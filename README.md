@@ -87,6 +87,7 @@ A gist file is also provided as a single file installation (https://gist.github.
       This is to be expected as the Shell is not yet fully installed.
 * In the terminal, type `selfupdate` or `selfupdate.sh` to retrieve rest of the
   files. 
+* Optionally, restart StaSh.
 
 ### Install from GitHub
 If you have a GitHub tool available in Pythonista, such as [git repo
