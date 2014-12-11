@@ -28,6 +28,7 @@ features are also what really set the difference from shellista.
     * Aliases, e.g. `alias l1='ls -1'; l1`
     * Single and double quotes behave like Bash, e.g. `"*"` means literal `*`,
       `"$HOME"` expands while `'$HOME'` does not.
+    * Backslash escaping, e.g. `ls My\ Script.py`
     * Glob, e.g. `ls ~/*.py`
     * **Backtick quotes** for subprocess, e.g. ``l`echo s` `` is the same as `ls`
     * **Pipes** to chain commands, e.g. `cat some_file | grep interesting`
@@ -55,6 +56,11 @@ features are also what really set the difference from shellista.
   behaviour. Like the Bash resource file, aliases, environment
   variables can be set here. The default resource file is `.stashrc` under
   StaSh's installation root.
+    * The prompt is customizable with the `PROMPT` environment variable.
+        * `\w` - current working directory with HOME folder abbreviated as `~`
+        * `\W` - last path component of current working directory
+        * All other strings are displayed literally
+        * The default setting is `PROMPT='[\W]$ '`
 
 * The UI can be configured using **configuration file** to customize its font
   size and color. The default config file is `.stash_config` under StaSh's
@@ -64,7 +70,7 @@ features are also what really set the difference from shellista.
   (C-D)** button.
 
 * StaSh employs Python threads to execute scripts. It maintains a stack of
-  threads that forms a threads family. This means a script being executed can
+  threads that forms a linear threads family. This means a script being executed can
   callback to StaSh and ask it to run another script. This also means no
   parallel threads are allowed, i.e. no background jobs. You can use the
   **Ctrl-C (C-C)** button to terminate all running threads at (almost) any time.
@@ -72,7 +78,8 @@ features are also what really set the difference from shellista.
 ## Installation
 The code is hosted on GitHub (https://github.com/ywangd/stash). 
 
-A gist file is also provided as a single file installation (https://gist.github.com/ywangd/7fbb2c1aa17e8734defd)
+A gist file is also provided as a single file installation
+(https://gist.github.com/ywangd/7fbb2c1aa17e8734defd).
 
 ### Single File Installation with Gist
 * Either use the [New from
@@ -96,6 +103,7 @@ clone the repository.
 
 ## Usage
 The usage of StaSh is in principle similar to Bash. A few things to note are:
+
 * The search paths for executable scripts is set via an environment variable
   called `BIN_PATH` as `PATH` is used by the system. The default `BIN_PATH` is
   `~/Documents/bin:$STASH_ROOT/bin`.

@@ -23,6 +23,9 @@ except:
 
 # TODO:
 #   history search in bang action using basic parser
+#   disable history buttons while external script is running
+#   auto-completes for "ls Script\ "
+#   Allow external script to register callbacks for UI actions, e.g. button tap, input return
 #
 #   Object pickle not working properly (DropboxSync)
 #
@@ -33,8 +36,7 @@ except:
 #   review how outs is set
 #
 #   Documentation
-#   README
-# Path/directory completion should have no trailing space
+#   Path/directory completion should have no trailing space
 
 
 _STDIN = sys.stdin
@@ -936,7 +938,6 @@ class ShCompleter(object):
 
         if line.strip() == '':  # all commands + py files in current directory + all alias
             all_names = self.app.runtime.get_all_script_names()
-            all_names.extend(f for f in os.listdir('.') if f.endswith('.py'))
             all_names.extend(self.app.runtime.aliases.keys())
 
         else:
@@ -1368,6 +1369,7 @@ class StaSh(object):
             if line.strip() != '':
                 self.term.write('\n%s\n' % self.term.inp.text)
                 self.term.set_inp_text('', with_prompt=False)
+                self.term.inp_buf = []  # clear input buffer for new command
                 self.runtime.reset_idx_to_history()
                 self.runtime.run(line)
             else:
