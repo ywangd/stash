@@ -83,7 +83,8 @@ def sh_background(name=None):
 
 _DEFAULT_RC = r"""
 PROMPT='[\W]$ '
-BIN_PATH=$BIN_PATH:~/Documents/bin
+BIN_PATH=~/Documents/bin:$BIN_PATH
+SELFUPDATE_BRANCH=master
 alias la='ls -a'
 alias ll='ls -la'
 """
@@ -175,6 +176,7 @@ class ShRuntime(object):
         # Match for commands in current dir and BIN_PATH
         # Effectively, current dir is always the first in BIN_PATH
         for path in ['.'] + self.envars['BIN_PATH'].split(os.pathsep):
+            path = os.path.expanduser(path)
             if os.path.exists(path):
                 for f in os.listdir(path):
                     if f == filename or f == filename + '.py' or f == filename + '.sh':
@@ -191,6 +193,7 @@ class ShRuntime(object):
         """ This function used for completer """
         all_names = []
         for path in ['.'] + self.envars['BIN_PATH'].split(os.pathsep):
+            path = os.path.expanduser(path)
             if os.path.exists(path):
                 for f in os.listdir(path):
                     if not os.path.isdir(f) and (f.endswith('.py') or f.endswith('.sh')):
@@ -1025,8 +1028,12 @@ class ShCompleter(object):
             filenames = [fname for fname in os.listdir(word_to_complete)]
         else:
             d = os.path.dirname(word_to_complete) or '.'
+            d = os.path.expanduser(d)
             f = os.path.basename(word_to_complete)
-            filenames = [fname for fname in os.listdir(d) if fname.startswith(f)]
+            try:
+                filenames = [fname for fname in os.listdir(d) if fname.startswith(f)]
+            except:
+                filenames = []
         return filenames
 
     def format_all_names(self, all_names):
