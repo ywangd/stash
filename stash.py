@@ -117,6 +117,8 @@ class ShRuntime(object):
                 self.history = [line.strip() for line in ins.readlines()]
         except IOError:
             self.history = []
+        self.history_listsource = ui.ListDataSource(self.history)
+        self.history_listsource.action = self.app.history_popover_tapped
         self.idx_to_history = -1
 
         self.parser = ShParser(self)
@@ -383,6 +385,7 @@ class ShRuntime(object):
             self.history.insert(0, s)
             if len(self.history) > self.HISTORY_MAX:
                 self.history = self.history[0:self.HISTORY_MAX]
+            self.history_listsource.items = self.history
 
     def save_history(self):
         try:
@@ -1286,6 +1289,7 @@ class ShTerm(ui.View):
               
     def history_present(self, listsource):
         table = ui.TableView()
+        listsource.font = self.BUTTON_FONT
         table.data_source = listsource
         table.delegate = listsource
         table.width = 300
@@ -1400,10 +1404,7 @@ class StaSh(object):
                 self.completer.complete(self.term.read_inp_line())
 
         elif vk == self.term.k_hist:
-            listsource = ui.ListDataSource(self.runtime.history)
-            listsource.font = self.term.BUTTON_FONT
-            listsource.action = self.history_popover_tapped
-            self.term.history_present(listsource)
+            self.term.history_present(self.runtime.history_listsource)
 
         elif vk == self.term.k_hup:
             self.runtime.history_up()
