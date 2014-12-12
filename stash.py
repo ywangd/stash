@@ -1374,7 +1374,10 @@ class StaSh(object):
 
     def textfield_did_begin_editing(self, textfield):
         pass
-       
+
+    def textfield_did_end_editing(self, textfield):
+        pass
+
     def textfield_should_return(self, textfield):
         if not self.runtime.worker_stack:
             # No thread is running. We are to process the command entered
@@ -1399,18 +1402,18 @@ class StaSh(object):
             self.term.input_did_return = True
 
         return True
-  
-    def textfield_did_end_editing(self, textfield):
-        pass
 
-    def textfield_should_change(self, textfield, rangee, replacement):
+    def textfield_should_change(self, textfield, range_, replacement):
         if not self.runtime.worker_stack:
-            if rangee[0] < len(self.term.prompt):
+            if range_[0] < len(self.term.prompt):  # Do not erase the prompt
                 return False
         return True
 
     def textfield_did_change(self, textfield):
-        pass
+        if not self.runtime.worker_stack:
+            # Do not wipe prompt (guard against the clear button)
+            if len(textfield.text) < len(self.term.prompt):
+                self.term.reset_inp()
 
     def vk_tapped(self, vk):
         if vk == self.term.k_tab:  # Tab completion
