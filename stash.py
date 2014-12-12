@@ -444,7 +444,8 @@ filename         : word
 
 """
 
-_word_chars = r'''0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%()*+,-./:=?@[]^_{}~'''
+_word_chars =
+r'''0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%()*+,-./:=?@[]^_{}~&'''
 
 class Assignment(object):
     def __init__(self, identifier, value):
