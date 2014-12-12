@@ -384,6 +384,15 @@ class ShRuntime(object):
                         pass
         return 0
 
+    def get_prompt(self):
+        prompt = self.envars['PROMPT']
+        if prompt.find('\\w') or prompt.find('\\W'):
+            curdir = os.getcwd().replace(self.envars['HOME'], '~')
+            prompt = prompt.replace('\\w', curdir)
+            prompt = prompt.replace('\\W',
+                                    curdir if os.path.dirname(curdir) == '~' else os.path.basename(curdir))
+        return prompt
+
     def add_history(self, s):
         if s.strip() != '' and (self.history == [] or s != self.history[0]):
             self.history.insert(0, s)
@@ -1006,7 +1015,7 @@ class ShCompleter(object):
                 newline = line
 
             if len(all_names) == 1:
-                if os.path.isdir(replace_string) and not is_cmd_word:
+                if os.path.isdir(os.path.expanduser(replace_string)) and not is_cmd_word:
                     newline += '/'
                 else:
                     newline += ' '
@@ -1205,7 +1214,7 @@ class ShTerm(ui.View):
   
     def set_inp_text(self, s, with_prompt=True):
         if with_prompt:
-            self.prompt = self.app.get_prompt()
+            self.prompt = self.app.runtime.get_prompt()
             self.inp.text = '%s%s' % (self.prompt, s)
         else:
             self.inp.text = s
@@ -1363,15 +1372,6 @@ class StaSh(object):
         config.read(os.path.expanduser(config.get('system', 'cfgfile')))
         return config
 
-    def get_prompt(self):
-        prompt = self.runtime.envars['PROMPT']
-        if prompt.find('\\w') or prompt.find('\\W'):
-            curdir = os.getcwd().replace(self.runtime.envars['HOME'], '~')
-            prompt = prompt.replace('\\w', curdir)
-            prompt = prompt.replace('\\W',
-                                    curdir if os.path.dirname(curdir) == '~' else os.path.basename(curdir))
-        return prompt
-
     def textfield_did_begin_editing(self, textfield):
         pass
        
@@ -1402,12 +1402,16 @@ class StaSh(object):
   
     def textfield_did_end_editing(self, textfield):
         pass
-  
-    def textfield_did_change(self, textfield):
+
+    def textfield_should_change(self, textfield, rangee, replacement):
         if not self.runtime.worker_stack:
-            if len(textfield.text) < len(self.term.prompt):  # Do not erase the prompt
-                self.term.reset_inp()
-  
+            if rangee[0] < len(self.term.prompt):
+                return False
+        return True
+
+    def textfield_did_change(self, textfield):
+        pass
+
     def vk_tapped(self, vk):
         if vk == self.term.k_tab:  # Tab completion
             if not self.runtime.worker_stack:
