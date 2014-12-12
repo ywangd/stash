@@ -23,9 +23,12 @@ except:
 
 # TODO:
 #   history search in bang action using basic parser
-#   disable history buttons while external script is running
 #   auto-completes for "ls Script\ "
 #   Allow external script to register callbacks for UI actions, e.g. button tap, input return
+#   Disable Tab, history when a script is running
+#   Stub ui for testing on PC
+#   More buttons for symbols
+#   Allow running scripts have full control over input textfields and maintains its own history and tab?
 #
 #   Object pickle not working properly (DropboxSync)
 #
@@ -518,7 +521,7 @@ class ShBasicParser(object):
             self.is_cmd = is_cmd
 
     def __init__(self):
-        escaped = ("\\" + pp.Word(pp.printables + ' ', exact=1))
+        escaped = "\\" + pp.Word(pp.printables + ' ', exact=1)
         uq_word = pp.Word(_word_chars)
         bq_word = pp.QuotedString('`', escChar='\\', unquoteResults=False)
         dq_word = pp.QuotedString('"', escChar='\\', unquoteResults=False)
@@ -952,6 +955,7 @@ class ShCompleter(object):
                 if len(line) > words[-1].epos:
                     has_trailing_white = True
                 word_to_complete = words[-1].tok
+                word_to_complete_normal_whites = word_to_complete.replace('\\ ', ' ')
                 is_cmd_word = words[-1].is_cmd
             except pp.ParseException as e:
                 self.app.term.write_with_prefix('parsing error: at char %d: %s\n' % (e.loc, e.pstr))
@@ -961,22 +965,22 @@ class ShCompleter(object):
 
             elif is_cmd_word:  # commands match + alias match + path match
                 script_names = [script_name for script_name in self.app.runtime.get_all_script_names()
-                                if script_name.startswith(word_to_complete)]
+                                if script_name.startswith(word_to_complete_normal_whites)]
                 alias_names = [aln for aln in self.app.runtime.aliases.keys()
-                               if aln.startswith(word_to_complete)]
+                               if aln.startswith(word_to_complete_normal_whites)]
                 path_names = []
-                for p in self.path_match(word_to_complete):
+                for p in self.path_match(word_to_complete_normal_whites):
                     if not os.path.isdir(p) and (p.endswith('.py') or p.endswith('.sh')):
                         path_names.append(p)
 
                 all_names = script_names + alias_names + path_names
             else:  # path match
-                all_names = self.path_match(word_to_complete)
+                all_names = self.path_match(word_to_complete_normal_whites)
 
             # If the partial word starts with a dollar sign, try envar match
-            if word_to_complete.startswith('$'):
+            if word_to_complete_normal_whites.startswith('$'):
                 all_names.extend('$' + varname for varname in self.app.runtime.envars.keys()
-                                 if varname.startswith(word_to_complete[1:]))
+                                 if varname.startswith(word_to_complete_normal_whites[1:]))
 
         all_names = sorted(set(all_names))
 
@@ -996,9 +1000,8 @@ class ShCompleter(object):
                     newline = line + prefix
 
                 else:
-                    search_string = word_to_complete.replace(' ', '\\ ')  # escape whitespaces
-                    replace_string = os.path.join(os.path.dirname(word_to_complete), prefix)
-                    replace_string = replace_string.replace(' ', '\\ ')  # escape whitespaces
+                    search_string = word_to_complete
+                    replace_string = os.path.join(os.path.dirname(word_to_complete), prefix.replace(' ', '\\ '))
                     # reverse to make sure only the rightmost match is replaced
                     newline = line[::-1].replace(search_string[::-1], replace_string[::-1], 1)[::-1]
             else:
@@ -1023,13 +1026,12 @@ class ShCompleter(object):
                 if _DEBUG_COMPLETER:
                     print self.format_all_names(all_names)
 
-    def path_match(self, word_to_complete):
-        if os.path.isdir(word_to_complete) and word_to_complete.endswith('/'):
-            filenames = [fname for fname in os.listdir(word_to_complete)]
+    def path_match(self, word_to_complete_normal_whites):
+        if os.path.isdir(word_to_complete_normal_whites) and word_to_complete_normal_whites.endswith('/'):
+            filenames = [fname for fname in os.listdir(word_to_complete_normal_whites)]
         else:
-            d = os.path.dirname(word_to_complete) or '.'
-            d = os.path.expanduser(d)
-            f = os.path.basename(word_to_complete)
+            d = os.path.expanduser(os.path.dirname(word_to_complete_normal_whites)) or '.'
+            f = os.path.basename(word_to_complete_normal_whites)
             try:
                 filenames = [fname for fname in os.listdir(d) if fname.startswith(f)]
             except:
@@ -1411,13 +1413,16 @@ class StaSh(object):
                 self.completer.complete(self.term.read_inp_line())
 
         elif vk == self.term.k_hist:
-            self.term.history_present(self.runtime.history_listsource)
+            if not self.runtime.worker_stack:
+                self.term.history_present(self.runtime.history_listsource)
 
         elif vk == self.term.k_hup:
-            self.runtime.history_up()
+            if not self.runtime.worker_stack:
+                self.runtime.history_up()
 
         elif vk == self.term.k_hdn:
-            self.runtime.history_dn()
+            if not self.runtime.worker_stack:
+                self.runtime.history_dn()
 
         elif vk == self.term.k_CD:
             if self.runtime.worker_stack:
