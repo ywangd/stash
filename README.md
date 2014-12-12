@@ -176,6 +176,9 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
 * Executing a script using the "Run" button while StaSh is running leads to
   corrupted namespaces and leaves StaSh unusable. However, running scripts from
   "Action Menu" is OK.
+    - This is because Pythonista clears all global variables before running a
+      script. This is the default behaviour and can be turned off in
+      "Interpreter Options" in settings.
 * Pickled objects are not restored correctly and generate `AttributeError` as
   if the class definition cannot be found. An example is the
   [DropboxSync](https://gist.github.com/freekrai/4183134) script.

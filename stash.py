@@ -17,15 +17,14 @@ import pyparsing as pp
 
 try:
     import ui
+    import console
     _IN_PYTHONISTA = True
 except:
     _IN_PYTHONISTA = False
 
 # TODO:
 #   history search in bang action using basic parser
-#   auto-completes for "ls Script\ "
 #   Allow external script to register callbacks for UI actions, e.g. button tap, input return
-#   Disable Tab, history when a script is running
 #   Stub ui for testing on PC
 #   More buttons for symbols
 #   Allow running scripts have full control over input textfields and maintains its own history and tab?
@@ -39,7 +38,6 @@ except:
 #   review how outs is set
 #
 #   Documentation
-#   Path/directory completion should have no trailing space
 
 
 _STDIN = sys.stdin
@@ -943,7 +941,7 @@ class ShCompleter(object):
     def complete(self, line):
         is_cmd_word = False
         has_trailing_white = False
-        word_to_complete = ''
+        word_to_complete = word_to_complete_normal_whites = ''
 
         if line.strip() == '':  # all commands + py files in current directory + all alias
             all_names = self.app.runtime.get_all_script_names()
@@ -993,7 +991,7 @@ class ShCompleter(object):
 
         else:
             # Complete up to the longest common prefix of all possibilities
-            prefix = os.path.commonprefix(all_names)
+            prefix = replace_string = os.path.commonprefix(all_names)
 
             if prefix != '':
                 if line.strip() == '' or has_trailing_white:
@@ -1008,7 +1006,10 @@ class ShCompleter(object):
                 newline = line
 
             if len(all_names) == 1:
-                newline += ' '
+                if os.path.isdir(replace_string) and not is_cmd_word:
+                    newline += '/'
+                else:
+                    newline += ' '
 
             if newline != line:
                 # No need to show available possibilities if some completion can be done
@@ -1411,18 +1412,26 @@ class StaSh(object):
         if vk == self.term.k_tab:  # Tab completion
             if not self.runtime.worker_stack:
                 self.completer.complete(self.term.read_inp_line())
+            else:
+                console.hud_alert('Not available', 'error', 1.0)
 
         elif vk == self.term.k_hist:
             if not self.runtime.worker_stack:
                 self.term.history_present(self.runtime.history_listsource)
+            else:
+                console.hud_alert('Not available', 'error', 1.0)
 
         elif vk == self.term.k_hup:
             if not self.runtime.worker_stack:
                 self.runtime.history_up()
+            else:
+                console.hud_alert('Not available', 'error', 1.0)
 
         elif vk == self.term.k_hdn:
             if not self.runtime.worker_stack:
                 self.runtime.history_dn()
+            else:
+                console.hud_alert('Not available', 'error', 1.0)
 
         elif vk == self.term.k_CD:
             if self.runtime.worker_stack:
@@ -1450,6 +1459,7 @@ class StaSh(object):
     def history_popover_tapped(self, sender):
         if sender.selected_row >= 0: 
             self.term.set_inp_text(sender.items[sender.selected_row])
+            self.runtime.idx_to_history = sender.selected_row
 
     def will_close(self):
         self.runtime.save_history()
