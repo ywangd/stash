@@ -534,7 +534,7 @@ class ShBasicParser(object):
         bq_word = pp.QuotedString('`', escChar='\\', unquoteResults=False)
         dq_word = pp.QuotedString('"', escChar='\\', unquoteResults=False)
         sq_word = pp.QuotedString("'", escChar='\\', unquoteResults=False)
-        punctuator = pp.oneOf('; & | < >').setParseAction(self.punctuator_action)
+        punctuator = pp.oneOf('; | < >').setParseAction(self.punctuator_action)
 
         word = pp.Combine(pp.OneOrMore(escaped ^ escaped ^ uq_word ^ bq_word ^ dq_word ^ sq_word))\
             .setParseAction(self.word_action)
