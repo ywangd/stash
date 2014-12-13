@@ -14,9 +14,8 @@ import runpy
 import sys
 import threading
 import ui
-print sys.argv
-run_as_thread = False
-run_as_module = False
+import argparse
+
 
 class ModuleThread(threading.Thread):
     
@@ -35,23 +34,18 @@ class ModuleThread(threading.Thread):
         except Exception, e:
             print e
 
-#Check for & to run as thread
-if sys.argv[len(sys.argv)-1]=='&':
-    sys.argv.pop()
-    run_as_thread=True
 
-#Check to run as module
-if sys.argv[1] == '-m' and len(sys.argv)>=3:
-    run_as_module = True
-    sys.argv.pop(1)
+ap = argparse.ArgumentParser()
+ap.add_argument('-m', '--module', action='store_true', default=False, help='run module')
+ap.add_argument('-b', '--background', action='store_true', default=False, help='run as background thread')
+ap.add_argument('name', help='file or module name')
+args = ap.parse_args()
 
-#make sure enough args are present
-if len(sys.argv) < 2:
-    print 'Usage: python [-m] file|module [args] [&]'
-    sys.exit()
-    
-module_name = str(sys.argv[1])
-sys.argv.pop(1)
+run_as_thread = args.background
+run_as_module = args.module
+module_name = str(args.name)
+
+sys.argv = [sys.argv[0]]
 
 if run_as_module:
     try:
