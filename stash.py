@@ -1,3 +1,4 @@
+#coding: utf-8
 """
 Docstring
 """
@@ -946,6 +947,7 @@ class ShCompleter(object):
 
     def __init__(self, app=None):
         self.app = app
+        self.np_max = app.config.getint('display', 'AUTO_COMPLETION_MAX')
 
     def complete(self, line):
         is_cmd_word = False
@@ -991,10 +993,10 @@ class ShCompleter(object):
 
         all_names = sorted(set(all_names))
 
-        if len(all_names) > 30:
+        if len(all_names) > self.np_max:
             if self.app:
                 self.app.term.write('%s\nMore than %d possibilities\n'
-                                    % (self.app.term.inp.text, 30))
+                                    % (self.app.term.inp.text, self.np_max))
             if _DEBUG_COMPLETER:
                 print self.format_all_names(all_names)
 
@@ -1335,6 +1337,7 @@ INPUT_TEXT_COLOR=(1.0, 1.0, 1.0)
 INPUT_TINT_COLOR=(0.0, 0.0, 1.0)
 HISTORY_MAX=30
 BUFFER_MAX=100
+AUTO_COMPLETION_MAX=30
 """
 
 
@@ -1387,6 +1390,7 @@ class StaSh(object):
                 self.term.write('\n%s\n' % self.term.inp.text)
                 self.term.set_inp_text('', with_prompt=False)
                 self.term.inp_buf = []  # clear input buffer for new command
+                self.term.input_did_return = False
                 self.runtime.reset_idx_to_history()
                 self.runtime.run(line)
             else:
