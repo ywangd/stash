@@ -1077,6 +1077,8 @@ class ShTerm(ui.View):
         self.BUFFER_MAX = app.config.getint('display', 'BUFFER_MAX')
         self.TEXT_FONT = eval(app.config.get('display', 'TEXT_FONT'))
         self.BUTTON_FONT = eval(app.config.get('display', 'BUTTON_FONT'))
+        
+        self.vk_symbols = app.config.get('display', 'VK_SYMBOLS')
 
         self.inp_buf = []
         self.out_buf = ''
@@ -1111,9 +1113,14 @@ class ShTerm(ui.View):
         self.k_tab.tint_color = 'black'
         self.k_tab.background_color = 'white'
         self.k_tab.size_to_fit()
+        
+        self.k_grp_0 = ui.View(name='k_grp_0', flex='WT')  # vk group 0
+        self.vks.add_subview(self.k_grp_0)
+        self.k_grp_0.background_color = 0.7
+        self.k_grp_0.x = self.k_tab.width + k_hspacing
    
         self.k_hist = ui.Button(name='k_hist', title=' Hist ', flex='RTB')
-        self.vks.add_subview(self.k_hist)
+        self.k_grp_0.add_subview(self.k_hist)
         self.k_hist.action = app.vk_tapped
         self.k_hist.font = self.BUTTON_FONT
         self.k_hist.border_width = 1
@@ -1122,10 +1129,9 @@ class ShTerm(ui.View):
         self.k_hist.tint_color = 'black'
         self.k_hist.background_color = 'white'
         self.k_hist.size_to_fit()
-        self.k_hist.x = self.k_tab.width + k_hspacing
 
         self.k_hup = ui.Button(name='k_hup', title=' Up ', flex='RTB')
-        self.vks.add_subview(self.k_hup)
+        self.k_grp_0.add_subview(self.k_hup)
         self.k_hup.action = app.vk_tapped
         self.k_hup.font = self.BUTTON_FONT
         self.k_hup.border_width = 1
@@ -1134,10 +1140,10 @@ class ShTerm(ui.View):
         self.k_hup.tint_color = 'black'
         self.k_hup.background_color = 'white'
         self.k_hup.size_to_fit()
-        self.k_hup.x = self.k_hist.x + self.k_hist.width + k_hspacing
+        self.k_hup.x = self.k_hist.width + k_hspacing
 
         self.k_hdn = ui.Button(name='k_hdn', title=' Dn ', flex='RTB')
-        self.vks.add_subview(self.k_hdn)
+        self.k_grp_0.add_subview(self.k_hdn)
         self.k_hdn.action = app.vk_tapped
         self.k_hdn.font = self.BUTTON_FONT
         self.k_hdn.border_width = 1
@@ -1149,7 +1155,7 @@ class ShTerm(ui.View):
         self.k_hdn.x = self.k_hup.x + self.k_hup.width + k_hspacing
 
         self.k_CD = ui.Button(name='k_CD', title=' C-D ', flex='RTB')
-        self.vks.add_subview(self.k_CD)
+        self.k_grp_0.add_subview(self.k_CD)
         self.k_CD.action = app.vk_tapped
         self.k_CD.font = self.BUTTON_FONT
         self.k_CD.border_width = 1
@@ -1161,7 +1167,7 @@ class ShTerm(ui.View):
         self.k_CD.x = self.k_hdn.x + self.k_hdn.width + k_hspacing
 
         self.k_CC = ui.Button(name='k_CC', title=' C-C ', flex='RTB')
-        self.vks.add_subview(self.k_CC)
+        self.k_grp_0.add_subview(self.k_CC)
         self.k_CC.action = app.vk_tapped
         self.k_CC.font = self.BUTTON_FONT
         self.k_CC.border_width = 1
@@ -1171,10 +1177,53 @@ class ShTerm(ui.View):
         self.k_CC.background_color = 'white'
         self.k_CC.size_to_fit()
         self.k_CC.x = self.k_CD.x + self.k_CD.width + k_hspacing
-  
+
+        self.k_swap = ui.Button(name='k_swap', title=' .. ', flex='LTB')
+        self.vks.add_subview(self.k_swap)
+        self.k_swap.action = app.vk_tapped
+        self.k_swap.font = self.BUTTON_FONT
+        self.k_swap.border_width = 1
+        self.k_swap.border_color = 0.9
+        self.k_swap.corner_radius = 5
+        self.k_swap.tint_color = 'black'
+        self.k_swap.background_color = 'white'
+        self.k_swap.size_to_fit()
+        self.k_swap.x = self.vks.width - self.k_swap.width
+
+        self.k_grp_1 = ui.View(name='k_grp_1', flex='WT')  # vk group 1
+        self.vks.add_subview(self.k_grp_1)
+        self.k_grp_1.background_color = 0.7
+        self.k_grp_1.x = self.k_tab.width + k_hspacing
+        
+        offset = 0
+        for i, sym in enumerate(self.vk_symbols):
+            if sym == ' ':
+                continue 
+            if not app.ON_IPAD and i > 6:
+                break
+            
+            k_sym = ui.Button(name='k_sym', title=' %s ' % sym, flex='RTB')
+            self.k_grp_1.add_subview(k_sym)
+            k_sym.action = app.vk_tapped
+            k_sym.font = self.BUTTON_FONT
+            k_sym.border_width = 1
+            k_sym.border_color = 0.9
+            k_sym.corner_radius = 5
+            k_sym.tint_color = 'black'
+            k_sym.background_color = 'white'
+            k_sym.size_to_fit()
+            k_sym.x = offset + k_hspacing * i
+            offset += k_sym.width
+
+        self.k_grp_0.width = self.vks.width - self.k_tab.width - self.k_swap.width - 2 * k_hspacing
+        self.k_grp_1.width = self.vks.width - self.k_tab.width - self.k_swap.width - 2 * k_hspacing
+        
         self.vks.height = self.k_hist.height
         self.vks.y = self.vks.superview.height - (self.vks.height + 4)
-  
+
+        self.k_grp_1.send_to_back()
+        self.on_k_grp = 0
+        
         self.inp = ui.TextField(name='inp', flex='WT')
         self.txts.add_subview(self.inp)
         self.inp.font = self.TEXT_FONT
@@ -1188,6 +1237,7 @@ class ShTerm(ui.View):
         self.inp.clear_button_mode = 'always'
         self.inp.autocapitalization_type = ui.AUTOCAPITALIZE_NONE
         self.inp.autocorrection_type = False
+        self.inp.spellchecking_type = False 
         self.inp.delegate = app
   
         self.out = ui.TextView(name='out', flex='WH')
@@ -1203,7 +1253,14 @@ class ShTerm(ui.View):
         self.out.text = ''
         self.out.editable = False
         self.out.delegate = app
-
+        
+    def toggle_k_grp(self):
+        if self.on_k_grp == 0:
+            self.k_grp_1.bring_to_front()
+        else:
+            self.k_grp_0.bring_to_front()
+        self.on_k_grp = 1 - self.on_k_grp
+        
     def will_close(self):
         self.cleanup()
 
@@ -1344,6 +1401,7 @@ INPUT_TINT_COLOR=(0.0, 0.0, 1.0)
 HISTORY_MAX=30
 BUFFER_MAX=100
 AUTO_COMPLETION_MAX=30
+VK_SYMBOLS=~/.-*|>$'=!&_"\?`
 """
 
 
@@ -1355,14 +1413,15 @@ class StaSh(object):
     def __init__(self):
 
         self.thread = threading.currentThread()
+        
+        #TODO: Better way to detect iPad
+        self.ON_IPAD = ui.get_screen_size()[1] >= 708
+
 
         self.config = self.load_config()
         self.term = ShTerm(self)
         self.runtime = ShRuntime(self)
         self.completer = ShCompleter(self)
-
-        #TODO: Better way to detect iPad
-        self.ON_IPAD = ui.get_screen_size()[1] >= 708
 
         # Navigate to the startup folder
         os.chdir(self.runtime.envars['HOME2'])
@@ -1431,6 +1490,9 @@ class StaSh(object):
                 self.completer.complete(self.term.read_inp_line())
             else:
                 console.hud_alert('Not available', 'error', 1.0)
+                
+        elif vk == self.term.k_swap:
+            self.term.toggle_k_grp()
 
         elif vk == self.term.k_hist:
             if not self.runtime.worker_stack:
@@ -1472,6 +1534,9 @@ class StaSh(object):
                         self.runtime.restore_state()  # Manually stopped thread does not restore state
                         self.term.write_with_prefix('successfully terminated thread %s\n' % worker)
                 self.term.reset_inp()
+        elif vk.name == 'k_sym':
+            # TODO: impossible to detect cursor position?
+            self.term.inp.text += vk.title.strip()
 
     def history_popover_tapped(self, sender):
         if sender.selected_row >= 0: 
