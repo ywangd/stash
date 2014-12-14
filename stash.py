@@ -22,6 +22,8 @@ try:
     _IN_PYTHONISTA = True
 except:
     _IN_PYTHONISTA = False
+    import dummyui as ui
+    import dummyconsole as console
 
 # TODO:
 #   history search in bang action using basic parser
@@ -29,6 +31,8 @@ except:
 #   Stub ui for testing on PC
 #   More buttons for symbols
 #   Allow running scripts have full control over input textfields and maintains its own history and tab?
+#   Blend shell and python code in StaSh script?
+#   Allow a single background job to be ran by ui.in_background?
 #
 #   Object pickle not working properly (DropboxSync)
 #
@@ -930,6 +934,8 @@ class ShParser(object):
                 else:
                     line += w.tok
                 last_pos = w.epos
+
+            line += self.line[last_pos:]  # add any possible ending whites
 
             if line != self.line:  # alias found and expanded
                 self.line = line
