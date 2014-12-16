@@ -1073,6 +1073,7 @@ class ShTerm(ui.View):
         self._flush_thread = None
         self._timer_to_start_flush_thread = None
         self._n_refresh = 5
+        self._refresh_pause = 0.01
   
         self.BUFFER_MAX = app.config.getint('display', 'BUFFER_MAX')
         self.TEXT_FONT = eval(app.config.get('display', 'TEXT_FONT'))
@@ -1369,7 +1370,7 @@ class ShTerm(ui.View):
         for i in range(self._n_refresh):
             self.out.content_offset = (0, self.out.content_size[1] - self.out.height)
             if i < self._n_refresh - 1:
-                time.sleep(0.01)
+                time.sleep(self._refresh_pause)
               
     def history_present(self, listsource):
         table = ui.TableView()
