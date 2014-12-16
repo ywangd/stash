@@ -83,11 +83,12 @@ def sh_background(name=None):
 
 _DEFAULT_RC = r"""
 PROMPT='[\W]$ '
-BIN_PATH=~/Documents/bin:$BIN_PATH
+BIN_PATH=~/Documents/bin:{syspath}:$BIN_PATH
 SELFUPDATE_BRANCH=master
+alias env='printenv'
 alias la='ls -a'
 alias ll='ls -la'
-"""
+""".format(syspath=":".join(sys.path))
 
 
 class ShRuntime(object):

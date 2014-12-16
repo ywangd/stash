@@ -2,33 +2,30 @@ import os
 import urllib2
 import random
 
-urlbase = 'https://raw.githubusercontent.com/ywangd/stash/master/'
+URLBASE = 'https://raw.githubusercontent.com/ywangd/stash/master/'
 
-fnames = ['stash.py', 'bin/selfupdate.sh', 'bin/echo.py', 'bin/wget.py', 'bin/unzip.py', 'bin/rm.py']
+FNAMES = ['stash.py', 'bin/selfupdate.sh', 'bin/echo.py', 'bin/wget.py', 'bin/unzip.py', 'bin/rm.py']
 
-home_dir = os.path.expanduser('~/Documents')
+STASH_DIR = os.path.expanduser("~/Documents/stash")
 
-os.chdir(home_dir)
-if not os.path.exists('stash'):
-    os.mkdir('stash')
+if not os.path.exists(STASH_DIR):
+    os.mkdir(STASH_DIR)
 
-os.chdir('stash')
-if not os.path.exists('bin'):
-    os.mkdir('bin')
+if not os.path.exists(os.path.join(STASH_DIR, 'bin')):
+    os.mkdir(os.path.join(STASH_DIR, 'bin'))
 
-for fname in fnames:
-
-    # Random number to force refresh
-    url = urlbase + fname + ('?q=%d' % random.randint(1, 999999))
-    print url
-
-    req = urllib2.Request(url)
-    req.add_header('Cache-Control', 'no-cache')
-    contents = urllib2.urlopen(req).read()
-
-    with open(fname, 'w') as outs:
-        outs.write(contents)
-
-print
-print 'Done'
-print
+if __name__ == "__main__":
+    for fname in FNAMES:
+        # Random number to force refresh
+        url = URLBASE + fname + '?q={}'.format(random.randint(1, 999999))
+        print(url)
+    
+        req = urllib2.Request(url)
+        req.add_header('Cache-Control', 'no-cache')
+    
+        with open(os.path.join(STASH_DIR, fname), 'w') as outs:
+            # Might need to open the file as binary if that's what
+            # urlopen returns. The docs aren't very specific.
+            outs.write(urllib2.urlopen(req).read())
+        
+        print("\nDone\n")
