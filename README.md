@@ -186,9 +186,9 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   expanded forms
 
 ## Contributing
-- Check any open issues or open a new issue to start discussions about your
+* Check any open issues or open a new issue to start discussions about your
   ideas of features and/or bugs
-- Fork the repository, make changes, and send pull requests
+* Fork the repository, make changes, and send pull requests
 
 
 
