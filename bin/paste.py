@@ -1,25 +1,32 @@
+from __future__ import print_function
+
+import argparse
 import os
 import sys
-import fileinput
-import argparse
 
 import clipboard
 
-ap = argparse.ArgumentParser()
-ap.add_argument('file', nargs='?', help='the file to be pasted')
-args = ap.parse_args()
-
-thefile = args.file if args.file else None
-
-if thefile is not None and os.path.isdir(thefile):
-    print '%s: Is a directory' % thefile
-
-else:
-    if thefile is None:
-        print clipboard.get()
+def main(args):
+    ap = argparse.ArgumentParser()
+    ap.add_argument('file', nargs='?', help='the file to be pasted')
+    ns = ap.parse_args(args)
+    
+    status = 0
+    
+    if ns.file:
+        if os.path.exists(ns.file):
+            print("paste: {}: file exists".format(ns.file), file=sys.stderr)
+            status = 1
+        else:
+            try:
+                with open(ns.file) as f:
+                    f.write(clipboard.get())
+            except Exception as err:
+                print("paste: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
     else:
-        try:
-            with open(thefile, 'w') as outs:
-                outs.write(clipboard.get())
-        except IOError:
-            print '%s: cannot open for writing' % thefile
+        print(clipboard.get())
+    
+    sys.exit(status)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

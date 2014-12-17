@@ -91,6 +91,7 @@ _DEFAULT_RC = r"""
 PROMPT='[\W]$ '
 BIN_PATH=~/Documents/bin:$BIN_PATH
 SELFUPDATE_BRANCH=master
+alias env='printenv'
 alias la='ls -a'
 alias ll='ls -la'
 """
