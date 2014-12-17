@@ -1,22 +1,24 @@
+from __future__ import print_function
+
+import argparse
+import fileinput
 import os
 import sys
-import fileinput
-import argparse
 
 import clipboard
 
-ap = argparse.ArgumentParser()
-ap.add_argument('file', nargs='?', help='the file to be copied')
-args = ap.parse_args()
-
-thefile = args.file if args.file else None
-
-if thefile is not None and os.path.isdir(thefile):
-    print '%s: Is a directory' % thefile
-
-else:
+def main(args):
+    ap = argparse.ArgumentParser()
+    ap.add_argument('file', nargs='*', help='one or more files to be copied')
+    ns = ap.parse_args(args)
+    
+    fileinput.close() # in case it is not closed
     try:
-        fileinput.close()  # in case it is not closed
-        clipboard.set(''.join(line for line in fileinput.input(thefile)))
+        clipboard.set(''.join(line for line in fileinput.input(ns.file)))
+    except Exception as err:
+        print("copy: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
     finally:
         fileinput.close()
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

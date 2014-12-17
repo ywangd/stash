@@ -1,21 +1,34 @@
-import os
+#!/usr/bin/env python
+########################################################################.......
+
+"""Create a new directory. The parent directory must already exist,
+unless -p is specified.
+"""
+
+from __future__ import print_function
+
 import argparse
+import os
+import sys
 
-ap = argparse.ArgumentParser()
-ap.add_argument('target', nargs=1, help='the directory to make')
-ap.add_argument('-p', '--parents', action='store_true', default=False,
-                help='make parent directories as needed')
-args = ap.parse_args()
+def main(args):
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("-p", "--parents", action="store_true",
+                   help="create parent directories as necessary")
+    p.add_argument("dir", action="store", nargs="+",
+                   help="the directory to be created")
+    ns = p.parse_args(args)
+    
+    status = 0
+    
+    for dir in ns.dir:
+        try:
+            (os.makedirs if ns.parents else os.mkdir)(dir)
+        except Exception as err:
+            print("mkdir: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+            status = 1
+    
+    sys.exit(status)
 
-target = args.target[0]
-
-if os.path.exists(target):
-    print "%s: File exists" % target
-else:
-    try:
-        if args.parents:
-            os.makedirs(target)
-        else:
-            os.mkdir(target)
-    except Exception:
-        print "%s: Unable to create" % target
+if __name__ == "__main__":
+    main(sys.argv[1:])

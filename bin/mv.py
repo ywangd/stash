@@ -1,57 +1,77 @@
+#!/usr/bin/env python
+########################################################################.......
+
+"""Move (rename) a file or directory to a new name, or into a new
+directory. Multiple source files may be specified if the destination is
+an existing directory.
+"""
+
+from __future__ import print_function
+
+import argparse
 import os
 import shutil
-import argparse
+import sys
 
-ap = argparse.ArgumentParser()
-ap.add_argument('source', nargs='+', help='Source files to be moved')
-ap.add_argument('target', nargs=1, help='Target file')
-args = ap.parse_args()
-
-def pprint(path):
-    if path.startswith(os.environ['HOME']):
-        return '~' + path.split(os.environ['HOME'], 1)[-1]
-    return path
-
-"""move files and directories"""
-dest = args.target[0]
-files = args.source
-
-if len(files) > 1:
-    # Moving multiple files, destination must be an existing directory.
-    if not os.path.isdir(dest):
-        print "%s: No such directory" % pprint(dest)
-    else:
-        full_dest = os.path.abspath(dest).rstrip('/') + '/'
-        for filef in files:
-            full_file = os.path.abspath(filef).rstrip('/')
-            file_name = os.path.basename(full_file)
-            new_name = os.path.join(full_dest, file_name)
-            if not os.path.exists(full_file):
-                print "! Error: Skipped, missing -", pprint(filef)
-                continue
-            try:
-                os.rename(full_file, new_name)
-            except Exception:
-                print "%s: Unable to move" % pprint(filef)
-else:
-    # Moving a single file to a (pre-existing) directory or a file
-    filef = files[0]
-    full_file = os.path.abspath(filef).rstrip('/')
-    file_name = os.path.basename(full_file)
-    full_dest = os.path.abspath(dest).rstrip('/')
-    if os.path.isdir(full_dest):
-        if os.path.exists(full_file):
-            try:
-                shutil.move(full_file, full_dest + '/' + file_name)
-            except:
-                print "%s: Unable to move" % pprint(filef)
+def main(args):
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("src", action="store", nargs="+",
+                   help="one or more source files or folders")
+    p.add_argument("dest", action="store",
+                   help="the destination name or folder")
+    ns = p.parse_args(args)
+    
+    status = 0
+    
+    if len(ns.src) > 1:
+        # Multiple source files
+        if os.path.exists(ns.dest):
+            # Destination must exist...
+            if os.path.isdir(ns.dest):
+                # ...and be a directory
+                for src in ns.src:
+                    try:
+                        # Attempt to move every source into destination
+                        shutil.move(src, os.path.join(ns.dest, os.path.basename(src)))
+                    except Exception as err:
+                        print("mv: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+                        status = 1
+            else:
+                print("mv: {}: not a directory".format(ns.dest), file=sys.stderr)
         else:
-            print "%s: No such file" % pprint(filef)
+            print("mv: {}: no such file or directory".format(ns.dest), file=sys.stderr)
+            status = 1
     else:
-        if os.path.exists(full_file):
-            try:
-                shutil.move(full_file, full_dest)
-            except:
-                print "%s: Unable to move" % pprint(filef)
+        # Single source file
+        src = ns.src[0]
+        if os.path.exists(src):
+            # Source must exist
+            if os.path.exists(ns.dest):
+                # If destination exists...
+                if os.path.isdir(ns.dest):
+                    # ...it must be a folder
+                    try:
+                        # Attempt to move source into destination
+                        shutil.move(src, os.path.join(ns.dest, os.path.basename(src)))
+                    except Exception as err:
+                        print("mv: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+                        status = 1
+                else:
+                    # Won't overwrite unasked
+                    print("mv: {}: file exists".format(ns.dest), file=sys.stderr)
+            else:
+                # Destination doesn't exist
+                try:
+                    # Try to rename source to destination
+                    shutil.move(src, ns.dest)
+                except Exception as err:
+                    print("mv: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+                    status = 1
         else:
-            print "%s: No such file" % pprint(filef)
+            print("mv: {}: no such file or directory".format(src), file=sys.stderr)
+            status = 1
+    
+    sys.exit(status)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
