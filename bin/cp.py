@@ -12,7 +12,7 @@ def pprint(path):
 def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('source', nargs='+', help='one or more files to be moved')
-    ap.add_argument('dest', nargs=1, help='destination file or folder')
+    ap.add_argument('dest', help='destination file or folder')
     ns = ap.parse_args(args)
     
     files = ns.source
