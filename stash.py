@@ -46,9 +46,8 @@ _STDOUT = sys.stdout
 _STDERR = sys.stderr
 
 
-_DEBUG = False
-_DEBUG_PARSER = False
 _DEBUG_RUNTIME = False
+_DEBUG_PARSER = False
 _DEBUG_COMPLETER = False
 
 
@@ -578,7 +577,7 @@ class ShExpander(object):
             print 'expand_bq_word: %s' % tok
 
         outs = StringIO()
-        worker = self.runtime.callback_run(tok[1:-1], final_outs=outs)
+        worker = self.runtime.run(tok[1:-1], final_outs=outs)
         while worker.isAlive():
             pass
         ret = ' '.join(outs.getvalue().splitlines())
@@ -754,6 +753,7 @@ class ShRuntime(object):
                 self.history = [line.strip() for line in ins.readlines()]
         except IOError:
             self.history = []
+            
         self.history_listsource = ui.ListDataSource(self.history)
         self.history_listsource.action = self.app.history_popover_tapped
         self.idx_to_history = -1
@@ -762,43 +762,51 @@ class ShRuntime(object):
         self.expander = ShExpander(self)
         self.retval = 0
 
+        self.enclosing_envars = {}
+
         self.state_stack = []
         self.worker_stack = []
 
-    @contextlib.contextmanager
     def save_state(self):
-        self.state_stack.append(
-            [self.envars,
+        # No need to save state for the first layer thread because it
+        # should run with the main thread's environment
+        if len(self.worker_stack) > 1:
+            self.state_stack.append(
+                [dict(self.envars),
+                 dict(self.aliases),
+                 self.history[:],
+                 os.getcwd(),
+                 dict(self.enclosing_envars),
+                 sys.stdin,
+                 sys.stdout,
+                 sys.stderr,
+                 sys.argv[:],
+                 sys.path[:],
+                 dict(os.environ),
+                ])
+            # new enclosed envars
+            self.envars.update(self.enclosing_envars)
+            self.enclosing_envars = {}
+
+    def restore_state(self):
+        if len(self.worker_stack) > 1:
+            (self.envars,
              self.aliases,
              self.history,
+             cwd,
+             self.enclosing_envars,
              sys.stdin,
              sys.stdout,
              sys.stderr,
-             sys.argv[:],
-             sys.path[:],
-             dict(os.environ),
-            ])
-        try:
-            yield
-        finally:
-            self.restore_state()
-
-    def restore_state(self):
-        (self.envars,
-         self.aliases,
-         self.history,
-         sys.stdin,
-         sys.stdout,
-         sys.stderr,
-         sys.argv,
-         sys.path,
-         os.environ) = self.state_stack.pop()
+             sys.argv,
+             sys.path,
+             os.environ) = self.state_stack.pop()
+            os.chdir(cwd)
 
     def load_rcfile(self):
         self.exec_lines(_DEFAULT_RC.splitlines())
 
-        # Source rcfile
-        try:
+        try:  # source rcfile
             self.exec_sh_file(self.rcfile)
         except IOError:
             pass
@@ -840,29 +848,10 @@ class ShRuntime(object):
                         all_names.append(f)
         return all_names
 
-    # This method is for normal flow of command execution.
-    # It updates the terminal and environment normally
-    def run(self, line, final_outs=None, add_to_history=True,
-            update_env=True,
+    def run(self, input_,
+            final_outs=None,
             code_validation_func=None,
-            reset_inp=True):
-
-        return self.callback_run(line, final_outs=final_outs,
-                                 add_to_history=add_to_history,
-                                 update_env=update_env,
-                                 code_validation_func=code_validation_func,
-                                 reset_inp=reset_inp)
-
-    # The callback run is for callback to the runtime when inside a
-    # running thread of the runtime. Commands executed via callback
-    # normally does not want update the environment (as if it is in
-    # a sub-shell) and does not reset on terminal.
-    # The code_validation_func is to be used by an external script
-    # to provide security check on user-supplied arguments.
-    def callback_run(self, line, final_outs=None, add_to_history=False,
-                     update_env=False,
-                     code_validation_func=None,
-                     reset_inp=False):
+            reset_inp=None):
 
         # Ensure the linearity of the worker threads.
         # To spawn a new worker thread, it is either
@@ -872,14 +861,23 @@ class ShRuntime(object):
             self.app.term.write_with_prefix('worker threads must be linear\n')
 
         def fn():
+            self.worker_stack.append(threading.currentThread())
+            self.save_state()
+
             try:
-                newline, complete_command = self.expander.expand(line)
-                if add_to_history:
+                lines = input_ if type(input_) is list else [input_]
+
+                for line in lines:
+                    if line.strip() == '':
+                        continue
+                    newline, complete_command = self.expander.expand(line)
+
                     self.add_history(newline)
-                if code_validation_func is None or code_validation_func(complete_command):
-                    self.run_complete_command(complete_command,
-                                              final_outs=final_outs,
-                                              update_env=update_env)
+
+                    if code_validation_func is None or code_validation_func(complete_command):
+                        self.run_complete_command(complete_command,
+                                                  final_outs=final_outs)
+
             except pp.ParseException as e:
                 if _DEBUG_PARSER:
                     _STDOUT.write('ParseException: %s\n' % repr(e))
@@ -896,27 +894,27 @@ class ShRuntime(object):
                 self.app.term.write_with_prefix('%s\n' % e.message)
 
             except IOError as e:
-                if _DEBUG:
+                if _DEBUG_RUNTIME:
                     _STDOUT.write('IOError: %s\n' % repr(e))
                 self.app.term.write_with_prefix('%s: %s\n' % (e.filename, e.strerror))
 
             except Exception as e:
-                if _DEBUG:
+                if _DEBUG_RUNTIME:
                     _STDOUT.write('Exception: %s\n' % repr(e))
                 self.app.term.write_with_prefix('%s\n' % str(e))
 
             finally:
-                self.worker_stack.pop()  # remove itself from the stack
-                if reset_inp:
+                self.restore_state()
+                if reset_inp or len(self.worker_stack) == 1:
                     self.app.term.reset_inp()
                 self.app.term.flush()
+                self.worker_stack.pop()  # remove itself from the stack
 
         worker = threading.Thread(name='_shruntime_thread', target=fn)
-        self.worker_stack.append(worker)
         worker.start()
         return worker
 
-    def run_complete_command(self, complete_command, final_outs=None, update_env=True):
+    def run_complete_command(self, complete_command, final_outs=None):
 
         for pipe_sequence in complete_command.lst:
             if _DEBUG_RUNTIME:
@@ -931,11 +929,16 @@ class ShRuntime(object):
                     new_envars[assignment.identifier] = assignment.value
 
                 # Only update the runtime's env for pure assignments
-                if update_env and simple_command.cmd_word == '' and idx == 0 and n_simple_commands == 1:
+                if simple_command.cmd_word == '' and idx == 0 and n_simple_commands == 1:
                     self.envars.update(new_envars)
+                else:
+                    self.enclosing_envars.update(new_envars)
 
                 if prev_outs:
-                    ins = prev_outs
+                    if type(prev_outs) == file:
+                        ins = StringIO()  # empty string
+                    else:
+                        ins = prev_outs
                 else:
                     ins = self.app.term
 
@@ -946,26 +949,27 @@ class ShRuntime(object):
                     mode = 'w' if simple_command.io_redirect.operator == '>' else 'a'
                     outs = open(simple_command.io_redirect.filename, mode)
 
-                if idx < n_simple_commands - 1:
+                elif idx < n_simple_commands - 1:
                     outs = StringIO()
+
                 elif final_outs:
                     outs = final_outs
 
-                if _DEBUG:
+                if _DEBUG_RUNTIME:
                     _STDOUT.write('io %s %s\n' % (ins, outs))
 
                 try:
                     if simple_command.cmd_word != '':
                         script_file = self.find_script_file(simple_command.cmd_word)
-                        if _DEBUG:
+
+                        if _DEBUG_RUNTIME:
                             _STDOUT.write('script is %s\n' % script_file)
 
-                        with self.save_state():
-                            if script_file.endswith('.py'):
-                                self.retval = self.exec_py_file(script_file, simple_command, ins, outs, errs)
+                        if script_file.endswith('.py'):
+                            self.retval = self.exec_py_file(script_file, simple_command, ins, outs, errs)
 
-                            else:  # TODO: run shell script file
-                                self.retval = self.exec_sh_file(script_file)
+                        else:
+                            self.retval = self.exec_sh_file(script_file, ins, outs, errs)
 
                     if self.retval != 0:
                         break  # break out of the pipe_sequence, but NOT pipe_sequence list
@@ -977,23 +981,23 @@ class ShRuntime(object):
 
                 except Exception as e:
                     err_msg = '%s\n' % e.message
-                    if _DEBUG:
+                    if _DEBUG_RUNTIME:
                         _STDOUT.write(err_msg)
                     self.app.term.write_with_prefix(err_msg)
                     break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
                 finally:
-                    if type(outs) == file:
+                    if type(outs) is file:
                         outs.close()
 
-    def exec_py_file(self, filename, simple_command, stdin=None, stdout=None, stderr=None):
+    def exec_py_file(self, filename, simple_command, ins=None, outs=None, errs=None):
         try:
-            if stdin:
-                sys.stdin = stdin
-            if stdout:
-                sys.stdout = stdout
-            if stderr:
-                sys.stderr = stderr
+            if ins:
+                sys.stdin = ins
+            if outs:
+                sys.stdout = outs
+            if errs:
+                sys.stderr = errs
             sys.argv = [os.path.basename(filename)] + simple_command.args  # First argument is the script name
             os.environ = self.envars
             file_path = os.path.relpath(filename)
@@ -1001,32 +1005,35 @@ class ShRuntime(object):
             namespace['__name__'] = '__main__'
             namespace['__file__'] = os.path.abspath(file_path)
             namespace['_stash'] = self.app
-            namespace['_stash_simple_command'] = simple_command
             execfile(file_path, namespace, namespace)
             return 0
 
         except SystemExit as e:
             return e.message
 
-        except:
-            err_msg = 'stash: %s\n' % sys.exc_value
-            if _DEBUG:
+        except Exception as e:
+            err_msg = '%s (%s)\n' % (str(e), sys.exc_value)
+            if _DEBUG_RUNTIME:
                 _STDOUT.write(err_msg)
-            self.app.term.write_with_prefix('%s\n' % err_msg)
+            self.app.term.write_with_prefix(err_msg)
             return 1
 
-    def exec_sh_file(self, filename):
-        with open(filename) as fins:
-            self.exec_lines(fins.readlines())
-        return 0
+    def exec_sh_file(self, filename, ins=None, outs=None, errs=None):
+        try:
+            with open(filename) as fins:
+                self.exec_lines(fins.readlines(), ins=ins, outs=outs, errs=errs)
+            return 0
+        except IOError as e:
+            self.app.term.write_with_prefix('%s: %s\n' % (e.filename, e.strerror))
+            return 1
+        except:
+            self.app.term.write_with_prefix('%s: error while executing shell script\n' % filename)
+            return 1
 
-    def exec_lines(self, lines):
-        for line in lines:
-            line = line.strip()
-            if line != '':
-                worker = self.run(line.strip(), add_to_history=False, reset_inp=False)
-                while worker.isAlive():  # wait for it to finish
-                    pass
+    def exec_lines(self, lines, ins=None, outs=None, errs=None):
+        worker = self.run(lines, reset_inp=False)
+        while worker.isAlive():
+            pass
 
     def get_prompt(self):
         prompt = self.envars['PROMPT']
@@ -1350,7 +1357,7 @@ class ShTerm(ui.View):
         self.flush()
 
     def write(self, s):
-        if _DEBUG:
+        if _DEBUG_RUNTIME:
             _STDOUT.write('Write Called: [%s]\n' % repr(s))
         if not _IN_PYTHONISTA:
             _STDOUT.write(s)
@@ -1361,7 +1368,7 @@ class ShTerm(ui.View):
         self.write('stash: ' + s)
 
     def writelines(self, lines):
-        if _DEBUG:
+        if _DEBUG_RUNTIME:
             _STDOUT.write('Writeline Called: [%s]\n' % repr(lines))
         self.write(''.join(lines))
 
@@ -1562,8 +1569,8 @@ class StaSh(object):
                         self.term.write_with_prefix('Try Ctrl-C again or restart the shell or even Pythonista\n')
                         break
                     else:
-                        self.runtime.worker_stack.pop()
                         self.runtime.restore_state()  # Manually stopped thread does not restore state
+                        self.runtime.worker_stack.pop()
                         self.term.write_with_prefix('successfully terminated thread %s\n' % worker)
                 self.term.reset_inp()
         elif vk.name == 'k_sym':
