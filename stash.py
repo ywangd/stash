@@ -1,8 +1,10 @@
 #coding: utf-8
 """
-Docstring
+StaSh - Shell for Pythonista
+
+https://github.com/ywangd/stash
 """
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 import os
 import sys
@@ -30,11 +32,9 @@ except:
 #   Allow running scripts have full control over input textfields and maintains its own history and tab?
 #   Blend shell and python code in StaSh script?
 #   Allow a single background job to be ran by ui.in_background?
+#   guard against empty statement
+#   Allow comments
 #
-#   Object pickle not working properly (DropboxSync)
-#
-#   Bang command history expand
-#   History with bang
 #   More useful button (composite buttons?)
 #   sys.exc information stack
 #   review how outs is set
@@ -69,6 +69,7 @@ class ShEventNotFound(Exception):
 
 class ShInternalError(Exception):
     pass
+
 
 def sh_delay(func, nseconds):
     t = threading.Timer(nseconds, func)
@@ -719,7 +720,6 @@ class ShCompleter(object):
         return '  '.join(all_names) + '\n'
 
 
-
 _DEFAULT_RC = r"""
 PROMPT='[\W]$ '
 BIN_PATH=~/Documents/bin:$BIN_PATH
@@ -759,43 +759,46 @@ class ShRuntime(object):
         self.parser = ShParser()
         self.expander = ShExpander(self)
         self.retval = 0
+
         self.state_stack = []
         self.worker_stack = []
 
     @contextlib.contextmanager
     def save_state(self):
-        self.state_stack.append([sys.stdin,
-                                 sys.stdout,
-                                 sys.stderr,
-                                 sys.argv[:],
-                                 sys.path[:],
-                                 dict(os.environ),
-                                 ])
+        self.state_stack.append(
+            [self.envars,
+             self.aliases,
+             self.history,
+             sys.stdin,
+             sys.stdout,
+             sys.stderr,
+             sys.argv[:],
+             sys.path[:],
+             dict(os.environ),
+            ])
         try:
             yield
         finally:
             self.restore_state()
 
     def restore_state(self):
-        (sys.stdin,
-        sys.stdout,
-        sys.stderr,
-        sys.argv,
-        sys.path,
-        os.environ) = self.state_stack.pop()
+        (self.envars,
+         self.aliases,
+         self.history,
+         sys.stdin,
+         sys.stdout,
+         sys.stderr,
+         sys.argv,
+         sys.path,
+         os.environ) = self.state_stack.pop()
 
     def load_rcfile(self):
-        for line in _DEFAULT_RC.splitlines():
-            if line.strip() != '':
-                # Do not reset input as PROMPT variable may not set before rcfile is loaded
-                worker = self.run(line.strip(), add_to_history=False, reset_inp=False)
-                while worker.isAlive():
-                    pass
+        self.exec_lines(_DEFAULT_RC.splitlines())
+
         # Source rcfile
         try:
             self.exec_sh_file(self.rcfile)
         except IOError:
-            #self.app.term.write_with_prefix('%s: rcfile does not exist\n' % self.rcfile)
             pass
 
     def find_script_file(self, filename):
@@ -1012,13 +1015,16 @@ class ShRuntime(object):
 
     def exec_sh_file(self, filename):
         with open(filename) as fins:
-            for line in fins.readlines():
-                line = line.strip()
-                if line != '':
-                    worker = self.run(line.strip(), add_to_history=False, reset_inp=False)
-                    while worker.isAlive():  # wait for it to finish
-                        pass
+            self.exec_lines(fins.readlines())
         return 0
+
+    def exec_lines(self, lines):
+        for line in lines:
+            line = line.strip()
+            if line != '':
+                worker = self.run(line.strip(), add_to_history=False, reset_inp=False)
+                while worker.isAlive():  # wait for it to finish
+                    pass
 
     def get_prompt(self):
         prompt = self.envars['PROMPT']
