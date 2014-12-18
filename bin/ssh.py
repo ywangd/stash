@@ -69,11 +69,17 @@ class StashSSH(object):
             self.port = port
             self.ssh = SSHClient()
             self.ssh.set_missing_host_key_policy(AutoAddPolicy())
-            self.ssh.connect(self.host,
-                             username=self.user,
-                             password=self.passwd,
-                             port=self.port,
-                             key_filename=self.find_ssh_keys())
+            if passwd:
+                self.ssh.connect(self.host,
+                                 username=self.user,
+                                 password=self.passwd,
+                                 port=self.port)#,
+                             #key_filename=self.find_ssh_keys())
+            else:
+                self.ssh.connect(self.host,
+                                 username=self.user,
+                                 port=self.port,
+                                 key_filename=self.find_ssh_keys())
             self.ssh_running = True
             return True
         except:
