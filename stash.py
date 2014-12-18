@@ -807,10 +807,11 @@ class ShRuntime(object):
             os.chdir(cwd)
 
     def load_rcfile(self):
-        self.exec_lines(_DEFAULT_RC.splitlines())
+        self.exec_sh_lines(_DEFAULT_RC.splitlines(),
+                           add_to_history=False)
 
         try:  # source rcfile
-            self.exec_sh_file(self.rcfile)
+            self.exec_sh_file(self.rcfile, add_to_history=False)
         except IOError:
             pass
 
@@ -853,6 +854,7 @@ class ShRuntime(object):
 
     def run(self, input_,
             final_outs=None,
+            add_to_history=True,
             code_validation_func=None,
             reset_inp=None):
 
@@ -875,7 +877,8 @@ class ShRuntime(object):
                         continue
                     newline, complete_command = self.expander.expand(line)
 
-                    self.add_history(newline)
+                    if add_to_history:
+                        self.add_history(newline)
 
                     if code_validation_func is None or code_validation_func(complete_command):
                         self.run_complete_command(complete_command,
@@ -1021,10 +1024,13 @@ class ShRuntime(object):
             self.app.term.write_with_prefix(err_msg)
             return 1
 
-    def exec_sh_file(self, filename, ins=None, outs=None, errs=None):
+    def exec_sh_file(self, filename, ins=None, outs=None, errs=None,
+                     add_to_history=True):
         try:
             with open(filename) as fins:
-                self.exec_lines(fins.readlines(), ins=ins, outs=outs, errs=errs)
+                self.exec_sh_lines(fins.readlines(),
+                                   ins=ins, outs=outs, errs=errs,
+                                   add_to_history=add_to_history)
             return 0
         except IOError as e:
             self.app.term.write_with_prefix('%s: %s\n' % (e.filename, e.strerror))
@@ -1033,8 +1039,10 @@ class ShRuntime(object):
             self.app.term.write_with_prefix('%s: error while executing shell script\n' % filename)
             return 1
 
-    def exec_lines(self, lines, ins=None, outs=None, errs=None):
-        worker = self.run(lines, reset_inp=False)
+    def exec_sh_lines(self, lines, ins=None, outs=None, errs=None,
+                      add_to_history=True):
+        worker = self.run(lines,
+                          add_to_history=add_to_history, reset_inp=False)
         while worker.isAlive():
             pass
 
