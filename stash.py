@@ -648,7 +648,8 @@ class ShCompleter(object):
                                if aln.startswith(word_to_complete_normal_whites)]
                 path_names = []
                 for p in self.path_match(word_to_complete_normal_whites):
-                    if not os.path.isdir(p) and (p.endswith('.py') or p.endswith('.sh')):
+                    if os.path.isdir(os.path.join(os.path.dirname(os.path.expanduser(word_to_complete_normal_whites)), p)) \
+                            or p.endswith('.py') or p.endswith('.sh'):
                         path_names.append(p)
 
                 all_names = script_names + alias_names + path_names
@@ -685,7 +686,7 @@ class ShCompleter(object):
                 newline = line
 
             if len(all_names) == 1:
-                if os.path.isdir(os.path.expanduser(replace_string)) and not is_cmd_word:
+                if os.path.isdir(os.path.expanduser(replace_string)):
                     newline += '/'
                 else:
                     newline += ' '
@@ -704,8 +705,9 @@ class ShCompleter(object):
                     print self.format_all_names(all_names)
 
     def path_match(self, word_to_complete_normal_whites):
-        if os.path.isdir(word_to_complete_normal_whites) and word_to_complete_normal_whites.endswith('/'):
-            filenames = [fname for fname in os.listdir(word_to_complete_normal_whites)]
+        if os.path.isdir(os.path.expanduser(word_to_complete_normal_whites)) \
+                and word_to_complete_normal_whites.endswith('/'):
+            filenames = [fname for fname in os.listdir(os.path.expanduser(word_to_complete_normal_whites))]
         else:
             d = os.path.expanduser(os.path.dirname(word_to_complete_normal_whites)) or '.'
             f = os.path.basename(word_to_complete_normal_whites)
