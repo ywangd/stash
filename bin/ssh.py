@@ -23,11 +23,43 @@ import re
 
 from paramiko import SSHClient, AutoAddPolicy
 
+def get_pyte():
+    import tempfile
+    commands = '''
+    echo StaSh ssh installing pyte...
+    wget https://codeload.github.com/selectel/pyte/zip/master -o ~/Documents/site-packages/pyte.zip
+    mkdir ~/Documents/site-packages/pyte_folder
+    unzip ~/Documents/site-packages/pyte.zip -d ~/Documents/site-packages/pyte_folder
+    rm -r ~/Documents/site-packages/pyte.zip
+    mv ~/Documents/site-packages/pyte_folder/pyte ~/Documents/site-packages/
+    rm -r ~/Documents/site-packages/pyte_folder
+    echo done
+    '''
+    temp = tempfile.NamedTemporaryFile()
+    try:
+        temp.write(commands)
+        temp.seek(0)
+        stash.runtime.exec_sh_file(temp.name)
+    finally:
+    # Automatically cleans up the file
+        temp.close()
+
+try:
+    import pyte
+except:
+    print 'pyte module not found.'
+    get_pyte()
+    import pyte
 
 class StashSSH(object):
     
     def __init__(self):
         self.ssh_running = False
+        self.screen = pyte.Screen(100,60)
+        self.stream = pyte.Stream()
+        self.stream.attach(self.screen)
+        self.curser = False
+        
         
     def connect(self,host='', passwd=None, port=22):
         print 'Connecting...'
@@ -64,14 +96,14 @@ class StashSSH(object):
         output = ''
         while self.ssh_running:
             if self.chan.recv_ready():
-                output += self.chan.recv(1024)
-                time.sleep(.2)
-                if not self.chan.recv_ready():
-                    output = output.replace('\t','')
-                    output = output.replace('\n\r','')
-                    #output = output.replace('\r','')
-                    print re.sub(r'\[?\d\d?;?\d?\d?m','',output)
-                    output = ''
+                #output += self.chan.recv(1024)
+                rcv = self.chan.recv(1024)
+
+                self.stream.feed(u'%s'%rcv)
+                
+            time.sleep(0.1)
+            stash.term.out.text = '\n'.join(self.screen.display)
+          
         
     def single_exec(self,command):
         sin,sout,serr = self.ssh.exec_command(command)
