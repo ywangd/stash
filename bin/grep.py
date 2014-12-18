@@ -15,8 +15,7 @@ def main(args):
     ap.add_argument('-v', '--invert', action='store_true',
                     help='invert the search result')
     ns = ap.parse_args(args)
-    print(ns)
-    
+
     flags = 0
     if ns.ignore_case:
         flags |= re.IGNORECASE
