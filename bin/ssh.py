@@ -100,6 +100,7 @@ class StashSSH(object):
         
     def stdout_thread(self):
         output = ''
+        test = ' '*60
         while self.ssh_running:
             if self.chan.recv_ready():
                 #output += self.chan.recv(1024)
@@ -108,13 +109,17 @@ class StashSSH(object):
                 self.stream.feed(u'%s'%rcv)
                 
             time.sleep(0.1)
-            stash.term.out.text = '\n'.join(self.screen.display)
-          
-        
+            count = len(self.screen.display)
+            for item in reversed(self.screen.display):
+                if str(item) != ' '*100:
+                    break
+                count -=1
+            stash.term.out.text = '\n'.join(self.screen.display[:count])
+
     def single_exec(self,command):
         sin,sout,serr = self.ssh.exec_command(command)
         for line in sout.readlines():
-            print line.replace('\n','')
+            line = line.replace('\n','')
         for line in serr.readlines():
             print line.replace('\n','')
         
