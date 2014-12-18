@@ -765,9 +765,15 @@ class ShRuntime(object):
         self.enclosing_envars = {}
 
         self.state_stack = []
+        self.io_stack = []
         self.worker_stack = []
 
     def save_state(self):
+        self.io_stack.append([
+            sys.stdin,
+            sys.stdout,
+            sys.stderr,
+        ])
         # No need to save state for the first layer thread because it
         # should run with the main thread's environment
         if len(self.worker_stack) > 1:
@@ -777,9 +783,6 @@ class ShRuntime(object):
                  self.history[:],
                  os.getcwd(),
                  dict(self.enclosing_envars),
-                 sys.stdin,
-                 sys.stdout,
-                 sys.stderr,
                  sys.argv[:],
                  sys.path[:],
                  dict(os.environ),
@@ -789,15 +792,15 @@ class ShRuntime(object):
             self.enclosing_envars = {}
 
     def restore_state(self):
+        (sys.stdin,
+         sys.stdout,
+         sys.stderr) = self.io_stack.pop()
         if len(self.worker_stack) > 1:
             (self.envars,
              self.aliases,
              self.history,
              cwd,
              self.enclosing_envars,
-             sys.stdin,
-             sys.stdout,
-             sys.stderr,
              sys.argv,
              sys.path,
              os.environ) = self.state_stack.pop()
