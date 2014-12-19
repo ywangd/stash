@@ -1438,7 +1438,19 @@ class ShTerm(ui.View):
         if s != '':
             self.out_buf += s
  
-    # File-like objects for IO redirect of external scripts
+    # file-like methods for output TextView
+    def seek(self, offset, whence=0):
+        if whence == 0:
+            if offset >= 0:
+                self.out_buf = self.out_buf[:offset]
+        else:  # 1 current position or 2 from the end are the same for the terminal
+            if offset < 0:
+                self.out_buf = self.out_buf[0:offset]
+
+    def tell(self):
+        return len(self.out_buf)
+
+    # file-like methods (TextField) for IO redirect of external scripts
     # read functions are only called by external script as raw_input
     def read(self, size=-1):
         return self.readline()
