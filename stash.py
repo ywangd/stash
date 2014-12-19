@@ -41,9 +41,9 @@ except:
 #
 #   Documentation
 
-_STDIN = sys.stdin
-_STDOUT = sys.stdout
-_STDERR = sys.stderr
+_STDIN = sys.__stdin__
+_STDOUT = sys.__stdout__
+_STDERR = sys.__stderr__
 
 
 _DEBUG_RUNTIME = False
@@ -769,6 +769,7 @@ class ShRuntime(object):
         self.worker_stack = []
 
     def save_state(self):
+        # Always save IO state
         self.io_stack.append([
             sys.stdin,
             sys.stdout,
@@ -780,7 +781,6 @@ class ShRuntime(object):
             self.state_stack.append(
                 [dict(self.envars),
                  dict(self.aliases),
-                 self.history[:],
                  os.getcwd(),
                  dict(self.enclosing_envars),
                  sys.argv[:],
@@ -791,29 +791,41 @@ class ShRuntime(object):
             self.envars.update(self.enclosing_envars)
             self.enclosing_envars = {}
 
-    def restore_state(self):
+    def restore_state(self,
+                      persist_envars=False,
+                      persist_aliases=False,
+                      persist_cwd=False):
+
         (sys.stdin,
          sys.stdout,
          sys.stderr) = self.io_stack.pop()
+
         if len(self.worker_stack) > 1:
+            saved_envars = self.envars
+            saved_aliases = self.aliases
+
             (self.envars,
              self.aliases,
-             self.history,
              cwd,
              self.enclosing_envars,
              sys.argv,
              sys.path,
              os.environ) = self.state_stack.pop()
-            os.chdir(cwd)
+
+            if persist_envars:
+                self.envars.update(saved_envars)
+
+            if persist_aliases:
+                self.aliases.update(saved_aliases)
+
+            if not persist_cwd:
+                os.chdir(cwd)
 
     def load_rcfile(self):
-        self.exec_sh_lines(_DEFAULT_RC.splitlines(),
-                           add_to_history=False)
+        self.exec_sh_lines(_DEFAULT_RC.splitlines(), add_to_history=False)
 
-        try:  # source rcfile
-            self.exec_sh_file(self.rcfile, add_to_history=False)
-        except IOError:
-            pass
+        if os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
+            self.exec_sh_file(self.rcfile, [], add_to_history=False)
 
     def find_script_file(self, filename):
         dir_match_found = False
@@ -854,9 +866,12 @@ class ShRuntime(object):
 
     def run(self, input_,
             final_outs=None,
-            add_to_history=True,
+            add_to_history=None,
             code_validation_func=None,
-            reset_inp=None):
+            reset_inp=None,
+            persist_envars=False,
+            persist_aliases=False,
+            persist_cwd=False):
 
         # Ensure the linearity of the worker threads.
         # To spawn a new worker thread, it is either
@@ -877,7 +892,11 @@ class ShRuntime(object):
                         continue
                     newline, complete_command = self.expander.expand(line)
 
-                    if add_to_history:
+                    # Only add history entry if:
+                    #   1. It is explicitly required
+                    #   2. It is the first layer thread directly spawned by the main thread
+                    #      and not explicitly required to not add
+                    if (add_to_history is None and len(self.worker_stack) == 1) or add_to_history:
                         self.add_history(newline)
 
                     if code_validation_func is None or code_validation_func(complete_command):
@@ -910,7 +929,9 @@ class ShRuntime(object):
                 self.app.term.write_with_prefix('%s\n' % str(e))
 
             finally:
-                self.restore_state()
+                self.restore_state(persist_envars=persist_envars,
+                                   persist_aliases=persist_aliases,
+                                   persist_cwd=persist_cwd)
                 if reset_inp or len(self.worker_stack) == 1:
                     self.app.term.reset_inp()
                 self.app.term.flush()
@@ -972,10 +993,10 @@ class ShRuntime(object):
                             _STDOUT.write('script is %s\n' % script_file)
 
                         if script_file.endswith('.py'):
-                            self.retval = self.exec_py_file(script_file, simple_command, ins, outs, errs)
+                            self.retval = self.exec_py_file(script_file, simple_command.args, ins, outs, errs)
 
                         else:
-                            self.retval = self.exec_sh_file(script_file, ins, outs, errs)
+                            self.retval = self.exec_sh_file(script_file, simple_command.args, ins, outs, errs)
 
                     if self.retval != 0:
                         break  # break out of the pipe_sequence, but NOT pipe_sequence list
@@ -996,7 +1017,8 @@ class ShRuntime(object):
                     if type(outs) is file:
                         outs.close()
 
-    def exec_py_file(self, filename, simple_command, ins=None, outs=None, errs=None):
+    def exec_py_file(self, filename, args,
+                     ins=None, outs=None, errs=None):
         try:
             if ins:
                 sys.stdin = ins
@@ -1004,7 +1026,7 @@ class ShRuntime(object):
                 sys.stdout = outs
             if errs:
                 sys.stderr = errs
-            sys.argv = [os.path.basename(filename)] + simple_command.args  # First argument is the script name
+            sys.argv = [os.path.basename(filename)] + args  # First argument is the script name
             os.environ = self.envars
             file_path = os.path.relpath(filename)
             namespace = dict(locals(), **globals())
@@ -1024,9 +1046,15 @@ class ShRuntime(object):
             self.app.term.write_with_prefix(err_msg)
             return 1
 
-    def exec_sh_file(self, filename, ins=None, outs=None, errs=None,
-                     add_to_history=True):
+    def exec_sh_file(self, filename, args,
+                     ins=None, outs=None, errs=None,
+                     add_to_history=None):
         try:
+            for i, arg in enumerate([filename] + args):
+                self.enclosing_envars[str(i)] = arg
+            self.enclosing_envars['#'] = len(args)
+            self.enclosing_envars['@'] = '\t'.join(args)
+
             with open(filename) as fins:
                 self.exec_sh_lines(fins.readlines(),
                                    ins=ins, outs=outs, errs=errs,
@@ -1039,10 +1067,12 @@ class ShRuntime(object):
             self.app.term.write_with_prefix('%s: error while executing shell script\n' % filename)
             return 1
 
-    def exec_sh_lines(self, lines, ins=None, outs=None, errs=None,
-                      add_to_history=True):
+    def exec_sh_lines(self, lines,
+                      ins=None, outs=None, errs=None,
+                      add_to_history=None):
         worker = self.run(lines,
-                          add_to_history=add_to_history, reset_inp=False)
+                          add_to_history=add_to_history,
+                          reset_inp=False)
         while worker.isAlive():
             pass
 
