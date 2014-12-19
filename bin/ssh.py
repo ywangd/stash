@@ -51,15 +51,16 @@ except:
     get_pyte()
     import pyte
 
+
 class StashSSH(object):
     
     def __init__(self):
         self.ssh_running = False
-        self.screen = pyte.Screen(100,60)
+        self.screen = pyte.screens.DiffScreen(100,60)
+        self.screen.dirty.clear()
+        #self.screen.set_mode(pyte.modes.DECTCEM)
         self.stream = pyte.Stream()
         self.stream.attach(self.screen)
-        self.curser = False
-        
         
     def connect(self,host='', passwd=None, port=22):
         print 'Connecting...'
@@ -85,7 +86,6 @@ class StashSSH(object):
         except:
             return False
         
-        
     def find_ssh_keys(self):
         files = []
         for file in os.listdir(APP_DIR+'/.ssh'):
@@ -99,22 +99,23 @@ class StashSSH(object):
         return user, host
         
     def stdout_thread(self):
-        output = ''
-        test = ' '*60
         while self.ssh_running:
             if self.chan.recv_ready():
                 #output += self.chan.recv(1024)
                 rcv = self.chan.recv(1024)
-
                 self.stream.feed(u'%s'%rcv)
+            if self.screen.dirty:
+                self.update_screen()
+                self.screen.dirty.clear()
                 
-            time.sleep(0.1)
-            count = len(self.screen.display)
-            for item in reversed(self.screen.display):
-                if str(item) != ' '*100:
-                    break
-                count -=1
-            stash.term.out.text = '\n'.join(self.screen.display[:count])
+    
+    def update_screen(self):
+        count = len(self.screen.display)
+        for item in reversed(self.screen.display):
+            if str(item) != ' '*100:
+                break
+            count -=1
+        stash.term.out.text = '\n'.join(self.screen.display[:count])
 
     def single_exec(self,command):
         sin,sout,serr = self.ssh.exec_command(command)
@@ -132,7 +133,7 @@ class StashSSH(object):
         t1 = threading.Thread(target=self.stdout_thread)
         t1.start()
         while True:
-            if self.chan.send_ready():
+            if self.chan.send_ready():        
                 if len(sys.stdin) != 0:
                     #sys.stdout = sys.stdout[:-len(sys.stdin)]
                     tmp =  ''.join(sys.stdin.readline())
@@ -142,8 +143,11 @@ class StashSSH(object):
                         break
                     self.chan.send(tmp+'\n')
         
+                
+        
     def exit(self):
         self.ssh_running = False
+
         
 if __name__=='__main__':
     ap = argparse.ArgumentParser()
