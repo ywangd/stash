@@ -66,6 +66,7 @@ class StashSSH(object):
         print 'Connecting...'
         try:
             self.user, self.host = self.parse_host(host)
+            self.stash = globals()['_stash']
             self.passwd = passwd
             self.port = port
             self.ssh = SSHClient()
@@ -105,17 +106,17 @@ class StashSSH(object):
                 rcv = self.chan.recv(1024)
                 self.stream.feed(u'%s'%rcv)
             if self.screen.dirty:
-                self.update_screen()
                 self.screen.dirty.clear()
-                
-    
+                self.update_screen()
+                  
     def update_screen(self):
         count = len(self.screen.display)
         for item in reversed(self.screen.display):
             if str(item) != ' '*100:
                 break
             count -=1
-        stash.term.out.text = '\n'.join(self.screen.display[:count])
+        text = '\n'.join(self.screen.display[:count])
+        self.stash.term.write(text)
 
     def single_exec(self,command):
         sin,sout,serr = self.ssh.exec_command(command)
