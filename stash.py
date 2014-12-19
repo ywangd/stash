@@ -13,7 +13,6 @@ from StringIO import StringIO
 import time
 import threading
 import glob
-import contextlib
 import functools
 
 import pyparsing as pp
@@ -27,19 +26,6 @@ except:
     import dummyconsole as console
     _IN_PYTHONISTA = False
 
-# TODO:
-#   Allow external script to register callbacks for UI actions, e.g. button tap, input return
-#   Allow running scripts have full control over input textfields and maintains its own history and tab?
-#   Blend shell and python code in StaSh script?
-#   Allow a single background job to be ran by ui.in_background?
-#   guard against empty statement
-#   Allow comments
-#
-#   More useful button (composite buttons?)
-#   sys.exc information stack
-#   review how outs is set
-#
-#   Documentation
 
 _STDIN = sys.__stdin__
 _STDOUT = sys.__stdout__
@@ -409,6 +395,7 @@ class ShExpander(object):
                     t = tokens[idxt]
                     fields = self.expand_word(t)
                     simple_command.cmd_word = fields[0]
+
                     if len(fields) > 1:
                         simple_command.args.extend(fields[1:])
                     idxt += 1
@@ -426,6 +413,14 @@ class ShExpander(object):
                         raise ShSingleExpansionRequired('multiple IO file: %s' % fields)
                     simple_command.io_redirect = ShIORedirect(io_op, fields[0])
                     idxt += 2
+
+                # Remove any empty fields after expansion.
+                if simple_command.args:
+                    simple_command.args = [arg for arg in simple_command.args if simple_command.args]
+                if simple_command.cmd_word == '' and simple_command.args:
+                    simple_command.cmd_word = simple_command.args.pop(0)
+                if simple_command.io_redirect and simple_command.io_redirect.filename == '':
+                    raise ShBadSubstitution('ambiguous redirect')
 
                 pipe_sequence.lst.append(simple_command)
                 if isc + 1 < len(pseq):
@@ -670,6 +665,10 @@ class ShExpander(object):
 
         finally:
             os.environ = saved_environ
+
+        if _DEBUG_PARSER:
+            if s != es:
+                _STDOUT.write('expandvars: %s -> %s\n' % (repr(s), repr(es)))
 
         return es
 
@@ -1022,6 +1021,7 @@ class ShRuntime(object):
 
             prev_outs = None
             for idx, simple_command in enumerate(pipe_sequence.lst):
+
                 new_envars = {}
                 for assignment in simple_command.assignments:
                     new_envars[assignment.identifier] = assignment.value
