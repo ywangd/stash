@@ -1257,10 +1257,13 @@ class ShTerm(ui.View):
         self.out_buf = ''
         self.flush()
 
-    def write(self, s):
+    def write(self, s,buff=True):
         if _DEBUG:
             _STDOUT.write('Write Called: [%s]\n' % repr(s))
-        self.add_out_buf(s)
+        if buff:
+            self.add_out_buf(s)
+        else:
+            self.out_buf = s
         self.flush()
 
     def write_with_prefix(self, s):

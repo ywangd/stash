@@ -64,28 +64,31 @@ class StashSSH(object):
         
     def connect(self,host='', passwd=None, port=22):
         print 'Connecting...'
+        self.user, self.host = self.parse_host(host)
+        self.stash = globals()['_stash']
+        self.passwd = passwd
+        self.port = port
+        self.ssh = SSHClient()
+        self.ssh.set_missing_host_key_policy(AutoAddPolicy())
         try:
-            self.user, self.host = self.parse_host(host)
-            self.stash = globals()['_stash']
-            self.passwd = passwd
-            self.port = port
-            self.ssh = SSHClient()
-            self.ssh.set_missing_host_key_policy(AutoAddPolicy())
-            if passwd:
+            print 'Looking for SSH keys...'
+            self.ssh.connect(self.host,
+                            username=self.user,
+                            password=self.passwd,
+                            port=self.port,
+                            key_filename=self.find_ssh_keys())
+        except:
+            try:
+                print 'No SSH key found. Trying password...'
                 self.ssh.connect(self.host,
                                  username=self.user,
                                  password=self.passwd,
-                                 port=self.port)#,
-                             #key_filename=self.find_ssh_keys())
-            else:
-                self.ssh.connect(self.host,
-                                 username=self.user,
-                                 port=self.port,
-                                 key_filename=self.find_ssh_keys())
-            self.ssh_running = True
-            return True
-        except:
-            return False
+                                 port=self.port)
+            except:
+                print '*Auth Error*'
+                return False
+        self.ssh_running = True
+        return True
         
     def find_ssh_keys(self):
         files = []
@@ -116,7 +119,7 @@ class StashSSH(object):
                 break
             count -=1
         text = '\n'.join(self.screen.display[:count])
-        self.stash.term.write(text)
+        self.stash.term.write(text,buff=False)
 
     def single_exec(self,command):
         sin,sout,serr = self.ssh.exec_command(command)
