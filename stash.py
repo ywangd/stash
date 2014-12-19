@@ -66,6 +66,9 @@ class ShSingleExpansionRequired(Exception):
 class ShEventNotFound(Exception):
     pass
 
+class ShBadSubstitution(Exception):
+    pass
+
 class ShInternalError(Exception):
     pass
 
@@ -599,13 +602,76 @@ class ShExpander(object):
     def expandvars(self, s):
         if _DEBUG_PARSER:
             print 'expandvars: %s' % s
+
         saved_environ = os.environ
         try:
             os.environ = self.runtime.envars
-            s = os.path.expandvars(s)
+
+            state = 'a'
+            es = ''
+            varname = ''
+            for nextchar in s:
+
+                if state == 'a':
+                    if nextchar == '$':
+                        state = '$'
+                        varname = ''
+                    else:
+                        es += nextchar
+
+                elif state == '$':
+                    if varname == '':
+                        if nextchar == '{':
+                            state = '{'
+                        elif nextchar in '0123456789@#':
+                            es += str(os.environ.get(nextchar, ''))
+                            state = 'a'
+                        elif nextchar == '$':
+                            es += str(threading.currentThread()._Thread__ident)
+                        elif nextchar in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxy':
+                            varname += nextchar
+                        else:
+                            es += '$' + nextchar
+                            state = 'a'
+
+                    else:
+                        if nextchar in '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxy':
+                            varname += nextchar
+                        else:
+                            if _DEBUG_PARSER:
+                                _STDOUT.write('envar sub: %s\n' % varname)
+                            es += os.environ.get(varname, '') + nextchar
+                            state = 'a'
+
+                elif state == '{':
+                    if nextchar == '}':
+                        if varname == '':
+                            raise ShBadSubstitution('bad envars substitution')
+                        else:
+                            es += os.environ.get(varname, '')
+                            state = 'a'
+                    elif nextchar in '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxy':
+                        varname += nextchar
+                    else:
+                        raise ShBadSubstitution('bad envars substitution')
+
+                else:
+                    raise ShInternalError('syntax error in envars substitution')
+
+            if state == '$':
+                if varname != '':
+                    if _DEBUG_PARSER:
+                        _STDOUT.write('envar sub: %s\n' % varname)
+                    es += os.environ.get(varname, '')
+                else:
+                    es += '$'
+            elif state == '{':
+                raise ShBadSubstitution('bad envars substitution')
+
         finally:
             os.environ = saved_environ
-        return s
+
+        return es
 
     def escape_wildcards(self, s0):
         return ''.join(('[%s]' % c if c in '[]?*' else c) for c in s0)
@@ -912,6 +978,11 @@ class ShRuntime(object):
                 if _DEBUG_PARSER:
                     _STDOUT.write('%s\n' % repr(e))
                 self.app.term.write_with_prefix('%s: event not found\n' % e.message)
+
+            except ShBadSubstitution as e:
+                if _DEBUG_PARSER:
+                    _STDOUT.write('%s\n' % repr(e))
+                self.app.term.write_with_prefix('%s\n' % e.message)
 
             except ShInternalError as e:
                 if _DEBUG_PARSER or _DEBUG_RUNTIME:
