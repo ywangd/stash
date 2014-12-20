@@ -61,3 +61,6 @@ target/
 
 # Misc
 tmp*
+
+# StaSh command history
+.stash_history
