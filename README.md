@@ -72,8 +72,14 @@ features are also what really set the difference from shellista.
 * StaSh employs Python threads to execute scripts. It maintains a stack of
   threads that forms a linear threads family. This means a script being executed can
   callback to StaSh and ask it to run another script. This also means no
-  parallel threads are allowed, i.e. no background jobs. You can use the
-  **Ctrl-C (C-C)** button to terminate all running threads at (almost) any time.
+  parallel threads are allowed, i.e. **No background** jobs (the `&` directive
+  from the command line is not allowed and will be reported as parsing error).
+  You can use the **Ctrl-C (C-C)** button to terminate all running threads at
+  (almost) any time.
+    * StaSh does not directly allow a background thread to be launched via
+      command line. However an external script can still just create its own
+      background thread and StaSh has no control of it. It is then up to user
+      to manage (or not manage) these threads.
 
 ## Installation
 The code is hosted on GitHub (https://github.com/ywangd/stash). 

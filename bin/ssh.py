@@ -39,7 +39,7 @@ def get_pyte():
     try:
         temp.write(commands)
         temp.seek(0)
-        stash.runtime.exec_sh_file(temp.name)
+        globals()['_stash'].runtime.exec_sh_file(temp.name)
     finally:
     # Automatically cleans up the file
         temp.close()
@@ -119,7 +119,10 @@ class StashSSH(object):
                 break
             count -=1
         text = '\n'.join(self.screen.display[:count])
-        self.stash.term.write(text,buff=False)
+        # clear the screen and write output
+        self.stash.term.seek(0)
+        self.stash.term.truncate()
+        self.stash.term.write(text)
 
     def single_exec(self,command):
         sin,sout,serr = self.ssh.exec_command(command)
@@ -138,14 +141,12 @@ class StashSSH(object):
         t1.start()
         while True:
             if self.chan.send_ready():        
-                if len(sys.stdin) != 0:
-                    #sys.stdout = sys.stdout[:-len(sys.stdin)]
-                    tmp =  ''.join(sys.stdin.readline())
-                    if tmp == 'exit':
-                        self.exit()
-                        
-                        break
-                    self.chan.send(tmp+'\n')
+                tmp = sys.stdin.readline()
+                if tmp == 'exit':
+                    self.exit()
+                    
+                    break
+                self.chan.send(tmp+'\n')
         
                 
         
