@@ -828,6 +828,7 @@ class ShRuntime(object):
         self.retval = 0
 
         self.enclosing_envars = {}
+        self.enclosing_aliases = {}
 
         self.state_stack = []
         self.io_stack = []
@@ -848,12 +849,14 @@ class ShRuntime(object):
                  dict(self.aliases),
                  os.getcwd(),
                  dict(self.enclosing_envars),
+                 dict(self.enclosing_aliases),
                  sys.argv[:],
                  sys.path[:],
                  dict(os.environ),
                 ])
             # new enclosed envars
             self.envars.update(self.enclosing_envars)
+            self.aliases.update(self.enclosing_aliases)
             self.enclosing_envars = {}
 
     def restore_state(self,
@@ -873,9 +876,13 @@ class ShRuntime(object):
              self.aliases,
              cwd,
              self.enclosing_envars,
+             self.enclosing_aliases,
              sys.argv,
              sys.path,
              os.environ) = self.state_stack.pop()
+
+            self.enclosing_envars.update(saved_envars)
+            self.enclosing_aliases.update(saved_aliases)
 
             if persist_envars:
                 self.envars.update(saved_envars)
