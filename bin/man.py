@@ -1,35 +1,62 @@
+'''Display the docstring for a command in /bin, or list all commands if no name is given.
 '''
-Display manual page (docstring) for scripts in /bin
 
-usage: 
-    man - Lists all python scripts in bin.
-    man [script] - shows the docstring if availiable.
-'''
-import sys
+from __future__ import print_function
+
+import argparse
+import ast
 import os
-import re
+import sys
 
-path = os.path.abspath(os.path.dirname(__file__))
-modules =  os.listdir(path)
-module_dict = {}
-for mod in modules:
-    module_dict[re.sub(r'\.\w*','',mod)]=mod
+def main(args):
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("cmd", nargs="?", help="the command to get the docstring from")
+    ns = ap.parse_args(args)
     
-if len(sys.argv) == 1:
-    key_list = module_dict.keys()
-    key_list.sort()
-    for mod in key_list:
-        print mod
-        #print mod.replace('.*','',mod)
-if len(sys.argv) >1:
-    search_str = sys.argv[1]
-    output = ''
-    expr = re.compile(r".*?[',\"]{3}(.*?)[',\"]{3}",re.S)
-    with open(path+'/'+module_dict[search_str],'r') as f:
-        out = f.read()
-        try:
-            output = 'Man page for %s\n%s'%(search_str,expr.search(out).group(1))
-        except:
-            output = '*No man page found*'
-    print output
+    bin_paths = os.environ["BIN_PATH"].split(os.pathsep)
+    
+    if not ns.cmd:
+        cmds = []
+        for path in bin_paths:
+            if os.path.exists(path):
+                cmds += [
+                    fn[:-3] for fn in os.listdir(path)
+                    if fn.endswith(".py")
+                    and not fn.startswith(".")
+                    and os.path.isfile(os.path.join(path, fn))
+                ]
         
+        if len(cmds) > 100:
+            if raw_input("List all {} commands?".format(len(cmds))).strip().lower() not in ("y", "yes"):
+                sys.exit(0)
+        
+        cmds.sort()
+        
+        print("\n".join(cmds))
+    else:
+        filename = None
+        for path in bin_paths:
+            if os.path.exists(path) and ns.cmd + ".py" in os.listdir(path):
+                filename = os.path.join(path, ns.cmd + ".py")
+                break
+        
+        if not filename:
+            print("man: command '{}' not found".format(ns.cmd))
+        
+        try:
+            with open(filename) as f:
+                tree = ast.parse(f.read(), os.path.basename(filename))
+        except Exception as err:
+            print("man: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+            sys.exit(1)
+        
+        docstring = ast.get_docstring(tree)
+        if docstring:
+            print("Docstring of command '{}':\n{}".format(ns.cmd, docstring))
+        else:
+            print("man: command '{}' has no docstring".format(ns.cmd))
+        
+        sys.exit(0)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
