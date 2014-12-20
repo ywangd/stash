@@ -1231,6 +1231,7 @@ class ShTerm(ui.View):
 
         self.inp_buf = []
         self.out_buf = ''
+        self.out_buf_pos = 0
         self.input_did_return = False  # For command with raw_input
         self.cleanup = app.will_close
 
@@ -1435,20 +1436,39 @@ class ShTerm(ui.View):
  
     def add_out_buf(self, s):
         """Control the buffer size"""
-        if s != '':
+        if s == '':
+            return
+
+        if self.out_buf_pos == len(self.out_buf):
             self.out_buf += s
- 
+            self.out_buf_pos = len(self.out_buf)
+        else:
+            new_pos = self.out_buf_pos + len(s)
+            self.out_buf = self.out_buf[0:self.out_buf_pos] + s + self.out_buf[new_pos:]
+            self.out_buf_pos = new_pos
+
     # file-like methods for output TextView
     def seek(self, offset, whence=0):
-        if whence == 0:
-            if offset >= 0:
-                self.out_buf = self.out_buf[:offset]
-        else:  # 1 current position or 2 from the end are the same for the terminal
-            if offset < 0:
-                self.out_buf = self.out_buf[0:offset]
+        if whence == 0:  # from start
+            self.out_buf_pos = offset
+        elif whence == 1:  # current position
+            self.out_buf_pos += offset
+        elif whence == 2:  # from the end
+            self.out_buf_pos = len(self.out_buf) + offset
+
+        if self.out_buf_pos < 0:
+            self.out_buf_pos = 0
+        elif self.out_buf_pos > len(self.out_buf):
+            self.out_buf_pos = len(self.out_buf)
 
     def tell(self):
-        return len(self.out_buf)
+        return self.out_buf_pos
+
+    def truncate(self, size=None):
+        if size is None:
+            self.out_buf = self.out_buf[0:self.out_buf_pos]
+        else:
+            self.out_buf = self.out_buf[0:size]
 
     # file-like methods (TextField) for IO redirect of external scripts
     # read functions are only called by external script as raw_input
