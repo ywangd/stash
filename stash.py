@@ -215,7 +215,10 @@ class ShParser(object):
         io_redirect_op = pp.oneOf('>> >').setParseAction(self.io_redirect_op_action)
         io_redirect = (io_redirect_op + word)('io_redirect')
 
-        cmd_prefix = pp.OneOrMore(assignment_word)('cmd_prefix')
+        # The optional ' ' is a workaround to a possible bug in pyparsing.
+        # The position of cmd_word after cmd_prefix is always reported 1 character ahead
+        # of the correct value.
+        cmd_prefix = (pp.OneOrMore(assignment_word) + pp.Optional(' '))('cmd_prefix')
         cmd_suffix = (pp.OneOrMore(word)('args') + pp.Optional(io_redirect)) ^ io_redirect
 
         modifier = pp.oneOf('! \\')
@@ -223,7 +226,7 @@ class ShParser(object):
 
         simple_command = \
             (cmd_prefix + pp.Optional(cmd_word) + pp.Optional(cmd_suffix)) \
-            ^ (cmd_word + pp.Optional(cmd_suffix))
+            | (cmd_word + pp.Optional(cmd_suffix))
         simple_command = pp.Group(simple_command)
 
         pipe_sequence = simple_command + pp.ZeroOrMore(pipe_op + simple_command)
@@ -260,7 +263,7 @@ class ShParser(object):
     def identifier_action(self, s, pos, toks):
         """ This function is only needed for debug """
         if _DEBUG_PARSER:
-            print 'identifier: %s' % toks[0]
+            print 'identifier: %d, %s' % (pos, toks[0])
 
     def assign_op_action(self, s, pos, toks):
         if _DEBUG_PARSER:
@@ -702,6 +705,10 @@ class ShCompleter(object):
                 is_cmd_word = tokens[-1].ttype == ShToken._CMD
             except pp.ParseException as e:
                 self.app.term.write_with_prefix('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
+
+            if _DEBUG_COMPLETER:
+                _STDOUT.write('cmd_word: %s, trailing_white: %s, word_to_complete: %s\n' %
+                              (is_cmd_word, has_trailing_white, word_to_complete))
 
             if has_trailing_white:  # files in current directory
                 all_names = [f for f in os.listdir('.')]
