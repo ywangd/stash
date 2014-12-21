@@ -3,11 +3,11 @@ Simulates a console call to python -m module|file [args]
 
 Used for running standard library python modules such as:
 SimpleHTTPServer, unittest and .py files.
-[&] will run the module/file in the background
+-b will run the module/file in the background
 
 usage:
-    python -m module_name [args]
-    python python_file.py [args]
+    python -m [-b] module_name [args]
+    python [-b] python_file.py [args]
 '''
 
 import runpy
@@ -39,13 +39,14 @@ ap = argparse.ArgumentParser()
 ap.add_argument('-m', '--module', action='store_true', default=False, help='run module')
 ap.add_argument('-b', '--background', action='store_true', default=False, help='run as background thread')
 ap.add_argument('name', help='file or module name')
+ap.add_argument('args', nargs='*',help='Optional arg list.')
 args = ap.parse_args()
 
 run_as_thread = args.background
 run_as_module = args.module
 module_name = str(args.name)
 
-sys.argv = [sys.argv[0]]
+sys.argv = [sys.argv[0]] + args.args
 
 if run_as_module:
     try:
