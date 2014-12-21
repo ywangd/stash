@@ -829,6 +829,7 @@ class ShRuntime(object):
 
         self.enclosing_envars = {}
         self.enclosing_aliases = {}
+        self.enclosing_cwd = ''
 
         self.state_stack = []
         self.io_stack = []
@@ -842,7 +843,7 @@ class ShRuntime(object):
             sys.stderr,
         ])
         # No need to save state for the first layer thread because it
-        # should run with the main thread's environment
+        # should run in the main stash thread's environment
         if len(self.worker_stack) > 1:
             self.state_stack.append(
                 [dict(self.envars),
@@ -850,6 +851,7 @@ class ShRuntime(object):
                  os.getcwd(),
                  dict(self.enclosing_envars),
                  dict(self.enclosing_aliases),
+                 self.enclosing_cwd,
                  sys.argv[:],
                  sys.path[:],
                  dict(os.environ),
@@ -857,7 +859,11 @@ class ShRuntime(object):
             # new enclosed envars
             self.envars.update(self.enclosing_envars)
             self.aliases.update(self.enclosing_aliases)
+            if self.enclosing_cwd and self.enclosing_cwd != os.getcwd():
+                os.chdir(self.enclosing_cwd)
             self.enclosing_envars = {}
+            self.enclosing_aliases = {}
+            self.enclosing_cwd = ''
 
     def restore_state(self,
                       persist_envars=False,
@@ -877,12 +883,14 @@ class ShRuntime(object):
              cwd,
              self.enclosing_envars,
              self.enclosing_aliases,
+             self.enclosing_cwd,
              sys.argv,
              sys.path,
              os.environ) = self.state_stack.pop()
 
             self.enclosing_envars.update(saved_envars)
             self.enclosing_aliases.update(saved_aliases)
+            self.enclosing_cwd = os.getcwd()
 
             if persist_envars:
                 self.envars.update(saved_envars)
@@ -892,6 +900,11 @@ class ShRuntime(object):
 
             if not persist_cwd:
                 os.chdir(cwd)
+
+        else:
+            self.enclosing_envars = {}
+            self.enclosing_aliases = {}
+            self.enclosing_cwd = ''
 
     def load_rcfile(self):
         self.exec_sh_lines(_DEFAULT_RC.splitlines(), add_to_history=False)
@@ -957,7 +970,7 @@ class ShRuntime(object):
             self.save_state()
 
             try:
-                lines = input_ if type(input_) is list else [input_]
+                lines = input_ if type(input_) is list else input_.splitlines()
 
                 for line in lines:
                     if line.strip() == '':

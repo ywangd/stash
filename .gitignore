@@ -62,5 +62,8 @@ target/
 # Misc
 tmp*
 
-# StaSh command history
+# StaSh dot files
 .stash_history
+.stashrc
+.stash_config
+
