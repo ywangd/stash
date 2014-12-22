@@ -33,20 +33,20 @@ class ModuleThread(threading.Thread):
                 runpy.run_path(self.module_name, run_name='__main__')
         except Exception, e:
             print e
-
+            
 
 ap = argparse.ArgumentParser()
 ap.add_argument('-m', '--module', action='store_true', default=False, help='run module')
 ap.add_argument('-b', '--background', action='store_true', default=False, help='run as background thread')
 ap.add_argument('name', help='file or module name')
-ap.add_argument('args', nargs='*',help='Optional arg list.')
+ap.add_argument('args_to_pass', nargs=argparse.REMAINDER, help='args to pass')
 args = ap.parse_args()
 
 run_as_thread = args.background
 run_as_module = args.module
 module_name = str(args.name)
 
-sys.argv = [sys.argv[0]] + args.args
+sys.argv = [sys.argv[0]] + args.args_to_pass
 
 if run_as_module:
     try:
