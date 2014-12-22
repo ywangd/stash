@@ -27,9 +27,9 @@ except:
     _IN_PYTHONISTA = False
 
 
-_STDIN = sys.__stdin__
-_STDOUT = sys.__stdout__
-_STDERR = sys.__stderr__
+_STDIN = sys.stdin
+_STDOUT = sys.stdout
+_STDERR = sys.stderr
 
 
 _DEBUG_RUNTIME = False
