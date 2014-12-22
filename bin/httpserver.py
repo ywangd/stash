@@ -300,7 +300,7 @@ def main(port=8000):
 if __name__ == '__main__':
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument('port', type=int, default=8000, help='port to server HTTP')
+    ap.add_argument('port', nargs='?', type=int, default=8000, help='port to server HTTP')
     ns = ap.parse_args()
     main(ns.port)
 
