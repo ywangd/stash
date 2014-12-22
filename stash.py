@@ -9,7 +9,10 @@ __version__ = '0.2.0'
 import os
 import sys
 from ConfigParser import ConfigParser
-from StringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 import time
 import threading
 import glob
@@ -27,9 +30,9 @@ except:
     _IN_PYTHONISTA = False
 
 
-_STDIN = sys.__stdin__
-_STDOUT = sys.__stdout__
-_STDERR = sys.__stderr__
+_STDIN = sys.stdin
+_STDOUT = sys.stdout
+_STDERR = sys.stderr
 
 
 _DEBUG_RUNTIME = False
@@ -1042,10 +1045,7 @@ class ShRuntime(object):
 
         for pipe_sequence in complete_command.lst:
             if pipe_sequence.in_background:
-                @ui.in_background
-                def fn():
-                    self.run_pipe_sequence(pipe_sequence, final_outs=final_outs)
-                fn()
+                ui.in_background(self.run_pipe_sequence)(pipe_sequence, final_outs=final_outs)
             else:
                 self.run_pipe_sequence(pipe_sequence, final_outs=final_outs)
 
@@ -1076,12 +1076,18 @@ class ShRuntime(object):
             else:
                 ins = self.app.term
 
-            outs = self.app.term
-            errs = self.app.term
+            if not pipe_sequence.in_background:
+                outs = self.app.term
+                errs = self.app.term
+            else:
+                outs = _STDOUT
+                errs = _STDERR
 
             if simple_command.io_redirect:
                 mode = 'w' if simple_command.io_redirect.operator == '>' else 'a'
-                outs = open(simple_command.io_redirect.filename, mode)
+                # For simplicity, stdout redirect works for stderr as well.
+                # Note this is different from a real shell.
+                errs = outs = open(simple_command.io_redirect.filename, mode)
 
             elif idx < n_simple_commands - 1:
                 outs = StringIO()
