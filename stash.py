@@ -9,10 +9,7 @@ __version__ = '0.2.0'
 import os
 import sys
 from ConfigParser import ConfigParser
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from StringIO import StringIO
 import time
 import threading
 import glob
