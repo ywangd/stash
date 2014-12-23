@@ -12,8 +12,7 @@ usage:
 
 import runpy
 import sys
-import ui
-import argparse            
+import argparse
 
 ap = argparse.ArgumentParser()
 ap.add_argument('-m', '--module', action='store_true', default=False, help='run module')

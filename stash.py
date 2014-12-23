@@ -621,7 +621,7 @@ class ShExpander(object):
                     if varname == '':
                         if nextchar == '{':
                             state = '{'
-                        elif nextchar in '0123456789@#':
+                        elif nextchar in '0123456789@#?':
                             es += str(os.environ.get(nextchar, ''))
                             state = 'a'
                         elif nextchar == '$':
@@ -832,7 +832,6 @@ class ShRuntime(object):
 
         self.parser = ShParser()
         self.expander = ShExpander(self)
-        self.retval = 0
 
         self.enclosing_envars = {}
         self.enclosing_aliases = {}
@@ -1103,12 +1102,12 @@ class ShRuntime(object):
                         _STDOUT.write('script is %s\n' % script_file)
 
                     if script_file.endswith('.py'):
-                        self.retval = self.exec_py_file(script_file, simple_command.args, ins, outs, errs)
+                        self.exec_py_file(script_file, simple_command.args, ins, outs, errs)
 
                     else:
-                        self.retval = self.exec_sh_file(script_file, simple_command.args, ins, outs, errs)
+                        self.exec_sh_file(script_file, simple_command.args, ins, outs, errs)
 
-                if self.retval != 0:
+                if os.environ['?'] != 0:
                     break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
                 if isinstance(outs, StringIO):
@@ -1146,17 +1145,17 @@ class ShRuntime(object):
             namespace['__file__'] = os.path.abspath(file_path)
             namespace['_stash'] = self.app
             execfile(file_path, namespace, namespace)
-            return 0
+            self.envars['?'] = 0
 
         except SystemExit as e:
-            return e.message
+            self.envars['?'] = e.code
 
         except Exception as e:
             err_msg = '%s (%s)\n' % (str(e), sys.exc_value)
             if _DEBUG_RUNTIME:
                 _STDOUT.write(err_msg)
             self.app.term.write_with_prefix(err_msg)
-            return 1
+            self.envars['?'] = 1
 
     def exec_sh_file(self, filename, args=None,
                      ins=None, outs=None, errs=None,
@@ -1173,13 +1172,18 @@ class ShRuntime(object):
                 self.exec_sh_lines(fins.readlines(),
                                    ins=ins, outs=outs, errs=errs,
                                    add_to_history=add_to_history)
-            return 0
+            if '?' in self.enclosing_envars.keys():
+                self.envars['?'] = self.enclosing_envars['?']
+            else:
+                self.envars['?'] = 0
+
         except IOError as e:
             self.app.term.write_with_prefix('%s: %s\n' % (e.filename, e.strerror))
-            return 1
+            self.envars['?'] = 1
+
         except:
             self.app.term.write_with_prefix('%s: error while executing shell script\n' % filename)
-            return 1
+            self.envars['?'] = 2
 
     def exec_sh_lines(self, lines,
                       ins=None, outs=None, errs=None,
