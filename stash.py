@@ -1041,79 +1041,91 @@ class ShRuntime(object):
     def run_complete_command(self, complete_command, final_outs=None):
 
         for pipe_sequence in complete_command.lst:
-            if _DEBUG_RUNTIME:
-                print pipe_sequence
+            if pipe_sequence.in_background:
+                ui.in_background(self.run_pipe_sequence)(pipe_sequence, final_outs=final_outs)
+            else:
+                self.run_pipe_sequence(pipe_sequence, final_outs=final_outs)
 
-            n_simple_commands = len(pipe_sequence.lst)
+    def run_pipe_sequence(self, pipe_sequence, final_outs=None):
+        if _DEBUG_RUNTIME:
+            print pipe_sequence
 
-            prev_outs = None
-            for idx, simple_command in enumerate(pipe_sequence.lst):
+        n_simple_commands = len(pipe_sequence.lst)
 
-                new_envars = {}
-                for assignment in simple_command.assignments:
-                    new_envars[assignment.identifier] = assignment.value
+        prev_outs = None
+        for idx, simple_command in enumerate(pipe_sequence.lst):
 
-                # Only update the runtime's env for pure assignments
-                if simple_command.cmd_word == '' and idx == 0 and n_simple_commands == 1:
-                    self.envars.update(new_envars)
+            new_envars = {}
+            for assignment in simple_command.assignments:
+                new_envars[assignment.identifier] = assignment.value
+
+            # Only update the runtime's env for pure assignments
+            if simple_command.cmd_word == '' and idx == 0 and n_simple_commands == 1:
+                self.envars.update(new_envars)
+            else:
+                self.enclosing_envars.update(new_envars)
+
+            if prev_outs:
+                if type(prev_outs) == file:
+                    ins = StringIO()  # empty string
                 else:
-                    self.enclosing_envars.update(new_envars)
+                    ins = prev_outs
+            else:
+                ins = self.app.term
 
-                if prev_outs:
-                    if type(prev_outs) == file:
-                        ins = StringIO()  # empty string
-                    else:
-                        ins = prev_outs
-                else:
-                    ins = self.app.term
-
+            if not pipe_sequence.in_background:
                 outs = self.app.term
                 errs = self.app.term
+            else:
+                outs = _STDOUT
+                errs = _STDERR
 
-                if simple_command.io_redirect:
-                    mode = 'w' if simple_command.io_redirect.operator == '>' else 'a'
-                    outs = open(simple_command.io_redirect.filename, mode)
+            if simple_command.io_redirect:
+                mode = 'w' if simple_command.io_redirect.operator == '>' else 'a'
+                # For simplicity, stdout redirect works for stderr as well.
+                # Note this is different from a real shell.
+                errs = outs = open(simple_command.io_redirect.filename, mode)
 
-                elif idx < n_simple_commands - 1:
-                    outs = StringIO()
+            elif idx < n_simple_commands - 1:
+                outs = StringIO()
 
-                elif final_outs:
-                    outs = final_outs
+            elif final_outs:
+                outs = final_outs
 
-                if _DEBUG_RUNTIME:
-                    _STDOUT.write('io %s %s\n' % (ins, outs))
+            if _DEBUG_RUNTIME:
+                _STDOUT.write('io %s %s\n' % (ins, outs))
 
-                try:
-                    if simple_command.cmd_word != '':
-                        script_file = self.find_script_file(simple_command.cmd_word)
+            try:
+                if simple_command.cmd_word != '':
+                    script_file = self.find_script_file(simple_command.cmd_word)
 
-                        if _DEBUG_RUNTIME:
-                            _STDOUT.write('script is %s\n' % script_file)
-
-                        if script_file.endswith('.py'):
-                            self.retval = self.exec_py_file(script_file, simple_command.args, ins, outs, errs)
-
-                        else:
-                            self.retval = self.exec_sh_file(script_file, simple_command.args, ins, outs, errs)
-
-                    if self.retval != 0:
-                        break  # break out of the pipe_sequence, but NOT pipe_sequence list
-
-                    if isinstance(outs, StringIO):
-                        outs.seek(0)  # rewind for next command in the pipe sequence
-
-                    prev_outs = outs
-
-                except Exception as e:
-                    err_msg = '%s\n' % e.message
                     if _DEBUG_RUNTIME:
-                        _STDOUT.write(err_msg)
-                    self.app.term.write_with_prefix(err_msg)
+                        _STDOUT.write('script is %s\n' % script_file)
+
+                    if script_file.endswith('.py'):
+                        self.retval = self.exec_py_file(script_file, simple_command.args, ins, outs, errs)
+
+                    else:
+                        self.retval = self.exec_sh_file(script_file, simple_command.args, ins, outs, errs)
+
+                if self.retval != 0:
                     break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
-                finally:
-                    if type(outs) is file:
-                        outs.close()
+                if isinstance(outs, StringIO):
+                    outs.seek(0)  # rewind for next command in the pipe sequence
+
+                prev_outs = outs
+
+            except Exception as e:
+                err_msg = '%s\n' % e.message
+                if _DEBUG_RUNTIME:
+                    _STDOUT.write(err_msg)
+                self.app.term.write_with_prefix(err_msg)
+                break  # break out of the pipe_sequence, but NOT pipe_sequence list
+
+            finally:
+                if type(outs) is file:
+                    outs.close()
 
     def exec_py_file(self, filename, args=None,
                      ins=None, outs=None, errs=None):
