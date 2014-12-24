@@ -1107,7 +1107,10 @@ class ShRuntime(object):
                     else:
                         self.exec_sh_file(script_file, simple_command.args, ins, outs, errs)
 
-                if os.environ['?'] != 0:
+                else:
+                    self.envars['?'] = 0
+
+                if self.envars['?'] != 0:
                     break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
                 if isinstance(outs, StringIO):
