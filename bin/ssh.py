@@ -4,7 +4,7 @@ You can open an intereactive shell by not passing a command. If a command is pas
 the single command is ran with output then ssh exits.
 
 Once a valid ssh session has been created the special command pythonista [get|put|edit] file1 [file2]
-can be used. The remote path must be absolute from the user directory. Use pythonista -h for more info
+can be used. Use pythonista -h for more info
 
 (exit) command will exit shell.
 
@@ -63,6 +63,7 @@ class StashSSH(object):
         #self.screen.set_mode(pyte.modes.DECTCEM)
         self.stream = pyte.Stream()
         self.stream.attach(self.screen)
+        self.pause_output = False
         
     def connect(self,host='', passwd=None, port=22):
         print 'Connecting...'
@@ -106,7 +107,7 @@ class StashSSH(object):
         
     def stdout_thread(self):
         while self.ssh_running:
-            if self.chan.recv_ready():
+            if self.chan.recv_ready() and not self.pause_output:
                 #output += self.chan.recv(1024)
                 rcv = self.chan.recv(1024)
                 self.stream.feed(u'%s'%rcv)
@@ -133,16 +134,32 @@ class StashSSH(object):
         for line in serr.readlines():
             print line.replace('\n','')
             
-            
+    def get_remote_path(self):
+        self.pause_output = True
+        self.chan.send('pwd \n')
+        while True:
+            if self.chan.recv_ready():
+                rcv = self.chan.recv(1024)
+                #print ' '.join([str((ord(a),a)) for a in rcv])
+                #print ' '.join([a for a in rcv])
+                res = re.search(r'pwd ?\r\n(.*)\r\n',rcv)
+                path = res.group(1)
+                self.pause_output = False
+                break
+        return path+'/'
+        
+        
     def get_file(self,remote, local):
         sftp = self.ssh.open_sftp()
-        sftp.get(remote,local)
+        path = self.get_remote_path()
+        sftp.get(path+remote,local)
         sftp.close()
         print 'File transfered.'
         
     def put_file(self,local,remote):
         sftp = self.ssh.open_sftp()
-        sftp.put(local,remote)
+        path = self.get_remote_path()
+        sftp.put(local,path+remote)
         sftp.close()
         print 'File transfered.'
         
@@ -155,7 +172,8 @@ class StashSSH(object):
             temp = tempfile.NamedTemporaryFile(dir=os.path.expanduser('~/Documents') , suffix='.py')
             cur_path = editor.get_path()
             sftp = self.ssh.open_sftp()
-            res = sftp.getfo(remote_file,temp)
+            path = self.get_remote_path()
+            res = sftp.getfo(path+remote_file,temp)
             #editor.open_file(temp.name)
             temp.seek(0)
             print '***When you are finished editing the file, you must come back to console to confim changes***'
@@ -166,7 +184,7 @@ class StashSSH(object):
             editor.open_file(cur_path)
             if input == 'y' or input =='Y':
                 with open(temp.name,'r') as f:
-                    sftp.putfo(f,remote_file)
+                    sftp.putfo(f,path+remote_file)
                     print 'File transfered.'
         except exception, e:
             print e
@@ -197,9 +215,9 @@ class StashSSH(object):
                     ssh_args.pop(0)
                     try:
                         tmp = argparse.ArgumentParser()
-                        tmp.add_argument('type', choices=('get','put', 'edit'),help='Mode: [get|put|edit]')
-                        tmp.add_argument('file1', action='store',help='put: local file. get: absolute remote file path. edit: absolute remote file path')
-                        tmp.add_argument('file2', action='store',nargs='?', help='get: local file, put: absolute remote file path, edit: blank')
+                        tmp.add_argument('type', choices=('get','put', 'edit','test'),help='Mode: [get|put|edit]')
+                        tmp.add_argument('file1', action='store',help='put: local file. get: remote file. edit: remote file')
+                        tmp.add_argument('file2', action='store',nargs='?', help='get: local file, put: remote file path, edit: blank')
                         ssh_args = tmp.parse_args(ssh_args)
                         
                         if ssh_args.type == 'put':
@@ -208,6 +226,8 @@ class StashSSH(object):
                             self.get_file(ssh_args.file1,ssh_args.file2)
                         elif ssh_args.type == 'edit':
                             self.edit_file(ssh_args.file1)
+                        elif ssh_args.type == 'test':
+                            self.get_remote_path()
                     #pass to avoid invalid arguments from exiting ssh.
                     except:
                         pass
