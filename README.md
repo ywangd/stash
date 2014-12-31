@@ -7,6 +7,10 @@ implement a bash-like shell for [Pythonista](http://omz-software.com/pythonista/
 StaSh behaves more like a real Shell, such as Bash. It is feature rich and
 allows users focus on tasks without getting in the way. 
 
+Since the initial release of StaSh, it has recieved valuable and constant
+contributions and advices from @briarfox, @dgelessus and @jsbain. 
+
+
 ## Notable Features
 StaSh has a pile of features which are to be expected from a real shell. The
 features are also what really set the difference from shellista.
@@ -34,13 +38,18 @@ features are also what really set the difference from shellista.
     * **Pipes** to chain commands, e.g. `cat some_file | grep interesting`
     * **IO redirect** (actually just Output redirect), e.g. `ls *.py > py_files.txt`. 
       Input redirect can be achieved by using pipes.
-    * Bang(!) to search command history, e.g. `ls -1`, `!l`
+    * Bang(!) to search command history, e.g. `ls -1`, `!l`. Bang commands like
+      `!!` and `!-1` also works.
 
 * Smart **auto-completion** just as expected
     * A UI button, "Tab", is provided to enable command line auto-completion.
     * It is clever to auto-completes either commands or files based on the input
       position
     * It also completes environmental variables and aliases.
+
+* Custmoisable virtual keys for commonly used symbols, e.g. `~/.-*|>`.
+    * The Symbols can be customized via the `VK_SYMBOLS` option in
+      stash config file (default is `.stash_config`).
 
 * **Command line history** management. Three UI buttons are provided to navigate
   through the history.
@@ -70,16 +79,22 @@ features are also what really set the difference from shellista.
   (C-D)** button.
 
 * StaSh employs Python threads to execute scripts. It maintains a stack of
-  threads that forms a linear threads family. This means a script being executed can
-  callback to StaSh and ask it to run another script. This also means no
-  parallel threads are allowed, i.e. **No background** jobs (the `&` directive
-  from the command line is not allowed and will be reported as parsing error).
-  You can use the **Ctrl-C (C-C)** button to terminate all running threads at
-  (almost) any time.
-    * StaSh does not directly allow a background thread to be launched via
-      command line. However an external script can still just create its own
-      background thread and StaSh has no control of it. It is then up to user
-      to manage (or not manage) these threads.
+  threads that forms a linear threads family. This also means no parallel
+  **foreground** threads are allowed. You can use the **Ctrl-C (C-C)** button
+  to terminate running foreground threads at (almost) any time.
+
+* Number of **background** jobs (appending commands with the `&` directive) are
+  not limited and will be executed in Pythonista main thread, i.e. the same
+  thread of the interactive prompt.
+    * Background job and StaSh foreground job can run simultaneously.
+    * Pythonista automatically queues background jobs so only one of them will
+      be executed at a given time.
+    * Background jobs can be terminated by tap the close button on the
+      interactive prompt panel. This enables a script to perform housekeeping
+      tasks recieving the `KeyboardInterrupt` exception. An example is the
+      `httpserver` command. It releases the binding port when terminated and
+      allows subsequent calls to the same command without restarting Pythonista.
+
 
 ## Installation
 The code is hosted on GitHub (https://github.com/ywangd/stash). 
@@ -96,11 +111,9 @@ A gist file is also provided as a single file installation
   will be downloaded and saved in a folder named **stash** under your document
   root.
 * Run **stash.py** to launch StaSh. 
-    * Note two error messages will be displayed saying `alias` is not available.
-      This is to be expected as the Shell is not yet fully installed.
+    * Note the Shell is not yet fully installed at this step.
 * In the terminal, type `selfupdate` or `selfupdate.sh` to retrieve rest of the
   files. 
-* Optionally, restart StaSh.
 
 ### Install from GitHub
 If you have a GitHub tool available in Pythonista, such as [git repo
@@ -125,36 +138,54 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   available. However, multiple commands can be written in a single line by
   separating them with semicolons, e.g. `ls -1 > file_list; cat file_list`.
 
-* There are currently 20 Python scripts provided along with StaSh to enable some
-  regular shell tasks. **Note the these scripts are not an inherent part of StaSh
-  and you can decide not use them at all and write up your own scripts. They are
-  provided for the purposes of convenience and proof of concept**. Hence they
-  are by no means complete. Many of them are taken from ShellistaExt with some
-  modifications.
+* There are currently 34 Python scripts provided along with StaSh (special
+  thanks to @briarfox and @dgelessus for providing many valuable scripts).
+  Categories of these scripts range from perfomring regular shell tasks to
+  advanced terminal utilities like `SSH`. Note the scripts are by no means
+  complete when compare to a real Linux shell. It is expected that the community
+  would come up with more scripts to be executed inside the StaSh framework. 
     * `alias.py`
-    * `bh.py` - approximate `/dev/null`
     * `cat.py`
     * `cd.py`
     * `cls.py`
     * `copy.py` - copy to iOS clipboard
     * `cp.py`
     * `echo.py`
+    * `edit.py` - Open any text type files in Pythonista editor
     * `env.py`
     * `grep.py`
+    * `httpserver.py` - A simple HTTP server with upload function (ripped from
+      https://gist.github.com/UniIsland/3346170)
     * `ls.py`
+    * `man.py` - Show help message (docstring) of a given command
     * `mkdir.py`
     * `mv.py`
+    * `openin.py` - Show the **open in** dialog to open a file in external apps.
     * `paste.py` - paste from iOS clipboard
+    * `printenv.py` - list environment variables
+    * `printhex.py` - Print hexadecimal dump of the given file 
     * `pwd.py`
+    * `python.py` - run python scripts or modules
+    * `quicklook.py` - iOS quick look for files of known types
     * `rm.py`
+    * `scp.py` - Copy files from/to remote servers. 
     * `sort.py`
+    * `source.py` - Evaluate a script in the current environment
+    * `ssh.py` - SSH client to either execute a command or spawn an interactive
+      session on remote servers. [pyte](https://github.com/selectel/pyte) is
+      used for terminal emulation and gives the command the feel of a
+      full-fledged SSH client. 
+    * `ssh-keygen.py` - Generate RSA/DSA SSH Keys.
+    * `touch.py` - Update timestamp of the given file or create it if not exist
     * `uniq.py`
     * `unzip.py`
+    * `version.py` - Show StaSh installation and version information
     * `wget.py`
+    * `which.py` - Find the exact path to a command script
 
 * One StaSh script, `selfupdate.sh`, is provided to download the latest zip from
   GitHub and extract it locally to update corresponding files. 
-    * It is a script formed by five lines of commands as an example of StaSh
+    * It is a script formed by a few lines of commands as an example of StaSh
       script.
     * It is a very simple script in that it just naively performs the download
       and extraction without checking timestamps or versions.
@@ -188,8 +219,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
 * Pickled objects are not restored correctly and generate `AttributeError` as
   if the class definition cannot be found. An example is the
   [DropboxSync](https://gist.github.com/freekrai/4183134) script.
-* Commands start with bang (!) should be recorded in the history with their
-  expanded forms
+
 
 ## Contributing
 * Check any open issues or open a new issue to start discussions about your
