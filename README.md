@@ -8,7 +8,9 @@ StaSh behaves more like a real Shell, such as Bash. It is feature rich and
 allows users focus on tasks without getting in the way. 
 
 Since the initial release of StaSh, it has recieved valuable and constant
-contributions and advices from @briarfox, @dgelessus and @jsbain. 
+contributions and advices from [@briarfox](https://github.com/briarfox),
+[@dgelessus](https://github.com/dgelessus) and
+[@jsbain](https://github.com/jsbain). 
 
 
 ## Notable Features
