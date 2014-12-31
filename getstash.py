@@ -4,7 +4,7 @@ import random
 
 URLBASE = 'https://raw.githubusercontent.com/ywangd/stash/master/'
 
-FNAMES = ['stash.py', 'bin/selfupdate.sh', 'bin/echo.py', 'bin/wget.py', 'bin/unzip.py', 'bin/rm.py']
+FNAMES = ['stash.py', 'bin/selfupdate.sh', 'bin/echo.py', 'bin/wget.py', 'bin/unzip.py', 'bin/rm.py', 'bin/alias.py']
 
 STASH_DIR = os.path.expanduser("~/Documents/stash")
 
