@@ -38,12 +38,20 @@ def output_print(msg):
     if args.verbose:
         print msg
         
+class MyFileObject(tarfile.ExFileObject):
+    def read(self, size, *args):
+        if self.position == self.size:
+            output_print("Extracting: %s" %self.name)
+        return tarfile.ExFileObject.read(self, size, *args)
+
+
+      
 def extract_members(members,extract):
     for tarinfo in members:
         for path in extract:
             if tarinfo.name == path or tarinfo.name.startswith(path):
-                output_print('Extracting - %s' % tarinfo.name)
                 yield tarinfo
+
         
 def extract_all(filename,members=None):
     if args.gzip:
@@ -60,12 +68,17 @@ def extract_all(filename,members=None):
     if members:
         tar.extractall(path='',members=extract_members(tar,members))
     else:
-        tar.extractall(path='',members=extract_members(tar,tar.getnames()))
+        tar.extractall(path='')
     tar.close()
     print 'Archive extracted.'
     
     
 def create_tar(filename,files):
+    #Progress filter
+    def tar_filter(tarinfo):
+        output_print('Adding: %s'%tarinfo.name)
+        return tarinfo
+        
     if args.gzip:
         output_print('Creating gzip file.')
         tar = tarfile.open(filename, "w:gz")
@@ -78,7 +91,7 @@ def create_tar(filename,files):
         
     for name in files:
         output_print('Adding %s' % name)
-        tar.add(name)
+        tar.add(name, filter=tar_filter)
     tar.close()
     print 'Archive Created.' 
     
@@ -106,6 +119,7 @@ if __name__=='__main__':
     ap.add_argument('-f','--file',action='store',help='Archive filename.')
     ap.add_argument('files',action='store',default=[],help='Create: Files/Dirs to add to archive.\nExtract: Specific Files/Dirs to extract, default: all',nargs='*')
     args = ap.parse_args()
+    tarfile.TarFile.fileobject = MyFileObject
     if args.list:
         list_tar(os.path.expanduser(args.file))
     elif args.create:
