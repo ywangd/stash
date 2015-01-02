@@ -49,7 +49,7 @@ features are also what really set the difference from shellista.
       position
     * It also completes environmental variables and aliases.
 
-* Custmoisable virtual keys for commonly used symbols, e.g. `~/.-*|>`.
+* Custmoisable **virtual keys for commonly used symbols**, e.g. `~/.-*|>`.
     * The Symbols can be customized via the `VK_SYMBOLS` option in
       stash config file (default is `.stash_config`).
 
@@ -81,7 +81,7 @@ features are also what really set the difference from shellista.
   (C-D)** button.
 
 * StaSh employs Python threads to execute scripts. It maintains a stack of
-  threads that forms a linear threads family. This also means no parallel
+  threads that forms a family of linear threads. This means no parallel
   **foreground** threads are allowed. You can use the **Ctrl-C (C-C)** button
   to terminate running foreground threads at (almost) any time.
 
@@ -144,8 +144,9 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   thanks to @briarfox and @dgelessus for providing many valuable scripts).
   Categories of these scripts range from perfomring regular shell tasks to
   advanced terminal utilities like `SSH`. Note the scripts are by no means
-  complete when compare to a real Linux shell. It is expected that the community
-  would come up with more scripts to be executed inside the StaSh framework. 
+  complete when compared to a real Linux shell. The scripts will be gradually
+  expanded should the need arise. It is also expected and appreciated that the
+  community would come up with more scripts.
     * `alias.py`
     * `cat.py`
     * `cd.py`
@@ -226,7 +227,8 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
 ## Contributing
 * Check any open issues or open a new issue to start discussions about your
   ideas of features and/or bugs
-* Fork the repository, make changes, and send pull requests
+* Fork the repository, make changes, and send pull requests 
+    - Please send pull requests to **dev** branch instead of master
 
 
 

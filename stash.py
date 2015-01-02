@@ -1547,7 +1547,8 @@ class ShTerm(ui.View):
         return lines
 
     def clear(self):
-        self.out_buf = ''
+        self.seek(0)
+        self.truncate()
         self.flush()
 
     def write(self, s):

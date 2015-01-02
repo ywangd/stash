@@ -24,8 +24,6 @@ if __name__ == "__main__":
         req.add_header('Cache-Control', 'no-cache')
     
         with open(os.path.join(STASH_DIR, fname), 'w') as outs:
-            # Might need to open the file as binary if that's what
-            # urlopen returns. The docs aren't very specific.
             outs.write(urllib2.urlopen(req).read())
         
         print("\nDone\n")
