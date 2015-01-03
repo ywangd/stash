@@ -1,4 +1,4 @@
-#coding: utf-8
+# -*- coding: utf-8 -*-
 """
 StaSh - Shell for Pythonista
 
@@ -6,16 +6,19 @@ https://github.com/ywangd/stash
 """
 __version__ = '0.2.0'
 
-import os
-import sys
-from ConfigParser import ConfigParser
-from StringIO import StringIO
-import time
-import threading
-import glob
+import ast
 import functools
+import glob
+import os
+import string
+import sys
+import threading
+import time
 
 import pyparsing as pp
+
+from ConfigParser import ConfigParser
+from StringIO import StringIO
 
 try:
     import ui
@@ -103,7 +106,7 @@ filename         : word
 
 """
 
-_word_chars = r'''0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%()*+,-./:=?@[]^_{}~'''
+_word_chars = string.digits + string.ascii_letters + r'''!#$%()*+,-./:=?@[]^_{}~'''
 
 class ShAssignment(object):
     def __init__(self, identifier, value):
@@ -798,6 +801,8 @@ PROMPT='[\W]$ '
 BIN_PATH=~/Documents/bin:$BIN_PATH
 SELFUPDATE_BRANCH=master
 alias env='printenv'
+alias logout='echo "Use the close button in the upper right corner to exit StaSh."'
+alias help='man'
 alias la='ls -a'
 alias ll='ls -la'
 """
@@ -1274,8 +1279,8 @@ class ShTerm(ui.View):
         self._refresh_pause = 0.01
 
         self.BUFFER_MAX = app.config.getint('display', 'BUFFER_MAX')
-        self.TEXT_FONT = eval(app.config.get('display', 'TEXT_FONT'))
-        self.BUTTON_FONT = eval(app.config.get('display', 'BUTTON_FONT'))
+        self.TEXT_FONT = ast.literal_eval(app.config.get('display', 'TEXT_FONT'))
+        self.BUTTON_FONT = ast.literal_eval(app.config.get('display', 'BUTTON_FONT'))
 
         self.vk_symbols = app.config.get('display', 'VK_SYMBOLS')
 
@@ -1429,9 +1434,9 @@ class ShTerm(ui.View):
         self.inp.font = self.TEXT_FONT
         self.inp.height = self.TEXT_FONT[1] + 2
         self.inp.y = self.inp.superview.height - (self.inp.height + 4) - (self.vks.height + 4)
-        self.inp.background_color = eval(app.config.get('display', 'INPUT_BACKGROUND_COLOR'))
-        self.inp.text_color = eval(app.config.get('display', 'INPUT_TEXT_COLOR'))
-        self.inp.tint_color = eval(app.config.get('display', 'INPUT_TINT_COLOR'))
+        self.inp.background_color = ast.literal_eval(app.config.get('display', 'INPUT_BACKGROUND_COLOR'))
+        self.inp.text_color = ast.literal_eval(app.config.get('display', 'INPUT_TEXT_COLOR'))
+        self.inp.tint_color = ast.literal_eval(app.config.get('display', 'INPUT_TINT_COLOR'))
         self.inp.text = self.prompt
         self.inp.bordered = False
         self.inp.clear_button_mode = 'always'
@@ -1445,11 +1450,11 @@ class ShTerm(ui.View):
         self.out.height = self.out.superview.height - (self.inp.height + 4) - (self.vks.height + 4)
         self.out.auto_content_inset = False
         self.out.content_inset = (0, 0, -8, 0)
-        self.out.background_color = eval(app.config.get('display', 'OUTPUT_BACKGROUND_COLOR'))
+        self.out.background_color = ast.literal_eval(app.config.get('display', 'OUTPUT_BACKGROUND_COLOR'))
         self.out.indicator_style = app.config.get('display', 'OUTPUT_INDICATOR_STYLE')
         self.out.font = self.TEXT_FONT
-        self.out.text_color = eval(app.config.get('display', 'OUTPUT_TEXT_COLOR'))
-        self.out.tint_color = eval(app.config.get('display', 'OUTPUT_TINT_COLOR'))
+        self.out.text_color = ast.literal_eval(app.config.get('display', 'OUTPUT_TEXT_COLOR'))
+        self.out.tint_color = ast.literal_eval(app.config.get('display', 'OUTPUT_TINT_COLOR'))
         self.out.text = ''
         self.out.editable = False
         self.out.delegate = app
