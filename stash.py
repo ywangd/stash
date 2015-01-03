@@ -1669,6 +1669,13 @@ class StaSh(object):
         self.term.write('StaSh v%s\n' % __version__)
         self.term.reset_inp()  # prompt
 
+    def __call__(self, *args, **kwargs):
+        """ This function is to be called by external script for
+         executing shell commands """
+        worker = self.runtime.run(*args, **kwargs)
+        while worker.isAlive():
+            pass
+
     @staticmethod
     def load_config():
         config = ConfigParser()
