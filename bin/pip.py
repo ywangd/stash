@@ -3,6 +3,8 @@ serach - Searches for packages
 versions - Lists all versions for a package
 install - Installs the package off pypi
 list - Lists currently installed backages.
+remove - remove a package installed by pip
+update - update a package installed by pip
 
 usage: pip.py [-h] [-n RESULT_COUNT]
               {search,versions,install,list} [package] [version]
@@ -22,6 +24,8 @@ import argparse
 import tempfile
 import re
 import os
+import sys
+import shutil
 
 package_file = os.path.expanduser('~/Documents/site-packages/.pypi_packages')
 
@@ -33,13 +37,11 @@ class PackageConfigHandler(object):
             f.close()
         self.parser = SafeConfigParser()
         self.parser.read(package_file)
-
-        
-    def add_module(self,name,ver,summary):
-        
+     
+    def add_module(self,name,dlname,ver,summary):
         if not self.parser.has_section(name):
             self.parser.add_section(name)
-            
+        self.parser.set(name,'download_name',dlname)
         self.parser.set(name,'version',ver)
         self.parser.set(name,'summary',summary)
     
@@ -50,15 +52,28 @@ class PackageConfigHandler(object):
             self.parser.write(f)
         
     def list_modules(self):
+        lst = []
         for module in self.parser.sections():
-            print '%s (%s) - %s' % (module,self.parser.get(module,'version'),self.parser.get(module,'summary'))
+            lst.append(module)
+        return lst
             
-        
-    def remove_module(self):
-        pass
-        
-    def update_module(self):
-        pass
+    
+    def module_exists(self,name):
+        if self.parser.has_section(name):
+            return True
+        else:
+            return False
+            
+    def get_info(self,name):
+        if self.parser.has_section(name):
+            tbl = {}
+            for opt, value in self.parser.items(name):
+                tbl[opt] = value
+            return tbl
+            
+    def remove_module(self,name):
+        self.parser.remove_section(name)
+        self.save_config()
         
 class Pypi(object):
     def __init__(self):
@@ -69,8 +84,8 @@ class Pypi(object):
     def search(self,search_str,limit=10):
         hits = self.pypi.search({'name': search_str}, 'and')
         if not hits:
-            print 'No matches found.'
-            return
+            raise PyPiError('No matches found.')
+        
         hits = sorted(hits, key=lambda pkg: pkg['_pypi_ordering'], reverse=True)
         if len(hits) > limit:
             hits = hits[:limit]
@@ -81,8 +96,7 @@ class Pypi(object):
         hits = self.pypi.package_releases(name, show_hidden)
     
         if not hits:
-            print 'Package not found.'
-            return 
+            raise PyPiError('Package not found.')
         if len(hits) > limit:
             hits = hits[:limit]
         for hit in hits:
@@ -116,13 +130,17 @@ class Pypi(object):
         tbl={}
         tbl['url'] = source['url']
         tbl['filename'] = source['filename']
+        tbl['download_name'] = name
         tbl['name'] = data['name'].lower()
         tbl['version'] = data['version']
         tbl['summary'] = data['summary']
         self._install(tbl)     
         
     def list_modules(self):
-        self.handler.list_modules()
+        modules = self.handler.list_modules()
+        for module in modules:
+            info = self.handler.get_info(module)
+            print '%s (%s) - %s' % (module,info['version'],info['summary'])
         
     def _install(self,data):
         if '.zip' in data['filename']:
@@ -131,8 +149,6 @@ class Pypi(object):
             tmp_folder = data['filename'][:-8]
         else:
             tmp_folder = data['filename'][:-7]
-        for n,i in data.items():
-            print '%s - %s ' % (n,i)
         
         try:
             _stash('echo StaSh pip installing %s'% data['name'])
@@ -147,12 +163,23 @@ class Pypi(object):
                 _stash('tar -xvjf ~/Documents/site-packages/%s' % data['filename'])
             else:
                 raise PyPiError('No vaild archives found.')
-                  
-            _stash('mv ~/Documents/site-packages/{basename}/{name} ~/Documents/site-packages/{name}'.format(basename=tmp_folder,name=data['name']))
-            _stash('mv ~/Documents/site-packages/{basename}/{name}.py ~/Documents/site-packages/{name}.py'.format(basename=tmp_folder,name=data['name']))
-            _stash('rm -r -f ~/Documents/site-packages/%s' % tmp_folder)
-            _stash('rm -r -f ~/Documents/site-packages/%s' % data['filename'])
-            self.handler.add_module(data['name'],data['version'],data['summary'])
+                
+            try:
+                if os.path.isdir(os.path.expanduser('~/Documents/site-packages/%s/%s' % (tmp_folder,data['name']))):
+                    _stash('mv ~/Documents/site-packages/{basename}/{name} ~/Documents/site-packages/{name}'.format(basename=tmp_folder,name=data['name']))
+                elif os.path.isfile(os.path.expanduser('~/Documents/site-packages/%s/%s.py' % (tmp_folder,data['name']))):
+                    _stash('mv ~/Documents/site-packages/{basename}/{name}.py ~/Documents/site-packages/{name}.py'.format(basename=tmp_folder,name=data['name']))
+                else:
+                    raise PyPiError('Unable to move package files. Package not Installed.')
+            except PyPiError,e:
+                print e.value
+                sys.exit(1)
+            finally:
+                _stash('echo Removing setup files.')
+                _stash('rm -r -f ~/Documents/site-packages/%s' % tmp_folder)
+                _stash('rm -r -f ~/Documents/site-packages/%s' % data['filename'])
+    
+            self.handler.add_module(data['name'],data['download_name'],data['version'],data['summary'])
         
             try:
                 __import__(data['name'])
@@ -161,11 +188,34 @@ class Pypi(object):
                 _stash('echo Failed import test. Check for dependencies')
             
         except Exception,e :
-            print e
             PyPiError('Unable to install package.')
             
-    def remove_module(self):
-        pass 
+    def remove_module(self,name):
+        if self.handler.module_exists(name):
+            if os.path.isdir(os.path.expanduser('~/Documents/site-packages/%s'%name)):
+                shutil.rmtree(os.path.expanduser('~/Documents/site-packages/%s'%name))
+            elif os.path.isfile(os.path.expanduser('~/Documents/site-packages/%s.py'%name)):
+                os.remove(os.path.expanduser('~/Documents/site-packages/%s.py'%name))
+            else:
+                raise PyPiError('Could not find package.')
+            self.handler.remove_module(name)
+            print 'Package removed.'
+        else:
+            raise PyPiError('No module by that name. Use pip list for list of installed modules.')
+            
+    def update_module(self,name):
+        if self.handler.module_exists(name):
+            current = self.handler.get_info(name.lower())
+            hit = self.pypi.package_releases(current['download_name'])[0]
+            if not current['version'] == hit:
+                print 'Updating %s' % name
+                self.remove_module(name)
+                self.download(current['download_name'])
+            else:
+                print 'Package upto date.'
+            
+        else:
+            raise PyPiError('Package not installed. Try pip install [package]')
         
 
 class PyPiError(Exception):
@@ -179,7 +229,7 @@ class PyPiError(Exception):
 if __name__=='__main__':
     
     ap = argparse.ArgumentParser()
-    ap.add_argument('command',action='store',choices=('search','versions','install','list'))
+    ap.add_argument('command',action='store',choices=('search','versions','install','list','remove','update'))
     ap.add_argument('-n',dest='result_count',default=10, type=int)
     ap.add_argument('package',action='store',nargs='?')
     ap.add_argument('version',action='store',nargs='?', default='')
@@ -193,6 +243,10 @@ if __name__=='__main__':
         pypi.download(args.package, args.version)
     elif args.command == 'list':
         pypi.list_modules()
+    elif args.command ==  'remove':
+        pypi.remove_module(args.package)
+    elif args.command == 'update':
+        pypi.update_module(args.package)
 
  
 
