@@ -16,8 +16,6 @@ def main(args):
                    help="variables to be printed")
     ns = p.parse_args(args)
     
-    print(ns.variables)
-    
     if ns.variables:
         vardict = {k: v for k, v in os.environ.items() if k in ns.variables}
     else:

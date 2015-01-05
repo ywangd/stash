@@ -16,14 +16,19 @@ def main(args):
      
     if args.expr is None:
         for k, v in rt.aliases.items():
-            print('{}={}'.format(k, v))
+            print('{}={}'.format(k, v[0]))
     
     else:
         if "=" in args.expr:
             name, value = args.expr.split("=", 1)
             if name == "" or value == "":
                 raise ValueError("alias: invalid name=value expression")
-            rt.aliases[name] = value
+
+            tokens, parsed = app.runtime.parser.parse(value)
+            # Ensure the actual form of an alias is fully expanded
+            tokens, _ = app.runtime.expander.alias_subs(tokens, parsed, exclude=name)
+            value_expanded = ' '.join(t.tok for t in tokens)
+            rt.aliases[name] = (value, value_expanded)
             sys.exit(0)
         else:
             try:
