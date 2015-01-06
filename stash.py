@@ -40,7 +40,7 @@ _DEBUG_PARSER = False
 _DEBUG_COMPLETER = False
 
 
-APP_DIR = os.path.abspath(os.path.dirname(__file__))
+APP_DIR = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
 
 
 class ShFileNotFound(Exception):
@@ -1669,6 +1669,11 @@ class StaSh(object):
         self.term.write('StaSh v%s\n' % __version__)
         self.term.reset_inp()  # prompt
 
+        # TODO: Better management for python path
+        lib_path = os.path.join(APP_DIR, 'lib')
+        if lib_path not in sys.path:
+            sys.path.insert(0, lib_path)
+
     def __call__(self, *args, **kwargs):
         """ This function is to be called by external script for
          executing shell commands """
@@ -1791,6 +1796,10 @@ class StaSh(object):
 
     def will_close(self):
         self.runtime.save_history()
+        # TODO: Better management for python path
+        lib_path = os.path.join(APP_DIR, 'lib')
+        if lib_path in sys.path:
+            sys.path.remove(lib_path)
  
     def run(self):
         self.term.present('panel')

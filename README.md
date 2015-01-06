@@ -13,6 +13,13 @@ contributions and advices from [@briarfox](https://github.com/briarfox),
 [@jsbain](https://github.com/jsbain). 
 
 
+## Background
+StaSh stands for Pythoni**sta** **Sh**ell. While **Sta** may not be the best
+alias for Pythonista, it forms a concise and meaningful word with the following
+**Sh** part. So the name StaSh is chosed to indicate it is a confined
+environment and awesome treasures could be found within.
+
+
 ## Notable Features
 StaSh has a pile of features which are to be expected from a real shell. The
 features are also what really set the difference from shellista.
