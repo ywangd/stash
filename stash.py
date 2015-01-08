@@ -228,7 +228,8 @@ class ShParser(object):
         cmd_word = (pp.Combine(pp.Optional(modifier) + word) ^ word)('cmd_word').setParseAction(self.cmd_word_action)
 
         simple_command = \
-            (cmd_prefix + pp.Optional(cmd_word) + pp.Optional(cmd_suffix)) \
+            pp.Suppress(pp.pythonStyleComment) \
+            | (cmd_prefix + pp.Optional(cmd_word) + pp.Optional(cmd_suffix)) \
             | (cmd_word + pp.Optional(cmd_suffix))
         simple_command = pp.Group(simple_command)
 
@@ -812,6 +813,11 @@ class ShRuntime(object):
     def __init__(self, app):
 
         self.app = app
+
+        self.enclosed_envars = {}
+        self.enclosed_aliases = {}
+        self.enclosed_cwd = ''
+
         self.envars = dict(os.environ,
                            HOME2=os.path.join(os.environ['HOME'], 'Documents'),
                            STASH_ROOT=APP_DIR,
@@ -843,85 +849,92 @@ class ShRuntime(object):
         self.enclosing_cwd = ''
 
         self.state_stack = []
-        self.io_stack = []
         self.worker_stack = []
 
     def save_state(self):
-        # Always save IO state
-        self.io_stack.append([
-            sys.stdin,
-            sys.stdout,
-            sys.stderr,
-        ])
-        # No need to save state for the first layer thread because it
-        # should run in the main stash thread's environment
-        if len(self.worker_stack) > 1:
-            self.state_stack.append(
-                [dict(self.envars),
-                 dict(self.aliases),
-                 os.getcwd(),
-                 dict(self.enclosing_envars),
-                 dict(self.enclosing_aliases),
-                 self.enclosing_cwd,
-                 sys.argv[:],
-                 sys.path[:],
-                 dict(os.environ),
-                ])
-            # new enclosed envars
+
+        if _DEBUG_RUNTIME:
+            _STDOUT.write('Saving stack %d ----\n' % len(self.state_stack))
+            _STDOUT.write('envars = %s\n' % sorted(self.envars.keys()))
+
+        self.state_stack.append(
+            [dict(self.enclosed_envars),
+             dict(self.enclosed_aliases),
+             self.enclosed_cwd,
+             sys.argv[:],
+             sys.path[:],
+             dict(os.environ),
+             sys.stdin,
+             sys.stdout,
+             sys.stderr,
+            ])
+
+        # new enclosed and enclosing variables
+        self.enclosed_envars = dict(self.envars)
+        self.enclosed_aliases = dict(self.aliases)
+        self.enclosed_cwd = os.getcwd()
+
+        # envars for next level shell is envars of current level plus all current enclosing
+        if self.enclosing_envars:
             self.envars.update(self.enclosing_envars)
-            self.aliases.update(self.enclosing_aliases)
-            if self.enclosing_cwd and self.enclosing_cwd != os.getcwd():
-                os.chdir(self.enclosing_cwd)
             self.enclosing_envars = {}
+
+        if self.enclosing_aliases:
+            self.aliases.update(self.enclosing_aliases)
             self.enclosing_aliases = {}
-            self.enclosing_cwd = ''
+
+        if self.enclosing_cwd and self.enclosing_cwd != os.getcwd():
+            os.chdir(self.enclosing_cwd)
 
     def restore_state(self,
                       persist_envars=False,
                       persist_aliases=False,
                       persist_cwd=False):
 
-        (sys.stdin,
+        if _DEBUG_RUNTIME:
+            _STDOUT.write('Popping stack %d ----\n' % (len(self.state_stack) - 1))
+            _STDOUT.write('envars = %s\n' % sorted(self.envars.keys()))
+
+        # If not persisting, parent shell's envars are set back to this level's
+        # enclosed vars. If persisting, envars of this level is then the same
+        # as its parent's envars.
+        self.enclosing_envars = self.envars
+        if not (persist_envars or len(self.state_stack) == 1):
+            self.envars = self.enclosed_envars
+
+        self.enclosing_aliases = self.aliases
+        if not (persist_aliases or len(self.state_stack) == 1):
+            self.aliases = self.enclosed_aliases
+
+        self.enclosing_cwd = os.getcwd()
+        if not (persist_cwd or len(self.state_stack) == 1):
+            if os.getcwd() != self.enclosed_cwd:
+                os.chdir(self.enclosed_cwd)
+
+        (self.enclosed_envars,
+         self.enclosed_aliases,
+         self.enclosed_cwd,
+         sys.argv,
+         sys.path,
+         os.environ,
+         sys.stdin,
          sys.stdout,
-         sys.stderr) = self.io_stack.pop()
+         sys.stderr) = self.state_stack.pop()
 
-        if len(self.worker_stack) > 1:
-            saved_envars = self.envars
-            saved_aliases = self.aliases
-
-            (self.envars,
-             self.aliases,
-             cwd,
-             self.enclosing_envars,
-             self.enclosing_aliases,
-             self.enclosing_cwd,
-             sys.argv,
-             sys.path,
-             os.environ) = self.state_stack.pop()
-
-            self.enclosing_envars.update(saved_envars)
-            self.enclosing_aliases.update(saved_aliases)
-            self.enclosing_cwd = os.getcwd()
-
-            if persist_envars:
-                self.envars.update(saved_envars)
-
-            if persist_aliases:
-                self.aliases.update(saved_aliases)
-
-            if not persist_cwd:
-                os.chdir(cwd)
-
-        else:
-            self.enclosing_envars = {}
-            self.enclosing_aliases = {}
-            self.enclosing_cwd = ''
+        if _DEBUG_RUNTIME:
+            _STDOUT.write('After poping\n')
+            _STDOUT.write('enclosed_envars = %s\n' % sorted(self.enclosing_envars.keys()))
+            _STDOUT.write('envars = %s\n' % sorted(self.envars.keys()))
 
     def load_rcfile(self):
-        self.exec_sh_lines(_DEFAULT_RC.splitlines(), add_to_history=False)
+        self.app(_DEFAULT_RC.splitlines(), add_to_history=False)
 
         if os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
-            self.exec_sh_file(self.rcfile, [], add_to_history=False)
+            try:
+                with open(self.rcfile) as ins:
+                    self.app(ins.readlines(), add_to_history=False)
+            except IOError:
+                self.app.term.write_with_prefix('%s: error reading rcfile\n' % self.rcfile)
 
     def find_script_file(self, filename):
         dir_match_found = False
@@ -1067,7 +1080,7 @@ class ShRuntime(object):
             if simple_command.cmd_word == '' and idx == 0 and n_simple_commands == 1:
                 self.envars.update(new_envars)
             else:
-                self.enclosing_envars.update(new_envars)
+                self.enclosing_envars = new_envars
 
             if prev_outs:
                 if type(prev_outs) == file:
