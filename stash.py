@@ -1012,6 +1012,21 @@ class ShRuntime(object):
                     if code_validation_func is None or code_validation_func(complete_command):
                         self.run_complete_command(complete_command,
                                                   final_outs=final_outs)
+                        # The enclosing variables of one command should not be carried to the
+                        # next command, i.e.
+                        #   A=42 xxx
+                        #   yyy
+                        # The value of A should not be carried over to command yyy
+                        # This applies to all enclosing variables including aliases and cwd.
+                        # But since envars is the only enclosing var that actually gets changed
+                        # outside of save/restore state functions (by leading assignments).
+                        # It is therefore the only one that needs to be reset.
+                        # NOTE: Theoretically the save/restore pair should be used for every single
+                        # command so that variables of different scopes are handled by the pair
+                        # of functions. This reset is needed because the commands here are executed
+                        # in a single save/restore pair for efficiency (since every save/restore means
+                        # creating new thread).
+                        self.enclosing_envars = {}
 
             except pp.ParseException as e:
                 if _DEBUG_PARSER:
@@ -1073,18 +1088,17 @@ class ShRuntime(object):
         prev_outs = None
         for idx, simple_command in enumerate(pipe_sequence.lst):
 
-            new_envars = {}
+            # The enclosing_envars needs to be reset for each simple command
+            # i.e. A=42 script1 | script2
+            # The value of A should not be carried to script2
+            self.enclosing_envars = {}
             for assignment in simple_command.assignments:
-                new_envars[assignment.identifier] = assignment.value
+                self.enclosing_envars[assignment.identifier] = assignment.value
 
             # Only update the runtime's env for pure assignments
             if simple_command.cmd_word == '' and idx == 0 and n_simple_commands == 1:
-                self.envars.update(new_envars)
-            else:
-                # The enclosing_envars needs to be reset for each simple command
-                # i.e. A=42 script1; script2
-                # The value of A should not be carried to script2
-                self.enclosing_envars = new_envars
+                self.envars.update(self.enclosing_envars)
+                self.enclosing_envars = {}
 
             if prev_outs:
                 if type(prev_outs) == file:
