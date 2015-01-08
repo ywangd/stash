@@ -885,6 +885,7 @@ class ShRuntime(object):
 
         if self.enclosing_cwd and self.enclosing_cwd != os.getcwd():
             os.chdir(self.enclosing_cwd)
+            self.enclosing_cwd = ''
 
     def restore_state(self,
                       persist_envars=False,
@@ -1080,6 +1081,9 @@ class ShRuntime(object):
             if simple_command.cmd_word == '' and idx == 0 and n_simple_commands == 1:
                 self.envars.update(new_envars)
             else:
+                # The enclosing_envars needs to be reset for each simple command
+                # i.e. A=42 script1; script2
+                # The value of A should not be carried to script2
                 self.enclosing_envars = new_envars
 
             if prev_outs:
