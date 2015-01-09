@@ -975,7 +975,9 @@ class ShRuntime(object):
         return all_names
 
     def run(self, input_,
+            final_ins=None,
             final_outs=None,
+            final_errs=None,
             add_to_history=None,
             code_validation_func=None,
             reset_inp=None,
@@ -1011,7 +1013,9 @@ class ShRuntime(object):
 
                     if code_validation_func is None or code_validation_func(complete_command):
                         self.run_complete_command(complete_command,
-                                                  final_outs=final_outs)
+                                                  final_ins=final_ins,
+                                                  final_outs=final_outs,
+                                                  final_errs=final_errs)
                         # The enclosing variables of one command should not be carried to the
                         # next command, i.e.
                         #   A=42 xxx
@@ -1071,15 +1075,24 @@ class ShRuntime(object):
         worker.start()
         return worker
 
-    def run_complete_command(self, complete_command, final_outs=None):
+    def run_complete_command(self, complete_command,
+                             final_ins=None,
+                             final_outs=None,
+                             final_errs=None):
 
         for pipe_sequence in complete_command.lst:
             if pipe_sequence.in_background:
-                ui.in_background(self.run_pipe_sequence)(pipe_sequence, final_outs=final_outs)
+                ui.in_background(self.run_pipe_sequence)(pipe_sequence,
+                                                         final_ins=final_ins,
+                                                         final_outs=final_outs,
+                                                         final_errs=final_errs)
             else:
-                self.run_pipe_sequence(pipe_sequence, final_outs=final_outs)
+                self.run_pipe_sequence(pipe_sequence,
+                                       final_ins=final_ins,
+                                       final_outs=final_outs,
+                                       final_errs=final_errs)
 
-    def run_pipe_sequence(self, pipe_sequence, final_outs=None):
+    def run_pipe_sequence(self, pipe_sequence, final_ins=None, final_outs=None, final_errs=None):
         if _DEBUG_RUNTIME:
             print pipe_sequence
 
@@ -1106,7 +1119,10 @@ class ShRuntime(object):
                 else:
                     ins = prev_outs
             else:
-                ins = self.app.term
+                if final_ins:
+                    ins = final_ins
+                else:
+                    ins = self.app.term
 
             if not pipe_sequence.in_background:
                 outs = self.app.term
@@ -1121,11 +1137,14 @@ class ShRuntime(object):
                 # Note this is different from a real shell.
                 errs = outs = open(simple_command.io_redirect.filename, mode)
 
-            elif idx < n_simple_commands - 1:
+            elif idx < n_simple_commands - 1: # before the last piped command
                 outs = StringIO()
 
-            elif final_outs:
-                outs = final_outs
+            else:
+                if final_outs:
+                    outs = final_outs
+                if final_errs:
+                    errs = final_errs
 
             if _DEBUG_RUNTIME:
                 _STDOUT.write('io %s %s\n' % (ins, outs))
@@ -1228,6 +1247,9 @@ class ShRuntime(object):
                       ins=None, outs=None, errs=None,
                       add_to_history=None):
         worker = self.run(lines,
+                          final_ins=ins,
+                          final_outs=outs,
+                          final_errs=errs,
                           add_to_history=add_to_history,
                           reset_inp=False)
         while worker.isAlive():
