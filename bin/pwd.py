@@ -10,6 +10,9 @@ import argparse
 import os
 import sys
 
+_stash = globals()['_stash']
+collapseuser = _stash.libcore.collapseuser
+
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("-b", "--basename", action="store_true",
@@ -19,7 +22,7 @@ def main(args):
     status = 0
     
     try:
-        print(os.path.basename(os.getcwd()) if ns.basename else os.getcwd())
+        print(os.path.basename(os.getcwd()) if ns.basename else collapseuser(os.getcwd()))
     except Exception as err:
         print("pwd: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
         status = 1

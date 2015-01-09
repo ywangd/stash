@@ -14,6 +14,7 @@ import string
 import sys
 import threading
 import time
+import imp
 
 import pyparsing as pp
 
@@ -33,6 +34,8 @@ except:
 _STDIN = sys.stdin
 _STDOUT = sys.stdout
 _STDERR = sys.stderr
+_SYS_PATH = sys.path
+_OS_ENVIRON = os.environ
 
 
 _DEBUG_RUNTIME = False
@@ -862,7 +865,6 @@ class ShRuntime(object):
              dict(self.enclosed_aliases),
              self.enclosed_cwd,
              sys.argv[:],
-             sys.path[:],
              dict(os.environ),
              sys.stdin,
              sys.stdout,
@@ -916,7 +918,6 @@ class ShRuntime(object):
          self.enclosed_aliases,
          self.enclosed_cwd,
          sys.argv,
-         sys.path,
          os.environ,
          sys.stdin,
          sys.stdout,
@@ -1188,6 +1189,11 @@ class ShRuntime(object):
                      ins=None, outs=None, errs=None):
         if args is None:
             args = []
+
+        # Prepend any user set python paths
+        if 'PYTHONPATH' in self.envars.keys():
+            sys.path = [os.path.expanduser(pth) for pth in self.envars['PYTHONPATH'].split(':')] + _SYS_PATH
+
         try:
             if ins:
                 sys.stdin = ins
@@ -1197,6 +1203,7 @@ class ShRuntime(object):
                 sys.stderr = errs
             sys.argv = [os.path.basename(filename)] + args  # First argument is the script name
             os.environ = self.envars
+
             file_path = os.path.relpath(filename)
             namespace = dict(locals(), **globals())
             namespace['__name__'] = '__main__'
@@ -1214,6 +1221,9 @@ class ShRuntime(object):
                 _STDOUT.write(err_msg)
             self.app.term.write_with_prefix(err_msg)
             self.envars['?'] = 1
+
+        finally:
+            sys.path = _SYS_PATH
 
     def exec_sh_file(self, filename, args=None,
                      ins=None, outs=None, errs=None,
@@ -1722,10 +1732,15 @@ class StaSh(object):
         self.term.write('StaSh v%s\n' % __version__)
         self.term.reset_inp()  # prompt
 
-        # TODO: Better management for python path
+        # Load library files as modules and save each of them as attributes
         lib_path = os.path.join(APP_DIR, 'lib')
-        if lib_path not in sys.path:
-            sys.path.insert(0, lib_path)
+        for f in os.listdir(lib_path):
+            if f.startswith('lib') and f.endswith('.py') and os.path.isfile(os.path.join(lib_path, f)):
+                name, _ = os.path.splitext(f)
+                try:
+                    self.__dict__[name] = imp.load_source(name, os.path.join(lib_path, f))
+                except:
+                    self.term.write_with_prefix('%s: failed to load library file' % f)
 
     def __call__(self, *args, **kwargs):
         """ This function is to be called by external script for
@@ -1849,11 +1864,7 @@ class StaSh(object):
 
     def will_close(self):
         self.runtime.save_history()
-        # TODO: Better management for python path
-        lib_path = os.path.join(APP_DIR, 'lib')
-        if lib_path in sys.path:
-            sys.path.remove(lib_path)
- 
+
     def run(self):
         self.term.present('panel')
         self.term.inp.begin_editing()

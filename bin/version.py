@@ -4,8 +4,8 @@
 import os
 import time
 
-from _collapseuser import collapseuser
-
+_stash = globals()['_stash']
+collapseuser = _stash.libcore.collapseuser
 
 def main():
     STASH_ROOT = os.environ['STASH_ROOT']
