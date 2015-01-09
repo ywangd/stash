@@ -111,8 +111,9 @@ def git_add(args):
                     if not os.path.samefile(cwd, repo.path) else x for x in args]
         for file in args:
             print 'Adding {0}'.format(file)
-        #repo.stage(args)
-        porcelain.add(repo.repo, args)
+            import pdb
+            pdb.set_trace()
+            porcelain.add(repo.repo, file)
     else:
         print command_help['add']
 
@@ -124,8 +125,8 @@ def git_rm(args):
                     if not os.path.samefile(cwd, repo.path) else x for x in args]
         for file in args:
             print 'Removing {0}'.format(file)
-        #repo.rm(args)
-        porcelain.rm(repo.repo, args)
+            #repo.rm(args)
+            porcelain.rm(repo.repo, args)
     else:
         print command_help['rm']
 
