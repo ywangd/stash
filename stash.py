@@ -902,15 +902,15 @@ class ShRuntime(object):
         # enclosed vars. If persisting, envars of this level is then the same
         # as its parent's envars.
         self.enclosing_envars = self.envars
-        if not (persist_envars or len(self.state_stack) == 1):
+        if not (persist_envars or len(self.worker_stack) == 1):
             self.envars = self.enclosed_envars
 
         self.enclosing_aliases = self.aliases
-        if not (persist_aliases or len(self.state_stack) == 1):
+        if not (persist_aliases or len(self.worker_stack) == 1):
             self.aliases = self.enclosed_aliases
 
         self.enclosing_cwd = os.getcwd()
-        if not (persist_cwd or len(self.state_stack) == 1):
+        if not (persist_cwd or len(self.worker_stack) == 1):
             if os.getcwd() != self.enclosed_cwd:
                 os.chdir(self.enclosed_cwd)
 
