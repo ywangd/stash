@@ -9,7 +9,9 @@ from __future__ import print_function
 import argparse
 import sys
 import fileinput
-
+def filter_non_printable(str):
+    return ''.join([c if (ord(c) > 31 and ord(c)<127 or ord(c) == 9) else ' ' for c in str  ])
+    
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("files", action="store", nargs="*", type=str,
@@ -21,7 +23,7 @@ def main(args):
     try:
         fileinput.close()  # in case it is not closed
         for line in fileinput.input(ns.files):
-            print(line, end='')
+            print(filter_non_printable(line), end='')
     except Exception as e:
         print(str(e))
         status = 1
