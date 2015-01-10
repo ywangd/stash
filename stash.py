@@ -831,6 +831,8 @@ class ShRuntime(object):
         self.historyfile = os.path.join(APP_DIR, config.get('system', 'historyfile'))
         self.HISTORY_MAX = config.getint('display', 'HISTORY_MAX')
 
+        self.py_traceback = config.getint('system', 'py_traceback')
+
         # load history from last session
         # NOTE the first entry in history is the latest one
         try:
@@ -1216,7 +1218,10 @@ class ShRuntime(object):
             self.envars['?'] = e.code
 
         except Exception as e:
-            err_msg = '%s (%s)\n' % (str(e), sys.exc_value)
+            if self.py_traceback:
+                import traceback
+                traceback.print_exc()
+            err_msg = '%s: (%s)\n' % (repr(e), sys.exc_value)
             if _DEBUG_RUNTIME:
                 _STDOUT.write(err_msg)
             self.app.term.write_with_prefix(err_msg)
@@ -1689,6 +1694,7 @@ _DEFAULT_CONFIG = """[system]
 cfgfile=.stash_config
 rcfile=.stashrc
 historyfile=.stash_history
+py_traceback=0
 
 [display]
 TEXT_FONT=('DejaVuSansMono', 12)
