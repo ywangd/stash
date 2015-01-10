@@ -24,18 +24,54 @@ commands:
 
 SAVE_PASSWORDS = True
 
-try:   
-    from dulwich.client import default_user_agent_string
-    from dulwich import porcelain
-except ImportError:
-    print 'dulwich not found.  install transistor1/dulwich'
-    raise
 
-try:
-    from gittle import Gittle
-except ImportError:
-    print 'gittle not found.  install jsbain/gittle'
+# temporary -- install required modules
+
+GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
+FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
+DULWICH_URL='https://github.com/transistor1/dulwich/archive/master.zip'
+
+if True:
+    libpath=os.path.join(_stash.runtime.envars['STASH_ROOT'] ,'lib')
+    if not libpath in sys.path:
+        sys.path.insert(1,libpath)
+    try:  
+        from dulwich.client import default_user_agent_string
+        from dulwich import porcelain
     
+    except ImportError:
+        _stash('wget {} -o $TMPDIR/dulwich.zip'.format(DULWICH_URL))
+        _stash('unzip $TMPDIR/dulwich.zip -d $TMPDIR/dulwich')
+        _stash('mv $TMPDIR/dulwich/dulwich $STASH_ROOT/lib/')
+        _stash('rm  $TMPDIR/dulwich.zip')
+        _stash('rm -r $TMPDIR/dulwich')
+    
+        from dulwich import porcelain
+        from dulwich.client import default_user_agent_string
+    
+    try:
+        gittle_path=os.path.join(libpath,'gittle')
+        funky_path=os.path.join(libpath,'funky')
+        import gittle
+        Gittle=gittle.Gittle
+    except ImportError:
+        _stash('wget {} -o $TMPDIR/gittle.zip'.format(GITTLE_URL))
+        _stash('unzip $TMPDIR/gittle.zip -d $TMPDIR/gittle')
+        _stash('mv $TMPDIR/gittle/gittle $STASH_ROOT/lib')
+        _stash('wget {} -o $TMPDIR/funky.zip'.format(FUNKY_URL))
+        _stash('unzip $TMPDIR/funky.zip -d $TMPDIR/funky')
+        _stash('mv $TMPDIR/funky/funky $STASH_ROOT/lib')
+        _stash('rm  $TMPDIR/gittle.zip')
+        _stash('rm  $TMPDIR/funky.zip')
+        _stash('rm -r $TMPDIR/gittle')
+        _stash('rm -r $TMPDIR/funky')
+        import gittle
+        Gittle=gittle.Gittle
+    ## end install modules
+else:
+    from dulwich import porcelain
+    from dulwich.client import default_user_agent_string
+    from gittle import Gittle
 
 import argparse
 import getpass
@@ -92,7 +128,7 @@ def git_status(args):
         status = porcelain.status(repo.repo)
         print status
     else:
-        print command_help['git_staged']
+        print command_help['status']
 
 def git_remote(args):
     '''List remote repos'''
@@ -107,12 +143,13 @@ def git_add(args):
     if len(args) > 0:
         repo = _get_repo()
         cwd = os.getcwd()
+        print 'cwd:',cwd
+        print 'repo',repo.path
         args = [os.path.join(os.path.relpath(cwd, repo.path), x)
                     if not os.path.samefile(cwd, repo.path) else x for x in args]
         for file in args:
             print 'Adding {0}'.format(file)
-        #repo.stage(args)
-        porcelain.add(repo.repo, args)
+            porcelain.add(repo.repo, [file])
     else:
         print command_help['add']
 
@@ -124,8 +161,8 @@ def git_rm(args):
                     if not os.path.samefile(cwd, repo.path) else x for x in args]
         for file in args:
             print 'Removing {0}'.format(file)
-        #repo.rm(args)
-        porcelain.rm(repo.repo, args)
+            #repo.rm(args)
+            porcelain.rm(repo.repo, args)
     else:
         print command_help['rm']
 
@@ -146,16 +183,25 @@ def git_reset(args):
         print command_help['reset']
 
 def git_commit(args):
-    if len(args) == 3:
-        try:
-            repo = _get_repo()
-            #print repo.commit(name=args[1],email=args[2],message=args[0])
-            author = "{0} <{1}>".format(args[1], args[2])
-            print porcelain.commit(repo.repo, args[0], author, author )
-        except:
-            print 'Error: {0}'.format(sys.exc_value)
-    else:
-        print command_help['commit']
+    ap=argparse.ArgumentParser('Commit current working tree.')
+    ap.add_argument('message',default=None,nargs='?')
+    ap.add_argument('name',default=None,nargs='?')
+    ap.add_argument('email',default=None,nargs='?')
+    ns=ap.parse_args(args)
+    if not ns.message:
+        ns.message=raw_input('Commit Message: ')
+    if not ns.name:
+        ns.name=raw_input('Author Name:')
+    if not ns.email:
+        ns.email=raw_input('Author Email')
+     
+    try:
+        repo = _get_repo()
+        author = "{0} <{1}>".format(ns.name, ns.email)
+        print porcelain.commit(repo.repo, ns.message, author, author )
+    except:
+        print 'Error: {0}'.format(sys.exc_value)
+
 
 def git_clone(args):
     if len(args) > 0:
@@ -345,4 +391,5 @@ if __name__=='__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('command',action='store',default='help',choices=command_help.keys(),nargs='?')
     ns,args = ap.parse_known_args()
-    func=commands[ns.command](args)
+    strargs=[str(a) for a in args]
+    func=commands[ns.command](strargs)
