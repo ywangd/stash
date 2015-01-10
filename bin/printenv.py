@@ -21,7 +21,7 @@ def main(args):
     else:
         vardict = os.environ
     
-    vardict = {k: v for k, v in vardict if k not in tuple("$@?!#*0123456789")}
+    vardict = {k: v for k, v in vardict.items() if k[0] not in "$@?!#*0123456789"}
     
     for k, v in vardict.items():
         print("{}={}".format(k, v))
