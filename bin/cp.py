@@ -1,3 +1,7 @@
+"""Copy a file or directory. Multiple source files may be specified if the destination is
+an existing directory.
+"""
+
 from __future__ import print_function
 
 import argparse
@@ -11,7 +15,7 @@ def pprint(path):
 
 def main(args):
     ap = argparse.ArgumentParser()
-    ap.add_argument('source', nargs='+', help='one or more files to be moved')
+    ap.add_argument('source', nargs='+', help='one or more files or directories to be copied')
     ap.add_argument('dest', help='destination file or folder')
     ns = ap.parse_args(args)
     

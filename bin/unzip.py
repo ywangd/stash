@@ -1,3 +1,4 @@
+"""Extract a zip archive into a directory."""
 import os
 import sys
 import zipfile
