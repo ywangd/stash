@@ -31,44 +31,47 @@ GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
 FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
 DULWICH_URL='https://github.com/transistor1/dulwich/archive/master.zip'
 
-libpath=os.path.join(_stash.runtime.envars['STASH_ROOT'] ,'lib')
-if not libpath in sys.path:
-    sys.path.insert(1,libpath)
-try:  
-    import dulwich.client
-    import dulwich.porcelain
-    porcelain=dulwich.porcelain
-    default_user_agent_string=dulwich.client.default_user_agent_string
-except ImportError:
-    _stash('wget {} -o $TMPDIR/dulwich.zip'.format(DULWICH_URL))
-    _stash('unzip $TMPDIR/dulwich.zip -d $TMPDIR/dulwich')
-    _stash('mv $TMPDIR/dulwich/dulwich $STASH_ROOT/lib/')
-    _stash('rm  $TMPDIR/dulwich.zip')
-    _stash('rm -r $TMPDIR/dulwich')
-    import dulwich.client
-    import dulwich.porcelain
-    porcelain=dulwich.porcelain
-    default_user_agent_string=dulwich.client.default_user_agent_string
-
-try:
-    gittle_path=os.path.join(libpath,'gittle')
-    funky_path=os.path.join(libpath,'funky')
-    import gittle
-    Gittle=gittle.Gittle
-except ImportError:
-    _stash('wget {} -o $TMPDIR/gittle.zip'.format(GITTLE_URL))
-    _stash('unzip $TMPDIR/gittle.zip -d $TMPDIR/gittle')
-    _stash('mv $TMPDIR/gittle/gittle $STASH_ROOT/lib')
-    _stash('wget {} -o $TMPDIR/funky.zip'.format(FUNKY_URL))
-    _stash('unzip $TMPDIR/funky.zip -d $TMPDIR/funky')
-    _stash('mv $TMPDIR/funky/funky $STASH_ROOT/lib')
-    _stash('rm  $TMPDIR/gittle.zip')
-    _stash('rm  $TMPDIR/funky.zip')
-    _stash('rm -r $TMPDIR/gittle')
-    _stash('rm -r $TMPDIR/funky')
-    import gittle
-    Gittle=gittle.Gittle
-## end install modules
+if True:
+    libpath=os.path.join(_stash.runtime.envars['STASH_ROOT'] ,'lib')
+    if not libpath in sys.path:
+        sys.path.insert(1,libpath)
+    try:  
+        from dulwich.client import default_user_agent_string
+        from dulwich import porcelain
+    
+    except ImportError:
+        _stash('wget {} -o $TMPDIR/dulwich.zip'.format(DULWICH_URL))
+        _stash('unzip $TMPDIR/dulwich.zip -d $TMPDIR/dulwich')
+        _stash('mv $TMPDIR/dulwich/dulwich $STASH_ROOT/lib/')
+        _stash('rm  $TMPDIR/dulwich.zip')
+        _stash('rm -r $TMPDIR/dulwich')
+    
+        from dulwich import porcelain
+        from dulwich.client import default_user_agent_string
+    
+    try:
+        gittle_path=os.path.join(libpath,'gittle')
+        funky_path=os.path.join(libpath,'funky')
+        import gittle
+        Gittle=gittle.Gittle
+    except ImportError:
+        _stash('wget {} -o $TMPDIR/gittle.zip'.format(GITTLE_URL))
+        _stash('unzip $TMPDIR/gittle.zip -d $TMPDIR/gittle')
+        _stash('mv $TMPDIR/gittle/gittle $STASH_ROOT/lib')
+        _stash('wget {} -o $TMPDIR/funky.zip'.format(FUNKY_URL))
+        _stash('unzip $TMPDIR/funky.zip -d $TMPDIR/funky')
+        _stash('mv $TMPDIR/funky/funky $STASH_ROOT/lib')
+        _stash('rm  $TMPDIR/gittle.zip')
+        _stash('rm  $TMPDIR/funky.zip')
+        _stash('rm -r $TMPDIR/gittle')
+        _stash('rm -r $TMPDIR/funky')
+        import gittle
+        Gittle=gittle.Gittle
+    ## end install modules
+else:
+    from dulwich import porcelain
+    from dulwich.client import default_user_agent_string
+    from gittle import Gittle
 
 import argparse
 import getpass
@@ -125,7 +128,7 @@ def git_status(args):
         status = porcelain.status(repo.repo)
         print status
     else:
-        print command_help['git_staged']
+        print command_help['status']
 
 def git_remote(args):
     '''List remote repos'''
@@ -140,6 +143,8 @@ def git_add(args):
     if len(args) > 0:
         repo = _get_repo()
         cwd = os.getcwd()
+        print 'cwd:',cwd
+        print 'repo',repo.path
         args = [os.path.join(os.path.relpath(cwd, repo.path), x)
                     if not os.path.samefile(cwd, repo.path) else x for x in args]
         for file in args:
