@@ -14,6 +14,7 @@ import string
 import sys
 import threading
 import time
+import imp
 
 import pyparsing as pp
 
@@ -33,6 +34,8 @@ except:
 _STDIN = sys.stdin
 _STDOUT = sys.stdout
 _STDERR = sys.stderr
+_SYS_PATH = sys.path
+_OS_ENVIRON = os.environ
 
 
 _DEBUG_RUNTIME = False
@@ -40,7 +43,7 @@ _DEBUG_PARSER = False
 _DEBUG_COMPLETER = False
 
 
-APP_DIR = os.path.abspath(os.path.dirname(__file__))
+APP_DIR = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
 
 
 class ShFileNotFound(Exception):
@@ -228,7 +231,8 @@ class ShParser(object):
         cmd_word = (pp.Combine(pp.Optional(modifier) + word) ^ word)('cmd_word').setParseAction(self.cmd_word_action)
 
         simple_command = \
-            (cmd_prefix + pp.Optional(cmd_word) + pp.Optional(cmd_suffix)) \
+            pp.Suppress(pp.pythonStyleComment) \
+            | (cmd_prefix + pp.Optional(cmd_word) + pp.Optional(cmd_suffix)) \
             | (cmd_word + pp.Optional(cmd_suffix))
         simple_command = pp.Group(simple_command)
 
@@ -812,6 +816,11 @@ class ShRuntime(object):
     def __init__(self, app):
 
         self.app = app
+
+        self.enclosed_envars = {}
+        self.enclosed_aliases = {}
+        self.enclosed_cwd = ''
+
         self.envars = dict(os.environ,
                            HOME2=os.path.join(os.environ['HOME'], 'Documents'),
                            STASH_ROOT=APP_DIR,
@@ -843,37 +852,41 @@ class ShRuntime(object):
         self.enclosing_cwd = ''
 
         self.state_stack = []
-        self.io_stack = []
         self.worker_stack = []
 
     def save_state(self):
-        # Always save IO state
-        self.io_stack.append([
-            sys.stdin,
-            sys.stdout,
-            sys.stderr,
-        ])
-        # No need to save state for the first layer thread because it
-        # should run in the main stash thread's environment
-        if len(self.worker_stack) > 1:
-            self.state_stack.append(
-                [dict(self.envars),
-                 dict(self.aliases),
-                 os.getcwd(),
-                 dict(self.enclosing_envars),
-                 dict(self.enclosing_aliases),
-                 self.enclosing_cwd,
-                 sys.argv[:],
-                 sys.path[:],
-                 dict(os.environ),
-                ])
-            # new enclosed envars
+
+        if _DEBUG_RUNTIME:
+            _STDOUT.write('Saving stack %d ----\n' % len(self.state_stack))
+            _STDOUT.write('envars = %s\n' % sorted(self.envars.keys()))
+
+        self.state_stack.append(
+            [dict(self.enclosed_envars),
+             dict(self.enclosed_aliases),
+             self.enclosed_cwd,
+             sys.argv[:],
+             dict(os.environ),
+             sys.stdin,
+             sys.stdout,
+             sys.stderr,
+            ])
+
+        # new enclosed and enclosing variables
+        self.enclosed_envars = dict(self.envars)
+        self.enclosed_aliases = dict(self.aliases)
+        self.enclosed_cwd = os.getcwd()
+
+        # envars for next level shell is envars of current level plus all current enclosing
+        if self.enclosing_envars:
             self.envars.update(self.enclosing_envars)
-            self.aliases.update(self.enclosing_aliases)
-            if self.enclosing_cwd and self.enclosing_cwd != os.getcwd():
-                os.chdir(self.enclosing_cwd)
             self.enclosing_envars = {}
+
+        if self.enclosing_aliases:
+            self.aliases.update(self.enclosing_aliases)
             self.enclosing_aliases = {}
+
+        if self.enclosing_cwd and self.enclosing_cwd != os.getcwd():
+            os.chdir(self.enclosing_cwd)
             self.enclosing_cwd = ''
 
     def restore_state(self,
@@ -881,47 +894,49 @@ class ShRuntime(object):
                       persist_aliases=False,
                       persist_cwd=False):
 
-        (sys.stdin,
+        if _DEBUG_RUNTIME:
+            _STDOUT.write('Popping stack %d ----\n' % (len(self.state_stack) - 1))
+            _STDOUT.write('envars = %s\n' % sorted(self.envars.keys()))
+
+        # If not persisting, parent shell's envars are set back to this level's
+        # enclosed vars. If persisting, envars of this level is then the same
+        # as its parent's envars.
+        self.enclosing_envars = self.envars
+        if not (persist_envars or len(self.state_stack) == 1):
+            self.envars = self.enclosed_envars
+
+        self.enclosing_aliases = self.aliases
+        if not (persist_aliases or len(self.state_stack) == 1):
+            self.aliases = self.enclosed_aliases
+
+        self.enclosing_cwd = os.getcwd()
+        if not (persist_cwd or len(self.state_stack) == 1):
+            if os.getcwd() != self.enclosed_cwd:
+                os.chdir(self.enclosed_cwd)
+
+        (self.enclosed_envars,
+         self.enclosed_aliases,
+         self.enclosed_cwd,
+         sys.argv,
+         os.environ,
+         sys.stdin,
          sys.stdout,
-         sys.stderr) = self.io_stack.pop()
+         sys.stderr) = self.state_stack.pop()
 
-        if len(self.worker_stack) > 1:
-            saved_envars = self.envars
-            saved_aliases = self.aliases
-
-            (self.envars,
-             self.aliases,
-             cwd,
-             self.enclosing_envars,
-             self.enclosing_aliases,
-             self.enclosing_cwd,
-             sys.argv,
-             sys.path,
-             os.environ) = self.state_stack.pop()
-
-            self.enclosing_envars.update(saved_envars)
-            self.enclosing_aliases.update(saved_aliases)
-            self.enclosing_cwd = os.getcwd()
-
-            if persist_envars:
-                self.envars.update(saved_envars)
-
-            if persist_aliases:
-                self.aliases.update(saved_aliases)
-
-            if not persist_cwd:
-                os.chdir(cwd)
-
-        else:
-            self.enclosing_envars = {}
-            self.enclosing_aliases = {}
-            self.enclosing_cwd = ''
+        if _DEBUG_RUNTIME:
+            _STDOUT.write('After poping\n')
+            _STDOUT.write('enclosed_envars = %s\n' % sorted(self.enclosing_envars.keys()))
+            _STDOUT.write('envars = %s\n' % sorted(self.envars.keys()))
 
     def load_rcfile(self):
-        self.exec_sh_lines(_DEFAULT_RC.splitlines(), add_to_history=False)
+        self.app(_DEFAULT_RC.splitlines(), add_to_history=False)
 
         if os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
-            self.exec_sh_file(self.rcfile, [], add_to_history=False)
+            try:
+                with open(self.rcfile) as ins:
+                    self.app(ins.readlines(), add_to_history=False)
+            except IOError:
+                self.app.term.write_with_prefix('%s: error reading rcfile\n' % self.rcfile)
 
     def find_script_file(self, filename):
         dir_match_found = False
@@ -961,7 +976,9 @@ class ShRuntime(object):
         return all_names
 
     def run(self, input_,
+            final_ins=None,
             final_outs=None,
+            final_errs=None,
             add_to_history=None,
             code_validation_func=None,
             reset_inp=None,
@@ -997,7 +1014,24 @@ class ShRuntime(object):
 
                     if code_validation_func is None or code_validation_func(complete_command):
                         self.run_complete_command(complete_command,
-                                                  final_outs=final_outs)
+                                                  final_ins=final_ins,
+                                                  final_outs=final_outs,
+                                                  final_errs=final_errs)
+                        # The enclosing variables of one command should not be carried to the
+                        # next command, i.e.
+                        #   A=42 xxx
+                        #   yyy
+                        # The value of A should not be carried over to command yyy
+                        # This applies to all enclosing variables including aliases and cwd.
+                        # But since envars is the only enclosing var that actually gets changed
+                        # outside of save/restore state functions (by leading assignments).
+                        # It is therefore the only one that needs to be reset.
+                        # NOTE: Theoretically the save/restore pair should be used for every single
+                        # command so that variables of different scopes are handled by the pair
+                        # of functions. This reset is needed because the commands here are executed
+                        # in a single save/restore pair for efficiency (since every save/restore means
+                        # creating new thread).
+                        self.enclosing_envars = {}
 
             except pp.ParseException as e:
                 if _DEBUG_PARSER:
@@ -1042,15 +1076,24 @@ class ShRuntime(object):
         worker.start()
         return worker
 
-    def run_complete_command(self, complete_command, final_outs=None):
+    def run_complete_command(self, complete_command,
+                             final_ins=None,
+                             final_outs=None,
+                             final_errs=None):
 
         for pipe_sequence in complete_command.lst:
             if pipe_sequence.in_background:
-                ui.in_background(self.run_pipe_sequence)(pipe_sequence, final_outs=final_outs)
+                ui.in_background(self.run_pipe_sequence)(pipe_sequence,
+                                                         final_ins=final_ins,
+                                                         final_outs=final_outs,
+                                                         final_errs=final_errs)
             else:
-                self.run_pipe_sequence(pipe_sequence, final_outs=final_outs)
+                self.run_pipe_sequence(pipe_sequence,
+                                       final_ins=final_ins,
+                                       final_outs=final_outs,
+                                       final_errs=final_errs)
 
-    def run_pipe_sequence(self, pipe_sequence, final_outs=None):
+    def run_pipe_sequence(self, pipe_sequence, final_ins=None, final_outs=None, final_errs=None):
         if _DEBUG_RUNTIME:
             print pipe_sequence
 
@@ -1059,15 +1102,17 @@ class ShRuntime(object):
         prev_outs = None
         for idx, simple_command in enumerate(pipe_sequence.lst):
 
-            new_envars = {}
+            # The enclosing_envars needs to be reset for each simple command
+            # i.e. A=42 script1 | script2
+            # The value of A should not be carried to script2
+            self.enclosing_envars = {}
             for assignment in simple_command.assignments:
-                new_envars[assignment.identifier] = assignment.value
+                self.enclosing_envars[assignment.identifier] = assignment.value
 
             # Only update the runtime's env for pure assignments
             if simple_command.cmd_word == '' and idx == 0 and n_simple_commands == 1:
-                self.envars.update(new_envars)
-            else:
-                self.enclosing_envars.update(new_envars)
+                self.envars.update(self.enclosing_envars)
+                self.enclosing_envars = {}
 
             if prev_outs:
                 if type(prev_outs) == file:
@@ -1075,7 +1120,10 @@ class ShRuntime(object):
                 else:
                     ins = prev_outs
             else:
-                ins = self.app.term
+                if final_ins:
+                    ins = final_ins
+                else:
+                    ins = self.app.term
 
             if not pipe_sequence.in_background:
                 outs = self.app.term
@@ -1090,11 +1138,14 @@ class ShRuntime(object):
                 # Note this is different from a real shell.
                 errs = outs = open(simple_command.io_redirect.filename, mode)
 
-            elif idx < n_simple_commands - 1:
+            elif idx < n_simple_commands - 1: # before the last piped command
                 outs = StringIO()
 
-            elif final_outs:
-                outs = final_outs
+            else:
+                if final_outs:
+                    outs = final_outs
+                if final_errs:
+                    errs = final_errs
 
             if _DEBUG_RUNTIME:
                 _STDOUT.write('io %s %s\n' % (ins, outs))
@@ -1138,6 +1189,11 @@ class ShRuntime(object):
                      ins=None, outs=None, errs=None):
         if args is None:
             args = []
+
+        # Prepend any user set python paths
+        if 'PYTHONPATH' in self.envars.keys():
+            sys.path = [os.path.expanduser(pth) for pth in self.envars['PYTHONPATH'].split(':')] + _SYS_PATH
+
         try:
             if ins:
                 sys.stdin = ins
@@ -1147,6 +1203,7 @@ class ShRuntime(object):
                 sys.stderr = errs
             sys.argv = [os.path.basename(filename)] + args  # First argument is the script name
             os.environ = self.envars
+
             file_path = os.path.relpath(filename)
             namespace = dict(locals(), **globals())
             namespace['__name__'] = '__main__'
@@ -1164,6 +1221,9 @@ class ShRuntime(object):
                 _STDOUT.write(err_msg)
             self.app.term.write_with_prefix(err_msg)
             self.envars['?'] = 1
+
+        finally:
+            sys.path = _SYS_PATH
 
     def exec_sh_file(self, filename, args=None,
                      ins=None, outs=None, errs=None,
@@ -1197,6 +1257,9 @@ class ShRuntime(object):
                       ins=None, outs=None, errs=None,
                       add_to_history=None):
         worker = self.run(lines,
+                          final_ins=ins,
+                          final_outs=outs,
+                          final_errs=errs,
                           add_to_history=add_to_history,
                           reset_inp=False)
         while worker.isAlive():
@@ -1552,7 +1615,8 @@ class ShTerm(ui.View):
         return lines
 
     def clear(self):
-        self.out_buf = ''
+        self.seek(0)
+        self.truncate()
         self.flush()
 
     def write(self, s):
@@ -1667,6 +1731,23 @@ class StaSh(object):
         self.runtime.load_rcfile()
         self.term.write('StaSh v%s\n' % __version__)
         self.term.reset_inp()  # prompt
+
+        # Load library files as modules and save each of them as attributes
+        lib_path = os.path.join(APP_DIR, 'lib')
+        for f in os.listdir(lib_path):
+            if f.startswith('lib') and f.endswith('.py') and os.path.isfile(os.path.join(lib_path, f)):
+                name, _ = os.path.splitext(f)
+                try:
+                    self.__dict__[name] = imp.load_source(name, os.path.join(lib_path, f))
+                except:
+                    self.term.write_with_prefix('%s: failed to load library file' % f)
+
+    def __call__(self, *args, **kwargs):
+        """ This function is to be called by external script for
+         executing shell commands """
+        worker = self.runtime.run(*args, **kwargs)
+        while worker.isAlive():
+            pass
 
     @staticmethod
     def load_config():
@@ -1783,7 +1864,7 @@ class StaSh(object):
 
     def will_close(self):
         self.runtime.save_history()
- 
+
     def run(self):
         self.term.present('panel')
         self.term.inp.begin_editing()
