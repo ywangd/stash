@@ -391,4 +391,5 @@ if __name__=='__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('command',action='store',default='help',choices=command_help.keys(),nargs='?')
     ns,args = ap.parse_known_args()
-    func=commands[ns.command](args)
+    strargs=[str(a) for a in args]
+    func=commands[ns.command](strargs)
