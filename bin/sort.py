@@ -1,3 +1,4 @@
+"""Sort standard input or a file to standard output"""
 import os
 import sys
 import fileinput

@@ -1,3 +1,5 @@
+"""Print standard input or file, omitting repeated lines"""
+
 import os
 import sys
 import fileinput
