@@ -1,3 +1,4 @@
+"""Writes the contents of the system clipboard to a file."""
 from __future__ import print_function
 
 import argparse

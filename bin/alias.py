@@ -1,5 +1,6 @@
 # Example of accessing the shell object from script
 # This ability completely removes the need of plugins
+"""List or define shell aliases."""
 from __future__ import print_function
 
 import sys

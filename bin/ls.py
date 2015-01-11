@@ -1,3 +1,4 @@
+"""List information about files (the current directory by default)"""
 import os
 import time
 from argparse import ArgumentParser
