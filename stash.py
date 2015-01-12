@@ -231,15 +231,16 @@ class ShParser(object):
         cmd_word = (pp.Combine(pp.Optional(modifier) + word) ^ word)('cmd_word').setParseAction(self.cmd_word_action)
 
         simple_command = \
-            pp.Suppress(pp.pythonStyleComment) \
-            | (cmd_prefix + pp.Optional(cmd_word) + pp.Optional(cmd_suffix)) \
+            (cmd_prefix + pp.Optional(cmd_word) + pp.Optional(cmd_suffix)) \
             | (cmd_word + pp.Optional(cmd_suffix))
         simple_command = pp.Group(simple_command)
 
         pipe_sequence = simple_command + pp.ZeroOrMore(pipe_op + simple_command)
         pipe_sequence = pp.Group(pipe_sequence)
 
-        complete_command = pipe_sequence + pp.ZeroOrMore(punctuator + pipe_sequence) + pp.Optional(punctuator)
+        complete_command = pp.Optional(pipe_sequence
+                                       + pp.ZeroOrMore(punctuator + pipe_sequence)
+                                       + pp.Optional(punctuator))
 
         # --- special parser for inside double quotes
         uq_word_in_dq = pp.Word(pp.printables.replace('`', ' ').replace('\\', ''))\
@@ -247,7 +248,7 @@ class ShParser(object):
         word_in_dq = pp.Combine(pp.OneOrMore(escaped ^ bq_word ^ uq_word_in_dq))
         # ---
 
-        self.parser = complete_command.parseWithTabs()
+        self.parser = complete_command.parseWithTabs().ignore(pp.pythonStyleComment)
         self.parser_within_dq = word_in_dq
         self.next_word_type = ShParser._NEXT_WORD_CMD
         self.tokens = []
