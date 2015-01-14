@@ -1,4 +1,5 @@
 import os
+import fileinput
 
 def collapseuser(path):
     """Reverse of os.path.expanduser: return path relative to ~, if
@@ -20,3 +21,28 @@ def collapseuser(path):
         collapsed = path
 
     return "~" if collapsed == "." else os.path.join("~", collapsed)
+
+
+def input_stream(files=()):
+    """ Handles input files similar to fileinput.
+    The advantage of this function is it recovers from errors if one
+    file is invalid and proceed with the next file
+    """
+    fileinput.close()
+    try:
+        if not files:
+            for line in fileinput.input(files):
+                yield line, 'STDIN', fileinput.filelineno()
+
+        else:
+            while files:
+                thefile = files.pop(0)
+                try:
+                    for line in fileinput.input(thefile):
+                        yield line, fileinput.filename(), fileinput.filelineno()
+                except IOError as e:
+                    yield None, fileinput.filename(), e
+    finally:
+        fileinput.close()
+
+
