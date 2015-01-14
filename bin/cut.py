@@ -31,6 +31,7 @@ def main(args):
                     metavar='DELIM',
                     help='use DELIM instead of SPACE for field delimiter')
     ap.add_argument('-f', '--fields',
+                    required=True,
                     metavar='LIST',
                     help='select only these fields')
     ap.add_argument('files', nargs='*', help='files to be cut')
