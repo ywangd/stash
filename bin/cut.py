@@ -2,7 +2,6 @@
 """
 import os
 import sys
-import fileinput
 import argparse
 
 _stash = globals()['_stash']
@@ -34,7 +33,7 @@ def main(args):
                     required=True,
                     metavar='LIST',
                     help='select only these fields')
-    ap.add_argument('files', nargs='*', help='files to be cut')
+    ap.add_argument('files', nargs='*', help='files to cut')
     ns = ap.parse_args(args)
 
     indices = construct_indices_from_list_spec(ns.fields)

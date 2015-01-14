@@ -32,7 +32,7 @@ def input_stream(files=()):
     try:
         if not files:
             for line in fileinput.input(files):
-                yield line, 'STDIN', fileinput.filelineno()
+                yield line, '', fileinput.filelineno()
 
         else:
             while files:
