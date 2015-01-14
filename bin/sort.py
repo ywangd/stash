@@ -4,25 +4,30 @@ import sys
 import fileinput
 import argparse
 
-ap = argparse.ArgumentParser()
-ap.add_argument('file', nargs='?', help='the file to be sorted')
-ap.add_argument('-r', '--reverse', action='store_true', default=False,
-                help='reverse the result of comparisons')
-args = ap.parse_args()
+def main(args):
+    ap = argparse.ArgumentParser()
+    ap.add_argument('file', nargs='?', help='the file to be sorted')
+    ap.add_argument('-r', '--reverse', action='store_true', default=False,
+                    help='reverse the result of comparisons')
+    ns = ap.parse_args(args)
 
-thefile = args.file if args.file else None
+    thefile = ns.file if ns.file else None
 
-if thefile is not None and os.path.isdir(thefile):
-    print '%s: Is a directory' % thefile
+    if thefile is not None and os.path.isdir(thefile):
+        print '%s: Is a directory' % thefile
 
-else:
-    try:
-        fileinput.close()  # in case it is not closed
-        lines = sorted(line for line in fileinput.input(thefile))
-        if args.reverse:
-            lines = lines[::-1]
+    else:
+        try:
+            fileinput.close()  # in case it is not closed
+            lines = sorted(line for line in fileinput.input(thefile))
+            if ns.reverse:
+                lines = lines[::-1]
 
-        print ''.join(lines)
+            print ''.join(lines)
 
-    finally:
-        fileinput.close()
+        finally:
+            fileinput.close()
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
