@@ -249,7 +249,7 @@ class ShParser(object):
         # ---
 
         self.parser = complete_command.parseWithTabs().ignore(pp.pythonStyleComment)
-        self.parser_within_dq = word_in_dq
+        self.parser_within_dq = word_in_dq.leaveWhitespace()
         self.next_word_type = ShParser._NEXT_WORD_CMD
         self.tokens = []
         self.parts = []
