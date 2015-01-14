@@ -841,6 +841,7 @@ class ShRuntime(object):
         self.HISTORY_MAX = config.getint('display', 'HISTORY_MAX')
 
         self.py_traceback = config.getint('system', 'py_traceback')
+        self.input_encoding_utf8 = config.getint('system', 'input_encoding_utf8')
 
         # load history from last session
         # NOTE the first entry in history is the latest one
@@ -1165,11 +1166,16 @@ class ShRuntime(object):
                     if _DEBUG_RUNTIME:
                         _STDOUT.write('script is %s\n' % script_file)
 
+                    if self.input_encoding_utf8:
+                        simple_command_args = [arg.encode('utf-8') for arg in simple_command.args]
+                    else:
+                        simple_command_args = simple_command.args
+
                     if script_file.endswith('.py'):
-                        self.exec_py_file(script_file, simple_command.args, ins, outs, errs)
+                        self.exec_py_file(script_file, simple_command_args, ins, outs, errs)
 
                     else:
-                        self.exec_sh_file(script_file, simple_command.args, ins, outs, errs)
+                        self.exec_sh_file(script_file, simple_command_args, ins, outs, errs)
 
                 else:
                     self.envars['?'] = 0
@@ -1615,13 +1621,16 @@ class ShTerm(ui.View):
             line = line[:int(size)] if size >= 0 else line
         else:
             line = ''
+        if self.app.runtime.input_encoding_utf8:
+            line = line.encode('utf-8')
         return line
 
     def readlines(self, size=-1):
         while not self.input_did_return:
             pass
         self.input_did_return = False
-        lines = [line + '\n' for line in self.inp_buf]
+        fn = (lambda s: s.encode('utf-8')) if self.app.runtime.input_encoding_utf8 else (lambda s: s)
+        lines = [fn(line + '\n') for line in self.inp_buf]
         self.inp_buf = []
         return lines
 
@@ -1701,6 +1710,7 @@ cfgfile=.stash_config
 rcfile=.stashrc
 historyfile=.stash_history
 py_traceback=0
+input_encoding_utf8=1
 
 [display]
 TEXT_FONT=('DejaVuSansMono', 12)
