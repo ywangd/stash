@@ -65,6 +65,8 @@ def subcmd_complete(toks, has_trailing_white):
         return None, None
 
     cmd_word = toks[0]
+    if cmd_word.endswith('.py'):
+        cmd_word = cmd_word[:-3]
 
     if has_trailing_white:
         pos = str(len(toks))
