@@ -77,8 +77,10 @@ def subcmd_complete(toks, has_trailing_white):
         cfg = _subcmd_cfg[cmd_word]
 
         if has_trailing_white:
+
             if pos in cfg.keys() and cfg[pos]['blank_completion']:
-                return cfg[pos]['candidates'], cfg[pos]['with_normal_completion']
+                cands = _select_from_candidates( cfg[pos]['candidates'], '')
+                return cands, cfg[pos]['with_normal_completion']
 
             elif '-' in cfg.keys() and cfg['-']['blank_completion']:
                 subcmd = None
@@ -86,7 +88,7 @@ def subcmd_complete(toks, has_trailing_white):
                     if not t.startswith('-'):
                         subcmd = t
                         break
-                cands = _select_from_candidate_groups(cfg['-']['candidate_groups'], toks[-1], subcmd)
+                cands = _select_from_candidate_groups(cfg['-']['candidate_groups'], '', subcmd)
                 if cands is not None:
                     return cands, cfg['-']['with_normal_completion']
 
