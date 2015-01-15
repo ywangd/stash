@@ -718,38 +718,52 @@ class ShCompleter(object):
                     has_trailing_white = True
                 word_to_complete = tokens[-1].tok
                 word_to_complete_normal_whites = word_to_complete.replace('\\ ', ' ')
-                is_cmd_word = tokens[-1].ttype == ShToken._CMD
+                toks = []
+                for i, t in enumerate(reversed(tokens)):
+                    toks.insert(0, t.tok)
+                    if t.ttype == ShToken._CMD:
+                        if i == 0:
+                            is_cmd_word = True
+                        break
+
+                if _DEBUG_COMPLETER:
+                    _STDOUT.write('cmd_word: %s, trailing_white: %s, word_to_complete: %s\n' %
+                                  (is_cmd_word, has_trailing_white, word_to_complete))
+
             except pp.ParseException as e:
                 self.app.term.write('%s\n' % self.app.term.inp.text)
                 self.app.term.write_with_prefix('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
                 return
 
-            if _DEBUG_COMPLETER:
-                _STDOUT.write('cmd_word: %s, trailing_white: %s, word_to_complete: %s\n' %
-                              (is_cmd_word, has_trailing_white, word_to_complete))
+            cands, with_normal_completion = \
+                self.app.libcompleter.subcmd_complete(toks, has_trailing_white)
 
-            if has_trailing_white:  # files in current directory
-                all_names = [f for f in os.listdir('.')]
+            if cands is None or with_normal_completion:
+                if has_trailing_white:  # files in current directory
+                    all_names = [f for f in os.listdir('.')]
 
-            elif is_cmd_word:  # commands match + alias match + path match
-                script_names = [script_name for script_name in self.app.runtime.get_all_script_names()
-                                if script_name.startswith(word_to_complete_normal_whites)]
-                alias_names = [aln for aln in self.app.runtime.aliases.keys()
-                               if aln.startswith(word_to_complete_normal_whites)]
-                path_names = []
-                for p in self.path_match(word_to_complete_normal_whites):
-                    if os.path.isdir(os.path.join(os.path.dirname(os.path.expanduser(word_to_complete_normal_whites)), p)) \
-                            or p.endswith('.py') or p.endswith('.sh'):
-                        path_names.append(p)
+                elif is_cmd_word:  # commands match + alias match + path match
+                    script_names = [script_name for script_name in self.app.runtime.get_all_script_names()
+                                    if script_name.startswith(word_to_complete_normal_whites)]
+                    alias_names = [aln for aln in self.app.runtime.aliases.keys()
+                                   if aln.startswith(word_to_complete_normal_whites)]
+                    path_names = []
+                    for p in self.path_match(word_to_complete_normal_whites):
+                        if os.path.isdir(os.path.join(os.path.dirname(os.path.expanduser(word_to_complete_normal_whites)), p)) \
+                                or p.endswith('.py') or p.endswith('.sh'):
+                            path_names.append(p)
 
-                all_names = script_names + alias_names + path_names
-            else:  # path match
-                all_names = self.path_match(word_to_complete_normal_whites)
+                    all_names = script_names + alias_names + path_names
+                else:  # path match
+                    all_names = self.path_match(word_to_complete_normal_whites)
 
-            # If the partial word starts with a dollar sign, try envar match
-            if word_to_complete_normal_whites.startswith('$'):
-                all_names.extend('$' + varname for varname in self.app.runtime.envars.keys()
-                                 if varname.startswith(word_to_complete_normal_whites[1:]))
+                # If the partial word starts with a dollar sign, try envar match
+                if word_to_complete_normal_whites.startswith('$'):
+                    all_names.extend('$' + varname for varname in self.app.runtime.envars.keys()
+                                     if varname.startswith(word_to_complete_normal_whites[1:]))
+
+            else:
+                all_names = cands
 
         all_names = sorted(set(all_names))
 
