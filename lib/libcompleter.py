@@ -1,6 +1,7 @@
 import os
 import json
 
+
 _subcmd_cfgfile = os.path.join(os.environ['STASH_ROOT'], '.completer_subcmd.json')
 
 _subcmd_cfg = {
@@ -40,8 +41,8 @@ _subcmd_cfg = {
 
     },
 
-
 }
+
 
 if os.path.exists(_subcmd_cfgfile) and os.path.isfile(_subcmd_cfgfile):
     try:
@@ -50,8 +51,10 @@ if os.path.exists(_subcmd_cfgfile) and os.path.isfile(_subcmd_cfgfile):
     except IOError:
         pass
 
+
 def _select_from_candidates(candidates, tok):
     return [cand for cand in candidates if cand.startswith(tok)]
+
 
 def _select_from_candidate_groups(candidate_groups, tok, after=None):
     for cg in candidate_groups:
@@ -76,36 +79,26 @@ def subcmd_complete(toks, has_trailing_white):
     try:
         cfg = _subcmd_cfg[cmd_word]
 
-        if has_trailing_white:
+        if pos in cfg.keys() \
+                and (not has_trailing_white
+                     or (has_trailing_white and cfg[pos]['blank_completion'])):
+            cands = _select_from_candidates(cfg[pos]['candidates'],
+                                            '' if has_trailing_white else toks[-1])
+            return cands, cfg[pos]['with_normal_completion']
 
-            if pos in cfg.keys() and cfg[pos]['blank_completion']:
-                cands = _select_from_candidates( cfg[pos]['candidates'], '')
-                return cands, cfg[pos]['with_normal_completion']
-
-            elif '-' in cfg.keys() and cfg['-']['blank_completion']:
-                subcmd = None
-                for t in toks[-2:0:-1]:
-                    if not t.startswith('-'):
-                        subcmd = t
-                        break
-                cands = _select_from_candidate_groups(cfg['-']['candidate_groups'], '', subcmd)
-                if cands is not None:
-                    return cands, cfg['-']['with_normal_completion']
-
-        else:
-            if pos in cfg.keys():
-                cands = _select_from_candidates( cfg[pos]['candidates'], toks[-1])
-                return cands, cfg[pos]['with_normal_completion']
-
-            elif toks[-1].startswith('-') and cfg.has_key('-'):
-                subcmd = None
-                for t in toks[-2:0:-1]:
-                    if not t.startswith('-'):
-                        subcmd = t
-                        break
-                cands = _select_from_candidate_groups(cfg['-']['candidate_groups'], toks[-1], subcmd)
-                if cands is not None:
-                    return cands, cfg['-']['with_normal_completion']
+        elif '-' in cfg.keys() \
+                and ((not has_trailing_white and toks[-1].startswith('-'))
+                     or (has_trailing_white and cfg['-']['blank_completion'])):
+            subcmd = None
+            for t in toks[-2:0:-1]:
+                if not t.startswith('-'):
+                    subcmd = t
+                    break
+            cands = _select_from_candidate_groups(cfg['-']['candidate_groups'],
+                                                  '' if has_trailing_white else toks[-1],
+                                                  subcmd)
+            if cands is not None:
+                return cands, cfg['-']['with_normal_completion']
 
     except KeyError as e:
         #print repr(e), e
