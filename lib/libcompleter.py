@@ -102,10 +102,9 @@ def subcmd_complete(toks, has_trailing_white):
                     if not t.startswith('-'):
                         subcmd = t
                         break
-                if subcmd is not None:
-                    cands = _select_from_candidate_groups(cfg['-']['candidate_groups'], toks[-1], subcmd)
-                    if cands is not None:
-                        return cands, cfg['-']['with_normal_completion']
+                cands = _select_from_candidate_groups(cfg['-']['candidate_groups'], toks[-1], subcmd)
+                if cands is not None:
+                    return cands, cfg['-']['with_normal_completion']
 
     except KeyError as e:
         #print repr(e), e
