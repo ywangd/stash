@@ -720,7 +720,9 @@ class ShCompleter(object):
                 word_to_complete_normal_whites = word_to_complete.replace('\\ ', ' ')
                 is_cmd_word = tokens[-1].ttype == ShToken._CMD
             except pp.ParseException as e:
+                self.app.term.write('%s\n' % self.app.term.inp.text)
                 self.app.term.write_with_prefix('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
+                return
 
             if _DEBUG_COMPLETER:
                 _STDOUT.write('cmd_word: %s, trailing_white: %s, word_to_complete: %s\n' %
@@ -1756,13 +1758,18 @@ class StaSh(object):
 
         # Load library files as modules and save each of them as attributes
         lib_path = os.path.join(APP_DIR, 'lib')
-        for f in os.listdir(lib_path):
-            if f.startswith('lib') and f.endswith('.py') and os.path.isfile(os.path.join(lib_path, f)):
-                name, _ = os.path.splitext(f)
-                try:
-                    self.__dict__[name] = imp.load_source(name, os.path.join(lib_path, f))
-                except:
-                    self.term.write_with_prefix('%s: failed to load library file' % f)
+        saved_environ = dict(os.environ)
+        os.environ.update(self.runtime.envars)
+        try:
+            for f in os.listdir(lib_path):
+                if f.startswith('lib') and f.endswith('.py') and os.path.isfile(os.path.join(lib_path, f)):
+                    name, _ = os.path.splitext(f)
+                    try:
+                        self.__dict__[name] = imp.load_source(name, os.path.join(lib_path, f))
+                    except:
+                        self.term.write_with_prefix('%s: failed to load library file' % f)
+        finally:
+            os.environ = saved_environ
 
     def __call__(self, *args, **kwargs):
         """ This function is to be called by external script for
