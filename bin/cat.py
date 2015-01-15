@@ -10,7 +10,7 @@ import argparse
 import sys
 import fileinput
 def filter_non_printable(str):
-    return ''.join([c if (ord(c) > 31 and ord(c)<127 or ord(c) == 9) else ' ' for c in str  ])
+    return ''.join([c if (ord(c) > 31 and ord(c)<127 or c in "\n\r\t\b") else ' ' for c in str  ])
     
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)

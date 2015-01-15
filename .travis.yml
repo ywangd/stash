@@ -1,0 +1,8 @@
+language: python
+python:
+  - "2.7"
+# command to install dependencies
+install:
+  - "pip install pyparsing==2.0.1"
+# command to run tests
+script: python testing.py -v

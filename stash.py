@@ -231,15 +231,16 @@ class ShParser(object):
         cmd_word = (pp.Combine(pp.Optional(modifier) + word) ^ word)('cmd_word').setParseAction(self.cmd_word_action)
 
         simple_command = \
-            pp.Suppress(pp.pythonStyleComment) \
-            | (cmd_prefix + pp.Optional(cmd_word) + pp.Optional(cmd_suffix)) \
+            (cmd_prefix + pp.Optional(cmd_word) + pp.Optional(cmd_suffix)) \
             | (cmd_word + pp.Optional(cmd_suffix))
         simple_command = pp.Group(simple_command)
 
         pipe_sequence = simple_command + pp.ZeroOrMore(pipe_op + simple_command)
         pipe_sequence = pp.Group(pipe_sequence)
 
-        complete_command = pipe_sequence + pp.ZeroOrMore(punctuator + pipe_sequence) + pp.Optional(punctuator)
+        complete_command = pp.Optional(pipe_sequence
+                                       + pp.ZeroOrMore(punctuator + pipe_sequence)
+                                       + pp.Optional(punctuator))
 
         # --- special parser for inside double quotes
         uq_word_in_dq = pp.Word(pp.printables.replace('`', ' ').replace('\\', ''))\
@@ -247,8 +248,8 @@ class ShParser(object):
         word_in_dq = pp.Combine(pp.OneOrMore(escaped ^ bq_word ^ uq_word_in_dq))
         # ---
 
-        self.parser = complete_command.parseWithTabs()
-        self.parser_within_dq = word_in_dq
+        self.parser = complete_command.parseWithTabs().ignore(pp.pythonStyleComment)
+        self.parser_within_dq = word_in_dq.leaveWhitespace()
         self.next_word_type = ShParser._NEXT_WORD_CMD
         self.tokens = []
         self.parts = []
@@ -380,14 +381,20 @@ class ShExpander(object):
         # Update the line to the history expanded form
         line = ' '.join(t.tok for t in tokens)
 
+        yield line  # line for history management
+
         # alias substitute
         tokens, parsed = self.alias_subs(tokens, parsed)
 
         # Start expanding
-        complete_command = ShCompleteCommand()
         idxt = 0
         for ipseq in range(0, len(parsed), 2):
             pseq = parsed[ipseq]
+
+            # TODO: Because of the generator changes, complete_command is not necessary
+            # as it simply contains a single pipe_sequence. It can probably be removed
+            # for efficiency.
+            complete_command = ShCompleteCommand()
             pipe_sequence = ShPipeSequence()
 
             for isc in range(0, len(pseq), 2):
@@ -442,7 +449,9 @@ class ShExpander(object):
                     pipe_sequence.in_background = True
             complete_command.lst.append(pipe_sequence)
 
-        return line, complete_command
+            # Generator to allow previous command to run first before later command is expanded
+            # e.g. A=42; echo $A
+            yield complete_command
 
     def history_subs(self, tokens, parsed):
         history_found = False
@@ -709,36 +718,52 @@ class ShCompleter(object):
                     has_trailing_white = True
                 word_to_complete = tokens[-1].tok
                 word_to_complete_normal_whites = word_to_complete.replace('\\ ', ' ')
-                is_cmd_word = tokens[-1].ttype == ShToken._CMD
+                toks = []
+                for i, t in enumerate(reversed(tokens)):
+                    toks.insert(0, t.tok)
+                    if t.ttype == ShToken._CMD:
+                        if i == 0:
+                            is_cmd_word = True
+                        break
+
+                if _DEBUG_COMPLETER:
+                    _STDOUT.write('cmd_word: %s, trailing_white: %s, word_to_complete: %s\n' %
+                                  (is_cmd_word, has_trailing_white, word_to_complete))
+
             except pp.ParseException as e:
+                self.app.term.write('%s\n' % self.app.term.inp.text)
                 self.app.term.write_with_prefix('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
+                return
 
-            if _DEBUG_COMPLETER:
-                _STDOUT.write('cmd_word: %s, trailing_white: %s, word_to_complete: %s\n' %
-                              (is_cmd_word, has_trailing_white, word_to_complete))
+            cands, with_normal_completion = \
+                self.app.libcompleter.subcmd_complete(toks, has_trailing_white)
 
-            if has_trailing_white:  # files in current directory
-                all_names = [f for f in os.listdir('.')]
+            if cands is None or with_normal_completion:
+                if has_trailing_white:  # files in current directory
+                    all_names = [f for f in os.listdir('.')]
 
-            elif is_cmd_word:  # commands match + alias match + path match
-                script_names = [script_name for script_name in self.app.runtime.get_all_script_names()
-                                if script_name.startswith(word_to_complete_normal_whites)]
-                alias_names = [aln for aln in self.app.runtime.aliases.keys()
-                               if aln.startswith(word_to_complete_normal_whites)]
-                path_names = []
-                for p in self.path_match(word_to_complete_normal_whites):
-                    if os.path.isdir(os.path.join(os.path.dirname(os.path.expanduser(word_to_complete_normal_whites)), p)) \
-                            or p.endswith('.py') or p.endswith('.sh'):
-                        path_names.append(p)
+                elif is_cmd_word:  # commands match + alias match + path match
+                    script_names = [script_name for script_name in self.app.runtime.get_all_script_names()
+                                    if script_name.startswith(word_to_complete_normal_whites)]
+                    alias_names = [aln for aln in self.app.runtime.aliases.keys()
+                                   if aln.startswith(word_to_complete_normal_whites)]
+                    path_names = []
+                    for p in self.path_match(word_to_complete_normal_whites):
+                        if os.path.isdir(os.path.join(os.path.dirname(os.path.expanduser(word_to_complete_normal_whites)), p)) \
+                                or p.endswith('.py') or p.endswith('.sh'):
+                            path_names.append(p)
 
-                all_names = script_names + alias_names + path_names
-            else:  # path match
-                all_names = self.path_match(word_to_complete_normal_whites)
+                    all_names = script_names + alias_names + path_names
+                else:  # path match
+                    all_names = self.path_match(word_to_complete_normal_whites)
 
-            # If the partial word starts with a dollar sign, try envar match
-            if word_to_complete_normal_whites.startswith('$'):
-                all_names.extend('$' + varname for varname in self.app.runtime.envars.keys()
-                                 if varname.startswith(word_to_complete_normal_whites[1:]))
+                # If the partial word starts with a dollar sign, try envar match
+                if word_to_complete_normal_whites.startswith('$'):
+                    all_names.extend('$' + varname for varname in self.app.runtime.envars.keys()
+                                     if varname.startswith(word_to_complete_normal_whites[1:]))
+
+            else:
+                all_names = cands
 
         all_names = sorted(set(all_names))
 
@@ -832,6 +857,7 @@ class ShRuntime(object):
         self.HISTORY_MAX = config.getint('display', 'HISTORY_MAX')
 
         self.py_traceback = config.getint('system', 'py_traceback')
+        self.input_encoding_utf8 = config.getint('system', 'input_encoding_utf8')
 
         # load history from last session
         # NOTE the first entry in history is the latest one
@@ -997,16 +1023,19 @@ class ShRuntime(object):
 
         def fn():
             self.worker_stack.append(threading.currentThread())
-            self.save_state()
 
             try:
                 lines = input_ if type(input_) is list else input_.splitlines()
 
                 for line in lines:
+                    # Ignore empty lines
                     if line.strip() == '':
                         continue
-                    newline, complete_command = self.expander.expand(line)
 
+                    # Parse and expand the line (note this function returns a generator object
+                    expanded = self.expander.expand(line)
+                    # The first member is the history expanded form
+                    newline = expanded.next()
                     # Only add history entry if:
                     #   1. It is explicitly required
                     #   2. It is the first layer thread directly spawned by the main thread
@@ -1014,26 +1043,23 @@ class ShRuntime(object):
                     if (add_to_history is None and len(self.worker_stack) == 1) or add_to_history:
                         self.add_history(newline)
 
-                    if code_validation_func is None or code_validation_func(complete_command):
-                        self.run_complete_command(complete_command,
-                                                  final_ins=final_ins,
-                                                  final_outs=final_outs,
-                                                  final_errs=final_errs)
-                        # The enclosing variables of one command should not be carried to the
-                        # next command, i.e.
-                        #   A=42 xxx
-                        #   yyy
-                        # The value of A should not be carried over to command yyy
-                        # This applies to all enclosing variables including aliases and cwd.
-                        # But since envars is the only enclosing var that actually gets changed
-                        # outside of save/restore state functions (by leading assignments).
-                        # It is therefore the only one that needs to be reset.
-                        # NOTE: Theoretically the save/restore pair should be used for every single
-                        # command so that variables of different scopes are handled by the pair
-                        # of functions. This reset is needed because the commands here are executed
-                        # in a single save/restore pair for efficiency (since every save/restore means
-                        # creating new thread).
-                        self.enclosing_envars = {}
+                    # Subsequent members are actual commands
+                    while True:
+                        self.save_state()  # State needs to be saved before expansion happens
+                        try:
+                            complete_command = next(expanded, None)
+                            if complete_command is None:  # generator exhausted
+                                break
+
+                            if code_validation_func is None or code_validation_func(complete_command):
+                                self.run_complete_command(complete_command,
+                                                          final_ins=final_ins,
+                                                          final_outs=final_outs,
+                                                          final_errs=final_errs)
+                        finally:
+                            self.restore_state(persist_envars=persist_envars,
+                                               persist_aliases=persist_aliases,
+                                               persist_cwd=persist_cwd)
 
             except pp.ParseException as e:
                 if _DEBUG_PARSER:
@@ -1063,12 +1089,9 @@ class ShRuntime(object):
             except Exception as e:
                 if _DEBUG_RUNTIME:
                     _STDOUT.write('Exception: %s\n' % repr(e))
-                self.app.term.write_with_prefix('%s\n' % str(e))
+                self.app.term.write_with_prefix('%s\n' % repr(e))
 
             finally:
-                self.restore_state(persist_envars=persist_envars,
-                                   persist_aliases=persist_aliases,
-                                   persist_cwd=persist_cwd)
                 if reset_inp or len(self.worker_stack) == 1:
                     self.app.term.reset_inp()
                 self.app.term.flush()
@@ -1159,11 +1182,16 @@ class ShRuntime(object):
                     if _DEBUG_RUNTIME:
                         _STDOUT.write('script is %s\n' % script_file)
 
+                    if self.input_encoding_utf8:
+                        simple_command_args = [arg.encode('utf-8') for arg in simple_command.args]
+                    else:
+                        simple_command_args = simple_command.args
+
                     if script_file.endswith('.py'):
-                        self.exec_py_file(script_file, simple_command.args, ins, outs, errs)
+                        self.exec_py_file(script_file, simple_command_args, ins, outs, errs)
 
                     else:
-                        self.exec_sh_file(script_file, simple_command.args, ins, outs, errs)
+                        self.exec_sh_file(script_file, simple_command_args, ins, outs, errs)
 
                 else:
                     self.envars['?'] = 0
@@ -1609,13 +1637,16 @@ class ShTerm(ui.View):
             line = line[:int(size)] if size >= 0 else line
         else:
             line = ''
+        if self.app.runtime.input_encoding_utf8:
+            line = line.encode('utf-8')
         return line
 
     def readlines(self, size=-1):
         while not self.input_did_return:
             pass
         self.input_did_return = False
-        lines = [line + '\n' for line in self.inp_buf]
+        fn = (lambda s: s.encode('utf-8')) if self.app.runtime.input_encoding_utf8 else (lambda s: s)
+        lines = [fn(line + '\n') for line in self.inp_buf]
         self.inp_buf = []
         return lines
 
@@ -1695,6 +1726,7 @@ cfgfile=.stash_config
 rcfile=.stashrc
 historyfile=.stash_history
 py_traceback=0
+input_encoding_utf8=1
 
 [display]
 TEXT_FONT=('DejaVuSansMono', 12)
@@ -1740,13 +1772,18 @@ class StaSh(object):
 
         # Load library files as modules and save each of them as attributes
         lib_path = os.path.join(APP_DIR, 'lib')
-        for f in os.listdir(lib_path):
-            if f.startswith('lib') and f.endswith('.py') and os.path.isfile(os.path.join(lib_path, f)):
-                name, _ = os.path.splitext(f)
-                try:
-                    self.__dict__[name] = imp.load_source(name, os.path.join(lib_path, f))
-                except:
-                    self.term.write_with_prefix('%s: failed to load library file' % f)
+        saved_environ = dict(os.environ)
+        os.environ.update(self.runtime.envars)
+        try:
+            for f in os.listdir(lib_path):
+                if f.startswith('lib') and f.endswith('.py') and os.path.isfile(os.path.join(lib_path, f)):
+                    name, _ = os.path.splitext(f)
+                    try:
+                        self.__dict__[name] = imp.load_source(name, os.path.join(lib_path, f))
+                    except:
+                        self.term.write_with_prefix('%s: failed to load library file' % f)
+        finally:
+            os.environ = saved_environ
 
     def __call__(self, *args, **kwargs):
         """ This function is to be called by external script for
