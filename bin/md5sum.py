@@ -16,6 +16,7 @@ optional arguments:
 import argparse
 from Crypto.Hash import MD5
 import re
+import sys
 
 def get_md5(fileobj):
     h = MD5.new()
@@ -30,7 +31,7 @@ def get_md5(fileobj):
 def check_list(filename):
     with open(filename,'r') as f:
         for line in f:
-            match = re.match(r'(\w+) ([\w.-_]+)',line)
+            match = re.match(r'(\w+)[ \t]+(.+)',line)
             try:
                 with open(match.group(2),'rb') as f1:
                     if match.group(1) == get_md5(f1):
@@ -50,7 +51,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument('-c','--check',action='store_true',default=False,
                 help='''Check a file with md5 values and files for a match. format: md5_hash filename''')
 ap.add_argument('file',action='store',help='File to get md5sum or file contailing a list of hashes and files')
-args = ap.parse_args()
+args = ap.parse_args(sys.argv[1:])
 
 if args.check:
     check_list(args.file)
