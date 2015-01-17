@@ -1,5 +1,5 @@
 '''
-md5sum - Get md5 hash of a file
+md5sum - Get md5 hash of a file. Supports pipes.
 
 usage: md5sum.py [-h] [-c] file
 
@@ -17,7 +17,7 @@ import argparse
 from Crypto.Hash import MD5
 import re
 import sys
-
+import os
 def get_md5(fileobj):
     h = MD5.new()
     chunk_size = 8192
@@ -39,22 +39,30 @@ def check_list(filename):
                     else:
                         print match.group(2)+': Fail'
             except:
-                print '''Invalid file to check. 
-                Format:
-                    md5_hash file_path
-                    md5_hash file_path
-                    '''
                 break
     
         
 ap = argparse.ArgumentParser()
 ap.add_argument('-c','--check',action='store_true',default=False,
                 help='''Check a file with md5 values and files for a match. format: md5_hash filename''')
-ap.add_argument('file',action='store',help='File to get md5sum or file contailing a list of hashes and files')
+ap.add_argument('file',action='store',nargs='?',help='File to get md5sum or file contailing a list of hashes and files')
 args = ap.parse_args(sys.argv[1:])
 
 if args.check:
-    check_list(args.file)
+    if args.file:
+        check_list(args.file)
+    else:
+        pipe = sys.stdin.read().rstrip().replace('\n',' ').split(' ')
+        for line in pipe:
+            if os.path.isfile(line):
+                check_list(line)
 else:
-    with open(args.file,'rb') as f:
-        print get_md5(f)
+    if args.file:
+        with open(args.file,'rb') as f:
+            print get_md5(f)
+    else:
+        pipe = sys.stdin.read().rstrip().replace('\n',' ').split(' ')
+        for line in pipe:
+            if os.path.isfile(line):
+                with open(line,'rb') as f:
+                    print '%s %s'% (get_md5(f),line)
