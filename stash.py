@@ -25,7 +25,7 @@ try:
     import ui
     import console
     _IN_PYTHONISTA = True
-except:
+except ImportError:
     import dummyui as ui
     import dummyconsole as console
     _IN_PYTHONISTA = False
@@ -38,12 +38,25 @@ _SYS_PATH = sys.path
 _OS_ENVIRON = os.environ
 
 
-_DEBUG_RUNTIME = False
 _DEBUG_PARSER = False
 _DEBUG_COMPLETER = False
+_DEBUG_RUNTIME = False
 
 
 APP_DIR = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
+
+
+def _debug_parser(msg):
+    if _DEBUG_PARSER:
+        _STDOUT.write(msg if msg.endswith('\n') else (msg + '\n'))
+
+def _debug_completer(msg):
+    if _DEBUG_COMPLETER:
+        _STDOUT.write(msg if msg.endswith('\n') else (msg + '\n'))
+
+def _debug_runtime(msg):
+    if _DEBUG_RUNTIME:
+        _STDOUT.write(msg if msg.endswith('\n') else (msg + '\n'))
 
 
 class ShFileNotFound(Exception):
@@ -270,49 +283,40 @@ class ShParser(object):
 
     def identifier_action(self, s, pos, toks):
         """ This function is only needed for debug """
-        if _DEBUG_PARSER:
-            print 'identifier: %d, %s' % (pos, toks[0])
+        _debug_parser('identifier: %d, %s' % (pos, toks[0]))
 
     def assign_op_action(self, s, pos, toks):
-        if _DEBUG_PARSER:
-            print 'assign_op: %s' % toks[0]
+        _debug_parser('assign_op: %s' % toks[0])
         self.next_word_type = ShParser._NEXT_WORD_VAL
 
     def assignment_word_action(self, s, pos, toks):
-        if _DEBUG_PARSER:
-            print 'assignment_word: %s' % toks[0]
+        _debug_parser('assignment_word: %s' % toks[0])
         self.add_token(toks[0], pos, ShToken._ASSIGN_WORD, self.parts)
         self.parts = []
         self.next_word_type = ShParser._NEXT_WORD_CMD
 
     def escaped_action(self, s, pos, toks):
-        if _DEBUG_PARSER:
-            print 'escaped: %s' % toks[0]
+        _debug_parser('escaped: %s' % toks[0])
         self.add_part(toks[0], pos, ShToken._ESCAPED)
 
     def uq_word_action(self, s, pos, toks):
-        if _DEBUG_PARSER:
-            print 'uq_word: %s' % toks[0]
+        _debug_parser('uq_word: %s' % toks[0])
         self.add_part(toks[0], pos, ShToken._UQ_WORD)
 
     def bq_word_action(self, s, pos, toks):
-        if _DEBUG_PARSER:
-            print 'bq_word: %s' % toks[0]
+        _debug_parser('bq_word: %s' % toks[0])
         self.add_part(toks[0], pos, ShToken._BQ_WORD)
 
     def dq_word_action(self, s, pos, toks):
-        if _DEBUG_PARSER:
-            print 'dq_word: %s' % toks[0]
+        _debug_parser('dq_word: %s' % toks[0])
         self.add_part(toks[0], pos, ShToken._DQ_WORD)
 
     def sq_word_action(self, s, pos, toks):
-        if _DEBUG_PARSER:
-            print 'sq_word: %s' % toks[0]
+        _debug_parser('sq_word: %s' % toks[0])
         self.add_part(toks[0], pos, ShToken._SQ_WORD)
 
     def word_action(self, s, pos, toks):
-        if _DEBUG_PARSER:
-            print 'word: %s' % toks[0]
+        _debug_parser('word: %s' % toks[0])
 
         if self.next_word_type == ShParser._NEXT_WORD_VAL:
             self.parts = ShToken(toks[0], pos, ShToken._WORD, self.parts)
@@ -332,8 +336,7 @@ class ShParser(object):
             self.next_word_type = None
 
     def cmd_word_action(self, s, pos, toks):
-        if _DEBUG_PARSER:
-            print 'cmd_word: %s' % toks[0]
+        _debug_parser('cmd_word: %s' % toks[0])
         # toks[0] is the whole cmd_word while parts do not include leading modifier if any
         self.add_token(toks[0], pos, ShToken._CMD, self.parts)
         self.next_word_type = None
@@ -341,20 +344,17 @@ class ShParser(object):
 
     def punctuator_action(self, s, pos, toks):
         if self.tokens[-1].ttype != ShToken._PUNCTUATOR and self.tokens[-1].spos != pos:
-            if _DEBUG_PARSER:
-                print 'punctuator: %s' % toks[0]
+            _debug_parser('punctuator: %s' % toks[0])
             self.add_token(toks[0], pos, ShToken._PUNCTUATOR)
             self.next_word_type = ShParser._NEXT_WORD_CMD
 
     def pipe_op_action(self, s, pos, toks):
-        if _DEBUG_PARSER:
-            print 'pipe_op: %s' % toks[0]
+        _debug_parser('pipe_op: %s' % toks[0])
         self.add_token(toks[0], pos, ShToken._PIPE_OP)
         self.next_word_type = ShParser._NEXT_WORD_CMD
 
     def io_redirect_op_action(self, s, pos, toks):
-        if _DEBUG_PARSER:
-            print 'io_redirect_op: %s' % toks[0]
+        _debug_parser('io_redirect_op: %s' % toks[0])
         self.add_token(toks[0], pos, ShToken._IO_REDIRECT_OP)
         self.next_word_type = ShParser._NEXT_WORD_FILE
 
@@ -463,8 +463,7 @@ class ShExpander(object):
             # The line is set to the string with history replaced
             # Re-parse the line
             line = ' '.join(t.tok for t in tokens)
-            if _DEBUG_PARSER:
-                print 'history found: %s' % line
+            _debug_parser('history found: %s' % line)
             tokens, parsed = self.runtime.parser.parse(line)
         return tokens, parsed
 
@@ -477,14 +476,12 @@ class ShExpander(object):
         if alias_found:
             # Replace all alias and re-parse the new line
             line = ' '.join(t.tok for t in tokens)
-            if _DEBUG_PARSER:
-                print 'alias found: %s' % line
+            _debug_parser('alias found: %s' % line)
             tokens, parsed = self.runtime.parser.parse(line)
         return tokens, parsed
 
     def expand_word(self, word):
-        if _DEBUG_PARSER:
-            print 'expand_word: %s' % word.tok
+        _debug_parser('expand_word: %s' % word.tok)
 
         words_expanded = []
         words_expanded_globable = []
@@ -538,8 +535,7 @@ class ShExpander(object):
         return fields
 
     def expand_escaped(self, tok):
-        if _DEBUG_PARSER:
-            print 'expand_escaped: %s' % tok
+        _debug_parser('expand_escaped: %s' % tok)
 
         c = tok[1]
         if c == 't':
@@ -554,19 +550,16 @@ class ShExpander(object):
             return c, c
 
     def expand_uq_word(self, tok):
-        if _DEBUG_PARSER:
-            print 'expand_uq_word: %s' % tok
+        _debug_parser('expand_uq_word: %s' % tok)
         s = self.expandvars(tok)
         return s
 
     def expand_sq_word(self, tok):
-        if _DEBUG_PARSER:
-            print 'expand_sq_word: %s' % tok
+        _debug_parser('expand_sq_word: %s' % tok)
         return tok[1:-1], self.escape_wildcards(tok[1:-1])
 
     def expand_dq_word(self, tok):
-        if _DEBUG_PARSER:
-            print 'expand_dq_word: %s' % tok
+        _debug_parser('expand_dq_word: %s' % tok)
         parts, parsed = self.runtime.parser.parse_within_dq(tok[1:-1])
         ex = exg = ''
         for p in parts:
@@ -590,8 +583,7 @@ class ShExpander(object):
         return ex, exg
 
     def expand_bq_word(self, tok):
-        if _DEBUG_PARSER:
-            print 'expand_bq_word: %s' % tok
+        _debug_parser('expand_bq_word: %s' % tok)
 
         outs = StringIO()
         worker = self.runtime.run(tok[1:-1], final_outs=outs)
@@ -601,8 +593,7 @@ class ShExpander(object):
         return ret
 
     def expanduser(self, s):
-        if _DEBUG_PARSER:
-            print 'expanduser: %s' % s
+        _debug_parser('expanduser: %s' % s)
         saved_environ = os.environ
         try:
             os.environ = self.runtime.envars
@@ -614,8 +605,7 @@ class ShExpander(object):
         return s
 
     def expandvars(self, s):
-        if _DEBUG_PARSER:
-            print 'expandvars: %s' % s
+        _debug_parser('expandvars: %s' % s)
 
         saved_environ = os.environ
         try:
@@ -652,8 +642,7 @@ class ShExpander(object):
                         if nextchar in '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxy':
                             varname += nextchar
                         else:
-                            if _DEBUG_PARSER:
-                                _STDOUT.write('envar sub: %s\n' % varname)
+                            _debug_parser('envar sub: %s\n' % varname)
                             es += os.environ.get(varname, '') + nextchar
                             state = 'a'
 
@@ -674,8 +663,7 @@ class ShExpander(object):
 
             if state == '$':
                 if varname != '':
-                    if _DEBUG_PARSER:
-                        _STDOUT.write('envar sub: %s\n' % varname)
+                    _debug_parser('envar sub: %s\n' % varname)
                     es += os.environ.get(varname, '')
                 else:
                     es += '$'
@@ -685,9 +673,8 @@ class ShExpander(object):
         finally:
             os.environ = saved_environ
 
-        if _DEBUG_PARSER:
-            if s != es:
-                _STDOUT.write('expandvars: %s -> %s\n' % (repr(s), repr(es)))
+        if s != es:
+            _debug_parser('expandvars: %s -> %s\n' % (repr(s), repr(es)))
 
         return es
 
@@ -726,9 +713,8 @@ class ShCompleter(object):
                             is_cmd_word = True
                         break
 
-                if _DEBUG_COMPLETER:
-                    _STDOUT.write('cmd_word: %s, trailing_white: %s, word_to_complete: %s\n' %
-                                  (is_cmd_word, has_trailing_white, word_to_complete))
+                _debug_completer('cmd_word: %s, trailing_white: %s, word_to_complete: %s\n' %
+                                (is_cmd_word, has_trailing_white, word_to_complete))
 
             except pp.ParseException as e:
                 self.app.term.write('%s\n' % self.app.term.inp.text)
@@ -770,8 +756,7 @@ class ShCompleter(object):
         if len(all_names) > self.np_max:
             self.app.term.write('%s\nMore than %d possibilities\n'
                                     % (self.app.term.inp.text, self.np_max))
-            if _DEBUG_COMPLETER:
-                print self.format_all_names(all_names)
+            _debug_completer(self.format_all_names(all_names))
 
         else:
             # Complete up to the longest common prefix of all possibilities
@@ -798,15 +783,12 @@ class ShCompleter(object):
             if newline != line:
                 # No need to show available possibilities if some completion can be done
                 self.app.term.set_inp_text(newline)  # Complete the line
-                if _DEBUG_COMPLETER:
-                    print repr(line)
-                    print repr(newline)
+                _debug_completer('%s -> %s' %(repr(line), repr(newline)))
 
             elif len(all_names) > 0:  # no completion available, show all possibilities if exist
                 self.app.term.write('%s\n%s\n'
                                     % (self.app.term.inp.text, self.format_all_names(all_names)))
-                if _DEBUG_COMPLETER:
-                    print self.format_all_names(all_names)
+                _debug_completer(self.format_all_names(all_names))
 
     def path_match(self, word_to_complete_normal_whites):
         if os.path.isdir(os.path.expanduser(word_to_complete_normal_whites)) \
@@ -884,9 +866,8 @@ class ShRuntime(object):
 
     def save_state(self):
 
-        if _DEBUG_RUNTIME:
-            _STDOUT.write('Saving stack %d ----\n' % len(self.state_stack))
-            _STDOUT.write('envars = %s\n' % sorted(self.envars.keys()))
+        _debug_runtime('Saving stack %d ----\n' % len(self.state_stack))
+        _debug_runtime('envars = %s\n' % sorted(self.envars.keys()))
 
         self.state_stack.append(
             [dict(self.enclosed_envars),
@@ -922,9 +903,8 @@ class ShRuntime(object):
                       persist_aliases=False,
                       persist_cwd=False):
 
-        if _DEBUG_RUNTIME:
-            _STDOUT.write('Popping stack %d ----\n' % (len(self.state_stack) - 1))
-            _STDOUT.write('envars = %s\n' % sorted(self.envars.keys()))
+        _debug_runtime('Popping stack %d ----\n' % (len(self.state_stack) - 1))
+        _debug_runtime('envars = %s\n' % sorted(self.envars.keys()))
 
         # If not persisting, parent shell's envars are set back to this level's
         # enclosed vars. If persisting, envars of this level is then the same
@@ -951,10 +931,9 @@ class ShRuntime(object):
          sys.stdout,
          sys.stderr) = self.state_stack.pop()
 
-        if _DEBUG_RUNTIME:
-            _STDOUT.write('After poping\n')
-            _STDOUT.write('enclosed_envars = %s\n' % sorted(self.enclosing_envars.keys()))
-            _STDOUT.write('envars = %s\n' % sorted(self.envars.keys()))
+        _debug_runtime('After poping\n')
+        _debug_runtime('enclosed_envars = %s\n' % sorted(self.enclosing_envars.keys()))
+        _debug_runtime('envars = %s\n' % sorted(self.envars.keys()))
 
     def load_rcfile(self):
         self.app(_DEFAULT_RC.splitlines(), add_to_history=False)
@@ -1062,33 +1041,27 @@ class ShRuntime(object):
                                                persist_cwd=persist_cwd)
 
             except pp.ParseException as e:
-                if _DEBUG_PARSER:
-                    _STDOUT.write('ParseException: %s\n' % repr(e))
+                _debug_parser('ParseException: %s\n' % repr(e))
                 self.app.term.write_with_prefix('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
 
             except ShEventNotFound as e:
-                if _DEBUG_PARSER:
-                    _STDOUT.write('%s\n' % repr(e))
+                _debug_parser('%s\n' % repr(e))
                 self.app.term.write_with_prefix('%s: event not found\n' % e.message)
 
             except ShBadSubstitution as e:
-                if _DEBUG_PARSER:
-                    _STDOUT.write('%s\n' % repr(e))
+                _debug_parser('%s\n' % repr(e))
                 self.app.term.write_with_prefix('%s\n' % e.message)
 
             except ShInternalError as e:
-                if _DEBUG_PARSER or _DEBUG_RUNTIME:
-                    _STDOUT.write('%s\n' % repr(e))
+                _debug_runtime('%s\n' % repr(e))
                 self.app.term.write_with_prefix('%s\n' % e.message)
 
             except IOError as e:
-                if _DEBUG_RUNTIME:
-                    _STDOUT.write('IOError: %s\n' % repr(e))
+                _debug_runtime('IOError: %s\n' % repr(e))
                 self.app.term.write_with_prefix('%s: %s\n' % (e.filename, e.strerror))
 
             except Exception as e:
-                if _DEBUG_RUNTIME:
-                    _STDOUT.write('Exception: %s\n' % repr(e))
+                _debug_runtime('Exception: %s\n' % repr(e))
                 self.app.term.write_with_prefix('%s\n' % repr(e))
 
             finally:
@@ -1119,8 +1092,7 @@ class ShRuntime(object):
                                        final_errs=final_errs)
 
     def run_pipe_sequence(self, pipe_sequence, final_ins=None, final_outs=None, final_errs=None):
-        if _DEBUG_RUNTIME:
-            print pipe_sequence
+        _debug_runtime(str(pipe_sequence))
 
         n_simple_commands = len(pipe_sequence.lst)
 
@@ -1172,15 +1144,13 @@ class ShRuntime(object):
                 if final_errs:
                     errs = final_errs
 
-            if _DEBUG_RUNTIME:
-                _STDOUT.write('io %s %s\n' % (ins, outs))
+            _debug_runtime('io %s %s\n' % (ins, outs))
 
             try:
                 if simple_command.cmd_word != '':
                     script_file = self.find_script_file(simple_command.cmd_word)
 
-                    if _DEBUG_RUNTIME:
-                        _STDOUT.write('script is %s\n' % script_file)
+                    _debug_runtime('script is %s\n' % script_file)
 
                     if self.input_encoding_utf8:
                         simple_command_args = [arg.encode('utf-8') for arg in simple_command.args]
@@ -1206,8 +1176,7 @@ class ShRuntime(object):
 
             except Exception as e:
                 err_msg = '%s\n' % e.message
-                if _DEBUG_RUNTIME:
-                    _STDOUT.write(err_msg)
+                _debug_runtime(err_msg)
                 self.app.term.write_with_prefix(err_msg)
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
@@ -1250,8 +1219,7 @@ class ShRuntime(object):
                 import traceback
                 traceback.print_exc()
             err_msg = '%s: (%s)\n' % (repr(e), sys.exc_value)
-            if _DEBUG_RUNTIME:
-                _STDOUT.write(err_msg)
+            _debug_runtime(err_msg)
             self.app.term.write_with_prefix(err_msg)
             self.envars['?'] = 1
 
@@ -1663,8 +1631,7 @@ class ShTerm(ui.View):
         self.flush()
 
     def write(self, s):
-        if _DEBUG_RUNTIME:
-            _STDOUT.write('Write Called: [%s]\n' % repr(s))
+        _debug_runtime('Write Called: [%s]\n' % repr(s))
         if not _IN_PYTHONISTA:
             _STDOUT.write(s)
         self.add_out_buf(s)
@@ -1674,8 +1641,7 @@ class ShTerm(ui.View):
         self.write('stash: ' + s)
 
     def writelines(self, lines):
-        if _DEBUG_RUNTIME:
-            _STDOUT.write('Writeline Called: [%s]\n' % repr(lines))
+        _debug_runtime('Writeline Called: [%s]\n' % repr(lines))
         self.write(''.join(lines))
 
     def flush(self):
