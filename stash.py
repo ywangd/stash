@@ -1383,7 +1383,8 @@ class ShTerm(ui.View):
         self.inp_buf = []
         self.out_buf = ''
         self.out_buf_pos = 0
-        self.input_did_return = False  # For command with raw_input
+        self.input_did_return = False  # For readline, e.g. raw_input
+        self.input_did_eof = False  # For read and readlines
         self.cleanup = app.will_close
 
         # TODO: Setup the prompt based on rcfile
@@ -1621,33 +1622,39 @@ class ShTerm(ui.View):
         else:
             self.out_buf = self.out_buf[0:size]
 
+    def encode(self, s):
+        return s.encode('utf-8') if self.app.runtime.input_encoding_utf8 else s
+
     # file-like methods (TextField) for IO redirect of external scripts
     # read functions are only called by external script as raw_input
     def read(self, size=-1):
-        return self.readline()
+        ret = ''.join(self.readlines())
+        if size >= 0:
+            ret = ret[:size]
+        return ret
 
-    def readline(self, size=-1):
-        while not self.input_did_return:
+    def readline(self, size=-1):  # raw_input
+        while not self.input_did_return and not self.input_did_eof:
             pass
-        self.input_did_return = False
+        self.input_did_return = self.input_did_eof = False
         # Read from input buffer instead of term directly.
         # This allows the term to response more quickly to user interactions.
         if self.inp_buf:
             line = self.inp_buf.pop()
-            line = line[:int(size)] if size >= 0 else line
+            line = line[:size] if size >= 0 else line
         else:
             line = ''
-        if self.app.runtime.input_encoding_utf8:
-            line = line.encode('utf-8')
-        return line
+
+        return self.encode(line)
 
     def readlines(self, size=-1):
-        while not self.input_did_return:
+        while not self.input_did_eof:
             pass
-        self.input_did_return = False
-        fn = (lambda s: s.encode('utf-8')) if self.app.runtime.input_encoding_utf8 else (lambda s: s)
-        lines = [fn(line + '\n') for line in self.inp_buf]
+        self.input_did_return = self.input_did_eof = False
+        lines = [self.encode(line + '\n') for line in self.inp_buf]
         self.inp_buf = []
+        if size >= 0:
+            lines = lines[:size]
         return lines
 
     def clear(self):
@@ -1749,11 +1756,11 @@ class StaSh(object):
     """
     The application class, also acts as the controller.
     """
-      
+
     def __init__(self):
 
         self.thread = threading.currentThread()
-        
+
         #TODO: Better way to detect iPad
         self.ON_IPAD = ui.get_screen_size()[1] >= 708
 
@@ -1789,8 +1796,11 @@ class StaSh(object):
         """ This function is to be called by external script for
          executing shell commands """
         worker = self.runtime.run(*args, **kwargs)
-        while worker.isAlive():
-            pass
+        try:
+            while worker.isAlive():
+                pass
+        except KeyboardInterrupt:  # This is for debug on PC
+            self.term.input_did_return = self.term.input_did_eof = True
 
     @staticmethod
     def load_config():
@@ -1818,6 +1828,7 @@ class StaSh(object):
                 self.term.set_inp_text('', with_prompt=False)
                 self.term.inp_buf = []  # clear input buffer for new command
                 self.term.input_did_return = False
+                self.term.input_did_eof = False
                 self.runtime.reset_idx_to_history()
                 self.runtime.run(line)
             else:
@@ -1852,7 +1863,7 @@ class StaSh(object):
                 self.completer.complete(self.term.read_inp_line())
             else:
                 console.hud_alert('Not available', 'error', 1.0)
-                
+
         elif vk == self.term.k_swap:
             self.term.toggle_k_grp()
 
@@ -1876,7 +1887,7 @@ class StaSh(object):
 
         elif vk == self.term.k_CD:
             if self.runtime.worker_stack:
-                self.term.input_did_return = True
+                self.term.input_did_eof = True
 
         elif vk == self.term.k_CC:
             if not self.runtime.worker_stack:
@@ -1901,7 +1912,7 @@ class StaSh(object):
             self.term.inp.text += vk.title.strip()
 
     def history_popover_tapped(self, sender):
-        if sender.selected_row >= 0: 
+        if sender.selected_row >= 0:
             self.term.set_inp_text(sender.items[sender.selected_row])
             self.runtime.idx_to_history = sender.selected_row
 
