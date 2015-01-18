@@ -15,6 +15,7 @@ import sys
 import threading
 import time
 import imp
+import argparse
 
 import pyparsing as pp
 
@@ -37,25 +38,20 @@ _STDERR = sys.stderr
 _SYS_PATH = sys.path
 _OS_ENVIRON = os.environ
 
-
-_DEBUG_PARSER = False
-_DEBUG_COMPLETER = False
-_DEBUG_RUNTIME = False
-
-
 APP_DIR = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
 
+_STARTUP_OPTIONS = argparse.Namespace()
 
 def _debug_parser(msg):
-    if _DEBUG_PARSER:
+    if _STARTUP_OPTIONS.debug_parser:
         _STDOUT.write(msg if msg.endswith('\n') else (msg + '\n'))
 
 def _debug_completer(msg):
-    if _DEBUG_COMPLETER:
+    if _STARTUP_OPTIONS.debug_completer:
         _STDOUT.write(msg if msg.endswith('\n') else (msg + '\n'))
 
 def _debug_runtime(msg):
-    if _DEBUG_RUNTIME:
+    if _STARTUP_OPTIONS.debug_runtime:
         _STDOUT.write(msg if msg.endswith('\n') else (msg + '\n'))
 
 
@@ -940,7 +936,8 @@ class ShRuntime(object):
     def load_rcfile(self):
         self.app(_DEFAULT_RC.splitlines(), add_to_history=False)
 
-        if os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
+        if not _STARTUP_OPTIONS.no_rcfile \
+                and os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
             try:
                 with open(self.rcfile) as ins:
                     self.app(ins.readlines(), add_to_history=False)
@@ -1890,6 +1887,25 @@ class StaSh(object):
    
    
 if __name__ == '__main__':
+    ap = argparse.ArgumentParser(description='Pythonista Shell',
+                                 version=__version__)
+    ap.add_argument('--debug-parser',
+                    action='store_true',
+                    help='display parser debugging message'
+                    )
+    ap.add_argument('--debug-completer',
+                    action='store_true',
+                    help='display completer debugging message'
+                    )
+    ap.add_argument('--debug-runtime',
+                    action='store_true',
+                    help='display runtime debugging message'
+                    )
+    ap.add_argument('--no-rcfile',
+                    action='store_true',
+                    help='do not load external resource file')
+    ap.parse_args(namespace=_STARTUP_OPTIONS)
+
     _stash = StaSh()
     _stash.run()
 
