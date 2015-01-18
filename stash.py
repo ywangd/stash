@@ -40,7 +40,11 @@ _OS_ENVIRON = os.environ
 
 APP_DIR = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
 
-_STARTUP_OPTIONS = argparse.Namespace()
+_STARTUP_OPTIONS = argparse.Namespace(
+    debug_parser=False,
+    debug_completer=False,
+    debug_runtime=False,
+    no_rcfile=False)
 
 def _debug_parser(msg):
     if _STARTUP_OPTIONS.debug_parser:
