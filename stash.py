@@ -381,14 +381,16 @@ class ShExpander(object):
         # Update the line to the history expanded form
         line = ' '.join(t.tok for t in tokens)
 
-        yield line  # line for history management
-
         # alias substitute
         tokens, parsed = self.alias_subs(tokens, parsed)
 
+        pseq_indices = range(0, len(parsed), 2)
+        n_complete_commands = len(pseq_indices)
+        yield line, n_complete_commands  # line for history management
+
         # Start expanding
         idxt = 0
-        for ipseq in range(0, len(parsed), 2):
+        for ipseq in pseq_indices:
             pseq = parsed[ipseq]
 
             # TODO: Because of the generator changes, complete_command is not necessary
@@ -1013,8 +1015,8 @@ class ShRuntime(object):
 
                     # Parse and expand the line (note this function returns a generator object
                     expanded = self.expander.expand(line)
-                    # The first member is the history expanded form
-                    newline = expanded.next()
+                    # The first member is the history expanded form and number of complete commands to follow
+                    newline, n_complete_commands = expanded.next()
                     # Only add history entry if:
                     #   1. It is explicitly required
                     #   2. It is the first layer thread directly spawned by the main thread
@@ -1023,13 +1025,10 @@ class ShRuntime(object):
                         self.add_history(newline)
 
                     # Subsequent members are actual commands
-                    while True:
+                    for _ in range(n_complete_commands):
                         self.save_state()  # State needs to be saved before expansion happens
                         try:
-                            complete_command = next(expanded, None)
-                            if complete_command is None:  # generator exhausted
-                                break
-
+                            complete_command = expanded.next()
                             if code_validation_func is None or code_validation_func(complete_command):
                                 self.run_complete_command(complete_command,
                                                           final_ins=final_ins,
