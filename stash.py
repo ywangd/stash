@@ -385,8 +385,8 @@ class ShExpander(object):
         tokens, parsed = self.alias_subs(tokens, parsed)
 
         pseq_indices = range(0, len(parsed), 2)
-        n_complete_commands = len(pseq_indices)
-        yield line, n_complete_commands  # line for history management
+        n_pipe_sequences = len(pseq_indices)
+        yield line, n_pipe_sequences  # line for history management
 
         # Start expanding
         idxt = 0
@@ -396,7 +396,6 @@ class ShExpander(object):
             # TODO: Because of the generator changes, complete_command is not necessary
             # as it simply contains a single pipe_sequence. It can probably be removed
             # for efficiency.
-            complete_command = ShCompleteCommand()
             pipe_sequence = ShPipeSequence()
 
             for isc in range(0, len(pseq), 2):
@@ -449,11 +448,10 @@ class ShExpander(object):
                 idxt += 1  # skip the punctuator
                 if parsed[ipseq + 1] == '&':
                     pipe_sequence.in_background = True
-            complete_command.lst.append(pipe_sequence)
 
             # Generator to allow previous command to run first before later command is expanded
             # e.g. A=42; echo $A
-            yield complete_command
+            yield pipe_sequence
 
     def history_subs(self, tokens, parsed):
         history_found = False
@@ -1016,8 +1014,8 @@ class ShRuntime(object):
 
                     # Parse and expand the line (note this function returns a generator object
                     expanded = self.expander.expand(line)
-                    # The first member is the history expanded form and number of complete commands to follow
-                    newline, n_complete_commands = expanded.next()
+                    # The first member is the history expanded form and number of pipe_sequence
+                    newline, n_pipe_sequences = expanded.next()
                     # Only add history entry if:
                     #   1. It is explicitly required
                     #   2. It is the first layer thread directly spawned by the main thread
@@ -1026,15 +1024,21 @@ class ShRuntime(object):
                         self.add_history(newline)
 
                     # Subsequent members are actual commands
-                    for _ in range(n_complete_commands):
+                    for _ in range(n_pipe_sequences):
                         self.save_state()  # State needs to be saved before expansion happens
                         try:
-                            complete_command = expanded.next()
-                            if code_validation_func is None or code_validation_func(complete_command):
-                                self.run_complete_command(complete_command,
-                                                          final_ins=final_ins,
-                                                          final_outs=final_outs,
-                                                          final_errs=final_errs)
+                            pipe_sequence = expanded.next()
+                            if code_validation_func is None or code_validation_func(pipe_sequence):
+                                if pipe_sequence.in_background:
+                                    ui.in_background(self.run_pipe_sequence)(pipe_sequence,
+                                                                             final_ins=final_ins,
+                                                                             final_outs=final_outs,
+                                                                             final_errs=final_errs)
+                                else:
+                                    self.run_pipe_sequence(pipe_sequence,
+                                                           final_ins=final_ins,
+                                                           final_outs=final_outs,
+                                                           final_errs=final_errs)
                         finally:
                             self.restore_state(persist_envars=persist_envars,
                                                persist_aliases=persist_aliases,
@@ -1073,23 +1077,6 @@ class ShRuntime(object):
         worker = threading.Thread(name='_shruntime_thread', target=fn)
         worker.start()
         return worker
-
-    def run_complete_command(self, complete_command,
-                             final_ins=None,
-                             final_outs=None,
-                             final_errs=None):
-
-        for pipe_sequence in complete_command.lst:
-            if pipe_sequence.in_background:
-                ui.in_background(self.run_pipe_sequence)(pipe_sequence,
-                                                         final_ins=final_ins,
-                                                         final_outs=final_outs,
-                                                         final_errs=final_errs)
-            else:
-                self.run_pipe_sequence(pipe_sequence,
-                                       final_ins=final_ins,
-                                       final_outs=final_outs,
-                                       final_errs=final_errs)
 
     def run_pipe_sequence(self, pipe_sequence, final_ins=None, final_outs=None, final_errs=None):
         _debug_runtime(str(pipe_sequence))
