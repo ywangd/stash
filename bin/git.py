@@ -24,6 +24,10 @@ commands:
 
 SAVE_PASSWORDS = True
 
+import argparse
+import getpass
+import urlparse,urllib2,keychain
+import sys,os
 
 # temporary -- install required modules
 
@@ -73,10 +77,7 @@ else:
     from dulwich.client import default_user_agent_string
     from gittle import Gittle
 
-import argparse
-import getpass
-import urlparse
-import sys,os
+#  end temporary
 
 
 
@@ -251,7 +252,7 @@ def git_push(args):
 
     netloc = urlparse.urlparse(result.url).netloc
 
-    keychainservice = 'shellista.git.{0}'.format(netloc)
+    keychainservice = 'stash.git.{0}'.format(netloc)
 
     if sep and not user:
         # -u : clears keychain for this server
@@ -264,7 +265,9 @@ def git_push(args):
         try:
             user = dict(keychain.get_services())[keychainservice]
         except KeyError:
-            user, pw = console.login_alert('Enter credentials for {0}'.format(netloc))
+            user = raw_input('enter username:')
+            pw = raw_input('enter password')
+            #user, pw = console.login_alert('Enter credentials for {0}'.format(netloc))
 
     if user:
         if not pw and SAVE_PASSWORDS:
