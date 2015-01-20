@@ -67,3 +67,4 @@ tmp*
 .stashrc
 .stash_config
 
+.scsm.json
