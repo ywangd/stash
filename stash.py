@@ -1595,10 +1595,10 @@ class ShTerm(ui.View):
         # Read from input buffer instead of term directly.
         # This allows the term to response more quickly to user interactions.
         if self.inp_buf:
-            line = self.inp_buf.pop()
+            line = self.inp_buf.pop() + '\n'
             line = line[:size] if size >= 0 else line
         else:
-            line = ''
+            line = '\n'
 
         return self.encode(line)
 
