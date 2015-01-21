@@ -717,7 +717,7 @@ class ShCompleter(object):
                                 (is_cmd_word, has_trailing_white, word_to_complete))
 
             except pp.ParseException as e:
-                self.app.term.write('%s\n' % self.app.term.inp.text)
+                self.app.term.write('%s\n' % self.app.term.read_inp_line(with_prompt=True))
                 self.app.term.write_with_prefix('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
                 return
 
@@ -755,7 +755,8 @@ class ShCompleter(object):
 
         if len(all_names) > self.np_max:
             self.app.term.write('%s\nMore than %d possibilities\n'
-                                    % (self.app.term.inp.text, self.np_max))
+                                    % (self.app.term.read_inp_line(with_prompt=True), self.np_max))
+            self.app.term.reset_inp()
             _debug_completer(self.format_all_names(all_names))
 
         else:
@@ -782,12 +783,15 @@ class ShCompleter(object):
 
             if newline != line:
                 # No need to show available possibilities if some completion can be done
-                self.app.term.set_inp_text(newline)  # Complete the line
+                oldline = self.app.term.read_inp_line()
+                self.app.term.write(newline[len(oldline):])
+                #self.app.term.set_inp_text(newline)  # Complete the line
                 _debug_completer('%s -> %s' %(repr(line), repr(newline)))
 
             elif len(all_names) > 0:  # no completion available, show all possibilities if exist
-                self.app.term.write('%s\n%s\n'
-                                    % (self.app.term.inp.text, self.format_all_names(all_names)))
+                self.app.term.write('\n%s\n%s'
+                                    % (self.format_all_names(all_names),
+                                       self.app.term.read_inp_line(with_prompt=True)))
                 _debug_completer(self.format_all_names(all_names))
 
     def path_match(self, word_to_complete_normal_whites):
@@ -1481,35 +1485,24 @@ class ShTerm(ui.View):
         self.k_grp_1.send_to_back()
         self.on_k_grp = 0
 
-        self.inp = ui.TextField(name='inp', flex='WT')
-        self.txts.add_subview(self.inp)
-        self.inp.font = self.TEXT_FONT
-        self.inp.height = self.TEXT_FONT[1] + 2
-        self.inp.y = self.inp.superview.height - (self.inp.height + 4) - (self.vks.height + 4)
-        self.inp.background_color = ast.literal_eval(app.config.get('display', 'INPUT_BACKGROUND_COLOR'))
-        self.inp.text_color = ast.literal_eval(app.config.get('display', 'INPUT_TEXT_COLOR'))
-        self.inp.tint_color = ast.literal_eval(app.config.get('display', 'INPUT_TINT_COLOR'))
-        self.inp.text = self.prompt
-        self.inp.bordered = False
-        self.inp.clear_button_mode = 'always'
-        self.inp.autocapitalization_type = ui.AUTOCAPITALIZE_NONE
-        self.inp.autocorrection_type = False
-        self.inp.spellchecking_type = False
-        self.inp.delegate = app
-
-        self.out = ui.TextView(name='out', flex='WH')
-        self.txts.add_subview(self.out)
-        self.out.height = self.out.superview.height - (self.inp.height + 4) - (self.vks.height + 4)
-        self.out.auto_content_inset = False
-        self.out.content_inset = (0, 0, -8, 0)
-        self.out.background_color = ast.literal_eval(app.config.get('display', 'OUTPUT_BACKGROUND_COLOR'))
-        self.out.indicator_style = app.config.get('display', 'OUTPUT_INDICATOR_STYLE')
-        self.out.font = self.TEXT_FONT
-        self.out.text_color = ast.literal_eval(app.config.get('display', 'OUTPUT_TEXT_COLOR'))
-        self.out.tint_color = ast.literal_eval(app.config.get('display', 'OUTPUT_TINT_COLOR'))
-        self.out.text = ''
-        self.out.editable = False
-        self.out.delegate = app
+        self.io = ui.TextView(name='io', flex='WH')
+        self.txts.add_subview(self.io)
+        self.io.height = self.io.superview.height - (self.vks.height + 4)
+        self.io.x = 0
+        self.io.y = 0
+        self.io.auto_content_inset = False
+        self.io.content_inset = (0, 0, 0, 0)
+        self.io.background_color = ast.literal_eval(app.config.get('display', 'OUTPUT_BACKGROUND_COLOR'))
+        self.io.indicator_style = app.config.get('display', 'OUTPUT_INDICATOR_STYLE')
+        self.io.font = self.TEXT_FONT
+        self.io.text_color = ast.literal_eval(app.config.get('display', 'OUTPUT_TEXT_COLOR'))
+        self.io.tint_color = ast.literal_eval(app.config.get('display', 'OUTPUT_TINT_COLOR'))
+        self.io.autocapitalization_type = ui.AUTOCAPITALIZE_NONE
+        self.io.autocorrection_type = False
+        self.io.spellchecking_type = False
+        self.io.text = ''
+        self.io.editable = True
+        self.io.delegate = app
         
     def toggle_k_grp(self):
         if self.on_k_grp == 0:
@@ -1528,8 +1521,13 @@ class ShTerm(ui.View):
         else:
             self.txts.height = self.height
 
-    def read_inp_line(self):
-        return self.inp.text[len(self.prompt):]
+    def read_inp_line(self, with_prompt=False):
+
+        s = self.io.text.splitlines()[-1]
+        if not with_prompt:
+            return s[len(self.prompt):]
+        else:
+            return s
   
     def reset_inp(self):
         self.set_inp_text('')
@@ -1537,13 +1535,17 @@ class ShTerm(ui.View):
     def set_inp_text(self, s, with_prompt=True):
         if with_prompt:
             self.prompt = self.app.runtime.get_prompt()
-            self.inp.text = '%s%s' % (self.prompt, s)
-        else:
-            self.inp.text = s
- 
-    def add_out_buf(self, s):
+            s = '%s%s' % (self.prompt, s)
+        self.write(s)
+
+    def add_out_buf(self, s, rng=None):
         """Control the buffer size"""
-        if s == '':
+        if s == '' and rng is None:
+            return
+
+        if rng is not None:
+            self.out_buf = self.out_buf[:rng[0]] + s + self.out_buf[rng[1]:]
+            self.out_buf_pos = len(self.out_buf)
             return
 
         if self.out_buf_pos == len(self.out_buf):
@@ -1551,7 +1553,7 @@ class ShTerm(ui.View):
             self.out_buf_pos = len(self.out_buf)
         else:
             new_pos = self.out_buf_pos + len(s)
-            self.out_buf = self.out_buf[0:self.out_buf_pos] + s + self.out_buf[new_pos:]
+            self.out_buf = self.out_buf[:self.out_buf_pos] + s + self.out_buf[new_pos:]
             self.out_buf_pos = new_pos
 
     # file-like methods for output TextView
@@ -1617,11 +1619,11 @@ class ShTerm(ui.View):
         self.truncate()
         self.flush()
 
-    def write(self, s):
+    def write(self, s, rng=None):
         _debug_runtime('Write Called: [%s]\n' % repr(s))
         if not _IN_PYTHONISTA:
             _STDOUT.write(s)
-        self.add_out_buf(s)
+        self.add_out_buf(s, rng)
         self.flush()
 
     def write_with_prefix(self, s):
@@ -1652,22 +1654,39 @@ class ShTerm(ui.View):
     # print many lines.
     @sh_background('_flush_thread')
     def _flush(self):
-        lines = self.out_buf.splitlines(True)
-        nlines = len(lines)
-        if nlines > self.BUFFER_MAX:
-            lines = lines[nlines - self.BUFFER_MAX:]
-            self.out_buf = ''.join(lines)
-        self.out.text = self.out_buf
+        #lines = self.out_buf.splitlines(True)
+        #nlines = len(lines)
+        #if nlines > self.BUFFER_MAX:
+            #lines = lines[nlines - self.BUFFER_MAX:]
+            #self.out_buf = ''.join(lines)
+
+        prefix = os.path.commonprefix([self.out_buf, self.io.text])
+        s = self.out_buf[len(prefix):]
+
+        rng = (len(prefix), len(self.io.text))
+
+        if s == '':
+            self.io.replace_range(rng, '')
+
+        else:
+            lines = s.splitlines(True)
+            while lines:
+                lns = lines[:100]
+                lines = lines[100:]
+                self.io.replace_range(rng, ''.join(lns))
+                rng = (len(self.io.text), len(self.io.text))
+
         self._scroll_to_end()
 
     def _scroll_to_end(self):
         # Have to scroll multiple times to get the correct scroll to the end effect.
         # This is because content_size reported by the ui system is not reliable.
         # It is either a bug or due to the asynchronous nature of the ui system.
-        for i in range(self._n_refresh):
-            self.out.content_offset = (0, self.out.content_size[1] - self.out.height)
-            if i < self._n_refresh - 1:
-                time.sleep(self._refresh_pause)
+        if self.io.content_size[1] > self.io.height:
+            for i in range(self._n_refresh):
+                self.io.content_offset = (0, self.io.content_size[1] - self.io.height)
+                if i < self._n_refresh - 1:
+                    time.sleep(self._refresh_pause)
               
     def history_present(self, listsource):
         table = ui.TableView()
@@ -1765,50 +1784,57 @@ class StaSh(object):
         config.read(os.path.expanduser(config.get('system', 'cfgfile')))
         return config
 
-    def textfield_did_begin_editing(self, textfield):
+    def textview_did_begin_editing(self, tv):
         pass
 
-    def textfield_did_end_editing(self, textfield):
+    def textview_did_end_editing(self, tv):
         pass
 
-    def textfield_should_return(self, textfield):
+    def textview_should_return(self, tv):
         if not self.runtime.worker_stack:
             # No thread is running. We are to process the command entered
             # from the GUI.
             line = self.term.read_inp_line()
             if line.strip() != '':
-                self.term.write('\n%s\n' % self.term.inp.text)
-                self.term.set_inp_text('', with_prompt=False)
                 self.term.inp_buf = []  # clear input buffer for new command
                 self.term.input_did_return = False
                 self.term.input_did_eof = False
                 self.runtime.reset_idx_to_history()
                 self.runtime.run(line)
             else:
-                self.term.write('\n')
                 self.term.reset_inp()
 
         else:
             # we have a running threading, all inputs are considered as
             # directed to the thread, NOT the main GUI program
-            self.term.inp_buf.append(self.term.inp.text)
-            self.term.write('%s\n' % self.term.inp.text)
-            self.term.set_inp_text('', with_prompt=False)
+            s = self.term.io.text.splitlines()[-1]
+            self.term.inp_buf.append(s)
             self.term.input_did_return = True
 
         return True
 
-    def textfield_should_change(self, textfield, range_, replacement):
-        if not self.runtime.worker_stack:
-            if range_[0] < len(self.term.prompt):  # Do not erase the prompt
-                return False
-        return True
+    def textview_should_change(self, tv, rng, replacement):
 
-    def textfield_did_change(self, textfield):
-        if not self.runtime.worker_stack:
-            # Do not wipe prompt (guard against the clear button)
-            if len(textfield.text) < len(self.term.prompt):
-                self.term.reset_inp()
+        # get valid change range
+        tot_len = len(self.term.io.text)
+        last_line = self.term.io.text.splitlines(True)[-1]
+        prompt_len = len(self.runtime.get_prompt())
+        valid_rng = (tot_len - len(last_line) + prompt_len, tot_len)
+
+        if not (rng[0] >= valid_rng[0] and rng[1] <= valid_rng[1]):
+            rng = (tot_len, tot_len)
+
+        self.term.write(replacement, rng)
+        if replacement == '\n':
+            self.textview_should_return(tv)
+
+        return False
+
+    def textview_did_change(self, tv):
+        pass
+
+    def textview_did_change_selection(self, tv):
+        pass
 
     def vk_tapped(self, vk):
         if vk == self.term.k_tab:  # Tab completion
@@ -1862,7 +1888,7 @@ class StaSh(object):
                 self.term.reset_inp()
         elif vk.name == 'k_sym':
             # TODO: impossible to detect cursor position?
-            self.term.inp.text += vk.title.strip()
+            self.term.write(vk.title.strip(), self.term.io.selected_range)
 
     def history_popover_tapped(self, sender):
         if sender.selected_row >= 0:
@@ -1874,7 +1900,7 @@ class StaSh(object):
 
     def run(self):
         self.term.present('panel')
-        self.term.inp.begin_editing()
+        self.term.io.begin_editing()
    
    
 if __name__ == '__main__':

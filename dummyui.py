@@ -54,6 +54,9 @@ class TextView(View):
         super(TextView, self).__init__(*args, **kwargs)
         self.text = ''
 
+    def replace_range(self, rng, s):
+        pass
+
 class Button(View):
     def __init__(self, *args, **kwargs):
         super(Button, self).__init__(*args, **kwargs)
