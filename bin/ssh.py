@@ -23,6 +23,7 @@ import argparse
 import threading
 import time
 import re
+import sys
 
 from paramiko import SSHClient, AutoAddPolicy, SFTPClient
 
@@ -204,11 +205,10 @@ class StashSSH(object):
         t1.start()
         while True:
             if self.chan.send_ready():        
-                tmp = sys.stdin.readline()
+                tmp = sys.stdin.readline().replace('\n','')
                 ssh_args = tmp.split(' ')
                 if ssh_args[0] == 'exit':
                     self.exit()
-                    
                     break
                 # sftp to and from pythonista
                 elif ssh_args[0] == 'pythonista':
