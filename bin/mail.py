@@ -161,14 +161,12 @@ if __name__ == "__main__":
                     body=args.message)
     else:
         #try except blocks used do to stash reading EOF on no input
-        try: sendto = raw_input('Send to: ')
-        except: sys.exit(0)
-        try: subject = raw_input('Subject: ')
-        except: subject = ''
-        try: msg = raw_input('Message: ')
-        except: msg = ' '
-        try: file = raw_input('Attachment: ')
-        except: file = ''
+        sendto = raw_input('Send to: ') or None
+        if not sendto:
+            sys.exit(0)
+        subject = raw_input('Subject: ') or ''
+        msg = raw_input('Message: ') or ''
+        file = raw_input('Attachment: ') or ''
         smail.send(sendto=sendto,
                     subject=subject,
                     attach=file,
