@@ -717,8 +717,9 @@ class ShCompleter(object):
                                 (is_cmd_word, has_trailing_white, word_to_complete))
 
             except pp.ParseException as e:
-                self.app.term.write('%s\n' % self.app.term.read_inp_line(with_prompt=True))
+                self.app.term.write('\n')
                 self.app.term.write_with_prefix('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
+                self.app.term.new_inp_line(with_text=line)
                 return
 
             cands, with_normal_completion = \
@@ -754,9 +755,8 @@ class ShCompleter(object):
         all_names = sorted(set(all_names))
 
         if len(all_names) > self.np_max:
-            self.app.term.write('%s\nMore than %d possibilities\n'
-                                    % (self.app.term.read_inp_line(with_prompt=True), self.np_max))
-            self.app.term.reset_inp()
+            self.app.term.write('\nMore than %d possibilities\n' % self.np_max)
+            self.app.term.new_inp_line(with_text=line)
             _debug_completer(self.format_all_names(all_names))
 
         else:
@@ -783,15 +783,12 @@ class ShCompleter(object):
 
             if newline != line:
                 # No need to show available possibilities if some completion can be done
-                oldline = self.app.term.read_inp_line()
-                self.app.term.write(newline[len(oldline):])
-                #self.app.term.set_inp_text(newline)  # Complete the line
+                self.app.term.set_inp_line(newline)
                 _debug_completer('%s -> %s' %(repr(line), repr(newline)))
 
             elif len(all_names) > 0:  # no completion available, show all possibilities if exist
-                self.app.term.write('\n%s\n%s'
-                                    % (self.format_all_names(all_names),
-                                       self.app.term.read_inp_line(with_prompt=True)))
+                self.app.term.write('\n%s\n' % self.format_all_names(all_names))
+                self.app.term.new_inp_line(with_text=line)
                 _debug_completer(self.format_all_names(all_names))
 
     def path_match(self, word_to_complete_normal_whites):
@@ -940,13 +937,13 @@ class ShRuntime(object):
         _debug_runtime('envars = %s\n' % sorted(self.envars.keys()))
 
     def load_rcfile(self):
-        self.app(_DEFAULT_RC.splitlines(), add_to_history=False)
+        self.app(_DEFAULT_RC.splitlines(), add_to_history=False, add_new_inp_line=False)
 
         if not _STARTUP_OPTIONS.no_rcfile \
                 and os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
             try:
                 with open(self.rcfile) as ins:
-                    self.app(ins.readlines(), add_to_history=False)
+                    self.app(ins.readlines(), add_to_history=False, add_new_inp_line=False)
             except IOError:
                 self.app.term.write_with_prefix('%s: error reading rcfile\n' % self.rcfile)
 
@@ -993,7 +990,7 @@ class ShRuntime(object):
             final_errs=None,
             add_to_history=None,
             code_validation_func=None,
-            reset_inp=None,
+            add_new_inp_line=None,
             persist_envars=False,
             persist_aliases=False,
             persist_cwd=False):
@@ -1073,8 +1070,8 @@ class ShRuntime(object):
                 self.app.term.write_with_prefix('%s\n' % repr(e))
 
             finally:
-                if reset_inp or len(self.worker_stack) == 1:
-                    self.app.term.reset_inp()
+                if add_new_inp_line or (len(self.worker_stack) == 1 and add_new_inp_line is not False):
+                    self.app.term.new_inp_line()
                 self.app.term.flush()
                 self.worker_stack.pop()  # remove itself from the stack
 
@@ -1253,7 +1250,7 @@ class ShRuntime(object):
                           final_outs=outs,
                           final_errs=errs,
                           add_to_history=add_to_history,
-                          reset_inp=False)
+                          add_new_inp_line=False)
         while worker.isAlive():
             pass
 
@@ -1303,14 +1300,14 @@ class ShRuntime(object):
         if self.idx_to_history >= len(self.history):
             self.idx_to_history -= 1
         else:
-            self.app.term.set_inp_text(self.history[self.idx_to_history])
+            self.app.term.set_inp_line(self.history[self.idx_to_history])
 
     def history_dn(self):
         self.idx_to_history -= 1
         if self.idx_to_history <= -1:
             self.idx_to_history = -1
         else:
-            self.app.term.set_inp_text(self.history[self.idx_to_history])
+            self.app.term.set_inp_line(self.history[self.idx_to_history])
 
     def reset_idx_to_history(self):
         self.idx_to_history = -1
@@ -1340,6 +1337,8 @@ class ShTerm(ui.View):
         self.vk_symbols = app.config.get('display', 'VK_SYMBOLS')
 
         self.inp_buf = []
+        self.inp_line_spos = 0
+        self.cursor_at = None
         self.out_buf = ''
         self.out_buf_pos = 0
         self.input_did_return = False  # For readline, e.g. raw_input
@@ -1522,39 +1521,29 @@ class ShTerm(ui.View):
             self.txts.height = self.height
 
     def read_inp_line(self, with_prompt=False):
+        s = self.io.text[self.inp_line_spos:]
+        return s if not with_prompt else (self.prompt + s)
 
-        s = self.io.text.splitlines()[-1]
-        if not with_prompt:
-            return s[len(self.prompt):]
+    def new_inp_line(self, with_text=''):
+        self.seek(0, 2)  # move to the end
+        self.prompt = self.app.runtime.get_prompt()
+        self.inp_line_spos = self.tell()
+        self.set_inp_line(self.prompt + with_text)
+        self.inp_line_spos += len(self.prompt)
+
+    def set_inp_line(self, s):
+        self.write(s, rng=(self.inp_line_spos, len(self.out_buf)))
+
+    def replace_out_buf(self, replacement, rng=None):
+        rpl_len = len(replacement)
+        if rng is None:
+            rng = (self.out_buf_pos, self.out_buf_pos + rpl_len)
+        if rng[1] < len(self.out_buf):
+            self.cursor_at = len(self.out_buf) - rng[1]
         else:
-            return s
-  
-    def reset_inp(self):
-        self.set_inp_text('')
-  
-    def set_inp_text(self, s, with_prompt=True):
-        if with_prompt:
-            self.prompt = self.app.runtime.get_prompt()
-            s = '%s%s' % (self.prompt, s)
-        self.write(s)
-
-    def add_out_buf(self, s, rng=None):
-        """Control the buffer size"""
-        if s == '' and rng is None:
-            return
-
-        if rng is not None:
-            self.out_buf = self.out_buf[:rng[0]] + s + self.out_buf[rng[1]:]
-            self.out_buf_pos = len(self.out_buf)
-            return
-
-        if self.out_buf_pos == len(self.out_buf):
-            self.out_buf += s
-            self.out_buf_pos = len(self.out_buf)
-        else:
-            new_pos = self.out_buf_pos + len(s)
-            self.out_buf = self.out_buf[:self.out_buf_pos] + s + self.out_buf[new_pos:]
-            self.out_buf_pos = new_pos
+            self.cursor_at = None
+        self.out_buf_pos = rng[0] + rpl_len
+        self.out_buf = self.out_buf[:rng[0]] + replacement + self.out_buf[rng[1]:]
 
     # file-like methods for output TextView
     def seek(self, offset, whence=0):
@@ -1623,7 +1612,7 @@ class ShTerm(ui.View):
         _debug_runtime('Write Called: [%s]\n' % repr(s))
         if not _IN_PYTHONISTA:
             _STDOUT.write(s)
-        self.add_out_buf(s, rng)
+        self.replace_out_buf(s, rng=rng)
         self.flush()
 
     def write_with_prefix(self, s):
@@ -1654,27 +1643,33 @@ class ShTerm(ui.View):
     # print many lines.
     @sh_background('_flush_thread')
     def _flush(self):
-        #lines = self.out_buf.splitlines(True)
-        #nlines = len(lines)
-        #if nlines > self.BUFFER_MAX:
-            #lines = lines[nlines - self.BUFFER_MAX:]
-            #self.out_buf = ''.join(lines)
 
-        prefix = os.path.commonprefix([self.out_buf, self.io.text])
-        s = self.out_buf[len(prefix):]
+        lines = self.out_buf.splitlines(True)
 
-        rng = (len(prefix), len(self.io.text))
-
-        if s == '':
-            self.io.replace_range(rng, '')
+        if len(lines) > 2 * self.BUFFER_MAX:
+            lines = lines[:-self.BUFFER_MAX]
+            rng = (0, len(''.join(lines)))
+            self.replace_out_buf('', rng=rng)
+            self.seek(0, whence=2)  # Move to the end
+            self.io.text = self.out_buf
 
         else:
-            lines = s.splitlines(True)
-            while lines:
-                lns = lines[:100]
-                lines = lines[100:]
-                self.io.replace_range(rng, ''.join(lns))
-                rng = (len(self.io.text), len(self.io.text))
+            prefix = os.path.commonprefix([self.out_buf, self.io.text])
+            replacement = self.out_buf[len(prefix):]
+            rng = (len(prefix), len(self.io.text))
+            if replacement == '':
+                self.io.replace_range(rng, '')
+            else:
+                lines = replacement.splitlines(True)
+                while lines:
+                    self.io.replace_range(rng, ''.join(lines[:100]))
+                    lines = lines[100:]
+                    rbound = len(self.io.text)
+                    rng = (rbound, rbound)
+
+        if self.cursor_at is not None:
+            cursor_at = len(self.io.text) - self.cursor_at
+            self.io.replace_range((cursor_at, cursor_at), '')
 
         self._scroll_to_end()
 
@@ -1718,7 +1713,7 @@ INPUT_BACKGROUND_COLOR=(0.3, 0.3, 0.3)
 INPUT_TEXT_COLOR=(1.0, 1.0, 1.0)
 INPUT_TINT_COLOR=(0.0, 0.0, 1.0)
 HISTORY_MAX=30
-BUFFER_MAX=100
+BUFFER_MAX=300
 AUTO_COMPLETION_MAX=30
 VK_SYMBOLS=~/.-*|>$'=!&_"\?`
 """
@@ -1747,7 +1742,7 @@ class StaSh(object):
         # parse rc file
         self.runtime.load_rcfile()
         self.term.write('StaSh v%s\n' % __version__)
-        self.term.reset_inp()  # prompt
+        self.term.new_inp_line()  # prompt
 
         # Load library files as modules and save each of them as attributes
         lib_path = os.path.join(APP_DIR, 'lib')
@@ -1802,11 +1797,12 @@ class StaSh(object):
                 self.runtime.reset_idx_to_history()
                 self.runtime.run(line)
             else:
-                self.term.reset_inp()
+                self.term.new_inp_line()
 
         else:
             # we have a running threading, all inputs are considered as
             # directed to the thread, NOT the main GUI program
+            # TODO: not reliable way to get input?
             s = self.term.io.text.splitlines()[-1]
             self.term.inp_buf.append(s)
             self.term.input_did_return = True
@@ -1816,15 +1812,19 @@ class StaSh(object):
     def textview_should_change(self, tv, rng, replacement):
 
         # get valid change range
+        # TODO : optimize
         tot_len = len(self.term.io.text)
         last_line = self.term.io.text.splitlines(True)[-1]
         prompt_len = len(self.runtime.get_prompt())
         valid_rng = (tot_len - len(last_line) + prompt_len, tot_len)
 
-        if not (rng[0] >= valid_rng[0] and rng[1] <= valid_rng[1]):
+        if replacement == '\n':
             rng = (tot_len, tot_len)
 
-        self.term.write(replacement, rng)
+        elif not (rng[0] >= valid_rng[0] and rng[1] <= valid_rng[1]):
+            rng = (tot_len, tot_len)
+
+        self.term.write(replacement, rng=rng)
         if replacement == '\n':
             self.textview_should_return(tv)
 
@@ -1885,14 +1885,14 @@ class StaSh(object):
                         self.runtime.restore_state()  # Manually stopped thread does not restore state
                         self.runtime.worker_stack.pop()
                         self.term.write_with_prefix('successfully terminated thread %s\n' % worker)
-                self.term.reset_inp()
+                self.term.new_inp_line()
         elif vk.name == 'k_sym':
             # TODO: impossible to detect cursor position?
-            self.term.write(vk.title.strip(), self.term.io.selected_range)
+            self.term.write(vk.title.strip(), rng=self.term.io.selected_range)
 
     def history_popover_tapped(self, sender):
         if sender.selected_row >= 0:
-            self.term.set_inp_text(sender.items[sender.selected_row])
+            self.term.set_inp_line(sender.items[sender.selected_row])
             self.runtime.idx_to_history = sender.selected_row
 
     def will_close(self):

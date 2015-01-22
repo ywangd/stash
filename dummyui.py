@@ -53,9 +53,12 @@ class TextView(View):
     def __init__(self, *args, **kwargs):
         super(TextView, self).__init__(*args, **kwargs)
         self.text = ''
+        self.selected_range = (0, 0)
 
     def replace_range(self, rng, s):
-        pass
+        self.text = self.text[:rng[0]] + s + self.text[rng[1]:]
+        tot_len = len(self.text)
+        self.selected_range = (tot_len, tot_len)
 
 class Button(View):
     def __init__(self, *args, **kwargs):
