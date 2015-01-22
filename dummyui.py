@@ -41,8 +41,6 @@ class View(object):
     def bring_to_front(self):
         pass
 
-    def begin_editing(self):
-        pass
 
 class TextField(View):
     def __init__(self, *args, **kwargs):
@@ -59,6 +57,13 @@ class TextView(View):
         self.text = self.text[:rng[0]] + s + self.text[rng[1]:]
         tot_len = len(self.text)
         self.selected_range = (tot_len, tot_len)
+
+    def begin_editing(self):
+        pass
+
+    def end_editing(self):
+        pass
+
 
 class Button(View):
     def __init__(self, *args, **kwargs):
