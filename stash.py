@@ -1311,51 +1311,55 @@ class ShRuntime(object):
 
     def reset_idx_to_history(self):
         self.idx_to_history = -1
-        
+
+
 class ShVk(ui.View):
     """
     The virtual keyboard container, which implements a swipe cursor positioning gesture
     """
-    def __init__(self,app,name='vks',flex='wh'):
-        self.app=app
-        self.flex=flex
-        self.name=name
-        self.sv=ui.ScrollView(name,flex='wh')
-        ui.View.add_subview(self,self.sv)
-        self.sv.delegate=self
-        self.dx=0
+    def __init__(self, app, name='vks', flex='wh'):
+        if not _IN_PYTHONISTA:
+            super(ShVk, self).__init__()
+
+        self.app = app
+        self.flex = flex
+        self.name = name
+        self.sv = ui.ScrollView(name, flex='wh')
+        super(ShVk, self).add_subview(self.sv)
+        self.sv.delegate = self
+        self.dx = 0
+
     def layout(self):
-        self.sv.content_size=(self.width+1, self.height)
-        
-    def add_subview(self,subview):
+        self.sv.content_size = (self.width + 1, self.height)
+
+    def add_subview(self, subview):
         self.sv.add_subview(subview)
-        
-    def remove_subview(self,subview):
-        self.sv.remove_subview(self,subview)
-    
+
+    def remove_subview(self, subview):
+        self.sv.remove_subview(subview)
+
     def scrollview_did_scroll(self, scrollview):
-        SCROLL_PER_CHAR=20.0 # Number of pixels to scroll to move 1 character
+        SCROLL_PER_CHAR = 20.0  # Number of pixels to scroll to move 1 character
         # integrate small scroll motions, but keep scrollview from actually moving
         if not scrollview.decelerating:
-            self.dx = self.dx - scrollview.content_offset[0]/SCROLL_PER_CHAR
-        scrollview.content_offset=(0.0,0.0)
-        
+            self.dx -= scrollview.content_offset[0] / SCROLL_PER_CHAR
+        scrollview.content_offset = (0.0, 0.0)
+
         if int(self.dx):
-            pos= self.app.term.io.selected_range[0]+int(self.dx)    
-            self.dx=self.dx-int(self.dx)
-       
-            tot_len = len(self.app.term.out_buf) 
-            if pos>=tot_len:
-                pos=tot_len
-            if pos<self.app.term.read_pos:
-                pos=self.app.term.read_pos
-            #update cursor position
+            pos = self.app.term.io.selected_range[0] + int(self.dx)
+            self.dx -= int(self.dx)
+
+            tot_len = len(self.app.term.out_buf)
+            if pos >= tot_len:
+                pos = tot_len
+            if pos < self.app.term.read_pos:
+                pos = self.app.term.read_pos
+            # update cursor position
             try:
                 self.app.term.io.replace_range((pos, pos), '')
             except ValueError:
                 pass
 
-        
 
 class ShTerm(ui.View):
     """
@@ -1407,7 +1411,7 @@ class ShTerm(ui.View):
         self.add_subview(self.txts)
         self.txts.background_color = 0.7
 
-        self.vks = ShVk(app=app,name='vks', flex='WT')
+        self.vks = ShVk(app=app, name='vks', flex='WT')
         self.txts.add_subview(self.vks)
         self.vks.background_color = 0.7
 
@@ -1424,7 +1428,7 @@ class ShTerm(ui.View):
         self.k_tab.background_color = 'white'
         self.k_tab.size_to_fit()
 
-        self.k_grp_0 = ShVk(app=app,name='k_grp_0', flex='WT')  # vk group 0
+        self.k_grp_0 = ShVk(app=app, name='k_grp_0', flex='WT')  # vk group 0
         self.vks.add_subview(self.k_grp_0)
         self.k_grp_0.background_color = 0.7
         self.k_grp_0.x = self.k_tab.width + k_hspacing
@@ -1527,7 +1531,7 @@ class ShTerm(ui.View):
         self.k_swap.width -= 2
         self.k_swap.x = self.vks.width - self.k_swap.width
 
-        self.k_grp_1 = ShVk(app,name='k_grp_1', flex='WT')  # vk group 1
+        self.k_grp_1 = ShVk(app, name='k_grp_1', flex='WT')  # vk group 1
         self.vks.add_subview(self.k_grp_1)
         self.k_grp_1.background_color = 0.7
         self.k_grp_1.x = self.k_tab.width + k_hspacing
