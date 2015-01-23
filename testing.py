@@ -39,15 +39,15 @@ class StashTests(unittest.TestCase):
             assert v in self.stash.runtime.envars.keys(), '%self.stash should be defined' % v
 
     def test_03(self):
-        cmp_str = r"""x y
+        cmp_str = r"""[stash]$ x y
 A is{0}
 A is 8
 bin
-""".format(' ')
+[stash]$ """.format(' ')
         self.do_test('test03.sh x y', cmp_str, ensure_undefined=('A',))
 
     def test_05(self):
-        cmp_str = r"""AA is{0}
+        cmp_str = r"""[stash]$ AA is{0}
 AA is Hello
 stash
 bin
@@ -59,11 +59,11 @@ bin
 2
 B is{0}
 stash
-""".format(' ')
+[stash]$ """.format(' ')
         self.do_test('test05.py', cmp_str, ensure_undefined=('AA', 'B'))
 
     def test_06(self):
-        cmp_str = r"""AA is{0}
+        cmp_str = r"""[stash]$ AA is{0}
 --- direct execution without sourcing ---
 From tobesourced AA is sourced
 env=printenv
@@ -98,34 +98,34 @@ la=ls -a
 ll=ls -la
 logout=echo "Use the close button in the upper right corner to exit StaSh."
 
-""".format(' ')
+[stash]$ """.format(' ')
         self.do_test('test06.sh', cmp_str, ensure_undefined=('A',))
 
 
     def test_07(self):
-        cmp_str = r"""A is 999
+        cmp_str = r"""[stash]$ A is 999
 A is{0}
-""".format(" ")
+[stash]$ """.format(" ")
         self.do_test('test07.sh', cmp_str, ensure_undefined=('A',))
 
     def test_08(self):
-        cmp_str = r"""A is{0}
-""".format(" ")
+        cmp_str = r"""[stash]$ A is{0}
+[stash]$ """.format(" ")
         self.do_test('test08.sh', cmp_str, ensure_undefined=('A',))
 
     def test_09(self):
-        cmp_str = r"""A is{0}
-""".format(" ")
+        cmp_str = r"""[stash]$ A is{0}
+[stash]$ """.format(" ")
         self.do_test('test09.sh', cmp_str, ensure_undefined=('A',))
 
     def test_10(self):
-        cmp_str = r"""1: #!/bin/bash
-"""
+        cmp_str = r"""[stash]$ 1: #!/bin/bash
+[stash]$ """
         self.do_test('test10.sh', cmp_str)
 
     def test_11(self):
-        cmp_str = r"""A is 42
-"""
+        cmp_str = r"""[stash]$ A is 42
+[stash]$ """
         self.do_test('test11.sh', cmp_str, ensure_undefined=('A',))
 
 
