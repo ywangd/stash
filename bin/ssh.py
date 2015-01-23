@@ -19,6 +19,8 @@ optional arguments:
   --password PASSWORD   Password for rsa/dsa key or password login
   -p PORT, --port PORT  port for ssh default: 22
 '''
+import os
+import sys
 import argparse
 import threading
 import time
@@ -95,6 +97,7 @@ class StashSSH(object):
         
     def find_ssh_keys(self):
         files = []
+        APP_DIR = os.environ['STASH_ROOT']
         for file in os.listdir(APP_DIR+'/.ssh'):
             if '.' not in file:
                 files.append(APP_DIR+'/.ssh/'+file)
@@ -121,10 +124,8 @@ class StashSSH(object):
             if str(item) != ' '*100:
                 break
             count -=1
-        text = '\n'.join(self.screen.display[:count])
-        # clear the screen and write output
-        self.stash.term.seek(0)
-        self.stash.term.truncate()
+        text = '\n'.join(self.screen.display[:count]).rstrip() + ' '
+        self.stash.term.truncate(0, flush=False)
         self.stash.term.write(text)
 
     def single_exec(self,command):
@@ -169,14 +170,14 @@ class StashSSH(object):
         import editor
     
         try:
-            temp = tempfile.NamedTemporaryFile(dir=os.path.expanduser('~/Documents') , suffix='.py')
+            temp = tempfile.NamedTemporaryFile(dir=os.path.expanduser('~/Documents'), suffix='.py')
             cur_path = editor.get_path()
             sftp = self.ssh.open_sftp()
             path = self.get_remote_path()
             res = sftp.getfo(path+remote_file,temp)
             #editor.open_file(temp.name)
             temp.seek(0)
-            print '***When you are finished editing the file, you must come back to console to confim changes***'
+            print '***When you are finished editing the file, you must come back to console to confirm changes***'
             editor.open_file(temp.name)
             time.sleep(1.5)
             console.hide_output()
@@ -186,7 +187,7 @@ class StashSSH(object):
                 with open(temp.name,'r') as f:
                     sftp.putfo(f,path+remote_file)
                     print 'File transfered.'
-        except exception, e:
+        except Exception, e:
             print e
         finally: 
             temp.close()
@@ -203,8 +204,8 @@ class StashSSH(object):
         t1 = threading.Thread(target=self.stdout_thread)
         t1.start()
         while True:
-            if self.chan.send_ready():        
-                tmp = sys.stdin.readline()
+            if self.chan.send_ready():   
+                tmp = raw_input()     
                 ssh_args = tmp.split(' ')
                 if ssh_args[0] == 'exit':
                     self.exit()
