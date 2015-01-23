@@ -717,7 +717,7 @@ class ShCompleter(object):
                                 (is_cmd_word, has_trailing_white, word_to_complete))
 
             except pp.ParseException as e:
-                self.app.term.write('\n')
+                self.app.term.write('\n', flush=False)
                 self.app.term.write_with_prefix('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
                 self.app.term.new_inp_line(with_text=line)
                 return
@@ -1319,6 +1319,7 @@ class ShTerm(ui.View):
     """
 
     STREAM = 0
+    POOL = 1
 
     def __init__(self, app):
         if not _IN_PYTHONISTA:
@@ -1328,6 +1329,7 @@ class ShTerm(ui.View):
 
         self.mode = ShTerm.STREAM
         self.editing = False
+        self.nlines_per_flush_replace = 100
         self.flush_recheck_delay = 0.1  # seconds
         self._flush_thread = None
         self._timer_to_start_flush_thread = None
@@ -1365,7 +1367,7 @@ class ShTerm(ui.View):
         self.txts.add_subview(self.vks)
         self.vks.background_color = 0.7
 
-        k_hspacing = 2
+        k_hspacing = 1
 
         self.k_tab = ui.Button(name='k_tab', title=' Tab ', flex='TB')
         self.vks.add_subview(self.k_tab)
@@ -1442,6 +1444,19 @@ class ShTerm(ui.View):
         self.k_CC.size_to_fit()
         self.k_CC.x = self.k_CD.x + self.k_CD.width + k_hspacing
 
+        # Kill line key
+        self.k_CU = ui.Button(name='k_CU', title=' CU ', flex='RTB')
+        self.k_grp_0.add_subview(self.k_CU)
+        self.k_CU.action = app.vk_tapped
+        self.k_CU.font = self.BUTTON_FONT
+        self.k_CU.border_width = 1
+        self.k_CU.border_color = 0.9
+        self.k_CU.corner_radius = 5
+        self.k_CU.tint_color = 'black'
+        self.k_CU.background_color = 'white'
+        self.k_CU.size_to_fit()
+        self.k_CU.x = self.k_CC.x + self.k_CC.width + k_hspacing
+
         # End Editing key
         self.k_KB = ui.Button(name='k_KB', title=' KB ', flex='RTB')
         self.k_grp_0.add_subview(self.k_KB)
@@ -1453,7 +1468,7 @@ class ShTerm(ui.View):
         self.k_KB.tint_color = 'black'
         self.k_KB.background_color = 'white'
         self.k_KB.size_to_fit()
-        self.k_KB.x = self.k_CC.x + self.k_CD.width + k_hspacing
+        self.k_KB.x = self.k_CU.x + self.k_CU.width + k_hspacing
 
         self.k_swap = ui.Button(name='k_swap', title='..', flex='LTB')
         self.vks.add_subview(self.k_swap)
@@ -1465,6 +1480,7 @@ class ShTerm(ui.View):
         self.k_swap.tint_color = 'black'
         self.k_swap.background_color = 'white'
         self.k_swap.size_to_fit()
+        self.k_swap.width -= 2
         self.k_swap.x = self.vks.width - self.k_swap.width
 
         self.k_grp_1 = ui.View(name='k_grp_1', flex='WT')  # vk group 1
@@ -1476,7 +1492,7 @@ class ShTerm(ui.View):
         for i, sym in enumerate(self.vk_symbols):
             if sym == ' ':
                 continue
-            if not app.ON_IPAD and i > 6:
+            if not app.ON_IPAD and i > 7:
                 break
 
             k_sym = ui.Button(name='k_sym', title=' %s ' % sym, flex='RTB')
@@ -1537,17 +1553,19 @@ class ShTerm(ui.View):
             self.txts.height = self.height
         self.flush()
 
-    def read_inp_line(self, with_prompt=False):
+    def read_inp_line(self):
         s = self.out_buf[self.read_pos:]
-        return s if not with_prompt else (self.prompt + s)
+        return s
 
     def new_inp_line(self, with_text=''):
         self.seek(0, 2)  # move to the end
         self.prompt = self.app.runtime.get_prompt()
         self.read_pos = self.tell()
-        self.write(self.prompt)
         if with_text:
+            self.write(self.prompt, flush=False)
             self.set_inp_line(with_text)
+        else:
+            self.write(self.prompt)
 
     def set_inp_line(self, s):
         self.write(s, rng=(self.read_pos, len(self.out_buf)), update_read_pos=False)
@@ -1589,13 +1607,14 @@ class ShTerm(ui.View):
     def tell(self):
         return self.write_pos
 
-    def truncate(self, size=None):
+    def truncate(self, size=None, flush=True):
         if size is None:
             self.out_buf = self.out_buf[0:self.write_pos]
         else:
             self.out_buf = self.out_buf[0:size]
         self.write_pos = self.read_pos = len(self.out_buf)
-        self.flush()
+        if flush:
+            self.flush()
 
     def encode(self, s):
         return s.encode('utf-8') if self.app.runtime.input_encoding_utf8 else s
@@ -1651,12 +1670,12 @@ class ShTerm(ui.View):
         if flush:
             self.flush()
 
-    def write_with_prefix(self, s):
-        self.write('stash: ' + s)
+    def write_with_prefix(self, s, **kwargs):
+        self.write('stash: ' + s, **kwargs)
 
-    def writelines(self, lines):
+    def writelines(self, lines, **kwargs):
         _debug_runtime('Writeline Called: [%s]\n' % repr(lines))
-        self.write(''.join(lines))
+        self.write(''.join(lines), **kwargs)
 
     def flush(self):
         # Throttle the flush by allowing only one running _flush thread
@@ -1686,7 +1705,20 @@ class ShTerm(ui.View):
             lines = lines[:-self.BUFFER_MAX]
             rng = (0, len(''.join(lines)))
             self.replace_out_buf('', rng=rng)
-            self.seek(0, whence=2)  # Move to the end
+
+            self.write_pos -= rng[1]
+            if self.write_pos < 0:
+                self.write_pos = len(self.out_buf)
+
+            self.read_pos -= rng[1]
+            if self.read_pos < 0:
+                self.read_pos = len(self.out_buf)
+
+            if self.cursor_at is not None:
+                self.cursor_at -= rng[1]
+                if self.cursor_at < 0:
+                    self.cursor_at = None
+
             self.io.text = self.out_buf
 
         else:
@@ -1698,12 +1730,12 @@ class ShTerm(ui.View):
             else:
                 lines = replacement.splitlines(True)
                 while lines:
-                    self.io.replace_range(rng, ''.join(lines[:100]))
-                    lines = lines[100:]
+                    self.io.replace_range(rng, ''.join(lines[:self.nlines_per_flush_replace]))
+                    lines = lines[self.nlines_per_flush_replace:]
                     rbound = len(self.io.text)
                     rng = (rbound, rbound)
 
-        # Set the cursor position for replacing
+        # Set the cursor position
         if self.cursor_at is not None:
             cursor_at = len(self.io.text) - self.cursor_at
             self.io.replace_range((cursor_at, cursor_at), '')
@@ -1839,14 +1871,14 @@ class StaSh(object):
         else:
             # we have a running threading, all inputs are considered as
             # directed to the thread, NOT the main GUI program
-            s = self.term.out_buf[self.term.read_pos:]
+            s = self.term.read_inp_line()
             self.term.read_pos += len(s)
             self.term.inp_buf.append(s)
             self.term.input_did_return = True
 
         return True
 
-    def textview_should_change(self, tv, rng, replacement):
+    def textview_should_change(self, tv, rng, replacement, is_virtual_key=False):
         # If range is invalid, simply append replacement at the end
         saved_rng = rng
         tot_len = len(self.term.out_buf)
@@ -1859,7 +1891,7 @@ class StaSh(object):
 
         elif replacement.find('\n') == -1:
             # let valid changes go through the builtin update for performance
-            if rng == saved_rng:
+            if rng == saved_rng and not is_virtual_key:
                 self.term.write(replacement, rng=rng, update_read_pos=False, flush=False)
                 return True
             else:
@@ -1879,8 +1911,8 @@ class StaSh(object):
         pass
 
     def textview_did_change_selection(self, tv):
-        if tv.selected_range == (0, 0):
-            self.vk_tapped(self.term.k_hup)
+        # TODO: Possible to support external keyboard arrow keys
+        pass
 
     def vk_tapped(self, vk):
         if vk == self.term.k_tab:  # Tab completion
@@ -1913,8 +1945,6 @@ class StaSh(object):
         elif vk == self.term.k_CD:
             if self.runtime.worker_stack:
                 self.term.input_did_eof = True
-            else:  # erase line if no running script
-                self.term.set_inp_line('')
 
         elif vk == self.term.k_CC:
             if not self.runtime.worker_stack:
@@ -1942,11 +1972,15 @@ class StaSh(object):
                 self.term.io.end_editing()
             else:
                 self.term.io.begin_editing()
+                
+        elif vk == self.term.k_CU:
+            self.term.set_inp_line('')
 
         elif vk.name == 'k_sym':
             self.textview_should_change(self.term.io,
                                         self.term.io.selected_range,
-                                        vk.title.strip())
+                                        vk.title.strip(),
+                                        is_virtual_key=True)
 
     def history_popover_tapped(self, sender):
         if sender.selected_row >= 0:
