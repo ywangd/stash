@@ -9,7 +9,7 @@ def in_background(func):
     return func
 
 def get_screen_size():
-    return (100, 100)
+    return 100, 100
 
 
 class View(object):
@@ -25,6 +25,9 @@ class View(object):
     def add_subview(self, v):
         self.subviews.append(v)
         v.superview = self
+
+    def remove_subview(self, v):
+        self.subviews.remove(v)
 
     def present(self, style='popover'):
         pass
@@ -63,6 +66,9 @@ class TextView(View):
 
     def end_editing(self):
         pass
+
+class ScrollView(View):
+    pass
 
 
 class Button(View):
