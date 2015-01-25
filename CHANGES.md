@@ -2,21 +2,21 @@
 
 ### Version 0.3.0 - 2015-01-25
 * New Features
-    - The main `_stash` object is now callable. It is more convenient for a
-      Python command script to issue other commands via the callable, e.g.
+    - The main `_stash` object is now callable. It is now more convenient for a
+      Python script to issue Shell commands via the callable, e.g.
       `_stash('ls')`, `_stash('pwd')`
     - Sub-command auto-completion system configurable via a JSON file (currently
       supports `pip` and `git`)
     - Comments (both full line and trailing) are now allowed in shell scripts
-    - All arguments are now by default converted from *unicode* type to *str*
+    - All arguments are now by default converted from `unicode` type to `str`
       type with utf-8 encoding before passing them to external scripts. The
-      change is to recognise that Python 2.x and its libraries is not fully
+      change is to recognise that Python 2.x and its libraries are not fully
       unicode compliant. This behavior can be turned off in config file.
     - Added a config option, *py_traceback*, to display full Python exception
       trace stack for command scripts.
     - A *lib* folder is added for storing shared modules so command scripts do
       not have to include them separately.
-        - These modules are stored as attributes of the main `_stash` object
+        - These modules are stored as attributes of the main `_stash` object.
 
 * Improvements
     - Runtime now emulates sub-shell environment even more correctly.
@@ -71,6 +71,7 @@
         - `md5sum.py` - Print or check MD5 checksums
         - `sha1sum.py` - Print of check SHA1 checksums
         - `sha256sum.py` - Print of check SHA256 checksums
+        - `zip.py` - Package and compress files and directories
     * Changed scripts 
         - `cat.py` - now usable on binary files 
         - `selfupdate.sh` - now removes test related files.
