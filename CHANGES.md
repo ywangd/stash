@@ -73,6 +73,7 @@
         - `sha256sum.py` - Print of check SHA256 checksums
         - `zip.py` - Package and compress files and directories
     * Changed scripts 
+        - `clear.py` now replaces `cls.py` to be consisent with the Linux counterpart
         - `cat.py` - now usable on binary files 
         - `selfupdate.sh` - now removes test related files.
         - `unzip.py` - now takes a `-t` option to show file contents
