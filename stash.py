@@ -4,7 +4,7 @@ StaSh - Shell for Pythonista
 
 https://github.com/ywangd/stash
 """
-__version__ = '0.3.0'
+__version__ = '0.4.0'
 
 import ast
 import functools
@@ -717,8 +717,9 @@ class ShCompleter(object):
                                 (is_cmd_word, has_trailing_white, word_to_complete))
 
             except pp.ParseException as e:
-                self.app.term.write('%s\n' % self.app.term.inp.text)
+                self.app.term.write('\n', flush=False)
                 self.app.term.write_with_prefix('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
+                self.app.term.new_inp_line(with_text=line)
                 return
 
             cands, with_normal_completion = \
@@ -754,8 +755,8 @@ class ShCompleter(object):
         all_names = sorted(set(all_names))
 
         if len(all_names) > self.np_max:
-            self.app.term.write('%s\nMore than %d possibilities\n'
-                                    % (self.app.term.inp.text, self.np_max))
+            self.app.term.write('\nMore than %d possibilities\n' % self.np_max)
+            self.app.term.new_inp_line(with_text=line)
             _debug_completer(self.format_all_names(all_names))
 
         else:
@@ -782,12 +783,12 @@ class ShCompleter(object):
 
             if newline != line:
                 # No need to show available possibilities if some completion can be done
-                self.app.term.set_inp_text(newline)  # Complete the line
+                self.app.term.set_inp_line(newline)
                 _debug_completer('%s -> %s' %(repr(line), repr(newline)))
 
             elif len(all_names) > 0:  # no completion available, show all possibilities if exist
-                self.app.term.write('%s\n%s\n'
-                                    % (self.app.term.inp.text, self.format_all_names(all_names)))
+                self.app.term.write('\n%s\n' % self.format_all_names(all_names))
+                self.app.term.new_inp_line(with_text=line)
                 _debug_completer(self.format_all_names(all_names))
 
     def path_match(self, word_to_complete_normal_whites):
@@ -936,13 +937,13 @@ class ShRuntime(object):
         _debug_runtime('envars = %s\n' % sorted(self.envars.keys()))
 
     def load_rcfile(self):
-        self.app(_DEFAULT_RC.splitlines(), add_to_history=False)
+        self.app(_DEFAULT_RC.splitlines(), add_to_history=False, add_new_inp_line=False)
 
         if not _STARTUP_OPTIONS.no_rcfile \
                 and os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
             try:
                 with open(self.rcfile) as ins:
-                    self.app(ins.readlines(), add_to_history=False)
+                    self.app(ins.readlines(), add_to_history=False, add_new_inp_line=False)
             except IOError:
                 self.app.term.write_with_prefix('%s: error reading rcfile\n' % self.rcfile)
 
@@ -989,7 +990,7 @@ class ShRuntime(object):
             final_errs=None,
             add_to_history=None,
             code_validation_func=None,
-            reset_inp=None,
+            add_new_inp_line=None,
             persist_envars=False,
             persist_aliases=False,
             persist_cwd=False):
@@ -1069,8 +1070,8 @@ class ShRuntime(object):
                 self.app.term.write_with_prefix('%s\n' % repr(e))
 
             finally:
-                if reset_inp or len(self.worker_stack) == 1:
-                    self.app.term.reset_inp()
+                if add_new_inp_line or (len(self.worker_stack) == 1 and add_new_inp_line is not False):
+                    self.app.term.new_inp_line()
                 self.app.term.flush()
                 self.worker_stack.pop()  # remove itself from the stack
 
@@ -1249,7 +1250,7 @@ class ShRuntime(object):
                           final_outs=outs,
                           final_errs=errs,
                           add_to_history=add_to_history,
-                          reset_inp=False)
+                          add_new_inp_line=False)
         while worker.isAlive():
             pass
 
@@ -1299,17 +1300,65 @@ class ShRuntime(object):
         if self.idx_to_history >= len(self.history):
             self.idx_to_history -= 1
         else:
-            self.app.term.set_inp_text(self.history[self.idx_to_history])
+            self.app.term.set_inp_line(self.history[self.idx_to_history])
 
     def history_dn(self):
         self.idx_to_history -= 1
         if self.idx_to_history <= -1:
             self.idx_to_history = -1
         else:
-            self.app.term.set_inp_text(self.history[self.idx_to_history])
+            self.app.term.set_inp_line(self.history[self.idx_to_history])
 
     def reset_idx_to_history(self):
         self.idx_to_history = -1
+
+
+class ShVk(ui.View):
+    """
+    The virtual keyboard container, which implements a swipe cursor positioning gesture
+    """
+    def __init__(self, app, name='vks', flex='wh'):
+        if not _IN_PYTHONISTA:
+            super(ShVk, self).__init__()
+
+        self.app = app
+        self.flex = flex
+        self.name = name
+        self.sv = ui.ScrollView(name, flex='wh')
+        super(ShVk, self).add_subview(self.sv)
+        self.sv.delegate = self
+        self.dx = 0
+
+    def layout(self):
+        self.sv.content_size = (self.width + 1, self.height)
+
+    def add_subview(self, subview):
+        self.sv.add_subview(subview)
+
+    def remove_subview(self, subview):
+        self.sv.remove_subview(subview)
+
+    def scrollview_did_scroll(self, scrollview):
+        SCROLL_PER_CHAR = 20.0  # Number of pixels to scroll to move 1 character
+        # integrate small scroll motions, but keep scrollview from actually moving
+        if not scrollview.decelerating:
+            self.dx -= scrollview.content_offset[0] / SCROLL_PER_CHAR
+        scrollview.content_offset = (0.0, 0.0)
+
+        if int(self.dx):
+            pos = self.app.term.io.selected_range[0] + int(self.dx)
+            self.dx -= int(self.dx)
+
+            tot_len = len(self.app.term.out_buf)
+            if pos >= tot_len:
+                pos = tot_len
+            if pos < self.app.term.read_pos:
+                pos = self.app.term.read_pos
+            # update cursor position
+            try:
+                self.app.term.io.replace_range((pos, pos), '')
+            except ValueError:
+                pass
 
 
 class ShTerm(ui.View):
@@ -1317,16 +1366,22 @@ class ShTerm(ui.View):
     The View as the terminal of the application
     """
 
+    STREAM = 0
+    POOL = 1
+
     def __init__(self, app):
         if not _IN_PYTHONISTA:
             super(ShTerm, self).__init__()
 
         self.app = app
 
+        self.mode = ShTerm.STREAM
+        self.editing = False
+        self.nlines_per_flush_replace = 100
         self.flush_recheck_delay = 0.1  # seconds
         self._flush_thread = None
         self._timer_to_start_flush_thread = None
-        self._n_refresh = 5
+        self._n_refresh = 8
         self._refresh_pause = 0.01
 
         self.BUFFER_MAX = app.config.getint('display', 'BUFFER_MAX')
@@ -1335,9 +1390,11 @@ class ShTerm(ui.View):
 
         self.vk_symbols = app.config.get('display', 'VK_SYMBOLS')
 
+        self.cursor_at = None
         self.inp_buf = []
         self.out_buf = ''
-        self.out_buf_pos = 0
+        self.read_pos = 0
+        self.write_pos = 0
         self.input_did_return = False  # For readline, e.g. raw_input
         self.input_did_eof = False  # For read and readlines
         self.cleanup = app.will_close
@@ -1354,11 +1411,11 @@ class ShTerm(ui.View):
         self.add_subview(self.txts)
         self.txts.background_color = 0.7
 
-        self.vks = ui.View(name='vks', flex='WT')
+        self.vks = ShVk(app=app, name='vks', flex='WT')
         self.txts.add_subview(self.vks)
         self.vks.background_color = 0.7
 
-        k_hspacing = 2
+        k_hspacing = 1
 
         self.k_tab = ui.Button(name='k_tab', title=' Tab ', flex='TB')
         self.vks.add_subview(self.k_tab)
@@ -1371,12 +1428,12 @@ class ShTerm(ui.View):
         self.k_tab.background_color = 'white'
         self.k_tab.size_to_fit()
 
-        self.k_grp_0 = ui.View(name='k_grp_0', flex='WT')  # vk group 0
+        self.k_grp_0 = ShVk(app=app, name='k_grp_0', flex='WT')  # vk group 0
         self.vks.add_subview(self.k_grp_0)
         self.k_grp_0.background_color = 0.7
         self.k_grp_0.x = self.k_tab.width + k_hspacing
 
-        self.k_hist = ui.Button(name='k_hist', title=' Hist ', flex='RTB')
+        self.k_hist = ui.Button(name='k_hist', title=' H ', flex='RTB')
         self.k_grp_0.add_subview(self.k_hist)
         self.k_hist.action = app.vk_tapped
         self.k_hist.font = self.BUTTON_FONT
@@ -1411,7 +1468,7 @@ class ShTerm(ui.View):
         self.k_hdn.size_to_fit()
         self.k_hdn.x = self.k_hup.x + self.k_hup.width + k_hspacing
 
-        self.k_CD = ui.Button(name='k_CD', title=' C-D ', flex='RTB')
+        self.k_CD = ui.Button(name='k_CD', title=' CD ', flex='RTB')
         self.k_grp_0.add_subview(self.k_CD)
         self.k_CD.action = app.vk_tapped
         self.k_CD.font = self.BUTTON_FONT
@@ -1423,7 +1480,7 @@ class ShTerm(ui.View):
         self.k_CD.size_to_fit()
         self.k_CD.x = self.k_hdn.x + self.k_hdn.width + k_hspacing
 
-        self.k_CC = ui.Button(name='k_CC', title=' C-C ', flex='RTB')
+        self.k_CC = ui.Button(name='k_CC', title=' CC ', flex='RTB')
         self.k_grp_0.add_subview(self.k_CC)
         self.k_CC.action = app.vk_tapped
         self.k_CC.font = self.BUTTON_FONT
@@ -1435,7 +1492,33 @@ class ShTerm(ui.View):
         self.k_CC.size_to_fit()
         self.k_CC.x = self.k_CD.x + self.k_CD.width + k_hspacing
 
-        self.k_swap = ui.Button(name='k_swap', title=' .. ', flex='LTB')
+        # Kill line key
+        self.k_CU = ui.Button(name='k_CU', title=' CU ', flex='RTB')
+        self.k_grp_0.add_subview(self.k_CU)
+        self.k_CU.action = app.vk_tapped
+        self.k_CU.font = self.BUTTON_FONT
+        self.k_CU.border_width = 1
+        self.k_CU.border_color = 0.9
+        self.k_CU.corner_radius = 5
+        self.k_CU.tint_color = 'black'
+        self.k_CU.background_color = 'white'
+        self.k_CU.size_to_fit()
+        self.k_CU.x = self.k_CC.x + self.k_CC.width + k_hspacing
+
+        # End Editing key
+        self.k_KB = ui.Button(name='k_KB', title=' KB ', flex='RTB')
+        self.k_grp_0.add_subview(self.k_KB)
+        self.k_KB.action = app.vk_tapped
+        self.k_KB.font = self.BUTTON_FONT
+        self.k_KB.border_width = 1
+        self.k_KB.border_color = 0.9
+        self.k_KB.corner_radius = 5
+        self.k_KB.tint_color = 'black'
+        self.k_KB.background_color = 'white'
+        self.k_KB.size_to_fit()
+        self.k_KB.x = self.k_CU.x + self.k_CU.width + k_hspacing
+
+        self.k_swap = ui.Button(name='k_swap', title='..', flex='LTB')
         self.vks.add_subview(self.k_swap)
         self.k_swap.action = app.vk_tapped
         self.k_swap.font = self.BUTTON_FONT
@@ -1445,9 +1528,10 @@ class ShTerm(ui.View):
         self.k_swap.tint_color = 'black'
         self.k_swap.background_color = 'white'
         self.k_swap.size_to_fit()
+        self.k_swap.width -= 2
         self.k_swap.x = self.vks.width - self.k_swap.width
 
-        self.k_grp_1 = ui.View(name='k_grp_1', flex='WT')  # vk group 1
+        self.k_grp_1 = ShVk(app, name='k_grp_1', flex='WT')  # vk group 1
         self.vks.add_subview(self.k_grp_1)
         self.k_grp_1.background_color = 0.7
         self.k_grp_1.x = self.k_tab.width + k_hspacing
@@ -1456,7 +1540,7 @@ class ShTerm(ui.View):
         for i, sym in enumerate(self.vk_symbols):
             if sym == ' ':
                 continue
-            if not app.ON_IPAD and i > 6:
+            if not app.ON_IPAD and i > 7:
                 break
 
             k_sym = ui.Button(name='k_sym', title=' %s ' % sym, flex='RTB')
@@ -1481,35 +1565,24 @@ class ShTerm(ui.View):
         self.k_grp_1.send_to_back()
         self.on_k_grp = 0
 
-        self.inp = ui.TextField(name='inp', flex='WT')
-        self.txts.add_subview(self.inp)
-        self.inp.font = self.TEXT_FONT
-        self.inp.height = self.TEXT_FONT[1] + 2
-        self.inp.y = self.inp.superview.height - (self.inp.height + 4) - (self.vks.height + 4)
-        self.inp.background_color = ast.literal_eval(app.config.get('display', 'INPUT_BACKGROUND_COLOR'))
-        self.inp.text_color = ast.literal_eval(app.config.get('display', 'INPUT_TEXT_COLOR'))
-        self.inp.tint_color = ast.literal_eval(app.config.get('display', 'INPUT_TINT_COLOR'))
-        self.inp.text = self.prompt
-        self.inp.bordered = False
-        self.inp.clear_button_mode = 'always'
-        self.inp.autocapitalization_type = ui.AUTOCAPITALIZE_NONE
-        self.inp.autocorrection_type = False
-        self.inp.spellchecking_type = False
-        self.inp.delegate = app
-
-        self.out = ui.TextView(name='out', flex='WH')
-        self.txts.add_subview(self.out)
-        self.out.height = self.out.superview.height - (self.inp.height + 4) - (self.vks.height + 4)
-        self.out.auto_content_inset = False
-        self.out.content_inset = (0, 0, -8, 0)
-        self.out.background_color = ast.literal_eval(app.config.get('display', 'OUTPUT_BACKGROUND_COLOR'))
-        self.out.indicator_style = app.config.get('display', 'OUTPUT_INDICATOR_STYLE')
-        self.out.font = self.TEXT_FONT
-        self.out.text_color = ast.literal_eval(app.config.get('display', 'OUTPUT_TEXT_COLOR'))
-        self.out.tint_color = ast.literal_eval(app.config.get('display', 'OUTPUT_TINT_COLOR'))
-        self.out.text = ''
-        self.out.editable = False
-        self.out.delegate = app
+        self.io = ui.TextView(name='io', flex='WH')
+        self.txts.add_subview(self.io)
+        self.io.height = self.io.superview.height - (self.vks.height + 8)
+        self.io.x = 0
+        self.io.y = 0
+        self.io.auto_content_inset = False
+        self.io.content_inset = (0, 0, 0, 0)
+        self.io.background_color = ast.literal_eval(app.config.get('display', 'BACKGROUND_COLOR'))
+        self.io.indicator_style = app.config.get('display', 'INDICATOR_STYLE')
+        self.io.font = self.TEXT_FONT
+        self.io.text_color = ast.literal_eval(app.config.get('display', 'TEXT_COLOR'))
+        self.io.tint_color = ast.literal_eval(app.config.get('display', 'TINT_COLOR'))
+        self.io.autocapitalization_type = ui.AUTOCAPITALIZE_NONE
+        self.io.autocorrection_type = False
+        self.io.spellchecking_type = False
+        self.io.text = ''
+        self.io.editable = True
+        self.io.delegate = app
         
     def toggle_k_grp(self):
         if self.on_k_grp == 0:
@@ -1524,58 +1597,72 @@ class ShTerm(ui.View):
     def keyboard_frame_did_change(self, frame):
         if frame[3] > 0:
             self.txts.height = self.height - frame[3]
-            self.flush()
         else:
             self.txts.height = self.height
+        self.flush()
 
     def read_inp_line(self):
-        return self.inp.text[len(self.prompt):]
-  
-    def reset_inp(self):
-        self.set_inp_text('')
-  
-    def set_inp_text(self, s, with_prompt=True):
-        if with_prompt:
-            self.prompt = self.app.runtime.get_prompt()
-            self.inp.text = '%s%s' % (self.prompt, s)
-        else:
-            self.inp.text = s
- 
-    def add_out_buf(self, s):
-        """Control the buffer size"""
-        if s == '':
-            return
+        s = self.out_buf[self.read_pos:]
+        return s
 
-        if self.out_buf_pos == len(self.out_buf):
-            self.out_buf += s
-            self.out_buf_pos = len(self.out_buf)
+    def new_inp_line(self, with_text=''):
+        self.seek(0, 2)  # move to the end
+        self.prompt = self.app.runtime.get_prompt()
+        self.read_pos = self.tell()
+        if with_text:
+            self.write(self.prompt, flush=False)
+            self.set_inp_line(with_text)
         else:
-            new_pos = self.out_buf_pos + len(s)
-            self.out_buf = self.out_buf[0:self.out_buf_pos] + s + self.out_buf[new_pos:]
-            self.out_buf_pos = new_pos
+            self.write(self.prompt)
+
+    def set_inp_line(self, s):
+        self.write(s, rng=(self.read_pos, len(self.out_buf)), update_read_pos=False)
+
+    def replace_out_buf(self, replacement, rng=None):
+        rpl_len = len(replacement)
+        # If range is not set, default to replace from the current
+        # write position for length of the replacement
+        if rng is None:
+            rng = (self.write_pos, self.write_pos + rpl_len)
+        # If there are more text to the right of the replace bounds,
+        # this means we have a replacement in between texts, mark the
+        # cursor position so it can be displayed properly later
+        if rng[1] < len(self.out_buf):
+            self.cursor_at = len(self.out_buf) - rng[1]
+        else:
+            self.cursor_at = None
+        # The new write position is at the end of the replacement.
+        # This is necessary because the string to be replaced may not
+        # be the same size as the replacement
+        self.write_pos = rng[0] + rpl_len
+        # Finally perform the replace
+        self.out_buf = self.out_buf[:rng[0]] + replacement + self.out_buf[rng[1]:]
 
     # file-like methods for output TextView
     def seek(self, offset, whence=0):
         if whence == 0:  # from start
-            self.out_buf_pos = offset
+            self.write_pos = offset
         elif whence == 1:  # current position
-            self.out_buf_pos += offset
+            self.write_pos += offset
         elif whence == 2:  # from the end
-            self.out_buf_pos = len(self.out_buf) + offset
+            self.write_pos = len(self.out_buf) + offset
 
-        if self.out_buf_pos < 0:
-            self.out_buf_pos = 0
-        elif self.out_buf_pos > len(self.out_buf):
-            self.out_buf_pos = len(self.out_buf)
+        if self.write_pos < 0:
+            self.write_pos = 0
+        elif self.write_pos > len(self.out_buf):
+            self.write_pos = len(self.out_buf)
 
     def tell(self):
-        return self.out_buf_pos
+        return self.write_pos
 
-    def truncate(self, size=None):
+    def truncate(self, size=None, flush=True):
         if size is None:
-            self.out_buf = self.out_buf[0:self.out_buf_pos]
+            self.out_buf = self.out_buf[0:self.write_pos]
         else:
             self.out_buf = self.out_buf[0:size]
+        self.write_pos = self.read_pos = len(self.out_buf)
+        if flush:
+            self.flush()
 
     def encode(self, s):
         return s.encode('utf-8') if self.app.runtime.input_encoding_utf8 else s
@@ -1595,7 +1682,7 @@ class ShTerm(ui.View):
         # Read from input buffer instead of term directly.
         # This allows the term to response more quickly to user interactions.
         if self.inp_buf:
-            line = self.inp_buf.pop() + '\n'
+            line = self.inp_buf.pop()
             line = line[:size] if size >= 0 else line
         else:
             line = '\n'
@@ -1606,7 +1693,7 @@ class ShTerm(ui.View):
         while not self.input_did_eof:
             pass
         self.input_did_return = self.input_did_eof = False
-        lines = [self.encode(line + '\n') for line in self.inp_buf]
+        lines = [self.encode(line) for line in self.inp_buf]
         self.inp_buf = []
         if size >= 0:
             lines = lines[:size]
@@ -1617,19 +1704,26 @@ class ShTerm(ui.View):
         self.truncate()
         self.flush()
 
-    def write(self, s):
+    def write(self, s, rng=None, update_read_pos=True, flush=True):
         _debug_runtime('Write Called: [%s]\n' % repr(s))
         if not _IN_PYTHONISTA:
             _STDOUT.write(s)
-        self.add_out_buf(s)
-        self.flush()
+        self.replace_out_buf(s, rng=rng)
+        # In most cases, the read position should be the write position.
+        # There are cases when read position shouldn't be updated, e.g.
+        # when manipulating input line with completer.
+        # Also read position can never decrease in a stream like output.
+        if update_read_pos and self.write_pos > self.read_pos:
+            self.read_pos = self.write_pos
+        if flush:
+            self.flush()
 
-    def write_with_prefix(self, s):
-        self.write('stash: ' + s)
+    def write_with_prefix(self, s, **kwargs):
+        self.write('stash: ' + s, **kwargs)
 
-    def writelines(self, lines):
+    def writelines(self, lines, **kwargs):
         _debug_runtime('Writeline Called: [%s]\n' % repr(lines))
-        self.write(''.join(lines))
+        self.write(''.join(lines), **kwargs)
 
     def flush(self):
         # Throttle the flush by allowing only one running _flush thread
@@ -1652,22 +1746,61 @@ class ShTerm(ui.View):
     # print many lines.
     @sh_background('_flush_thread')
     def _flush(self):
+
         lines = self.out_buf.splitlines(True)
-        nlines = len(lines)
-        if nlines > self.BUFFER_MAX:
-            lines = lines[nlines - self.BUFFER_MAX:]
-            self.out_buf = ''.join(lines)
-        self.out.text = self.out_buf
+
+        if len(lines) > 2 * self.BUFFER_MAX:
+            lines = lines[:-self.BUFFER_MAX]
+            rng = (0, len(''.join(lines)))
+            self.replace_out_buf('', rng=rng)
+
+            self.write_pos -= rng[1]
+            if self.write_pos < 0:
+                self.write_pos = len(self.out_buf)
+
+            self.read_pos -= rng[1]
+            if self.read_pos < 0:
+                self.read_pos = len(self.out_buf)
+
+            if self.cursor_at is not None:
+                self.cursor_at -= rng[1]
+                if self.cursor_at < 0:
+                    self.cursor_at = None
+
+            self.io.text = self.out_buf
+
+        else:
+            prefix = os.path.commonprefix([self.out_buf, self.io.text])
+            replacement = self.out_buf[len(prefix):]
+            rng = (len(prefix), len(self.io.text))
+            if replacement == '':
+                self.io.replace_range(rng, '')
+            else:
+                lines = replacement.splitlines(True)
+                while lines:
+                    self.io.replace_range(rng, ''.join(lines[:self.nlines_per_flush_replace]))
+                    lines = lines[self.nlines_per_flush_replace:]
+                    rbound = len(self.io.text)
+                    rng = (rbound, rbound)
+
+        # Set the cursor position
+        if self.cursor_at is not None:
+            cursor_at = len(self.io.text) - self.cursor_at
+            self.io.replace_range((cursor_at, cursor_at), '')
+
         self._scroll_to_end()
 
-    def _scroll_to_end(self):
+    def _scroll_to_end(self, n_refresh=None):
         # Have to scroll multiple times to get the correct scroll to the end effect.
         # This is because content_size reported by the ui system is not reliable.
         # It is either a bug or due to the asynchronous nature of the ui system.
-        for i in range(self._n_refresh):
-            self.out.content_offset = (0, self.out.content_size[1] - self.out.height)
-            if i < self._n_refresh - 1:
-                time.sleep(self._refresh_pause)
+        if self.io.content_size[1] > self.io.height:
+            if n_refresh is None:
+                n_refresh = self._n_refresh
+            for i in range(n_refresh):
+                self.io.content_offset = (0, self.io.content_size[1] - self.io.height)
+                if i < n_refresh - 1:
+                    time.sleep(self._refresh_pause)
               
     def history_present(self, listsource):
         table = ui.TableView()
@@ -1691,16 +1824,13 @@ input_encoding_utf8=1
 [display]
 TEXT_FONT=('DejaVuSansMono', 12)
 BUTTON_FONT=('DejaVuSansMono', 14)
-OUTPUT_BACKGROUND_COLOR=(0.0, 0.0, 0.0)
-OUTPUT_TEXT_COLOR=(1.0, 1.0, 1.0)
-OUTPUT_TINT_COLOR=(0.0, 0.0, 1.0)
-OUTPUT_INDICATOR_STYLE=white
-INPUT_BACKGROUND_COLOR=(0.3, 0.3, 0.3)
-INPUT_TEXT_COLOR=(1.0, 1.0, 1.0)
-INPUT_TINT_COLOR=(0.0, 0.0, 1.0)
+BACKGROUND_COLOR=(0.0, 0.0, 0.0)
+TEXT_COLOR=(1.0, 1.0, 1.0)
+TINT_COLOR=(0.0, 0.0, 1.0)
+INDICATOR_STYLE=white
 HISTORY_MAX=30
-BUFFER_MAX=100
-AUTO_COMPLETION_MAX=30
+BUFFER_MAX=200
+AUTO_COMPLETION_MAX=50
 VK_SYMBOLS=~/.-*|>$'=!&_"\?`
 """
 
@@ -1728,7 +1858,7 @@ class StaSh(object):
         # parse rc file
         self.runtime.load_rcfile()
         self.term.write('StaSh v%s\n' % __version__)
-        self.term.reset_inp()  # prompt
+        self.term.new_inp_line()  # prompt
 
         # Load library files as modules and save each of them as attributes
         lib_path = os.path.join(APP_DIR, 'lib')
@@ -1765,51 +1895,73 @@ class StaSh(object):
         config.read(os.path.expanduser(config.get('system', 'cfgfile')))
         return config
 
-    def textfield_did_begin_editing(self, textfield):
-        pass
+    def textview_did_begin_editing(self, tv):
+        self.term.editing = True
 
-    def textfield_did_end_editing(self, textfield):
-        pass
+    def textview_did_end_editing(self, tv):
+        self.term.editing = False
 
-    def textfield_should_return(self, textfield):
+    def textview_should_return(self, tv):
         if not self.runtime.worker_stack:
             # No thread is running. We are to process the command entered
             # from the GUI.
             line = self.term.read_inp_line()
+            self.term.read_pos += len(line)
             if line.strip() != '':
-                self.term.write('\n%s\n' % self.term.inp.text)
-                self.term.set_inp_text('', with_prompt=False)
                 self.term.inp_buf = []  # clear input buffer for new command
                 self.term.input_did_return = False
                 self.term.input_did_eof = False
                 self.runtime.reset_idx_to_history()
                 self.runtime.run(line)
             else:
-                self.term.write('\n')
-                self.term.reset_inp()
+                self.term.new_inp_line()
 
         else:
             # we have a running threading, all inputs are considered as
             # directed to the thread, NOT the main GUI program
-            self.term.inp_buf.append(self.term.inp.text)
-            self.term.write('%s\n' % self.term.inp.text)
-            self.term.set_inp_text('', with_prompt=False)
+            s = self.term.read_inp_line()
+            self.term.read_pos += len(s)
+            self.term.inp_buf.append(s)
             self.term.input_did_return = True
 
         return True
 
-    def textfield_should_change(self, textfield, range_, replacement):
-        if not self.runtime.worker_stack:
-            if range_[0] < len(self.term.prompt):  # Do not erase the prompt
-                return False
-        return True
+    def textview_should_change(self, tv, rng, replacement, is_virtual_key=False):
+        # If range is invalid, simply append replacement at the end
+        saved_rng = rng
+        tot_len = len(self.term.out_buf)
 
-    def textfield_did_change(self, textfield):
-        if not self.runtime.worker_stack:
-            # Do not wipe prompt (guard against the clear button)
-            if len(textfield.text) < len(self.term.prompt):
-                self.term.reset_inp()
+        if rng[0] < self.term.read_pos or rng[1] > tot_len:
+            rng = (tot_len, tot_len)
 
+        if replacement == '\t':
+            self.vk_tapped(self.term.k_tab)
+
+        elif replacement.find('\n') == -1:
+            # let valid changes go through the builtin update for performance
+            if rng == saved_rng and not is_virtual_key:
+                self.term.write(replacement, rng=rng, update_read_pos=False, flush=False)
+                return True
+            else:
+                self.term.write(replacement, rng=rng, update_read_pos=False)
+
+        else:
+            trailer = self.term.out_buf[rng[1]:]
+            rng = (rng[0], len(self.term.out_buf))
+            rpl = replacement.splitlines(True)[0]
+            self.term.write(rpl[:-1] + trailer + '\n',
+                            rng=rng, update_read_pos=False)
+            self.textview_should_return(tv)
+
+        return False
+
+    def textview_did_change(self, tv):
+        pass
+
+    def textview_did_change_selection(self, tv):
+        # TODO: Possible to support external keyboard arrow keys
+        pass
+        
     def vk_tapped(self, vk):
         if vk == self.term.k_tab:  # Tab completion
             if not self.runtime.worker_stack:
@@ -1844,7 +1996,9 @@ class StaSh(object):
 
         elif vk == self.term.k_CC:
             if not self.runtime.worker_stack:
+                self.term.write('\n')
                 self.term.write_with_prefix('no thread to terminate\n')
+                self.term.new_inp_line()
 
             else:  # ctrl-c terminates the entire stack of threads
                 for worker in self.runtime.worker_stack[::-1]:
@@ -1859,14 +2013,26 @@ class StaSh(object):
                         self.runtime.restore_state()  # Manually stopped thread does not restore state
                         self.runtime.worker_stack.pop()
                         self.term.write_with_prefix('successfully terminated thread %s\n' % worker)
-                self.term.reset_inp()
+                self.term.new_inp_line()
+
+        elif vk == self.term.k_KB:
+            if self.term.editing:
+                self.term.io.end_editing()
+            else:
+                self.term.io.begin_editing()
+                
+        elif vk == self.term.k_CU:
+            self.term.set_inp_line('')
+
         elif vk.name == 'k_sym':
-            # TODO: impossible to detect cursor position?
-            self.term.inp.text += vk.title.strip()
+            self.textview_should_change(self.term.io,
+                                        self.term.io.selected_range,
+                                        vk.title.strip(),
+                                        is_virtual_key=True)
 
     def history_popover_tapped(self, sender):
         if sender.selected_row >= 0:
-            self.term.set_inp_text(sender.items[sender.selected_row])
+            self.term.set_inp_line(sender.items[sender.selected_row])
             self.runtime.idx_to_history = sender.selected_row
 
     def will_close(self):
@@ -1874,7 +2040,7 @@ class StaSh(object):
 
     def run(self):
         self.term.present('panel')
-        self.term.inp.begin_editing()
+        self.term.io.begin_editing()
    
    
 if __name__ == '__main__':
