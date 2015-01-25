@@ -173,13 +173,12 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `alias.py`
     * `cat.py`
     * `cd.py`
-    * `cls.py`
+    * `clear.py`
     * `copy.py` - Copy to iOS clipboard
     * `cp.py`
     * `cut.py` - Cut out selection portions of each line of a file
     * `echo.py`
     * `edit.py` - Open any text type files in Pythonista editor
-    * `env.py`
     * `find.py` - Powerful file searching tool
     * `git.py` - Git client ported from shellista
     * `grep.py`

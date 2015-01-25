@@ -14,34 +14,33 @@ def main(args):
     ap.add_argument('-t', '--list',
                     action='store_true',
                     help='list the contents of an archive')
-    ap.add_argument('zipfname', nargs=1, help='zip file to be extracted')
+    ap.add_argument('zipfile',
+                    help='zip file to be extracted')
     ns = ap.parse_args(args)
 
-    zipfname = ns.zipfname[0]
-
-    if not os.path.isfile(zipfname):
-        print "%s: No such file" % zipfname
+    if not os.path.isfile(ns.zipfile):
+        print "%s: No such file" % ns.zipfile
 
     else:
         # PK magic marker check
-        with open(zipfname) as f:
+        with open(ns.zipfile) as f:
             try:
                 pk_check = f.read(2)
             except:
                 pk_check = ''
 
         if pk_check != 'PK':
-            print "%s: does not appear to be a zip file" % zipfname
+            print "%s: does not appear to be a zip file" % ns.zipfile
             sys.exit(1)
 
         if ns.list:
             location = ''
         else:
-            if os.path.basename(zipfname).lower().endswith('.zip'):
-                altpath = os.path.splitext(os.path.basename(zipfname))[0]
+            if os.path.basename(ns.zipfile).lower().endswith('.zip'):
+                altpath = os.path.splitext(os.path.basename(ns.zipfile))[0]
             else:
-                altpath = os.path.basename(zipfname) + '_unzipped'
-            altpath = os.path.join(os.path.dirname(zipfname), altpath)
+                altpath = os.path.basename(ns.zipfile) + '_unzipped'
+            altpath = os.path.join(os.path.dirname(ns.zipfile), altpath)
             location = ns.exdir or altpath
             if (os.path.exists(location)) and not (os.path.isdir(location)):
                 print "%s: destination is not a directory" % location
@@ -49,7 +48,7 @@ def main(args):
             elif not os.path.exists(location):
                 os.makedirs(location)
 
-        with open(zipfname, 'rb') as zipfp:
+        with open(ns.zipfile, 'rb') as zipfp:
             try:
                 zipf = zipfile.ZipFile(zipfp)
                 # check for a leading directory common to all files and remove it
@@ -87,7 +86,7 @@ def main(args):
                     if ns.verbose or ns.list:
                         print fn
             except:
-                print "%s: zip file is corrupt" % zipfname
+                print "%s: zip file is corrupt" % ns.zipfile
 
 
 if __name__ == '__main__':
