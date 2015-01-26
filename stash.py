@@ -1345,20 +1345,10 @@ class ShVk(ui.View):
             self.dx -= scrollview.content_offset[0] / SCROLL_PER_CHAR
         scrollview.content_offset = (0.0, 0.0)
 
-        if int(self.dx):
-            pos = self.app.term.io.selected_range[0] + int(self.dx)
-            self.dx -= int(self.dx)
-
-            tot_len = len(self.app.term.out_buf)
-            if pos >= tot_len:
-                pos = tot_len
-            if pos < self.app.term.read_pos:
-                pos = self.app.term.read_pos
-            # update cursor position
-            try:
-                self.app.term.io.replace_range((pos, pos), '')
-            except ValueError:
-                pass
+        offset = int(self.dx)
+        if offset:
+            self.dx -= offset
+            self.app.term.set_cursor(offset, whence=1)
 
 
 class ShTerm(ui.View):
@@ -1390,9 +1380,10 @@ class ShTerm(ui.View):
 
         self.vk_symbols = app.config.get('display', 'VK_SYMBOLS')
 
-        self.cursor_at = None
         self.inp_buf = []
         self.out_buf = ''
+        # cursor position count from the end, this is not the same as selected_range[0]
+        self.cursor_rindex = None
         self.read_pos = 0
         self.write_pos = 0
         self.input_did_return = False  # For readline, e.g. raw_input
@@ -1618,6 +1609,38 @@ class ShTerm(ui.View):
     def set_inp_line(self, s):
         self.write(s, rng=(self.read_pos, len(self.out_buf)), update_read_pos=False)
 
+    def set_read_pos(self, offset, whence=0):
+        if whence == 0:  # from start
+            self.read_pos = offset
+        elif whence == 1:  # current position
+            self.read_pos += offset
+        elif whence == 2:  # from the end
+            self.read_pos = len(self.out_buf) + offset
+
+        if self.read_pos < 0:
+            self.read_pos = 0
+        elif self.read_pos > len(self.out_buf):
+            self.read_pos = len(self.out_buf)
+
+    def set_cursor(self, offset, whence=0):
+        # Set cursor position Right Away (without going through the
+        # write/flush pipeline)
+        if whence == 0:  # from start
+            pos = offset
+        elif whence == 1:  # current position
+            pos = self.io.selected_range[0] + offset
+        elif whence == 2:  # from the end
+            pos = len(self.out_buf) + offset
+        else:
+            pos = None
+
+        if pos is not None:
+            if pos < self.read_pos:
+                pos = self.read_pos
+            elif pos > len(self.out_buf):
+                pos = len(self.out_buf)
+            self.io.replace_range((pos, pos), '')
+
     def replace_out_buf(self, replacement, rng=None):
         rpl_len = len(replacement)
         # If range is not set, default to replace from the current
@@ -1628,9 +1651,9 @@ class ShTerm(ui.View):
         # this means we have a replacement in between texts, mark the
         # cursor position so it can be displayed properly later
         if rng[1] < len(self.out_buf):
-            self.cursor_at = len(self.out_buf) - rng[1]
+            self.cursor_rindex = len(self.out_buf) - rng[1]
         else:
-            self.cursor_at = None
+            self.cursor_rindex = None
         # The new write position is at the end of the replacement.
         # This is necessary because the string to be replaced may not
         # be the same size as the replacement
@@ -1762,11 +1785,6 @@ class ShTerm(ui.View):
             if self.read_pos < 0:
                 self.read_pos = len(self.out_buf)
 
-            if self.cursor_at is not None:
-                self.cursor_at -= rng[1]
-                if self.cursor_at < 0:
-                    self.cursor_at = None
-
             self.io.text = self.out_buf
 
         else:
@@ -1784,9 +1802,9 @@ class ShTerm(ui.View):
                     rng = (rbound, rbound)
 
         # Set the cursor position
-        if self.cursor_at is not None:
-            cursor_at = len(self.io.text) - self.cursor_at
-            self.io.replace_range((cursor_at, cursor_at), '')
+        if self.cursor_rindex is not None:
+            cursor_rindex = len(self.io.text) - self.cursor_rindex
+            self.io.replace_range((cursor_rindex, cursor_rindex), '')
 
         self._scroll_to_end()
 
