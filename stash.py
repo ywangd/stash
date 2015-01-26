@@ -1945,6 +1945,10 @@ class StaSh(object):
         return True
 
     def textview_should_change(self, tv, rng, replacement, is_virtual_key=False):
+        # do nothing when pressing delete key right before the read position
+        if replacement == '' and rng[1] == self.term.read_pos and rng[0] == rng[1] - 1:
+            return False
+
         # If range is invalid, simply append replacement at the end
         saved_rng = rng
         tot_len = len(self.term.out_buf)
