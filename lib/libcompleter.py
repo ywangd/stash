@@ -63,39 +63,40 @@ def _select_from_candidate_groups(candidate_groups, tok, after=None):
     return None
 
 
-def subcmd_complete(toks, has_trailing_white):
-    if len(toks) == 1 and not has_trailing_white:
+def subcmd_complete(toks, word_to_complete):
+    if len(toks) == 0:
+        return None, None
+
+    is_blank_completion = word_to_complete == ''
+    if len(toks) == 1 and not is_blank_completion:
         return None, None
 
     cmd_word = toks[0]
     if cmd_word.endswith('.py'):
         cmd_word = cmd_word[:-3]
 
-    if has_trailing_white:
-        pos = str(len(toks))
-    else:
-        pos = str(len(toks) - 1)
+    pos = str(len(toks))
 
     try:
         cfg = _subcmd_cfg[cmd_word]
 
         if pos in cfg.keys() \
-                and (not has_trailing_white
-                     or (has_trailing_white and cfg[pos]['blank_completion'])):
+                and (not is_blank_completion
+                     or (is_blank_completion and cfg[pos]['blank_completion'])):
             cands = _select_from_candidates(cfg[pos]['candidates'],
-                                            '' if has_trailing_white else toks[-1])
+                                            '' if is_blank_completion else word_to_complete)
             return cands, cfg[pos]['with_normal_completion']
 
         elif '-' in cfg.keys() \
-                and ((not has_trailing_white and toks[-1].startswith('-'))
-                     or (has_trailing_white and cfg['-']['blank_completion'])):
+                and ((not is_blank_completion and word_to_complete.startswith('-'))
+                     or (is_blank_completion and cfg['-']['blank_completion'])):
             subcmd = None
-            for t in toks[-2:0:-1]:
+            for t in toks[-1:0:-1]:
                 if not t.startswith('-'):
                     subcmd = t
                     break
             cands = _select_from_candidate_groups(cfg['-']['candidate_groups'],
-                                                  '' if has_trailing_white else toks[-1],
+                                                  '' if is_blank_completion else word_to_complete,
                                                   subcmd)
             if cands is not None:
                 return cands, cfg['-']['with_normal_completion']

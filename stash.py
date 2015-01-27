@@ -689,68 +689,69 @@ class ShCompleter(object):
         self.app = app
         self.np_max = app.config.getint('display', 'AUTO_COMPLETION_MAX')
 
-    def complete(self, line):
-        is_cmd_word = False
-        has_trailing_white = False
-        word_to_complete = word_to_complete_normal_whites = ''
+    def complete(self, line, cursor_at=None):
+        len_line = len(line)
+        try:
+            tokens, _ = self.app.runtime.parser.parse(line)
+        except pp.ParseException as e:
+            self.app.term.write('\n', flush=False)
+            self.app.term.write_with_prefix('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
+            self.app.term.new_inp_line(with_text=line)
+            return
 
-        if line.strip() == '':  # all commands + py files in current directory + all alias
-            all_names = self.app.runtime.get_all_script_names()
-            all_names.extend(self.app.runtime.aliases.keys())
+        if cursor_at is None:
+            cursor_at = len_line
+
+        toks = []  # this is only for sub-cmd completion
+        is_cmd_word = False
+        for t in tokens:
+            if t.ttype == ShToken._CMD:
+                toks = []
+                is_cmd_word = True
+            toks.append(t.tok)
+            if t.spos <= cursor_at <= t.epos:
+                word_to_complete = t.tok[:cursor_at]
+                toks.pop()
+                replace_range = (t.spos, cursor_at)
+                break
+            is_cmd_word = False
+        else:
+            word_to_complete = ''
+            is_cmd_word = not is_cmd_word
+            replace_range = (cursor_at, cursor_at)
+
+        word_to_complete_normal_whites = word_to_complete.replace('\\ ', ' ')
+
+        _debug_completer('is_cmd_word: %s, word_to_complete: %s, replace_range: %s\n' %
+                         (is_cmd_word, word_to_complete, repr(replace_range)))
+
+        cands, with_normal_completion = self.app.libcompleter.subcmd_complete(toks, word_to_complete)
+
+        if cands is None or with_normal_completion:
+
+            path_names = self.path_match(word_to_complete_normal_whites)
+
+            if is_cmd_word:
+                dirname = os.path.dirname(os.path.expanduser(word_to_complete_normal_whites))
+                path_names = [p for p in path_names
+                              if os.path.isdir(os.path.join(dirname, p)) or p.endswith('.py') or p.endswith('.sh')]
+                script_names = self.app.runtime.get_all_script_names()
+                script_names.extend(self.app.runtime.aliases.keys())
+                if word_to_complete_normal_whites != '':
+                    script_names = [name for name in script_names if name.startswith(word_to_complete_normal_whites)]
+            else:
+                script_names = []
+
+            if word_to_complete_normal_whites.startswith('$'):
+                envar_names = ['$' + varname for varname in self.app.runtime.envars.keys()
+                               if varname.startswith(word_to_complete_normal_whites[1:])]
+            else:
+                envar_names = []
+
+            all_names = path_names + envar_names + script_names
 
         else:
-            try:
-                tokens, _ = self.app.runtime.parser.parse(line)
-                if len(line) > tokens[-1].epos:
-                    has_trailing_white = True
-                word_to_complete = tokens[-1].tok
-                word_to_complete_normal_whites = word_to_complete.replace('\\ ', ' ')
-                toks = []
-                for i, t in enumerate(reversed(tokens)):
-                    toks.insert(0, t.tok)
-                    if t.ttype == ShToken._CMD:
-                        if i == 0:
-                            is_cmd_word = True
-                        break
-
-                _debug_completer('cmd_word: %s, trailing_white: %s, word_to_complete: %s\n' %
-                                (is_cmd_word, has_trailing_white, word_to_complete))
-
-            except pp.ParseException as e:
-                self.app.term.write('\n', flush=False)
-                self.app.term.write_with_prefix('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
-                self.app.term.new_inp_line(with_text=line)
-                return
-
-            cands, with_normal_completion = \
-                self.app.libcompleter.subcmd_complete(toks, has_trailing_white)
-
-            if cands is None or with_normal_completion:
-                if has_trailing_white:  # files in current directory
-                    all_names = [f for f in os.listdir('.')]
-
-                elif is_cmd_word:  # commands match + alias match + path match
-                    script_names = [script_name for script_name in self.app.runtime.get_all_script_names()
-                                    if script_name.startswith(word_to_complete_normal_whites)]
-                    alias_names = [aln for aln in self.app.runtime.aliases.keys()
-                                   if aln.startswith(word_to_complete_normal_whites)]
-                    path_names = []
-                    for p in self.path_match(word_to_complete_normal_whites):
-                        if os.path.isdir(os.path.join(os.path.dirname(os.path.expanduser(word_to_complete_normal_whites)), p)) \
-                                or p.endswith('.py') or p.endswith('.sh'):
-                            path_names.append(p)
-
-                    all_names = script_names + alias_names + path_names
-                else:  # path match
-                    all_names = self.path_match(word_to_complete_normal_whites)
-
-                # If the partial word starts with a dollar sign, try envar match
-                if word_to_complete_normal_whites.startswith('$'):
-                    all_names.extend('$' + varname for varname in self.app.runtime.envars.keys()
-                                     if varname.startswith(word_to_complete_normal_whites[1:]))
-
-            else:
-                all_names = cands
+            all_names = cands
 
         all_names = sorted(set(all_names))
 
@@ -764,27 +765,14 @@ class ShCompleter(object):
             prefix = replace_string = os.path.commonprefix(all_names)
 
             if prefix != '':
-                if line.strip() == '' or has_trailing_white:
-                    newline = line + prefix
-
-                else:
-                    search_string = word_to_complete
-                    replace_string = os.path.join(os.path.dirname(word_to_complete), prefix.replace(' ', '\\ '))
-                    # reverse to make sure only the rightmost match is replaced
-                    newline = line[::-1].replace(search_string[::-1], replace_string[::-1], 1)[::-1]
+                newline = line[:replace_range[0]] + prefix.replace(' ', '\\ ') + line[replace_range[1]:]
             else:
                 newline = line
-
-            if len(all_names) == 1:
-                if os.path.isdir(os.path.expanduser(replace_string)):
-                    newline += '/'
-                else:
-                    newline += ' '
 
             if newline != line:
                 # No need to show available possibilities if some completion can be done
                 self.app.term.set_inp_line(newline)
-                _debug_completer('%s -> %s' %(repr(line), repr(newline)))
+                _debug_completer('%s -> %s' % (repr(line), repr(newline)))
 
             elif len(all_names) > 0:  # no completion available, show all possibilities if exist
                 self.app.term.write('\n%s\n' % self.format_all_names(all_names))
@@ -792,14 +780,16 @@ class ShCompleter(object):
                 _debug_completer(self.format_all_names(all_names))
 
     def path_match(self, word_to_complete_normal_whites):
-        if os.path.isdir(os.path.expanduser(word_to_complete_normal_whites)) \
-                and word_to_complete_normal_whites.endswith('/'):
-            filenames = [fname for fname in os.listdir(os.path.expanduser(word_to_complete_normal_whites))]
+        full_path = os.path.expanduser(word_to_complete_normal_whites)
+        if os.path.isdir(full_path) and full_path.endswith('/'):
+            filenames = [(fname + '/') if os.path.isdir(os.path.join(full_path, fname)) else fname
+                         for fname in os.listdir(full_path)]
         else:
-            d = os.path.expanduser(os.path.dirname(word_to_complete_normal_whites)) or '.'
-            f = os.path.basename(word_to_complete_normal_whites)
+            d = os.path.dirname(full_path) or '.'
+            f = os.path.basename(full_path)
             try:
-                filenames = [fname for fname in os.listdir(d) if fname.startswith(f)]
+                filenames = [(fname + '/') if os.path.isdir(os.path.join(full_path, fname)) else (fname + ' ')
+                             for fname in os.listdir(d) if fname.startswith(f)]
             except:
                 filenames = []
         return filenames
@@ -1987,7 +1977,13 @@ class StaSh(object):
     def vk_tapped(self, vk):
         if vk == self.term.k_tab:  # Tab completion
             if not self.runtime.worker_stack:
-                self.completer.complete(self.term.read_inp_line())
+                rng = self.term.io.selected_range
+                cursor_at = None
+                # Valid cursor positions are only when non-selection
+                # and after the read position
+                if rng[0] == rng[1] and rng[0] >= self.term.read_pos:
+                    cursor_at = rng[0] - self.term.read_pos
+                self.completer.complete(self.term.read_inp_line(), cursor_at=cursor_at)
             else:
                 console.hud_alert('Not available', 'error', 1.0)
 
