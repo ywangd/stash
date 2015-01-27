@@ -1310,7 +1310,7 @@ class ShRuntime(object):
             raise ShEventNotFound(tok)
 
     def history_up(self):
-        # self.app.term.dio.text += 'up: %d %d\n' % (self.idx_to_history, len(self.history))
+        # self.app.term.dbgout.text += 'up: %d %d\n' % (self.idx_to_history, len(self.history))
         self.idx_to_history += 1
         if self.idx_to_history >= len(self.history):
             self.idx_to_history = len(self.history) - 1
@@ -1329,7 +1329,7 @@ class ShRuntime(object):
                 self.app.term.set_inp_line(entry)
 
     def history_dn(self):
-        # self.app.term.dio.text += 'down: %d %d\n' % (self.idx_to_history, len(self.history))
+        # self.app.term.dbgout.text += 'down: %d %d\n' % (self.idx_to_history, len(self.history))
         self.idx_to_history -= 1
         if self.idx_to_history <= -1:
             self.idx_to_history = 0
@@ -1612,13 +1612,13 @@ class ShTerm(ui.View):
         self.io.editable = True
         self.io.delegate = app
 
-        # self.dio = ui.TextView(name='dio')
-        # self.txts.add_subview(self.dio)
-        # self.dio.y = 0
+        # self.dbgout = ui.TextView(name='dbgout')
+        # self.txts.add_subview(self.dbgout)
+        # self.dbgout.y = 0
         # ss = ui.get_screen_size()
-        # self.dio.x = ss[1] / 2
-        # self.dio.width = ss[1] / 2
-        # self.dio.height = ss[0] / 2
+        # self.dbgout.x = ss[1] / 2
+        # self.dbgout.width = ss[1] / 2
+        # self.dbgout.height = ss[0] / 2
         
     def toggle_k_grp(self):
         if self.on_k_grp == 0:
@@ -1636,6 +1636,9 @@ class ShTerm(ui.View):
         else:
             self.txts.height = self.height
         self.flush()
+
+    def is_flushing(self):
+        return self._flush_thread is not None and self._flush_thread.isAlive()
 
     def read_inp_line(self):
         s = self.out_buf[self.read_pos:]
@@ -1676,8 +1679,9 @@ class ShTerm(ui.View):
             self.read_pos = len(self.out_buf)
 
     def set_cursor(self, offset, whence=0):
-        # Set cursor position Right Away (without going through the
-        # write/flush pipeline)
+        # Wait till screen is not flushing
+        while self.is_flushing():
+            pass
         if whence == 0:  # from start
             pos = offset
         elif whence == 1:  # current position
@@ -1692,7 +1696,10 @@ class ShTerm(ui.View):
                 pos = self.read_pos
             elif pos > len(self.out_buf):
                 pos = len(self.out_buf)
-            self.io.replace_range((pos, pos), '')
+            try:
+                self.io.replace_range((pos, pos), '')
+            except:
+                pass
 
     def replace_out_buf(self, replacement, rng=None):
         rpl_len = len(replacement)
@@ -1803,7 +1810,7 @@ class ShTerm(ui.View):
 
     def flush(self):
         # Throttle the flush by allowing only one running _flush thread
-        if self._flush_thread is None or not self._flush_thread.isAlive():
+        if not self.is_flushing():
             # No running flush thread, create one
             self._flush_thread = self._flush()  # in background
 
@@ -2027,6 +2034,10 @@ class StaSh(object):
             if rng == saved_rng and not is_virtual_key:
                 self.term.write(replacement, rng=rng, update_read_pos=False, flush=False)
                 return True
+            # Do nothing if screen is flushing
+            # This is to guarantee that the input texts appear in order
+            elif self.term.is_flushing():
+                return False
             else:
                 self.term.write(replacement, rng=rng, update_read_pos=False)
 
@@ -2048,7 +2059,8 @@ class StaSh(object):
         saved_ex_kb_selected_range = self.runtime.ex_kb_selected_range
         self.runtime.ex_kb_selected_range = rng
 
-        if self.term._flush_thread is not None and self.term._flush_thread.isAlive():
+        # Do nothing if screen is flushing
+        if self.term.is_flushing():
             return
 
         tot_len = len(self.term.out_buf)
