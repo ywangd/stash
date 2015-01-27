@@ -703,48 +703,48 @@ class ShCompleter(object):
             cursor_at = len_line
 
         toks = []  # this is only for sub-cmd completion
-        is_cmd_word = False
+        is_cmd_word = True
         for t in tokens:
             if t.ttype == ShToken._CMD:
                 toks = []
                 is_cmd_word = True
-            toks.append(t.tok)
+
             if t.spos <= cursor_at <= t.epos:
-                word_to_complete = t.tok[:cursor_at]
-                toks.pop()
+                word_to_complete = t.tok[:cursor_at - t.spos]
                 replace_range = (t.spos, cursor_at)
                 break
+
+            toks.append(t.tok)
             is_cmd_word = False
+
         else:
             word_to_complete = ''
-            is_cmd_word = not is_cmd_word
             replace_range = (cursor_at, cursor_at)
 
-        word_to_complete_normal_whites = word_to_complete.replace('\\ ', ' ')
+        toks.append(word_to_complete)
 
         _debug_completer('is_cmd_word: %s, word_to_complete: %s, replace_range: %s\n' %
                          (is_cmd_word, word_to_complete, repr(replace_range)))
 
-        cands, with_normal_completion = self.app.libcompleter.subcmd_complete(toks, word_to_complete)
+        cands, with_normal_completion = self.app.libcompleter.subcmd_complete(toks)
 
         if cands is None or with_normal_completion:
 
-            path_names = self.path_match(word_to_complete_normal_whites)
+            path_names = self.path_match(word_to_complete)
 
             if is_cmd_word:
-                dirname = os.path.dirname(os.path.expanduser(word_to_complete_normal_whites))
                 path_names = [p for p in path_names
-                              if os.path.isdir(os.path.join(dirname, p)) or p.endswith('.py') or p.endswith('.sh')]
+                              if os.path.isdir(os.path.expanduser(p)) or p.endswith('.py') or p.endswith('.sh')]
                 script_names = self.app.runtime.get_all_script_names()
-                script_names.extend(name + ' ' for name in self.app.runtime.aliases.keys())
-                if word_to_complete_normal_whites != '':
+                script_names.extend(self.app.runtime.aliases.keys())
+                if word_to_complete != '':
                     script_names = [name for name in script_names if name.startswith(word_to_complete)]
             else:
                 script_names = []
 
-            if word_to_complete_normal_whites.startswith('$'):
-                envar_names = ['$' + varname + ' ' for varname in self.app.runtime.envars.keys()
-                               if varname.startswith(word_to_complete_normal_whites[1:])]
+            if word_to_complete.startswith('$'):
+                envar_names = ['$' + varname for varname in self.app.runtime.envars.keys()
+                               if varname.startswith(word_to_complete[1:])]
             else:
                 envar_names = []
 
@@ -756,48 +756,66 @@ class ShCompleter(object):
         all_names = sorted(set(all_names))
 
         if len(all_names) > self.np_max:
-            self.app.term.write('\nMore than %d possibilities\n' % self.np_max)
-            self.app.term.new_inp_line(with_text=line)
+            self.app.term.write('\nMore than %d possibilities\n' % self.np_max, flush=False)
+            self.app.term.new_inp_line(with_text=line, cursor_at=cursor_at)
             _debug_completer(self.format_all_names(all_names))
+            newline = line  # for debug on pc
 
         else:
             # Complete up to the longest common prefix of all possibilities
-            prefix = replace_string = os.path.commonprefix(all_names)
+            prefix = os.path.commonprefix(all_names)
 
             if prefix != '':
+                if len(all_names) == 1 and not prefix.endswith('/'):
+                    prefix += ' '
                 newline = line[:replace_range[0]] + prefix + line[replace_range[1]:]
+                cursor_at += len(prefix) - (replace_range[1] - replace_range[0])
             else:
                 newline = line
 
             if newline != line:
                 # No need to show available possibilities if some completion can be done
-                self.app.term.set_inp_line(newline)
+                self.app.term.set_inp_line(newline, cursor_at=cursor_at)
                 _debug_completer('%s -> %s' % (repr(line), repr(newline)))
 
             elif len(all_names) > 0:  # no completion available, show all possibilities if exist
                 self.app.term.write('\n%s\n' % self.format_all_names(all_names))
-                self.app.term.new_inp_line(with_text=line)
+                self.app.term.new_inp_line(with_text=line, cursor_at=cursor_at)
                 _debug_completer(self.format_all_names(all_names))
 
-    def path_match(self, word_to_complete_normal_whites):
+        return newline, all_names  # for debug on pc
+
+    def path_match(self, word_to_complete):
+        # os.path.xxx functions do not like escaped whitespace
+        word_to_complete_normal_whites = word_to_complete.replace('\\ ', ' ')
+
         full_path = os.path.expanduser(word_to_complete_normal_whites)
+
+        file_names = []
         if os.path.isdir(full_path) and full_path.endswith('/'):
-            filenames = [(fname.replace(' ', '\\ ') + '/') if os.path.isdir(os.path.join(full_path, fname))
-                         else (fname.replace(' ', '\\ ') + ' ')
-                         for fname in os.listdir(full_path)]
+            for fname in os.listdir(full_path):
+                if os.path.isdir(os.path.join(full_path, fname)):
+                    fname += '/'
+                file_names.append(
+                    os.path.join(os.path.dirname(word_to_complete), fname.replace(' ', '\\ ')))
+
         else:
             d = os.path.dirname(full_path) or '.'
             f = os.path.basename(full_path)
-            try:
-                filenames = [(fname.replace(' ', '\\ ') + '/') if os.path.isdir(os.path.join(full_path, fname))
-                             else (fname.replace(' ', '\\ ') + ' ')
-                             for fname in os.listdir(d) if fname.startswith(f)]
-            except:
-                filenames = []
-        return filenames
+            for fname in os.listdir(d):
+                if fname.startswith(f):
+                    if os.path.isdir(os.path.join(d, fname)):
+                        fname += '/'
+                    file_names.append(
+                        os.path.join(os.path.dirname(word_to_complete), fname.replace(' ', '\\ ')))
+
+        return file_names
 
     def format_all_names(self, all_names):
-        return '  '.join(all_names) + '\n'
+        # only show the last component to be completed in a directory path
+        return '  '.join(os.path.basename(os.path.dirname(name)) + '/' if name.endswith('/')
+                         else os.path.basename(name)
+                         for name in all_names) + '\n'
 
 
 _DEFAULT_RC = r"""
@@ -966,7 +984,7 @@ class ShRuntime(object):
             raise ShFileNotFound('%s: command not found' % filename)
 
     def get_all_script_names(self):
-        """ This function used for completer """
+        """ This function used for completer, whitespaces in names are escaped"""
         all_names = []
         for path in ['.'] + self.envars['BIN_PATH'].split(os.pathsep):
             path = os.path.expanduser(path)
@@ -1588,18 +1606,26 @@ class ShTerm(ui.View):
         s = self.out_buf[self.read_pos:]
         return s
 
-    def new_inp_line(self, with_text=''):
-        self.seek(0, 2)  # move to the end
+    def new_inp_line(self, with_text='', cursor_at=None):
+        self.seek(0, whence=2)  # move to the end
         self.prompt = self.app.runtime.get_prompt()
         self.read_pos = self.tell()
         if with_text:
             self.write(self.prompt, flush=False)
-            self.set_inp_line(with_text)
+            self.set_inp_line(with_text, cursor_at=cursor_at)
         else:
             self.write(self.prompt)
 
-    def set_inp_line(self, s):
-        self.write(s, rng=(self.read_pos, len(self.out_buf)), update_read_pos=False)
+    def set_inp_line(self, s, cursor_at=None):
+        if cursor_at is None:
+            self.write(s, rng=(self.read_pos, len(self.out_buf)),
+                       update_read_pos=False)
+        else:
+            self.write(s, rng=(self.read_pos, len(self.out_buf)),
+                       flush=False, update_read_pos=False)
+            pos = self.read_pos + cursor_at
+            self.write('', (pos, pos), update_read_pos=False)
+            self.seek(0, whence=2)  # set write_pos at the end while cursor is in the middle
 
     def set_read_pos(self, offset, whence=0):
         if whence == 0:  # from start
@@ -1777,7 +1803,12 @@ class ShTerm(ui.View):
             if self.read_pos < 0:
                 self.read_pos = len(self.out_buf)
 
-            self.io.text = self.out_buf
+            self.io.replace_range((0, len(self.io.text)), self.out_buf)
+
+            # don't bother with rindex if screen text is being halved
+            # because it seems to sometimes make cursor not shown after
+            # a long output, e.g. cat a large file
+            self.cursor_rindex = None
 
         else:
             prefix = os.path.commonprefix([self.out_buf, self.io.text])
@@ -1795,8 +1826,13 @@ class ShTerm(ui.View):
 
         # Set the cursor position
         if self.cursor_rindex is not None:
-            cursor_rindex = len(self.io.text) - self.cursor_rindex
-            self.io.replace_range((cursor_rindex, cursor_rindex), '')
+            try:
+                cursor_rindex = len(self.io.text) - self.cursor_rindex
+                self.io.replace_range((cursor_rindex, cursor_rindex), '')
+            except:
+                # TypeError could happen here because cursor_rindex may be
+                # set to None by another write call
+                pass
 
         self._scroll_to_end()
 

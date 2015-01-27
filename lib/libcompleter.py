@@ -63,19 +63,19 @@ def _select_from_candidate_groups(candidate_groups, tok, after=None):
     return None
 
 
-def subcmd_complete(toks, word_to_complete):
-    if len(toks) == 0:
+def subcmd_complete(toks):
+    # Only one token, this is still command, not sub-command yet
+    if len(toks) == 1:
         return None, None
 
+    word_to_complete = toks[-1]
     is_blank_completion = word_to_complete == ''
-    if len(toks) == 1 and not is_blank_completion:
-        return None, None
 
     cmd_word = toks[0]
     if cmd_word.endswith('.py'):
         cmd_word = cmd_word[:-3]
 
-    pos = str(len(toks))
+    pos = str(len(toks) - 1)
 
     try:
         cfg = _subcmd_cfg[cmd_word]
@@ -102,7 +102,6 @@ def subcmd_complete(toks, word_to_complete):
                 return cands, cfg['-']['with_normal_completion']
 
     except KeyError as e:
-        #print repr(e), e
         pass
 
     return None, None
