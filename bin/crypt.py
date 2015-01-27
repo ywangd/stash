@@ -23,11 +23,12 @@ except:
     sys.exit(0)
 
 class Crypt(object):
-    def __init__(self,in_filename,out_filename=''):
+    def __init__(self,in_filename,out_filename=None):
         self.in_filename = in_filename
-        self.out_filename = out_filename or in_filename+'.enc'
+        self.out_filename = out_filename
         
     def aes_encrypt(self,key=None, chunksize=64*1024):
+        self.out_filename = self.out_filename or self.in_filename+'.enc'
         aes = AesKey(key)
         with open(self.in_filename, 'rb') as infile:
             with open(self.out_filename, 'wb') as outfile:
@@ -35,6 +36,7 @@ class Crypt(object):
             
         
     def aes_decrypt(self,key, chunksize=64*1024):
+        self.out_filename = self.out_filename or os.path.splitext(self.in_filename)[0]
         aes = AesKey(key)
 
         with open(self.in_filename, 'rb') as infile:
