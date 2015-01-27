@@ -736,14 +736,14 @@ class ShCompleter(object):
                 path_names = [p for p in path_names
                               if os.path.isdir(os.path.join(dirname, p)) or p.endswith('.py') or p.endswith('.sh')]
                 script_names = self.app.runtime.get_all_script_names()
-                script_names.extend(self.app.runtime.aliases.keys())
+                script_names.extend(name + ' ' for name in self.app.runtime.aliases.keys())
                 if word_to_complete_normal_whites != '':
-                    script_names = [name for name in script_names if name.startswith(word_to_complete_normal_whites)]
+                    script_names = [name for name in script_names if name.startswith(word_to_complete)]
             else:
                 script_names = []
 
             if word_to_complete_normal_whites.startswith('$'):
-                envar_names = ['$' + varname for varname in self.app.runtime.envars.keys()
+                envar_names = ['$' + varname + ' ' for varname in self.app.runtime.envars.keys()
                                if varname.startswith(word_to_complete_normal_whites[1:])]
             else:
                 envar_names = []
@@ -765,7 +765,7 @@ class ShCompleter(object):
             prefix = replace_string = os.path.commonprefix(all_names)
 
             if prefix != '':
-                newline = line[:replace_range[0]] + prefix.replace(' ', '\\ ') + line[replace_range[1]:]
+                newline = line[:replace_range[0]] + prefix + line[replace_range[1]:]
             else:
                 newline = line
 
@@ -782,13 +782,15 @@ class ShCompleter(object):
     def path_match(self, word_to_complete_normal_whites):
         full_path = os.path.expanduser(word_to_complete_normal_whites)
         if os.path.isdir(full_path) and full_path.endswith('/'):
-            filenames = [(fname + '/') if os.path.isdir(os.path.join(full_path, fname)) else fname
+            filenames = [(fname.replace(' ', '\\ ') + '/') if os.path.isdir(os.path.join(full_path, fname))
+                         else (fname.replace(' ', '\\ ') + ' ')
                          for fname in os.listdir(full_path)]
         else:
             d = os.path.dirname(full_path) or '.'
             f = os.path.basename(full_path)
             try:
-                filenames = [(fname + '/') if os.path.isdir(os.path.join(full_path, fname)) else (fname + ' ')
+                filenames = [(fname.replace(' ', '\\ ') + '/') if os.path.isdir(os.path.join(full_path, fname))
+                             else (fname.replace(' ', '\\ ') + ' ')
                              for fname in os.listdir(d) if fname.startswith(f)]
             except:
                 filenames = []
@@ -971,7 +973,7 @@ class ShRuntime(object):
             if os.path.exists(path):
                 for f in os.listdir(path):
                     if not os.path.isdir(f) and (f.endswith('.py') or f.endswith('.sh')):
-                        all_names.append(f)
+                        all_names.append(f.replace(' ', '\\ '))
         return all_names
 
     def run(self, input_,
