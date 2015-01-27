@@ -783,7 +783,7 @@ class ShCompleter(object):
                 self.app.term.new_inp_line(with_text=line, cursor_at=cursor_at)
                 _debug_completer(self.format_all_names(all_names))
 
-        return newline, all_names  # for debug on pc
+        return newline, all_names, cursor_at  # for debug on pc
 
     def path_match(self, word_to_complete):
         # os.path.xxx functions do not like escaped whitespace

@@ -15,6 +15,7 @@ class StashTests(unittest.TestCase):
         self.stash = stash.StaSh()
         self.stash('cd $STASH_ROOT')
         self.stash('BIN_PATH=$STASH_ROOT/tests:$BIN_PATH')
+        self.complete = self.stash.completer.complete
 
     def tearDown(self):
         assert len(self.stash.runtime.worker_stack) == 0, 'Worker stack is not clean'
@@ -127,6 +128,55 @@ A is{0}
         cmp_str = r"""[stash]$ A is 42
 [stash]$ """
         self.do_test('test11.sh', cmp_str, ensure_undefined=('A',))
+
+    def test_completion_01(self):
+        newline, all_names, cursor_at = self.complete('pw')
+        assert newline == 'pwd.py '
+
+    def test_completion_02(self):
+        newline, all_names, cursor_at = self.complete('pws', cursor_at=2)
+        assert newline == 'pwd.py s'
+        assert cursor_at == 7
+
+    def test_completion_03(self):
+        newline, all_names, cursor_at = self.complete('ls s', cursor_at=3)
+        assert cursor_at == 3
+        assert newline == 'ls s'
+        assert 'README.md' in all_names
+        assert 'source.py' not in all_names
+
+    def test_completion_04(self):
+        newline, all_names, cursor_at = self.complete('')
+        assert newline == ''
+        assert cursor_at == 0
+        assert 'source.py' in all_names
+        assert 'README.md' not in all_names
+
+    def test_completion_05(self):
+        newline, all_names, cursor_at = self.complete('ls README.md ')
+        assert newline == 'ls README.md '
+        assert cursor_at == 13
+        assert 'CHANGES.md' in all_names
+        assert 'source.py' not in all_names
+
+    def test_completion_06(self):
+        newline, all_names, cursor_at = self.complete('git ')
+        assert newline == 'git '
+        assert cursor_at == 4
+        assert 'branch' in all_names
+        assert 'clone' in all_names
+        assert 'README.md' not in all_names
+
+    def test_completion_07(self):
+        newline, all_names, cursor_at = self.complete('ls -')
+        assert newline == 'ls -'
+        assert '--all' in all_names
+        assert 'README.md' not in all_names
+
+    def test_completion_08(self):
+        newline, all_names, cursor_at = self.complete('git brREA', cursor_at=6)
+        assert newline == 'git branch REA'
+        assert cursor_at == 11
 
 
 if __name__ == '__main__':
