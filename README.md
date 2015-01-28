@@ -20,8 +20,9 @@ environment and great treasures may be found within.
 StaSh has a pile of features which are to be expected from a real shell. These
 features are what really set the difference from shellista.
 
-* **Panel UI** program that is completely event driven. This means:
+* **Panel UI** program that is completely event driven
     * **No blocking thread**, builtin interactive prompt is accessible at all time
+    * Consistent look and feel as real PC terminals
     * Almost all scripts can be called from within StaSh, including programs
       using UI and **Scene** packages. You can even launch another
       **panel** UI program and the new UI will simply replace StaSh (not really
@@ -31,7 +32,7 @@ features are what really set the difference from shellista.
       in background. But StaSh can stay up forever (till memory runs out due to
       other Apps). You can just launch StaSh to run a few commands and leave it.
       It will still be there for you when you return later.
-
+	
 * **Comprehensive** command line parsing and handling using
   [pyparsing](http://pyparsing.wikispaces.com)
     * Environmental variables, e.g `echo $HOME`, `NAME=value`
@@ -50,18 +51,36 @@ features are what really set the difference from shellista.
 * Smart **auto-completion** just as expected
     * A UI button, "Tab", is provided to enable command line auto-completion.
     * It is clever to auto-completes either commands or files based on the
-      input position
+      **cursor** position
     * It also completes environment variables and aliases.
     * It also features a sub-command auto-completion system. For an example,
       type `git sta` and press `Tab`. It will auto-completes to `git status `.
       You can easily add your own sub-commands completion via a JSON file.
 
-* Customisable **virtual keys for commonly used symbols**, e.g. `~/.-*|>`.
-    * The Symbols can be customized via the `VK_SYMBOLS` option in
-      stash config file (default is `.stash_config`).
-
 * **Command line history** management. Three UI buttons are provided to navigate
   through the history.
+
+* **On-screen virtual keys** - an extra row of keys on top of the on-screen
+  keyboard to provide control functions and easier access to symbols
+    * Virtual keys for control functions including:
+        * **Tab** - command line auto-completion
+        * **CC** (Ctrl-C) - terminate the running job
+        * **CD** (Ctrl-D) - end of Input
+        * **CU** (Ctrl-U) - kill line
+        * **KB** - show/hide keyboard
+        * **H** - display a popup window to show command history
+        * **Up** - recall the previous command in history
+        * **Dn** - recall the next command in history
+    * Customisable **virtual keys for commonly used symbols**, e.g. `~/.-*|>`.
+        * The Symbols can be customized via the `VK_SYMBOLS` option in stash
+          config file (default is `.stash_config`).
+
+* **Swipe on the virtual key row to position cursor** (similar to what Pythonista
+  editor offers)
+
+* **External keyboard support**
+	* **Tab** key for auto-completion
+	* **⌘ (cmd) + up (↑) / down (↓)** for navigating through command history
 
 * You can **run almost any regular python scripts** from within StaSh 
     * There is no need to customize them for the shell. If it can be executed by
@@ -80,12 +99,8 @@ features are what really set the difference from shellista.
         * All other strings are displayed literally
         * The default setting is `PROMPT='[\W]$ '`
 
-* The UI can be configured via **configuration file** to customize its font
-  size and color. The default config file is `.stash_config` under StaSh
-  installation root.
-
-* **Easy self update** by running a single `selfupdate` command from within the
-  shell.
+* **Easy self update** to keep update with the development by running a single
+  `selfupdate` command from within the shell.
     - The `selfupdate` script manages StaSh installation folder and may delete
       files in the process. It is therefore recommend to **not** put your own
       scripts under `$STASH_ROOT/bin`. Instead, save your own scripts
@@ -96,12 +111,13 @@ features are what really set the difference from shellista.
       selfupdate`**
     - You may need to restart StaSh after the update.
 
-* Input request from scripts being executed can be terminated by **Ctrl-D
-  (C-D)** button.
+* The UI can be configured via **configuration file** to customize its font
+  size and color. The default config file is `.stash_config` under StaSh
+  installation root.
 
 * StaSh employs Python threads to execute scripts. It maintains a stack of
   threads that forms a family of **linear** threads. This means no parallel
-  **foreground** threads are allowed. You can use the **Ctrl-C (C-C)** button
+  **foreground** threads are allowed. You can use the **Ctrl-C (CC)** button
   to terminate running foreground threads at (almost) any time.
 
 * Number of **background** jobs (appending commands with the `&` directive) are
@@ -128,12 +144,8 @@ A gist file is also provided as a single file installation
   Gist](https://gist.github.com/omz/b0644f5ed1d94bd32805) script or simply
   copy/paste to get the gist file, `getstash.py`, at
   https://gist.github.com/ywangd/7fbb2c1aa17e8734defd
-* Run `getstash.py` to download the minimal sets of files for StaSh. The files
-  will be downloaded and saved in a folder named **stash** under your document
-  root.
-* Run **stash.py** to launch StaSh (Note the Shell is not yet fully installed at this step).
-* In the terminal, type and run `selfupdate` to retrieve rest of the
-  files. 
+* Run `getstash.py` to download and install StaSh.
+	* It by default installs to a folder named **stash** under your document root, i.e. `~/Documents/stash`.
 
 ### Install from GitHub
 If you have a GitHub tool available in Pythonista, such as
@@ -166,10 +178,10 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   [@briarfox](https://github.com/briarfox),
   [@dgelessus](https://github.com/dgelessus) and
   [@jsbain](https://github.com/jsbain). These scripts range from performing
-  regular shell tasks to advanced terminal utilities like `ssh`. Note the
+  regular shell tasks to advanced utilities like `ssh`and `git`. Note the
   scripts are by no means complete when compared to a real Linux shell. The
-  scripts will be gradually expanded should the need arise. It is also expected
-  and appreciated that the community would come up with more scripts.
+  script collection will be gradually expanded should the need arise. It is also expected
+  and appreciated that the community would come up with more scripts (you .
     * `alias.py`
     * `cat.py`
     * `cd.py`
@@ -245,11 +257,6 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
 
 
 ## Known Issues
-* The terminal flickers up and down a bit while output texts are being rolled
-  out. This is caused by the incorrect value of `content_size` reported by the
-  UI system. If you know a way to fix it, please let me know.
-* Rotating the device sometimes makes the input textfield barely visible.
-  Restart the shell to fix it.
 * Executing a script using the "Run" button while StaSh is running leads to
   corrupted namespaces and leaves StaSh unusable. However, running scripts from
   "Action Menu" is OK.
@@ -266,6 +273,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   ideas of features and/or bugs
 * Fork the repository, make changes, and send pull requests 
     - Please send pull requests to the **dev** branch instead of master
+
 
 
 

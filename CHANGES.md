@@ -1,5 +1,44 @@
 # Change Log #
 
+### Version 0.4.0 - 2015-01-29
+* New Features
+	* **New UI design with unified Input/Output areas**
+		* No more screen flashing when scrolling. Smooth scroll at all time
+		* Support device rotation at any direction
+		* Manipute cursor position with ease
+		* Consistent look and feel to real PC terminals
+	* **External keyboard support**
+		* Tab completion works flawlessly 
+		* Navigate through command history with ⌘ (cmd) + up (↑) / down (↓)
+	* **Swipe gesture on virtual key buttons**
+        * Similar to what Pythonista offers, you can now swipe left/right on
+          the extra virtual key row to position cursor with better control
+          and precision
+	* More virtual keys
+		* Show/hide on-screen keyboard with the **KB** button.
+		* Kill line easily with the **CU** (Ctrl-U) button
+
+* Improvements 
+    * Auto-completion now takes account of cursor position and completes the
+      corresponding word fragment 
+    * You can now navigate back to the unfinished line when browsing through
+      command history
+    * Single Gist file installation just got better. Now it requires **no
+      additional steps**. Simply run the script and the full stack of files
+      will be installed.
+
+* Command Scripts
+    * New scripts
+        - `crpty.py` - File encryption using AES in CBC mode
+    * Changed scripts
+        - `pcsm.py` - `scsm` is renamed to **`pcsm`** (Pythonista Command
+          Script Manager) to clearly state that the scripts are not StaSh
+          specific. The Index repo is also renamed to Pythonista Command Script
+          Index.
+
+* Various bug fixes
+
+
 ### Version 0.3.0 - 2015-01-25
 * New Features
     - The main `_stash` object is now callable. It is now more convenient for a
@@ -136,4 +175,5 @@
 
 ### Version 0.1.0 - 2014-12-10
 * initial release
+
 
