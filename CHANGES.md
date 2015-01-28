@@ -29,12 +29,13 @@
 
 * Command Scripts
     * New scripts
-        - `crpty.py` - File encryption using AES in CBC mode
+        - `crypt.py` - File encryption using AES in CBC mode
     * Changed scripts
         - `pcsm.py` - `scsm` is renamed to **`pcsm`** (Pythonista Command
-          Script Manager) to clearly state that the scripts are not StaSh
-          specific. The Index repo is also renamed to Pythonista Command Script
-          Index.
+          Script Manager) to clearly state that the scripts are **NOT** StaSh
+          specific. The [Index
+          repo](https://github.com/ywangd/Pythonista-Command-Script-Index) is
+          also renamed to Pythonista Command Script Index.
 
 * Various bug fixes
 

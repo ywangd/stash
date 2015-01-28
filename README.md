@@ -188,6 +188,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `clear.py`
     * `copy.py` - Copy to iOS clipboard
     * `cp.py`
+    * `crypt.py` - File encryption using AES in CBC mode
     * `cut.py` - Cut out selection portions of each line of a file
     * `echo.py`
     * `edit.py` - Open any text type files in Pythonista editor
@@ -204,6 +205,10 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `mv.py`
     * `openin.py` - Show the **open in** dialog to open a file in external apps.
     * `paste.py` - Paste from iOS clipboard
+    * `pcsm.py` - Client program for [Pythonista Command Script
+      Index](https://github.com/ywangd/Pythonista-Command-Script-Index). More
+      details can be found at the 
+      [Index repo](https://github.com/ywangd/Pythonista-Command-Script-Index).
     * `pip.py` - Search, download, install, update and uninstall pure Python
       packages from PyPI.
     * `printenv.py` - List environment variables
@@ -213,8 +218,6 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `quicklook.py` - iOS quick look for files of known types
     * `rm.py`
     * `scp.py` - Copy files from/to remote servers. 
-    * `scsm.py` - An attempt to build an Index and client for managing StaSh
-      command scripts
     * `sha1sum.py` - Print of check SHA1 checksums
     * `sha256sum.py` - Print of check SHA256 checksums
     * `sort.py`
