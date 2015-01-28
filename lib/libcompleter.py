@@ -41,6 +41,15 @@ _subcmd_cfg = {
 
     },
 
+    "pcsm": {
+        "1": {
+            'candidates': ['info', 'install', 'list', 'remove'],
+            'blank_completion': True,
+            'with_normal_completion': False,
+        },
+
+    },
+
 }
 
 
