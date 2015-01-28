@@ -1689,9 +1689,9 @@ class ShTerm(ui.View):
             self.read_pos = len(self.out_buf)
 
     def set_cursor(self, offset, whence=0):
-        # Wait till screen is not flushing
-        while self.is_flushing():
-            pass
+        # Do nothing if screen is flushing
+        if self.is_flushing():
+            return
         if whence == 0:  # from start
             pos = offset
         elif whence == 1:  # current position
