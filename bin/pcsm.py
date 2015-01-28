@@ -1,5 +1,5 @@
 """
-Stash Command Script Manager - managing non-builtin command scripts
+Pythonista Command Script Manager - managing non-builtin command scripts
 """
 import sys
 import os
@@ -15,10 +15,10 @@ _stash = globals()['_stash']
 try:
     URL_MAIN_INDEX = os.environ['SCM_URL_MAIN_INDEX']
 except KeyError:
-    URL_MAIN_INDEX = 'https://raw.githubusercontent.com/ywangd/stash-command-script-index/master/index.json'
+    URL_MAIN_INDEX = 'https://raw.githubusercontent.com/ywangd/Pythonista-Command-Script-Index/master/index.json'
 
 STASH_ROOT = os.environ['STASH_ROOT']
-RECORD_FILE = os.path.join(STASH_ROOT, '.scsm.json')
+RECORD_FILE = os.path.join(STASH_ROOT, '.pcsm.json')
 
 def refreshable_url(url):
     return '%s?q=%d' % (url, random.randint(0, 9999))
@@ -33,9 +33,9 @@ def dict_update(d, u):
     return d
 
 
-class ScsmException(Exception):
+class PcsmException(Exception):
     def __init__(self, message):
-        super(ScsmException, self).__init__('scsm: %s' % message)
+        super(PcsmException, self).__init__('pcsm: %s' % message)
 
 
 def get_release_for_version(releases, ver_num=None):
@@ -113,10 +113,10 @@ class MergedIndices(object):
 
     def install(self, cmd_name, ver_num, dest_dir):
         if cmd_name not in self.merged_index['commands'].keys():
-            raise ScsmException('%s: command script not found' % cmd_name)
+            raise PcsmException('%s: command script not found' % cmd_name)
 
         elif self.merged_index['commands'][cmd_name].get('installed', None):
-            raise ScsmException('%s: command script already installed' % cmd_name)
+            raise PcsmException('%s: command script already installed' % cmd_name)
 
         else:
             meta_url, tag = urllib2.splittag(self.merged_index['commands'][cmd_name]['meta_url'])
@@ -127,7 +127,7 @@ class MergedIndices(object):
 
             release = get_release_for_version(releases, ver_num)
             if release is None:
-                raise ScsmException('%s: release not found' % cmd_name)
+                raise PcsmException('%s: release not found' % cmd_name)
 
             if 'filetype' not in release:
                 if release['url'].endswith('.py'):
@@ -135,7 +135,7 @@ class MergedIndices(object):
                 elif release['url'].endswith('.zip'):
                     release['filetype'] = 'ZippedFiles'
                 else:
-                    raise ScsmException('%s: unknown filetype' % cmd_name)
+                    raise PcsmException('%s: unknown filetype' % cmd_name)
 
             if not dest_dir:
                 dest_dir = os.path.join(os.environ['HOME2'], 'bin')
@@ -165,7 +165,7 @@ class MergedIndices(object):
                             files_installed.append(f)
                 _stash('rm files.zip files.log')
             else:
-                raise ScsmException('%s: unknown filetype' % cmd_name)
+                raise PcsmException('%s: unknown filetype' % cmd_name)
 
             installed = {
                 'version': release['version'],
@@ -185,7 +185,7 @@ class MergedIndices(object):
         url = self.find_index_url_for_cmd_name(cmd_name)
 
         if url is None:
-            raise ScsmException('%s: command script not installed' % cmd_name)
+            raise PcsmException('%s: command script not installed' % cmd_name)
 
         else:
             merged_index = self.merged_indices[url]
@@ -212,7 +212,7 @@ class MergedIndices(object):
         url = self.find_index_url_for_cmd_name(cmd_name)
 
         if url is None:
-            raise ScsmException('%s: command script not installed' % cmd_name)
+            raise PcsmException('%s: command script not installed' % cmd_name)
 
         else:
             merged_index = self.merged_indices[url]
@@ -302,7 +302,7 @@ def main(args):
             merged_indices = MergedIndices(URL_MAIN_INDEX, RECORD_FILE)
             merged_indices.info(ns.command)
 
-    except ScsmException as e:
+    except PcsmException as e:
         print e.message
         sys.exit(1)
 
