@@ -1,29 +1,45 @@
 import os
+import sys
 import urllib2
 import random
 
-URLBASE = 'https://raw.githubusercontent.com/ywangd/stash/master/'
+URLBASE = 'https://raw.githubusercontent.com/ywangd/stash/master'
 
 FNAMES = ['stash.py', 'bin/selfupdate.sh', 'bin/echo.py', 'bin/wget.py', 'bin/unzip.py', 'bin/rm.py', 'bin/alias.py']
 
-STASH_DIR = os.path.expanduser("~/Documents/stash")
+HOME2 = os.path.expanduser('~/Documents')
 
-if not os.path.exists(STASH_DIR):
-    os.mkdir(STASH_DIR)
+STASH_ROOT = os.path.join(HOME2, 'stash')
 
-if not os.path.exists(os.path.join(STASH_DIR, 'bin')):
-    os.mkdir(os.path.join(STASH_DIR, 'bin'))
+os.chdir(HOME2)
+if not os.path.exists(STASH_ROOT):
+    os.mkdir(STASH_ROOT)
 
-if __name__ == "__main__":
+os.chdir(STASH_ROOT)
+if not os.path.exists('lib'):
+    os.mkdir('lib')
+if not os.path.exists('bin'):
+    os.mkdir('bin')
+
+print 'Downloading files ...'
+try:
     for fname in FNAMES:
         # Random number to force refresh
-        url = URLBASE + fname + '?q={}'.format(random.randint(1, 999999))
-        print(url)
-    
+        url = "%s/%s?q=%d" % (URLBASE, fname, random.randint(1, 999999))
+        print url
         req = urllib2.Request(url)
         req.add_header('Cache-Control', 'no-cache')
-    
-        with open(os.path.join(STASH_DIR, fname), 'w') as outs:
-            outs.write(urllib2.urlopen(req).read())
-        
-        print("\nDone\n")
+        contents = urllib2.urlopen(req).read()
+        with open(fname, 'w') as outs:
+            outs.write(contents)
+
+except:
+    print 'Please make sure internet connection is available'
+    sys.exit(1)
+
+from stash import StaSh
+stash = StaSh()
+stash('selfupdate', final_outs=sys.stdout)
+stash.load_lib()  # reload libraries
+stash('version', final_outs=sys.stdout)
+stash('echo Installation completed', final_outs=sys.stdout)
