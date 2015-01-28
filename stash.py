@@ -868,6 +868,7 @@ class ShRuntime(object):
         self.history_listsource = ui.ListDataSource(self.history)
         self.history_listsource.action = self.app.history_popover_tapped
         self.idx_to_history = -1
+        self.history_templine = ''
 
         self.parser = ShParser()
         self.expander = ShExpander(self)
@@ -1311,9 +1312,14 @@ class ShRuntime(object):
 
     def history_up(self):
         # self.app.term.dbgout.text += 'up: %d %d\n' % (self.idx_to_history, len(self.history))
+        # Save the unfinished line user is typing before showing entries from history
+        if self.idx_to_history == -1:
+            self.history_templine = self.app.term.read_inp_line().rstrip()
+
         self.idx_to_history += 1
         if self.idx_to_history >= len(self.history):
             self.idx_to_history = len(self.history) - 1
+            # move cursor back to input line if the request comes from an external keyboard
             if self.ex_kb_history_requested:
                 self.ex_kb_history_requested = False
                 if self.app.term.read_inp_line().endswith(self.ex_kb_history_suffix):
@@ -1331,8 +1337,9 @@ class ShRuntime(object):
     def history_dn(self):
         # self.app.term.dbgout.text += 'down: %d %d\n' % (self.idx_to_history, len(self.history))
         self.idx_to_history -= 1
-        if self.idx_to_history <= -1:
-            self.idx_to_history = 0
+        if self.idx_to_history < -1:
+            self.idx_to_history = -1
+            # move cursor back to input line if the request comes from an external keyboard
             if self.ex_kb_history_requested:
                 self.ex_kb_history_requested = False
                 if self.app.term.read_inp_line().endswith(self.ex_kb_history_suffix):
@@ -1340,7 +1347,10 @@ class ShRuntime(object):
                 else:
                     self.app.term.set_cursor(0, whence=2)
         else:
-            entry = self.history[self.idx_to_history]
+            if self.idx_to_history == -1:
+                entry = self.history_templine
+            else:
+                entry = self.history[self.idx_to_history]
             if self.ex_kb_history_requested:
                 self.ex_kb_history_requested = False
                 self.app.term.set_inp_line(entry + self.ex_kb_history_suffix, cursor_at=len(entry))
@@ -2155,6 +2165,9 @@ class StaSh(object):
 
     def history_popover_tapped(self, sender):
         if sender.selected_row >= 0:
+            # Save the unfinished line user is typing before showing entries from history
+            if self.runtime.idx_to_history == -1:
+                self.runtime.history_templine = self.term.read_inp_line().rstrip()
             self.term.set_inp_line(sender.items[sender.selected_row])
             self.runtime.idx_to_history = sender.selected_row
 
