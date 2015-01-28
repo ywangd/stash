@@ -848,6 +848,10 @@ class ShRuntime(object):
         self.rcfile = os.path.join(APP_DIR, config.get('system', 'rcfile'))
         self.historyfile = os.path.join(APP_DIR, config.get('system', 'historyfile'))
         self.HISTORY_MAX = config.getint('display', 'HISTORY_MAX')
+        # External keyboard support
+        self.ex_kb_selected_range = (0, 0)
+        self.ex_kb_history_suffix = '    '
+        self.ex_kb_history_requested = False
 
         self.py_traceback = config.getint('system', 'py_traceback')
         self.input_encoding_utf8 = config.getint('system', 'input_encoding_utf8')
@@ -864,6 +868,7 @@ class ShRuntime(object):
         self.history_listsource = ui.ListDataSource(self.history)
         self.history_listsource.action = self.app.history_popover_tapped
         self.idx_to_history = -1
+        self.history_templine = ''
 
         self.parser = ShParser()
         self.expander = ShExpander(self)
@@ -1275,7 +1280,7 @@ class ShRuntime(object):
 
     def add_history(self, s):
         if s.strip() != '' and (self.history == [] or s != self.history[0]):
-            self.history.insert(0, s)
+            self.history.insert(0, s.strip())  # remove any surrounding whites
             if len(self.history) > self.HISTORY_MAX:
                 self.history = self.history[0:self.HISTORY_MAX]
             self.history_listsource.items = self.history
@@ -1306,18 +1311,51 @@ class ShRuntime(object):
             raise ShEventNotFound(tok)
 
     def history_up(self):
+        # self.app.term.dbgout.text += 'up: %d %d\n' % (self.idx_to_history, len(self.history))
+        # Save the unfinished line user is typing before showing entries from history
+        if self.idx_to_history == -1:
+            self.history_templine = self.app.term.read_inp_line().rstrip()
+
         self.idx_to_history += 1
         if self.idx_to_history >= len(self.history):
-            self.idx_to_history -= 1
+            self.idx_to_history = len(self.history) - 1
+            # move cursor back to input line if the request comes from an external keyboard
+            if self.ex_kb_history_requested:
+                self.ex_kb_history_requested = False
+                if self.app.term.read_inp_line().endswith(self.ex_kb_history_suffix):
+                    self.app.term.set_cursor(-len(self.ex_kb_history_suffix), whence=2)
+                else:
+                    self.app.term.set_cursor(0, whence=2)
         else:
-            self.app.term.set_inp_line(self.history[self.idx_to_history])
+            entry = self.history[self.idx_to_history]
+            if self.ex_kb_history_requested:
+                self.ex_kb_history_requested = False
+                self.app.term.set_inp_line(entry + self.ex_kb_history_suffix, cursor_at=len(entry))
+            else:
+                self.app.term.set_inp_line(entry)
 
     def history_dn(self):
+        # self.app.term.dbgout.text += 'down: %d %d\n' % (self.idx_to_history, len(self.history))
         self.idx_to_history -= 1
-        if self.idx_to_history <= -1:
+        if self.idx_to_history < -1:
             self.idx_to_history = -1
+            # move cursor back to input line if the request comes from an external keyboard
+            if self.ex_kb_history_requested:
+                self.ex_kb_history_requested = False
+                if self.app.term.read_inp_line().endswith(self.ex_kb_history_suffix):
+                    self.app.term.set_cursor(-len(self.ex_kb_history_suffix), whence=2)
+                else:
+                    self.app.term.set_cursor(0, whence=2)
         else:
-            self.app.term.set_inp_line(self.history[self.idx_to_history])
+            if self.idx_to_history == -1:
+                entry = self.history_templine
+            else:
+                entry = self.history[self.idx_to_history]
+            if self.ex_kb_history_requested:
+                self.ex_kb_history_requested = False
+                self.app.term.set_inp_line(entry + self.ex_kb_history_suffix, cursor_at=len(entry))
+            else:
+                self.app.term.set_inp_line(entry)
 
     def reset_idx_to_history(self):
         self.idx_to_history = -1
@@ -1400,7 +1438,6 @@ class ShTerm(ui.View):
         self.input_did_eof = False  # For read and readlines
         self.cleanup = app.will_close
 
-        # TODO: Setup the prompt based on rcfile
         self.prompt = '$ '
 
         # Start constructing the view's layout
@@ -1584,6 +1621,14 @@ class ShTerm(ui.View):
         self.io.text = ''
         self.io.editable = True
         self.io.delegate = app
+
+        # self.dbgout = ui.TextView(name='dbgout')
+        # self.txts.add_subview(self.dbgout)
+        # self.dbgout.y = 0
+        # ss = ui.get_screen_size()
+        # self.dbgout.x = ss[1] / 2
+        # self.dbgout.width = ss[1] / 2
+        # self.dbgout.height = ss[0] / 2
         
     def toggle_k_grp(self):
         if self.on_k_grp == 0:
@@ -1601,6 +1646,9 @@ class ShTerm(ui.View):
         else:
             self.txts.height = self.height
         self.flush()
+
+    def is_flushing(self):
+        return self._flush_thread is not None and self._flush_thread.isAlive()
 
     def read_inp_line(self):
         s = self.out_buf[self.read_pos:]
@@ -1641,8 +1689,9 @@ class ShTerm(ui.View):
             self.read_pos = len(self.out_buf)
 
     def set_cursor(self, offset, whence=0):
-        # Set cursor position Right Away (without going through the
-        # write/flush pipeline)
+        # Do nothing if screen is flushing
+        if self.is_flushing():
+            return
         if whence == 0:  # from start
             pos = offset
         elif whence == 1:  # current position
@@ -1657,7 +1706,10 @@ class ShTerm(ui.View):
                 pos = self.read_pos
             elif pos > len(self.out_buf):
                 pos = len(self.out_buf)
-            self.io.replace_range((pos, pos), '')
+            try:
+                self.io.replace_range((pos, pos), '')
+            except:
+                pass
 
     def replace_out_buf(self, replacement, rng=None):
         rpl_len = len(replacement)
@@ -1768,7 +1820,7 @@ class ShTerm(ui.View):
 
     def flush(self):
         # Throttle the flush by allowing only one running _flush thread
-        if self._flush_thread is None or not self._flush_thread.isAlive():
+        if not self.is_flushing():
             # No running flush thread, create one
             self._flush_thread = self._flush()  # in background
 
@@ -1992,6 +2044,10 @@ class StaSh(object):
             if rng == saved_rng and not is_virtual_key:
                 self.term.write(replacement, rng=rng, update_read_pos=False, flush=False)
                 return True
+            # Do nothing if screen is flushing
+            # This is to guarantee that the input texts appear in order
+            elif self.term.is_flushing():
+                return False
             else:
                 self.term.write(replacement, rng=rng, update_read_pos=False)
 
@@ -2009,9 +2065,30 @@ class StaSh(object):
         pass
 
     def textview_did_change_selection(self, tv):
-        # TODO: Possible to support external keyboard arrow keys
-        pass
-        
+        rng = tv.selected_range
+        saved_ex_kb_selected_range = self.runtime.ex_kb_selected_range
+        self.runtime.ex_kb_selected_range = rng
+
+        # Do nothing if screen is flushing
+        if self.term.is_flushing():
+            return
+
+        tot_len = len(self.term.out_buf)
+        if rng == (0, 0):
+            if saved_ex_kb_selected_range[0] >= self.term.read_pos:
+                self.runtime.ex_kb_history_requested = True
+                self.runtime.ex_kb_selected_range = (self.term.read_pos, self.term.read_pos)
+                self.vk_tapped(self.term.k_hup)
+
+        elif rng == (tot_len, tot_len):
+            inp_line = self.term.read_inp_line()
+            if inp_line.endswith(self.runtime.ex_kb_history_suffix) \
+                and saved_ex_kb_selected_range[0] >= self.term.read_pos \
+                and rng[0] - saved_ex_kb_selected_range[1] >= len(self.runtime.ex_kb_history_suffix):
+                self.runtime.ex_kb_history_requested = True
+                self.runtime.ex_kb_selected_range = (self.term.read_pos, self.term.read_pos)
+                self.vk_tapped(self.term.k_hdn)
+
     def vk_tapped(self, vk):
         if vk == self.term.k_tab:  # Tab completion
             if not self.runtime.worker_stack:
@@ -2088,6 +2165,9 @@ class StaSh(object):
 
     def history_popover_tapped(self, sender):
         if sender.selected_row >= 0:
+            # Save the unfinished line user is typing before showing entries from history
+            if self.runtime.idx_to_history == -1:
+                self.runtime.history_templine = self.term.read_inp_line().rstrip()
             self.term.set_inp_line(sender.items[sender.selected_row])
             self.runtime.idx_to_history = sender.selected_row
 
