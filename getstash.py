@@ -16,7 +16,7 @@ if not os.path.exists(STASH_ROOT):
     os.mkdir(STASH_ROOT)
 
 os.chdir(STASH_ROOT)
-for x in ('lib', 'bin')
+for x in ('lib', 'bin'):
     if not os.path.exists(x):
         os.mkdir(x)
 
