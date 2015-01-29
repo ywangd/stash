@@ -5,15 +5,15 @@
 	* **New UI design with unified Input/Output areas**
 		* No more screen flashing when scrolling. Smooth scroll at all time
 		* Support device rotation at any direction
-		* Manipute cursor position with ease
-		* Consistent look and feel to real PC terminals
+		* Manipulate cursor position with ease
+		* Consistent look and feel as a proper PC terminal
 	* **External keyboard support**
 		* Tab completion works flawlessly 
 		* Navigate through command history with ⌘ (cmd) + up (↑) / down (↓)
 	* **Swipe gesture on virtual key buttons**
-        * Similar to what Pythonista offers, you can now swipe left/right on
-          the extra virtual key row to position cursor with better control
-          and precision
+        * Similar to what Pythonista builtin editor offers, you can now swipe
+          left/right on the extra virtual key row to position cursor with
+          better control and precision
 	* More virtual keys
 		* Show/hide on-screen keyboard with the **KB** button.
 		* Kill line easily with the **CU** (Ctrl-U) button
@@ -176,5 +176,6 @@
 
 ### Version 0.1.0 - 2014-12-10
 * initial release
+
 
 
