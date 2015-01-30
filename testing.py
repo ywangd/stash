@@ -178,6 +178,22 @@ A is{0}
         assert newline == 'git branch REA'
         assert cursor_at == 11
 
+    def test_completion_09(self):
+        newline, all_names, cursor_at = self.complete('$STASH_')
+        assert newline == '$STASH_ROOT '
+
+    def test_completion_10(self):
+        newline, all_names, cursor_at = self.complete('$STASH_ROOT/bi')
+        assert newline == '$STASH_ROOT/bin/'
+
+    def test_completion_11(self):
+        newline, all_names, cursor_at = self.complete('ls $STASH_ROOT/bi')
+        assert newline == 'ls $STASH_ROOT/bin/'
+
+    def test_completion_12(self):
+        newline, all_names, cursor_at = self.complete('ls $STASH_ROOT/bin/ls.')
+        assert newline == 'ls $STASH_ROOT/bin/ls.py '
+
 
 if __name__ == '__main__':
     unittest.main()

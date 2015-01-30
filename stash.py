@@ -734,7 +734,7 @@ class ShCompleter(object):
 
             if is_cmd_word:
                 path_names = [p for p in path_names
-                              if os.path.isdir(os.path.expanduser(p)) or p.endswith('.py') or p.endswith('.sh')]
+                              if p.endswith('/') or p.endswith('.py') or p.endswith('.sh')]
                 script_names = self.app.runtime.get_all_script_names()
                 script_names.extend(self.app.runtime.aliases.keys())
                 if word_to_complete != '':
@@ -788,28 +788,35 @@ class ShCompleter(object):
     def path_match(self, word_to_complete):
         # os.path.xxx functions do not like escaped whitespace
         word_to_complete_normal_whites = word_to_complete.replace('\\ ', ' ')
-
         full_path = os.path.expanduser(word_to_complete_normal_whites)
 
-        file_names = []
+        # recognise path with embedded environment variable, e.g. $STASH_ROOT/
+        head, tail = os.path.split(word_to_complete_normal_whites)
+        if head != '':
+            full_path2 = self.app.runtime.expander.expandvars(full_path)
+            if full_path2 != full_path and full_path2 != '':
+                full_path = full_path2
+
+        path_names = []
         if os.path.isdir(full_path) and full_path.endswith('/'):
             for fname in os.listdir(full_path):
                 if os.path.isdir(os.path.join(full_path, fname)):
                     fname += '/'
-                file_names.append(
+                path_names.append(
                     os.path.join(os.path.dirname(word_to_complete), fname.replace(' ', '\\ ')))
 
         else:
             d = os.path.dirname(full_path) or '.'
             f = os.path.basename(full_path)
-            for fname in os.listdir(d):
-                if fname.startswith(f):
-                    if os.path.isdir(os.path.join(d, fname)):
-                        fname += '/'
-                    file_names.append(
-                        os.path.join(os.path.dirname(word_to_complete), fname.replace(' ', '\\ ')))
+            if os.path.isdir(d):
+                for fname in os.listdir(d):
+                    if fname.startswith(f):
+                        if os.path.isdir(os.path.join(d, fname)):
+                            fname += '/'
+                        path_names.append(
+                            os.path.join(os.path.dirname(word_to_complete), fname.replace(' ', '\\ ')))
 
-        return file_names
+        return path_names
 
     def format_all_names(self, all_names):
         # only show the last component to be completed in a directory path
