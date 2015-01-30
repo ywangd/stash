@@ -13,10 +13,10 @@ commands:
     modified: git modified - show what files have been modified
     log: git log - Options:\n\t[-l|--length  numner_of _results]\n\t[-f|--format format string can use {message}{author}{author_email}{committer}{committer_email}{merge}{commit}]\n\t[-o|--output]  file_name
     push: git push [http(s)://<remote repo>] [-u username[:password]] - push changes back to remote
-    pull: git pull [http(s)://<remote repo>] - pull changes from a remote repository
+    pull: git pull [http(s)://<remote repo> or remote] - pull changes from a remote repository
     checkout: git checkout <branch> - check out a particular branch in the Git tree
     branch: git branch - show branches
-    remote: git remote - list remote repos 
+    remote: git remote [remotename remoteuri]- list or add remote repos 
     status: git status - show status of files (staged unstaged untracked)
     reset: git reset - reset a repo to its pre-change state
     help: git help
@@ -88,11 +88,12 @@ command_help={    'init':  'initialize a new Git repository'
     ,'clone': 'git clone <url> [path] - clone a remote repository'
     ,'modified': 'git modified - show what files have been modified'
     ,'log': 'git log - Options:\n\t[-l|--length  numner_of _results]\n\t[-f|--format format string can use {message}{author}{author_email}{committer}{committer_email}{merge}{commit}]\n\t[-o|--output]  file_name'
-    ,'push': 'git push [http(s)://<remote repo>] [-u username[:password]] - push changes back to remote'
-    ,'pull': 'git pull [http(s)://<remote repo>] - pull changes from a remote repository'
+    ,'push': 'git push [http(s)://<remote repo> or remote] [-u username[:password]] - push changes back to remote'
+    ,'pull': 'git pull [http(s)://<remote repo> or remote] - pull changes from a remote repository'
+    ,'fetch': 'git fetch [uri or remote] - fetch changes from remote'
     ,'checkout': 'git checkout <branch> - check out a particular branch in the Git tree'
     ,'branch': 'git branch - show branches'
-    ,'remote': 'git remote - list remote repos '
+    ,'remote': 'git remote [remotename remoteuri] list or add remote repos '
     ,'status': 'git status - show status of files (staged unstaged untracked)'
     ,'reset': 'git reset - reset a repo to its pre-change state'
     ,'help': 'git help'
@@ -137,6 +138,9 @@ def git_remote(args):
         repo = _get_repo()
         for key, value in repo.remotes.items():
             print key, value
+    elif len(args)==2:
+        repo=_get_repo()
+        repo.add_remote(args[0],args[1])
     else:
         print command_help['remote']
 
@@ -221,6 +225,11 @@ def git_pull(args):
     if len(args) <= 1:
         repo = _get_repo()
         url = args[0] if len(args)==1 else repo.remotes.get('origin','')
+        
+        if url in repo.remotes:
+            origin=url
+            url=repo.remotes.get(origin)
+        
         if url:
             repo.pull(origin_uri=url)
         else:
@@ -228,11 +237,30 @@ def git_pull(args):
     else:
         print command_help['git pull']
 
-
+def git_fetch(args): 
+    parser = argparse.ArgumentParser(prog='git fetch'
+                                     , usage='git fetch [http(s)://<remote repo> or remotename] [-u username[:password]]'
+                                     , description="Push to a remote repository")
+    parser.add_argument('url', type=str, nargs='?', help='URL to push to')
+    parser.add_argument('-u', metavar='username[:password]', type=str, required=False, help='username[:password]')
+    result = parser.parse_args(args)
+    
+    repo = _get_repo()
+    
+    origin='origin'
+    if not result.url:
+        result.url = repo.remotes.get('origin','')
+    if result.url in repo.remotes:
+        origin=result.url
+        result.url=repo.remotes.get(origin)
+    remote_refs=porcelain.fetch(repo.repo.path,result.url)
+    
+    repo._setup_fetched_refs(remote_refs, origin, False)
+    print remote_refs
 
 def git_push(args):
     parser = argparse.ArgumentParser(prog='git push'
-                                     , usage='git push [http(s)://<remote repo>] [-u username[:password]]'
+                                     , usage='git push [http(s)://<remote repo> or remote] [-u username[:password]]'
                                      , description="Push to a remote repository")
     parser.add_argument('url', type=str, nargs='?', help='URL to push to')
     parser.add_argument('-u', metavar='username[:password]', type=str, required=False, help='username[:password]')
@@ -242,9 +270,12 @@ def git_push(args):
 
     repo = _get_repo()
 
-    #Try to get the remote origin
+    origin='origin'
     if not result.url:
         result.url = repo.remotes.get('origin','')
+    if result.url in repo.remotes:
+        origin=result.url
+        result.url=repo.remotes.get(origin)
 
     branch_name = os.path.join('refs','heads', repo.active_branch)  #'refs/heads/%s' % repo.active_branch
 
@@ -383,6 +414,7 @@ commands = {
     ,'log': git_log
     ,'push': git_push
     ,'pull': git_pull
+    ,'fetch': git_fetch
     ,'branch': git_branch
     ,'checkout': git_checkout
     ,'remote': git_remote
