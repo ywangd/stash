@@ -4,7 +4,7 @@ StaSh - Shell for Pythonista
 
 https://github.com/ywangd/stash
 """
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 
 import ast
 import functools
@@ -1731,7 +1731,8 @@ class ShTerm(ui.View):
         # Finally perform the replace
         self.out_buf = self.out_buf[:rng[0]] + replacement + self.out_buf[rng[1]:]
 
-    # file-like methods for output TextView
+    # file-like methods for TextView to perform IO redirect
+    # They are called by external scripts, e.g. on issuing raw_input()
     def seek(self, offset, whence=0):
         if whence == 0:  # from start
             self.write_pos = offset
@@ -1760,8 +1761,6 @@ class ShTerm(ui.View):
     def encode(self, s):
         return s.encode('utf-8') if self.app.runtime.input_encoding_utf8 else s
 
-    # file-like methods (TextField) for IO redirect of external scripts
-    # read functions are only called by external script as raw_input
     def read(self, size=-1):
         ret = ''.join(self.readlines())
         if size >= 0:
