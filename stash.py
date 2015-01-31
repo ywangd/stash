@@ -861,6 +861,7 @@ class ShRuntime(object):
         self.ex_kb_history_requested = False
 
         self.py_traceback = config.getint('system', 'py_traceback')
+        self.py_pdb = config.getint('system', 'py_pdb')
         self.input_encoding_utf8 = config.getint('system', 'input_encoding_utf8')
 
         # load history from last session
@@ -1225,13 +1226,18 @@ class ShRuntime(object):
             self.envars['?'] = e.code
 
         except Exception as e:
-            if self.py_traceback:
-                import traceback
-                traceback.print_exc()
-            err_msg = '%s: (%s)\n' % (repr(e), sys.exc_value)
+            etype, evalue, tb = sys.exc_info()
+            err_msg = '%s: %s\n' % (repr(etype), evalue)
             _debug_runtime(err_msg)
             self.app.term.write_with_prefix(err_msg)
             self.envars['?'] = 1
+
+            if self.py_traceback or self.py_pdb:
+                import traceback
+                traceback.print_exception(etype, evalue, tb)
+                if self.py_pdb:
+                    import pdb
+                    pdb.post_mortem(tb)
 
         finally:
             sys.path = _SYS_PATH
@@ -1923,6 +1929,7 @@ cfgfile=.stash_config
 rcfile=.stashrc
 historyfile=.stash_history
 py_traceback=0
+py_pdb=0
 input_encoding_utf8=1
 
 [display]
