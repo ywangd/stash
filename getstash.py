@@ -25,7 +25,7 @@ try:
     for fname in FNAMES:
         # Random number to force refresh
         url = "%s/%s?q=%d" % (URLBASE, fname, random.randint(1, 999999))
-        print(url)
+        print url
         req = urllib2.Request(url)
         req.add_header('Cache-Control', 'no-cache')
         contents = urllib2.urlopen(req).read()
@@ -36,6 +36,7 @@ except:
     print 'Please make sure internet connection is available'
     sys.exit(1)
 
+print 'Bootstrapping ...'
 from stash import StaSh
 stash = StaSh()
 stash('selfupdate', final_outs=sys.stdout)

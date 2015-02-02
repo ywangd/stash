@@ -872,6 +872,7 @@ class ShRuntime(object):
                 self.history = [line.strip() for line in ins.readlines()]
         except IOError:
             self.history = []
+        self.history_alt = []
             
         self.history_listsource = ui.ListDataSource(self.history)
         self.history_listsource.action = self.app.history_popover_tapped
@@ -922,6 +923,10 @@ class ShRuntime(object):
             os.chdir(self.enclosing_cwd)
             self.enclosing_cwd = ''
 
+        if len(self.worker_stack) == 1:
+            self.history, self.history_alt = self.history_alt, self.history
+            self.history_listsource.items = self.history
+
     def restore_state(self,
                       persist_envars=False,
                       persist_aliases=False,
@@ -929,6 +934,10 @@ class ShRuntime(object):
 
         _debug_runtime('Popping stack %d ----\n' % (len(self.state_stack) - 1))
         _debug_runtime('envars = %s\n' % sorted(self.envars.keys()))
+
+        if len(self.worker_stack) == 1:
+            self.history, self.history_alt = self.history_alt, self.history
+            self.history_listsource.items = self.history
 
         # If not persisting, parent shell's envars are set back to this level's
         # enclosed vars. If persisting, envars of this level is then the same
@@ -1297,6 +1306,7 @@ class ShRuntime(object):
             if len(self.history) > self.HISTORY_MAX:
                 self.history = self.history[0:self.HISTORY_MAX]
             self.history_listsource.items = self.history
+        self.reset_idx_to_history()
 
     def save_history(self):
         try:
@@ -2027,7 +2037,6 @@ class StaSh(object):
                 self.term.inp_buf = []  # clear input buffer for new command
                 self.term.input_did_return = False
                 self.term.input_did_eof = False
-                self.runtime.reset_idx_to_history()
                 self.runtime.run(line)
             else:
                 self.term.new_inp_line()
@@ -2038,6 +2047,7 @@ class StaSh(object):
             s = self.term.read_inp_line()
             self.term.read_pos += len(s)
             self.term.inp_buf.append(s)
+            self.runtime.add_history(s.rstrip())
             self.term.input_did_return = True
 
         return True
@@ -2124,22 +2134,13 @@ class StaSh(object):
             self.term.toggle_k_grp()
 
         elif vk == self.term.k_hist:
-            if not self.runtime.worker_stack:
-                self.term.history_present(self.runtime.history_listsource)
-            else:
-                console.hud_alert('Not available', 'error', 1.0)
+            self.term.history_present(self.runtime.history_listsource)
 
         elif vk == self.term.k_hup:
-            if not self.runtime.worker_stack:
-                self.runtime.history_up()
-            else:
-                console.hud_alert('Not available', 'error', 1.0)
+            self.runtime.history_up()
 
         elif vk == self.term.k_hdn:
-            if not self.runtime.worker_stack:
-                self.runtime.history_dn()
-            else:
-                console.hud_alert('Not available', 'error', 1.0)
+            self.runtime.history_dn()
 
         elif vk == self.term.k_CD:
             if self.runtime.worker_stack:
@@ -2190,6 +2191,8 @@ class StaSh(object):
             self.runtime.idx_to_history = sender.selected_row
 
     def will_close(self):
+        if len(self.runtime.worker_stack) >= 1:
+            self.runtime.history = self.runtime.history_alt
         self.runtime.save_history()
 
     def run(self):
