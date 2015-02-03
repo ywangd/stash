@@ -2096,7 +2096,19 @@ class StaSh(object):
         return False
 
     def textview_did_change(self, tv):
-        pass
+        if self.term.is_flushing():  # do nothing if screen is flushing
+            return
+        # The following code is a fix to a possible UI system bug:
+        # Some key-combos that delete texts, e.g. alt-delete, cmd-delete, from external
+        # keyboard do not trigger textview_should_change event. So following checks
+        # are added to ensure consistency betwen out_buf and io.text, also the prompt
+        # do not get erased.
+        rng = tv.selected_range
+        if rng[0] == rng[1] and self.term.out_buf[rng[0]:] != self.term.io.text[rng[0]:]:
+            if rng[0] >= self.term.read_pos:
+                self.term.out_buf = self.term.out_buf[:rng[0]] + self.term.io.text[rng[0]:]
+            else:
+                self.term.set_inp_line(self.term.io.text[rng[0]:], cursor_at=0)
 
     def textview_did_change_selection(self, tv):
         rng = tv.selected_range
