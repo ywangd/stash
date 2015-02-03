@@ -44,6 +44,7 @@ _STARTUP_OPTIONS = argparse.Namespace(
     debug_parser=False,
     debug_completer=False,
     debug_runtime=False,
+    debug_console=False,
     no_rcfile=False)
 
 def _debug_parser(msg):
@@ -1644,14 +1645,19 @@ class ShTerm(ui.View):
         self.io.editable = True
         self.io.delegate = app
 
-        # self.dbgout = ui.TextView(name='dbgout')
-        # self.txts.add_subview(self.dbgout)
-        # self.dbgout.y = 0
-        # ss = ui.get_screen_size()
-        # self.dbgout.x = ss[1] / 2
-        # self.dbgout.width = ss[1] / 2
-        # self.dbgout.height = ss[0] / 2
-        
+        if _STARTUP_OPTIONS.debug_console:
+            self.dbgout = ui.TextView(name='dbgout', flex='H')
+            self.txts.add_subview(self.dbgout)
+            screen_width_by_2 = ui.get_screen_size()[1] / 2
+            self.dbgout.width = screen_width_by_2
+            self.dbgout.height = self.io.height
+            self.dbgout.x = screen_width_by_2
+            self.dbgout.y = 0
+            self.dbgout.editable = False
+            self.dbgout.font = self.TEXT_FONT
+            self.io.flex = 'H'
+            self.io.width = screen_width_by_2
+
     def toggle_k_grp(self):
         if self.on_k_grp == 0:
             self.k_grp_1.bring_to_front()
@@ -2217,6 +2223,9 @@ if __name__ == '__main__':
                     action='store_true',
                     help='display runtime debugging message'
                     )
+    ap.add_argument('--debug-console',
+                    action='store_true',
+                    help='show debug console')
     ap.add_argument('--no-rcfile',
                     action='store_true',
                     help='do not load external resource file')
