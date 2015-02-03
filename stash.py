@@ -1459,7 +1459,6 @@ class ShTerm(ui.View):
         self.write_pos = 0
         self.input_did_return = False  # For readline, e.g. raw_input
         self.input_did_eof = False  # For read and readlines
-        self.cleanup = app.will_close
 
         self.prompt = '$ '
 
@@ -1661,7 +1660,7 @@ class ShTerm(ui.View):
         self.on_k_grp = 1 - self.on_k_grp
         
     def will_close(self):
-        self.cleanup()
+        self.app.will_close()
 
     def keyboard_frame_did_change(self, frame):
         if frame[3] > 0:
@@ -2039,6 +2038,7 @@ class StaSh(object):
                 self.term.input_did_eof = False
                 self.runtime.run(line)
             else:
+                self.runtime.reset_idx_to_history()
                 self.term.new_inp_line()
 
         else:
@@ -2191,8 +2191,10 @@ class StaSh(object):
             self.runtime.idx_to_history = sender.selected_row
 
     def will_close(self):
-        if len(self.runtime.worker_stack) >= 1:
-            self.runtime.history = self.runtime.history_alt
+        for worker in self.runtime.worker_stack[::-1]:
+            worker._Thread__stop()
+            self.runtime.restore_state()  # Manually stopped thread does not restore state
+            self.runtime.worker_stack.pop()
         self.runtime.save_history()
 
     def run(self):
