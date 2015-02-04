@@ -1976,6 +1976,8 @@ class StaSh(object):
         self.runtime = ShRuntime(self)
         self.completer = ShCompleter(self)
 
+        self.tab_action = None
+
         # Navigate to the startup folder
         if _IN_PYTHONISTA:
             os.chdir(self.runtime.envars['HOME2'])
@@ -2038,6 +2040,7 @@ class StaSh(object):
             self.term.read_pos += len(line)
             if line.strip() != '':
                 self.term.inp_buf = []  # clear input buffer for new command
+                self.tab_action = None  # reset tab action for new command
                 self.term.input_did_return = False
                 self.term.input_did_eof = False
                 self.runtime.run(line)
@@ -2148,7 +2151,10 @@ class StaSh(object):
                     cursor_at = rng[0] - self.term.read_pos
                 self.completer.complete(self.term.read_inp_line(), cursor_at=cursor_at)
             else:
-                console.hud_alert('Not available', 'error', 1.0)
+                if callable(self.tab_action):
+                    self.tab_action()
+                else:
+                    console.hud_alert('Not available', 'error', 1.0)
 
         elif vk == self.term.k_swap:
             self.term.toggle_k_grp()
