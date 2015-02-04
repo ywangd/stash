@@ -926,7 +926,6 @@ class ShRuntime(object):
 
         if len(self.worker_stack) == 1:
             self.history, self.history_alt = self.history_alt, self.history
-            self.history_listsource.items = self.history
 
     def restore_state(self,
                       persist_envars=False,
@@ -938,7 +937,6 @@ class ShRuntime(object):
 
         if len(self.worker_stack) == 1:
             self.history, self.history_alt = self.history_alt, self.history
-            self.history_listsource.items = self.history
 
         # If not persisting, parent shell's envars are set back to this level's
         # enclosed vars. If persisting, envars of this level is then the same
