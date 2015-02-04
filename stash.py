@@ -2099,14 +2099,18 @@ class StaSh(object):
         # The following code is a fix to a possible UI system bug:
         # Some key-combos that delete texts, e.g. alt-delete, cmd-delete, from external
         # keyboard do not trigger textview_should_change event. So following checks
-        # are added to ensure consistency betwen out_buf and io.text, also the prompt
+        # are added to ensure consistency between out_buf and io.text, also the prompt
         # do not get erased.
         rng = tv.selected_range
         if rng[0] == rng[1] and self.term.out_buf[rng[0]:] != self.term.io.text[rng[0]:]:
             if rng[0] >= self.term.read_pos:
                 self.term.out_buf = self.term.out_buf[:rng[0]] + self.term.io.text[rng[0]:]
             else:
-                self.term.set_inp_line(self.term.io.text[rng[0]:], cursor_at=0)
+                s = self.term.out_buf[self.term.read_pos:]
+                if s == self.term.io.text[len(self.term.io.text) - len(s):]:
+                    self.term.flush()
+                else:
+                    self.term.set_inp_line(self.term.io.text[rng[0]:], cursor_at=0)
 
     def textview_did_change_selection(self, tv):
         rng = tv.selected_range
