@@ -27,7 +27,7 @@ SAVE_PASSWORDS = True
 import argparse
 import getpass
 import urlparse,urllib2,keychain
-import sys,os
+import sys,os,posix
 
 # temporary -- install required modules
 
@@ -42,7 +42,7 @@ if True:
     try:  
         from dulwich.client import default_user_agent_string
         from dulwich import porcelain
-    
+        from dulwich.index import index_entry_from_stat
     except ImportError:
         _stash('wget {} -o $TMPDIR/dulwich.zip'.format(DULWICH_URL))
         _stash('unzip $TMPDIR/dulwich.zip -d $TMPDIR/dulwich')
@@ -75,6 +75,7 @@ if True:
 else:
     from dulwich import porcelain
     from dulwich.client import default_user_agent_string
+    from dulwich.index import index_entry_from_stat
     from gittle import Gittle
 
 #  end temporary
@@ -95,7 +96,7 @@ command_help={    'init':  'initialize a new Git repository'
     ,'branch': 'git branch - show branches'
     ,'remote': 'git remote [remotename remoteuri] list or add remote repos '
     ,'status': 'git status - show status of files (staged unstaged untracked)'
-    ,'reset': 'git reset - reset a repo to its pre-change state'
+    ,'reset': 'git reset [<commit>] <paths>  reset <paths> in staging area back to their state at <commit>.  this does not affect files in the working area.  \ngit reset [ --mixed | --hard ] [<commit>] reset a repo to its pre-change state. default resets index, but not working tree.  i.e unstages all files.   --hard is dangerous, overwriting index and working tree to <commit>'
     ,'help': 'git help'
           }
 
@@ -117,7 +118,64 @@ def _find_repo(path):
 def _get_repo():
     return Gittle(_find_repo(os.getcwd()))
 
+def _confirm_dangerous():
+        repo = _get_repo()
+        status=porcelain(repo.repo.path)
+        if any(status.staged.values()+status.unstaged):
+            force=raw_input('WARNING:  there are uncommitted modified files files and/or staged changes.  these could be overwritten by this command.  continue anyway? [y/n] ')
+            if not force=='y':
+                raise Exception('use cancelled dangerous operation')
+                
+def unstage(commit='HEAD',paths=[]):
+    repo=_get_repo().repo
+    for somepath in paths:
+        #print path
+        path=_get_repo().relpath(somepath)
+        full_path = os.path.join(repo.path, path)
 
+        index=repo.open_index()
+        tree_id=repo[commit]._tree
+        try:
+            tree_entry=repo[tree_id].lookup_path(lambda x:repo[x],path)
+        except KeyError:
+            #if tree_entry didnt exist, this file was being added, so remove index entry
+            try:
+                del(index[path])
+                index.write()
+            except KeyError:
+                print 'file not in index.',path
+            return
+            
+        try:
+            index_entry=list(index[path])
+        except KeyError:
+            #if index_entry doesnt exist, this file was being removed.  readd it
+            if os.path.exists(full_path):
+                index_entry=list(index_entry_from_stat(posix.lstat(full_path),tree_entry[1]  ,0    ))
+            else:
+                index_entry=[[0]*11,tree_entry[1],0]
+                
+        #update index entry stats to reflect commit
+        index_entry[4]=tree_entry[0] #mode
+        index_entry[7]=len(repo[tree_entry[1]].data) #size
+        index_entry[8]=tree_entry[1] #sha
+        index_entry[0]=repo[commit].commit_time #ctime
+        index_entry[1]=repo[commit].commit_time #mtime
+        index[path]=index_entry
+        index.write()
+
+def unstage_all( commit='HEAD'):
+    # files to unstage consist of whatever was in new tree, plus whatever was in old index (added files to old branch)
+    repo=_get_repo().repo
+    index=repo.open_index()
+    tree_id=repo[commit]._tree
+    for entry in repo.object_store.iter_tree_contents(tree_id):
+        unstage(commit,[entry.path])
+
+    for entry in index.iteritems():
+        unstage(commit,[entry[0]])
+
+    
 def git_init(args):
     if len(args) == 1:
         Gittle.init(args[0])
@@ -148,13 +206,13 @@ def git_add(args):
     if len(args) > 0:
         repo = _get_repo()
         cwd = os.getcwd()
-        print 'cwd:',cwd
-        print 'repo',repo.path
+
         args = [os.path.join(os.path.relpath(cwd, repo.path), x)
                     if not os.path.samefile(cwd, repo.path) else x for x in args]
         for file in args:
             print 'Adding {0}'.format(file)
             porcelain.add(repo.repo, [file])
+
     else:
         print command_help['add']
 
@@ -168,6 +226,7 @@ def git_rm(args):
             print 'Removing {0}'.format(file)
             #repo.rm(args)
             porcelain.rm(repo.repo, args)
+
     else:
         print command_help['rm']
 
@@ -181,11 +240,50 @@ def git_branch(args):
         print command_help['branch']
 
 def git_reset(args):
-    if len(args) == 0:
-        repo = _get_repo()
-        porcelain.reset(repo.repo, 'hard')
+    ap=argparse.ArgumentParser('reset')
+    ap.add_argument('commit',nargs='?',action='store',default='HEAD')
+    ap.add_argument('paths',nargs='*')
+    mode=ap.add_mutually_exclusive_group()
+    mode.add_argument('--hard',action='store_true',dest='hard')
+    mode.add_argument('--mixed',action='store_false',dest='hard')
+
+    ns=ap.parse_args(args)
+
+    
+    hard=ns.hard
+        
+    repo = _get_repo().repo
+    #handle optionals
+    commit= ns.commit
+    # first arg was really a file
+    paths=ns.paths or []
+    if not commit in _get_repo() and os.path.exists(commit):
+        paths=[commit]+paths
+        commit = None
+    elif not commit in _get_repo() and not os.path.exists(commit):
+        raise Exception('{} is not a valid commit or file'.format(commit))
+    if not commit:
+        commit=repo.refs['HEAD']
+    
+    if hard:
+        _confirm_dangerous()
+    # first, unstage index
+    if paths:
+        unstage(commit,paths)
     else:
-        print command_help['reset']
+        print 'resetting index. please wait'
+        unstage_all(commit)
+        print 'complete'
+    # next, rebuild files
+    if hard:
+        treeobj=repo[repo[commit].tree]
+        
+        for path in paths:
+            print 'resetting '+path
+            relpath=repo.relpath(path)
+            file_contents=repo[treeobj[relpath][1]].as_raw_string()
+            with open(str(path),'w') as f:
+                f.write(file_contents)
 
 def git_commit(args):
     ap=argparse.ArgumentParser('Commit current working tree.')
@@ -224,6 +322,7 @@ def git_clone(args):
 def git_pull(args):
     if len(args) <= 1:
         repo = _get_repo()
+        _confirm_dangerous()
         url = args[0] if len(args)==1 else repo.remotes.get('origin','')
         
         if url in repo.remotes:
@@ -353,8 +452,14 @@ def git_log(args):
 def git_checkout(args):
     if len(args) in [1,2]:
         repo = _get_repo()
+        _confirm_dangerous()
+            
         if len(args) == 1:
-            repo.clean_working()
+            branchname=args[0]
+            if branchname in repo.branches:
+                branch_ref=repo._format_ref_branch(branchname)
+                repo.repo.refs.set_symbolic_ref('HEAD',branch_ref)
+                repo.checkout_all()
             repo.switch_branch('{0}'.format(args[0]))
 
         #Temporary hack to get create branch into source
@@ -368,7 +473,7 @@ def git_checkout(args):
                 git_checkout([args[1]])
     else:
         print command_help['checkout']
-
+        
 def git_help(args):
     print 'help:'
     for key, value in command_help.items():
