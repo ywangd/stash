@@ -1,63 +1,123 @@
-''' telnet hostname [port] [timeout]
-
-a very simple telnet client.
-
-
 '''
-import socket, select, string, sys, telnetlib,time,argparse
-#main function
-if __name__ == "__main__":
-    app = globals()['_stash']
-    ap=argparse.ArgumentParser()
-    ap.add_argument('host')
-    ap.add_argument('port',default=23,nargs='?',type=int)
-    ap.add_argument('timeout',default=2,nargs='?',type=int)
-    args=ap.parse_args()
-    print ap
-    host = args.host
-    port = args.port
-    timeout=args.timeout
-    
-    print host,port, timeout
-    try :
-        s = telnetlib.Telnet(host,port,timeout)
-        #s.open()
-    # connect to remote host
-    except :
-        print 'Unable to connect'
-        sys.exit()
+telnet.py - simple telnet
+usage: telnet.py [-h] host [port] [timeout]
 
-    print 'Connected to remote host.  type [[[ to quit'
-                #user entered a message
-    def getuserinput():
-        ui.cancel_delays()
-        if app.term.inp_buf:
-            msg = sys.stdin.readline()
-            s.write(msg.encode('ascii')+b'\n')
-            if msg=='[[[':
-                print 'exit'
-                s.close()
-                sys.exit()
-        ui.delay(getuserinput,0.1)
-    getuserinput()
-    while 1:
-        socket_list = [ s] #stdin seems to always say it is getting events, so just pollstdin
+positional arguments:
+  host        host
+  port        port default:23
+  timeout     Timeout default:5s
 
-        # Get the list sockets which are readable
-        read_sockets, write_sockets, error_sockets = select.select(socket_list , [], [])
+optional arguments:
+  -h, --help  show this help message and exit
+'''
+import telnetlib
+import time
+import threading
+import argparse
+import sys
+
+DELAY = 0.5
+            
+class Telnet(object):
+    def __init__(self,host,port=23,timeout=5):
+        self.host = host
+        self.port = port
+        self.timeout = timeout
+        self.connected = False
         
-        for sock in read_sockets:
-            #incoming message from remote server
-            if sock == s:
+    def connect(self):
+        try:
+            print 'Connecting to %s port %d' %(self.host,self.port)
+            self.telnet = telnetlib.Telnet(self.host,self.port,self.timeout)
+            self.connected = True
+            print 'Connected...'
+            self.readloop = threading.Thread(target=self.readloop)
+            self.readloop.start()
+                                             
+        except Exception,e:
+            print 'Failed to connect. %s' % e
 
-                data = sock.read_eager()
-                if not data :
-                    pass
-                else :
-                    #print data.decode('ascii')
-                    if data.decode('ascii').find('[H')>-1:  #cheap way to fake screen clear
-                        app.term.clear()
-                    else:
-                        sys.stdout.write(data.decode('ascii'))
+            
+    def read(self):
+        if self.connected:
+            time.sleep(DELAY)
+            return self.telnet.read_very_eager()
+            
+            
+    def readloop(self):
+        while self.connected: 
+            try:
+                res =  self.read()
+                if res:
+                    print res
+            except:
+                self.connected = False
+                print 'EOF Reached.'
+            
+            
+    def write(self,msg):
+        if self.connected:
+            try:
+                self.telnet.write(msg+'\r\n')
+            except Exception,e:
+                print e
+            
+    def disconnect(self):
+        if self.telnet:
+            print 'Disconnect...'
+            self.telnet.close()
+            self.connected = False
+            #if self.readloop:
+            #    self.readloop.join()
+            sys.exit(0)
 
+if __name__=='__main__':
+    ap = argparse.ArgumentParser()
+    ap.add_argument('host',help='host')
+    ap.add_argument('port',nargs='?',default=23,type=int,help='port default:23')
+    ap.add_argument('timeout',nargs='?',default=5,type=int,help='Timeout default:5s')
+    args = ap.parse_args()
+    telnet = Telnet(args.host,args.port,args.timeout)
+    telnet.connect()
+    while telnet.connected:
+        inp = raw_input()
+        telnet.write(inp)
+        if inp =='exit':
+            break
+    telnet.disconnect()
+    
+    '''
+    try:
+        print 'Connecting to %s port %d' %(args.host,args.port)
+        tn = telnetlib.Telnet(args.host,args.port,args.timeout)
+        print 'Connected...'
+        
+        state = 1
+    except Exception,e:
+        print e
+        sys.exit(0)
+        
+    t1 = threading.Thread(target=readThread)
+    t1.start()
+
+    try:
+        while state:    
+            inp = raw_input()   
+            tn.write(inp+'\r\n')
+            if inp =='exit':
+                state = 0
+        t1.join()
+        tn.close()
+        print 'Disconnect...'
+        sys.exit(0)
+    except:
+        if t1: t1.join()
+        if tn: tn.close()
+        
+'''   
+    
+            
+    
+    
+    
 
