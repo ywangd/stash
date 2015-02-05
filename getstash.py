@@ -5,7 +5,7 @@ import random
 
 URLBASE = 'https://raw.githubusercontent.com/ywangd/stash/master'
 
-FNAMES = ['stash.py', 'bin/selfupdate.sh', 'bin/echo.py', 'bin/wget.py', 'bin/unzip.py', 'bin/rm.py', 'bin/alias.py']
+FNAMES = 'stash.py bin/selfupdate.sh bin/echo.py bin/wget.py bin/unzip.py bin/rm.py bin/alias.py'.split()
 
 HOME2 = os.path.expanduser('~/Documents')
 
@@ -16,10 +16,9 @@ if not os.path.exists(STASH_ROOT):
     os.mkdir(STASH_ROOT)
 
 os.chdir(STASH_ROOT)
-if not os.path.exists('lib'):
-    os.mkdir('lib')
-if not os.path.exists('bin'):
-    os.mkdir('bin')
+for x in ('lib', 'bin'):
+    if not os.path.exists(x):
+        os.mkdir(x)
 
 print 'Downloading files ...'
 try:
@@ -37,6 +36,7 @@ except:
     print 'Please make sure internet connection is available'
     sys.exit(1)
 
+print 'Bootstrapping ...'
 from stash import StaSh
 stash = StaSh()
 stash('selfupdate', final_outs=sys.stdout)

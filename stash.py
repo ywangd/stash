@@ -4,7 +4,7 @@ StaSh - Shell for Pythonista
 
 https://github.com/ywangd/stash
 """
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 
 import ast
 import functools
@@ -44,6 +44,7 @@ _STARTUP_OPTIONS = argparse.Namespace(
     debug_parser=False,
     debug_completer=False,
     debug_runtime=False,
+    debug_console=False,
     no_rcfile=False)
 
 def _debug_parser(msg):
@@ -734,7 +735,7 @@ class ShCompleter(object):
 
             if is_cmd_word:
                 path_names = [p for p in path_names
-                              if os.path.isdir(os.path.expanduser(p)) or p.endswith('.py') or p.endswith('.sh')]
+                              if p.endswith('/') or p.endswith('.py') or p.endswith('.sh')]
                 script_names = self.app.runtime.get_all_script_names()
                 script_names.extend(self.app.runtime.aliases.keys())
                 if word_to_complete != '':
@@ -788,28 +789,35 @@ class ShCompleter(object):
     def path_match(self, word_to_complete):
         # os.path.xxx functions do not like escaped whitespace
         word_to_complete_normal_whites = word_to_complete.replace('\\ ', ' ')
-
         full_path = os.path.expanduser(word_to_complete_normal_whites)
 
-        file_names = []
+        # recognise path with embedded environment variable, e.g. $STASH_ROOT/
+        head, tail = os.path.split(word_to_complete_normal_whites)
+        if head != '':
+            full_path2 = self.app.runtime.expander.expandvars(full_path)
+            if full_path2 != full_path and full_path2 != '':
+                full_path = full_path2
+
+        path_names = []
         if os.path.isdir(full_path) and full_path.endswith('/'):
             for fname in os.listdir(full_path):
                 if os.path.isdir(os.path.join(full_path, fname)):
                     fname += '/'
-                file_names.append(
+                path_names.append(
                     os.path.join(os.path.dirname(word_to_complete), fname.replace(' ', '\\ ')))
 
         else:
             d = os.path.dirname(full_path) or '.'
             f = os.path.basename(full_path)
-            for fname in os.listdir(d):
-                if fname.startswith(f):
-                    if os.path.isdir(os.path.join(d, fname)):
-                        fname += '/'
-                    file_names.append(
-                        os.path.join(os.path.dirname(word_to_complete), fname.replace(' ', '\\ ')))
+            if os.path.isdir(d):
+                for fname in os.listdir(d):
+                    if fname.startswith(f):
+                        if os.path.isdir(os.path.join(d, fname)):
+                            fname += '/'
+                        path_names.append(
+                            os.path.join(os.path.dirname(word_to_complete), fname.replace(' ', '\\ ')))
 
-        return file_names
+        return path_names
 
     def format_all_names(self, all_names):
         # only show the last component to be completed in a directory path
@@ -854,6 +862,7 @@ class ShRuntime(object):
         self.ex_kb_history_requested = False
 
         self.py_traceback = config.getint('system', 'py_traceback')
+        self.py_pdb = config.getint('system', 'py_pdb')
         self.input_encoding_utf8 = config.getint('system', 'input_encoding_utf8')
 
         # load history from last session
@@ -864,6 +873,7 @@ class ShRuntime(object):
                 self.history = [line.strip() for line in ins.readlines()]
         except IOError:
             self.history = []
+        self.history_alt = []
             
         self.history_listsource = ui.ListDataSource(self.history)
         self.history_listsource.action = self.app.history_popover_tapped
@@ -914,6 +924,9 @@ class ShRuntime(object):
             os.chdir(self.enclosing_cwd)
             self.enclosing_cwd = ''
 
+        if len(self.worker_stack) == 1:
+            self.history, self.history_alt = self.history_alt, self.history
+
     def restore_state(self,
                       persist_envars=False,
                       persist_aliases=False,
@@ -921,6 +934,9 @@ class ShRuntime(object):
 
         _debug_runtime('Popping stack %d ----\n' % (len(self.state_stack) - 1))
         _debug_runtime('envars = %s\n' % sorted(self.envars.keys()))
+
+        if len(self.worker_stack) == 1:
+            self.history, self.history_alt = self.history_alt, self.history
 
         # If not persisting, parent shell's envars are set back to this level's
         # enclosed vars. If persisting, envars of this level is then the same
@@ -1218,13 +1234,18 @@ class ShRuntime(object):
             self.envars['?'] = e.code
 
         except Exception as e:
-            if self.py_traceback:
-                import traceback
-                traceback.print_exc()
-            err_msg = '%s: (%s)\n' % (repr(e), sys.exc_value)
+            etype, evalue, tb = sys.exc_info()
+            err_msg = '%s: %s\n' % (repr(etype), evalue)
             _debug_runtime(err_msg)
             self.app.term.write_with_prefix(err_msg)
             self.envars['?'] = 1
+
+            if self.py_traceback or self.py_pdb:
+                import traceback
+                traceback.print_exception(etype, evalue, tb)
+                if self.py_pdb:
+                    import pdb
+                    pdb.post_mortem(tb)
 
         finally:
             sys.path = _SYS_PATH
@@ -1284,6 +1305,7 @@ class ShRuntime(object):
             if len(self.history) > self.HISTORY_MAX:
                 self.history = self.history[0:self.HISTORY_MAX]
             self.history_listsource.items = self.history
+        self.reset_idx_to_history()
 
     def save_history(self):
         try:
@@ -1436,7 +1458,6 @@ class ShTerm(ui.View):
         self.write_pos = 0
         self.input_did_return = False  # For readline, e.g. raw_input
         self.input_did_eof = False  # For read and readlines
-        self.cleanup = app.will_close
 
         self.prompt = '$ '
 
@@ -1622,14 +1643,19 @@ class ShTerm(ui.View):
         self.io.editable = True
         self.io.delegate = app
 
-        # self.dbgout = ui.TextView(name='dbgout')
-        # self.txts.add_subview(self.dbgout)
-        # self.dbgout.y = 0
-        # ss = ui.get_screen_size()
-        # self.dbgout.x = ss[1] / 2
-        # self.dbgout.width = ss[1] / 2
-        # self.dbgout.height = ss[0] / 2
-        
+        if _STARTUP_OPTIONS.debug_console:
+            self.dbgout = ui.TextView(name='dbgout', flex='H')
+            self.txts.add_subview(self.dbgout)
+            screen_width_by_2 = ui.get_screen_size()[1] / 2
+            self.dbgout.width = screen_width_by_2
+            self.dbgout.height = self.io.height
+            self.dbgout.x = screen_width_by_2
+            self.dbgout.y = 0
+            self.dbgout.editable = False
+            self.dbgout.font = self.TEXT_FONT
+            self.io.flex = 'H'
+            self.io.width = screen_width_by_2
+
     def toggle_k_grp(self):
         if self.on_k_grp == 0:
             self.k_grp_1.bring_to_front()
@@ -1638,7 +1664,7 @@ class ShTerm(ui.View):
         self.on_k_grp = 1 - self.on_k_grp
         
     def will_close(self):
-        self.cleanup()
+        self.app.will_close()
 
     def keyboard_frame_did_change(self, frame):
         if frame[3] > 0:
@@ -1731,7 +1757,8 @@ class ShTerm(ui.View):
         # Finally perform the replace
         self.out_buf = self.out_buf[:rng[0]] + replacement + self.out_buf[rng[1]:]
 
-    # file-like methods for output TextView
+    # file-like methods for TextView to perform IO redirect
+    # They are called by external scripts, e.g. on issuing raw_input()
     def seek(self, offset, whence=0):
         if whence == 0:  # from start
             self.write_pos = offset
@@ -1760,8 +1787,6 @@ class ShTerm(ui.View):
     def encode(self, s):
         return s.encode('utf-8') if self.app.runtime.input_encoding_utf8 else s
 
-    # file-like methods (TextField) for IO redirect of external scripts
-    # read functions are only called by external script as raw_input
     def read(self, size=-1):
         ret = ''.join(self.readlines())
         if size >= 0:
@@ -1917,6 +1942,7 @@ cfgfile=.stash_config
 rcfile=.stashrc
 historyfile=.stash_history
 py_traceback=0
+py_pdb=0
 input_encoding_utf8=1
 
 [display]
@@ -1949,6 +1975,8 @@ class StaSh(object):
         self.term = ShTerm(self)
         self.runtime = ShRuntime(self)
         self.completer = ShCompleter(self)
+
+        self.tab_action = None
 
         # Navigate to the startup folder
         if _IN_PYTHONISTA:
@@ -2012,11 +2040,12 @@ class StaSh(object):
             self.term.read_pos += len(line)
             if line.strip() != '':
                 self.term.inp_buf = []  # clear input buffer for new command
+                self.tab_action = None  # reset tab action for new command
                 self.term.input_did_return = False
                 self.term.input_did_eof = False
-                self.runtime.reset_idx_to_history()
                 self.runtime.run(line)
             else:
+                self.runtime.reset_idx_to_history()
                 self.term.new_inp_line()
 
         else:
@@ -2025,6 +2054,7 @@ class StaSh(object):
             s = self.term.read_inp_line()
             self.term.read_pos += len(s)
             self.term.inp_buf.append(s)
+            self.runtime.add_history(s.rstrip())
             self.term.input_did_return = True
 
         return True
@@ -2067,7 +2097,23 @@ class StaSh(object):
         return False
 
     def textview_did_change(self, tv):
-        pass
+        if self.term.is_flushing():  # do nothing if screen is flushing
+            return
+        # The following code is a fix to a possible UI system bug:
+        # Some key-combos that delete texts, e.g. alt-delete, cmd-delete, from external
+        # keyboard do not trigger textview_should_change event. So following checks
+        # are added to ensure consistency between out_buf and io.text, also the prompt
+        # do not get erased.
+        rng = tv.selected_range
+        if rng[0] == rng[1] and self.term.out_buf[rng[0]:] != self.term.io.text[rng[0]:]:
+            if rng[0] >= self.term.read_pos:
+                self.term.out_buf = self.term.out_buf[:rng[0]] + self.term.io.text[rng[0]:]
+            else:
+                s = self.term.out_buf[self.term.read_pos:]
+                if s == self.term.io.text[len(self.term.io.text) - len(s):]:
+                    self.term.flush()
+                else:
+                    self.term.set_inp_line(self.term.io.text[rng[0]:], cursor_at=0)
 
     def textview_did_change_selection(self, tv):
         rng = tv.selected_range
@@ -2105,28 +2151,22 @@ class StaSh(object):
                     cursor_at = rng[0] - self.term.read_pos
                 self.completer.complete(self.term.read_inp_line(), cursor_at=cursor_at)
             else:
-                console.hud_alert('Not available', 'error', 1.0)
+                if callable(self.tab_action):
+                    self.tab_action()
+                else:
+                    console.hud_alert('Not available', 'error', 1.0)
 
         elif vk == self.term.k_swap:
             self.term.toggle_k_grp()
 
         elif vk == self.term.k_hist:
-            if not self.runtime.worker_stack:
-                self.term.history_present(self.runtime.history_listsource)
-            else:
-                console.hud_alert('Not available', 'error', 1.0)
+            self.term.history_present(self.runtime.history_listsource)
 
         elif vk == self.term.k_hup:
-            if not self.runtime.worker_stack:
-                self.runtime.history_up()
-            else:
-                console.hud_alert('Not available', 'error', 1.0)
+            self.runtime.history_up()
 
         elif vk == self.term.k_hdn:
-            if not self.runtime.worker_stack:
-                self.runtime.history_dn()
-            else:
-                console.hud_alert('Not available', 'error', 1.0)
+            self.runtime.history_dn()
 
         elif vk == self.term.k_CD:
             if self.runtime.worker_stack:
@@ -2177,6 +2217,10 @@ class StaSh(object):
             self.runtime.idx_to_history = sender.selected_row
 
     def will_close(self):
+        for worker in self.runtime.worker_stack[::-1]:
+            worker._Thread__stop()
+            self.runtime.restore_state()  # Manually stopped thread does not restore state
+            self.runtime.worker_stack.pop()
         self.runtime.save_history()
 
     def run(self):
@@ -2199,6 +2243,9 @@ if __name__ == '__main__':
                     action='store_true',
                     help='display runtime debugging message'
                     )
+    ap.add_argument('--debug-console',
+                    action='store_true',
+                    help='show debug console')
     ap.add_argument('--no-rcfile',
                     action='store_true',
                     help='do not load external resource file')

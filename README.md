@@ -22,7 +22,7 @@ features are what really set the difference from shellista.
 
 * **Panel UI** program that is completely event driven
     * **No blocking thread**, builtin interactive prompt is accessible at all time
-    * Consistent look and feel as real PC terminals
+    * Consistent look and feel as a proper PC terminal
     * Almost all scripts can be called from within StaSh, including programs
       using UI and **Scene** packages. You can even launch another
       **panel** UI program and the new UI will simply replace StaSh (not really
@@ -76,7 +76,7 @@ features are what really set the difference from shellista.
           config file (default is `.stash_config`).
 
 * **Swipe on the virtual key row to position cursor** (similar to what Pythonista
-  editor offers)
+  builtin editor offers)
 
 * **External keyboard support**
 	* **Tab** key for auto-completion
@@ -145,7 +145,8 @@ A gist file is also provided as a single file installation
   copy/paste to get the gist file, `getstash.py`, at
   https://gist.github.com/ywangd/7fbb2c1aa17e8734defd
 * Run `getstash.py` to download and install StaSh.
-	* It by default installs to a folder named **stash** under your document root, i.e. `~/Documents/stash`.
+    * It by default installs to a folder named **stash** under your document
+      root, i.e. `~/Documents/stash`.
 
 ### Install from GitHub
 If you have a GitHub tool available in Pythonista, such as
@@ -180,8 +181,9 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   [@jsbain](https://github.com/jsbain). These scripts range from performing
   regular shell tasks to advanced utilities like `ssh`and `git`. Note the
   scripts are by no means complete when compared to a real Linux shell. The
-  script collection will be gradually expanded should the need arise. It is also expected
-  and appreciated that the community would come up with more scripts (you .
+  script collection will be gradually expanded should the need arise. It is
+  also expected and appreciated that the community would come up with more
+  scripts.
     * `alias.py`
     * `cat.py`
     * `cd.py`
@@ -206,9 +208,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `openin.py` - Show the **open in** dialog to open a file in external apps.
     * `paste.py` - Paste from iOS clipboard
     * `pcsm.py` - Client program for [Pythonista Command Script
-      Index](https://github.com/ywangd/Pythonista-Command-Script-Index). More
-      details can be found at the 
-      [Index repo](https://github.com/ywangd/Pythonista-Command-Script-Index).
+      Index](https://github.com/ywangd/Pythonista-Command-Script-Index) 
     * `pip.py` - Search, download, install, update and uninstall pure Python
       packages from PyPI.
     * `printenv.py` - List environment variables
