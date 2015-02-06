@@ -13,12 +13,10 @@ if __name__ == "__main__":
     ap.add_argument('port',default=23,nargs='?',type=int)
     ap.add_argument('timeout',default=2,nargs='?',type=int)
     args=ap.parse_args()
-    print ap
     host = args.host
     port = args.port
     timeout=args.timeout
-    
-    print host,port, timeout
+
     try :
         s = telnetlib.Telnet(host,port,timeout)
         #s.open()
@@ -33,24 +31,27 @@ if __name__ == "__main__":
         ui.cancel_delays()
         if app.term.inp_buf:
             msg = sys.stdin.readline()
-            s.write(msg.encode('ascii')+b'\n')
-            if msg=='[[[':
+            if msg=='[[[\n':
                 print 'exit'
                 s.close()
                 sys.exit()
+            s.write(msg.encode('ascii')+b'\r\n')
         ui.delay(getuserinput,0.1)
     getuserinput()
     while 1:
         socket_list = [ s] #stdin seems to always say it is getting events, so just pollstdin
 
         # Get the list sockets which are readable
-        read_sockets, write_sockets, error_sockets = select.select(socket_list , [], [])
+        try:
+            read_sockets, write_sockets, error_sockets = select.select(socket_list , [], [])
+        except:
+            sys.exit(0)
         
         for sock in read_sockets:
             #incoming message from remote server
             if sock == s:
 
-                data = sock.read_eager()
+                data = sock.read_very_eager()
                 if not data :
                     pass
                 else :
