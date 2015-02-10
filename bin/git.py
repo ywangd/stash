@@ -40,6 +40,7 @@ if True:
     if not libpath in sys.path:
         sys.path.insert(1,libpath)
     try:  
+        import dulwich
         from dulwich.client import default_user_agent_string
         from dulwich import porcelain
         from dulwich.index import index_entry_from_stat
@@ -49,7 +50,7 @@ if True:
         _stash('mv $TMPDIR/dulwich/dulwich $STASH_ROOT/lib/')
         _stash('rm  $TMPDIR/dulwich.zip')
         _stash('rm -r $TMPDIR/dulwich')
-    
+        import dulwich
         from dulwich import porcelain
         from dulwich.client import default_user_agent_string
     
@@ -93,7 +94,7 @@ command_help={    'init':  'initialize a new Git repository'
     ,'pull': 'git pull [http(s)://<remote repo> or remote] - pull changes from a remote repository'
     ,'fetch': 'git fetch [uri or remote] - fetch changes from remote'
     ,'checkout': 'git checkout <branch> - check out a particular branch in the Git tree'
-    ,'branch': 'git branch - show branches'
+    ,'branch': 'git branch - show and manage branches.  see git branch -h'
     ,'remote': 'git remote [remotename remoteuri] list or add remote repos '
     ,'status': 'git status - show status of files (staged unstaged untracked)'
     ,'reset': 'git reset [<commit>] <paths>  reset <paths> in staging area back to their state at <commit>.  this does not affect files in the working area.  \ngit reset [ --mixed | --hard ] [<commit>] reset a repo to its pre-change state. default resets index, but not working tree.  i.e unstages all files.   --hard is dangerous, overwriting index and working tree to <commit>'
@@ -120,7 +121,7 @@ def _get_repo():
 
 def _confirm_dangerous():
         repo = _get_repo()
-        status=porcelain(repo.repo.path)
+        status=porcelain.status(repo.path)
         if any(status.staged.values()+status.unstaged):
             force=raw_input('WARNING:  there are uncommitted modified files files and/or staged changes.  these could be overwritten by this command.  continue anyway? [y/n] ')
             if not force=='y':
@@ -210,8 +211,11 @@ def git_add(args):
         args = [os.path.join(os.path.relpath(cwd, repo.path), x)
                     if not os.path.samefile(cwd, repo.path) else x for x in args]
         for file in args:
-            print 'Adding {0}'.format(file)
-            porcelain.add(repo.repo, [file])
+            if os.path.exists(file):
+                print 'Adding {0}'.format(file)
+                porcelain.add(repo.repo, [file])
+            else:
+                print '{} does not exist. skipping'.format(file)
 
     else:
         print command_help['add']
@@ -229,15 +233,15 @@ def git_rm(args):
 
     else:
         print command_help['rm']
+def launch_subcmd(cmd,args):
+    cmdpath=os.path.join(_stash.runtime.envars['STASH_ROOT'],'lib','git',cmd)
 
+    _stash.runtime.exec_py_file(cmdpath, args=args,
+                     ins=sys.stdin, outs=sys.stdout, errs=sys.stderr)
+    
 def git_branch(args):
-    if len(args) == 0:
-        repo = _get_repo()
-        active = repo.active_branch
-        for key, value in repo.branches.items():
-            print ('* ' if key == active else '') + key, value
-    else:
-        print command_help['branch']
+    launch_subcmd('git-branch.py',args)
+
 
 def git_reset(args):
     ap=argparse.ArgumentParser('reset')
@@ -248,7 +252,6 @@ def git_reset(args):
     mode.add_argument('--mixed',action='store_false',dest='hard')
 
     ns=ap.parse_args(args)
-
     
     hard=ns.hard
         
@@ -353,9 +356,36 @@ def git_fetch(args):
         origin=result.url
         result.url=repo.remotes.get(origin)
     remote_refs=porcelain.fetch(repo.repo.path,result.url)
+
+    remote_tags = gittle.utils.git.subrefs(remote_refs, 'refs/tags')
+    remote_heads = gittle.utils.git.subrefs(remote_refs, 'refs/heads')
+        
+    # Filter refs
+    clean_remote_tags = gittle.utils.git.clean_refs(remote_tags)
+    clean_remote_heads = gittle.utils.git.clean_refs(remote_heads)
+
+    # Base of new refs
+    heads_base = 'refs/remotes/' + origin
+
+    # Import branches
+    repo.import_refs(
+        heads_base,
+        clean_remote_heads
+    )
+    for k,v in clean_remote_heads.items():
+        print 'imported {}/{} {}'.format(heads_base,k,v) 
+    # Import tags
+    repo.import_refs(
+        'refs/tags',
+        clean_remote_tags
+    )
+    for k,v in clean_remote_tags.items():
+        print 'imported {}/{} {}'.format('refs/tags',k,v) 
+    #delete unused remote refs
+    for k in gittle.utils.git.subrefs(repo.refs,heads_base):
+        if k not in gittle.utils.git.subrefs(clean_remote_heads,origin):
+            del repo.refs['/'.join([heads_base,k])]
     
-    repo._setup_fetched_refs(remote_refs, origin, False)
-    print remote_refs
 
 def git_push(args):
     parser = argparse.ArgumentParser(prog='git push'
@@ -515,7 +545,7 @@ commands = {
     ,'rm': git_rm
     ,'commit': git_commit
     ,'clone': git_clone
-    ,'modified': git_modified
+    ,'modified': git_modified 
     ,'log': git_log
     ,'push': git_push
     ,'pull': git_pull
@@ -528,8 +558,18 @@ commands = {
     ,'help': git_help
     }
 if __name__=='__main__':
+    if len(sys.argv)==1:
+        sys.argv=sys.argv+['-h']
+
     ap = argparse.ArgumentParser()
-    ap.add_argument('command',action='store',default='help',choices=command_help.keys(),nargs='?')
-    ns,args = ap.parse_known_args()
-    strargs=[str(a) for a in args]
-    func=commands[ns.command](strargs)
+    subparser=ap.add_subparsers()
+    for key,value in commands.iteritems():
+        sp=subparser.add_parser(key, help=command_help[key] ,add_help=False)
+        sp.set_defaults(func=commands[key])
+    ns,args=ap.parse_known_args()
+    ns.func(args)
+   # ap.add_argument('command',action='store',default='help',choices=command_help.keys(),nargs='?')
+    
+   # ns,args = ap.parse_known_args()
+    #strargs=[str(a) for a in args]
+    #func=commands[ns.command](strargs)
