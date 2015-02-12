@@ -303,11 +303,12 @@ def git_commit(args):
     ap.add_argument('email',default=None,nargs='?')
     ns=ap.parse_args(args)
     
-    merging = repo.repo.refs.haskey('MERGE_HEAD')
+    repo = _get_repo()
+    merging = 'MERGE_HEAD' in repo.repo.refs
     merge_head=None
     if merging:
         print 'merging in process:' 
-        merge_head= repo['MERGE_HEAD']
+        merge_head= [repo['MERGE_HEAD']]
         merge_msg= repo.repo.get_named_file('MERGE_MSG')
         print merge_msg
         ns.message += merge_msg
@@ -319,9 +320,9 @@ def git_commit(args):
         ns.email=raw_input('Author Email')
          
     try:
-        repo = _get_repo()
+
         author = "{0} <{1}>".format(ns.name, ns.email)
-        print porcelain.commit(repo.repo, ns.message, author, author , merge_heads=[merge_head])
+        print repo.repo.do_commit(message=ns.message, author=author, committer=author , merge_heads=merge_head)
     except:
         print 'Error: {0}'.format(sys.exc_value)
 
@@ -501,10 +502,10 @@ def git_checkout(args):
     if len(args) in [1,2]:
         repo = _get_repo()
         _confirm_dangerous()
-        if repo.refs.haskey('MERGE_HEAD'):
+        if 'MERGE_HEAD' in repo.repo.refs:
             #just cancel in progress merge
-            del repo.refs['MERGE_HEAD']
-            repo._put_named_file('MERGE_MSG','')
+            del repo.repo.refs['MERGE_HEAD']
+            repo.repo._put_named_file('MERGE_MSG','')
         if len(args) == 1:
             branchname=args[0]
             if branchname in repo.branches:
