@@ -4,9 +4,7 @@
     git branch (-m | -M) [<oldbranch>] <newbranch>
     git branch (-d | -D) [-r] <branchname>…
     git branch --edit-description [<branchname>]"""
-class GitError(Exception):
-    def __init__(self,arg):
-        Exception.__init__(self,arg)
+
 import sys,os
 import dulwich
 from dulwich import porcelain
@@ -14,117 +12,9 @@ from dulwich.walk import Walker
 from gittle import Gittle
 import argparse
 
-def _find_repo(path):
-    subdirs = os.walk(path).next()[1]
-    if '.git' in subdirs:
-        return path
-    else:
-        parent = os.path.dirname(path)
-        if parent == path:
-            return None
-        else:
-            return _find_repo(parent)
+from gitutils import _get_repo, find_revision_sha, is_ancestor, merge_base, can_ff, any_one, count_commits_between, get_remote_tracking_branch, GitError
 
-#Get the parent git repo, if there is one
-def _get_repo():
-    return Gittle(_find_repo(os.getcwd()))
 
-def any_one(iterable):
-    it = iter(iterable)
-    return any(it) and not any(it)
-
-def find_revision_sha(rev):
-    '''rev may refer to the following ways to "spell" a commit object:
-    <sha1>  full or abbreviated sha, only if unique
-    <ref>  search in local refs, then remote refs.
-      . If '$GIT_DIR/<refname>' exists, that is what you mean (this is usually
-    useful only for 'HEAD', 'FETCH_HEAD', 'ORIG_HEAD', 'MERGE_HEAD'
-    and 'CHERRY_PICK_HEAD');
-    . otherwise, 'refs/<refname>' if it exists;
-    . otherwise, 'refs/tags/<refname>' if it exists;
-    . otherwise, 'refs/heads/<refname>' if it exists;
-    . otherwise, 'refs/remotes/<refname>' if it exists;
-    . otherwise, 'refs/remotes/<refname>/HEAD' if it exists.
-    '''
-    repo=_get_repo()
-    o=repo.repo.object_store
-    shalist=[sha for sha in o if sha.startswith(rev) and isinstance(o[sha],dulwich.objects.Commit)]
-    if len(shalist)==1:
-        return (shalist[0])
-    elif len(shalist)>1:
-        raise GitError('SHA {} is not unique'.format(rev))
-    returnval = repo.refs.get(rev) or repo.tags.get(rev) or repo.branches.get(rev) or repo.remote_branches.get(rev)
-    if returnval:
-        return returnval
-    else:
-        raise GitError('could not find rev {}'.format(rev))
-        
-def merge_base(rev1,rev2):
-    ''''git merge-base' finds best common ancestor(s) between two commits to use
-in a three-way merge.  One common ancestor is 'better' than another common
-ancestor if the latter is an ancestor of the former.  A common ancestor
-that does not have any better common ancestor is a 'best common
-ancestor', i.e. a 'merge base'.  Note that there can be more than one
-merge base for a pair of commits.'''
-    sha1=find_revision_sha(rev1)
-    sha2=find_revision_sha(rev2)
-    repo=_get_repo()
-          
-    sha2_ancestors,_=repo.repo.object_store._collect_ancestors([sha2],[])
-    merge_bases=[]
-    queue=[sha1]
-    seen=[]
-    
-    while queue:
-        elt=queue.pop()
-        if elt not in seen: #prevent circular
-            seen.append(elt)
-            if elt in sha2_ancestors:
-                merge_bases.append(elt)
-            elif repo[elt].parents:
-                queue.extend(repo[elt].parents)
-    return merge_bases
-    
-
-def is_ancestor(rev1,rev2):
-    '''return true if rev1 is an ancestor of rev2'''
-    sha1=find_revision_sha(rev1)
-    sha2=find_revision_sha(rev2)
-    return True if sha1 in merge_base(sha1,sha2) else False
-def can_ff(oldrev,newrev):
-    return merge_base(oldrev,newrev)==[oldrev]
-def merge(args):
-    ''''git merge' [-n] [--stat] [--no-commit] [--squash] [--[no-]edit]
-	[-s <strategy>] [-X <strategy-option>] [-S[<key-id>]]
-	 [-m <msg>] [<commit>...]
-    'git merge' <msg> HEAD <commit>...
-    'git merge' --abort
-    '''
-    repo=_get_repo()
-    
-    default_merge_head = get_remote_tracking_branch(repo.active_branch)
-    
-    parser=argparse.ArgumentParser(prog='merge')
-    parser.add_argument('commit',action='store',nargs='?')
-    result=parser.parse_args(args)
-    
-    # first, determine merge head
-    merge_head = find_revision_sha(result.commit or default_merge_head)
-    head=find_revision_sha(repo.active_branch)
-    if can_ff(head,merge_head):
-        repo.refs[head]=repo.refs[merge_head]
-        return 
-    if count_commits_between(merge_head,head)[0]:
-        print 'head is already up to date'
-        return  
-    base_sha=merge_base(head,merge_head)[0]  #fixme, multiple bases
-    
-    merge_head_sha=find_revision_sha(merge_head)
-    head_sha=find_revision_sha(head)
-    base_tree=repo[repo[base_sha].tree]
-    merge_head_tree=repo[repo[merge_head].tree]
-    head_tree=repo[repo[head_sha].tree]
-    return head_tree,merge_head_tree, base_tree
 def branch(args):
     repo=_get_repo()
     
@@ -248,17 +138,6 @@ def branch_list(result):
                 commitmsg=(repo[value].message if result.verbose else '').strip()
                 print ('* ' if repo.active_branch == key else '') + key,  dispval, commitmsg
 
-def count_commits_between(rev1,rev2):
-    '''find common ancestor. then count ancestor->sha1, and ancestor->sha2 '''
-    repo=_get_repo()
-    sha1=find_revision_sha(rev1)
-    sha2=find_revision_sha(rev2)
-    if sha1==sha2:
-        return (0,0)
-    sha1_ahead= sum(1 for _ in Walker(repo.repo.object_store,(sha1,),(sha2,)))
-    sha1_behind=sum(1 for _ in Walker(repo.repo.object_store,(sha2,),(sha1,)))
-    return (sha1_ahead,sha1_behind)
-    
 def delete_branch(delete_branchname,force=False,remote=None, verbose=0):
     '''delete a branch.  
     if remote=True, then look in refs/remotes, otherwise check refs/heads
@@ -310,16 +189,6 @@ def move_branch(movebranch,force,verbose):
     if oldbranch == repo.active_branch:
         repo.active_branch=newbranch
 
-    
-def get_remote_tracking_branch(branchname):
-    config = _get_repo().repo.get_config()
-    try:
-        remote=config.get(('branch',branchname),'remote')
-        merge=config.get(('branch',branchname),'merge')
-        remotebranch=merge.split('refs/heads/')[1]
-        return remote+'/'+remotebranch
-    except KeyError:
-        return None
         
 def remove_tracking(branchname):
     '''remove branch entry from config'''
