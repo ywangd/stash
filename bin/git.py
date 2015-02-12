@@ -253,12 +253,17 @@ def git_reset(args):
     mode=ap.add_mutually_exclusive_group()
     mode.add_argument('--hard',action='store_true',dest='hard')
     mode.add_argument('--mixed',action='store_false',dest='hard')
-
+    ap.add_argument('--merge',action='store_true')
     ns=ap.parse_args(args)
     
     hard=ns.hard
         
     repo = _get_repo().repo
+    
+    if ns.merge:
+        del repo.refs['MERGE_HEAD']
+        repo._put_named_file('MERGE_MSG','')
+        
     #handle optionals
     commit= ns.commit
     # first arg was really a file
@@ -297,17 +302,26 @@ def git_commit(args):
     ap.add_argument('name',default=None,nargs='?')
     ap.add_argument('email',default=None,nargs='?')
     ns=ap.parse_args(args)
+    
+    merging = repo.repo.refs.haskey('MERGE_HEAD')
+    merge_head=None
+    if merging:
+        print 'merging in process:' 
+        merge_head= repo['MERGE_HEAD']
+        merge_msg= repo.repo.get_named_file('MERGE_MSG')
+        print merge_msg
+        ns.message += merge_msg
     if not ns.message:
         ns.message=raw_input('Commit Message: ')
     if not ns.name:
         ns.name=raw_input('Author Name:')
     if not ns.email:
         ns.email=raw_input('Author Email')
-     
+         
     try:
         repo = _get_repo()
         author = "{0} <{1}>".format(ns.name, ns.email)
-        print porcelain.commit(repo.repo, ns.message, author, author )
+        print porcelain.commit(repo.repo, ns.message, author, author , merge_heads=[merge_head])
     except:
         print 'Error: {0}'.format(sys.exc_value)
 
@@ -483,10 +497,14 @@ def git_log(args):
 
 
 def git_checkout(args):
+
     if len(args) in [1,2]:
         repo = _get_repo()
         _confirm_dangerous()
-            
+        if repo.refs.haskey('MERGE_HEAD'):
+            #just cancel in progress merge
+            del repo.refs['MERGE_HEAD']
+            repo._put_named_file('MERGE_MSG','')
         if len(args) == 1:
             branchname=args[0]
             if branchname in repo.branches:

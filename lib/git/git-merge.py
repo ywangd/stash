@@ -87,7 +87,9 @@ def walk_trees(store, tree_ids,prune_identical=False):
 
 def merge_trees(store, base, mine, theirs):
     ''' takes tree ids for base, mine, and theirs.  merge trees into current working tee'''
-
+    num_conflicts=0
+    added=[]
+    removed=[]
     w=walk_trees(store,[base,mine, theirs],True)
     count = 0
     for b,m,t in w:
@@ -109,6 +111,7 @@ def merge_trees(store, base, mine, theirs):
         elif b==m and not t:
             print m.path, ' was deleted in theirs.'
             os.remove(m.path)
+            removed.append(m.path)
         elif not b and m and not t:  #add in mine
             print m.path ,'added in mine'
             continue 
@@ -117,6 +120,7 @@ def merge_trees(store, base, mine, theirs):
             print t.path, ': adding to head'
             with open(t.path,'w') as f:
                 f.write(store[t.sha].data)
+            added.append(t.path)
         elif not m == t: # conflict
             print 'merging...', m.path
             result=diff3.merge(store[m.sha].data.splitlines(True)
@@ -128,8 +132,10 @@ def merge_trees(store, base, mine, theirs):
                 for line in mergedfile:
                     f.write(line)
             if had_conflict:
+                num_conflicts+=1
                 print('{} had a conflict.  conflict markers added.  resolve manually '.format(m.path))
-
+            added.append(m.path)
+    return num_conflicts, added, removed
 
 def mergecommits(store,base,mine,theirs):
     merge_trees(store,store[base].tree,store[mine].tree,store[theirs].tree)
@@ -142,18 +148,26 @@ def merge(args):
     'git merge' --abort
     '''
     repo=_get_repo()
-    print 'get remote'
-    default_merge_head = get_remote_tracking_branch(repo.active_branch)
-    print 'remote:', default_merge_head
+
     print 'parsing args'
     parser=argparse.ArgumentParser(prog='merge')
     parser.add_argument('commit',action='store',nargs='?')
+    parser.add_argument('--msg',nargs=1,action='store',help='commit message to store')
+    parser.add_argument('--abort',action='store_true',help='abort in progress merge attempt')
     result=parser.parse_args(args)
+    
+    if result.abort:
+        print 'attempting to undo merge'
+        git_reset([])
+        del repo.repo.refs['MERGE_HEAD']     
+        repo._put_named_file('MERGE_MSG','')
     print 'parsed. get mergehead'
     #todo: check for uncommitted changes and confirm
     
     # first, determine merge head
-    merge_head = find_revision_sha(result.commit or default_merge_head)
+    merge_head = find_revision_sha(result.commit or get_remote_tracking_branch(repo.active_branch))
+    if not merge_head:
+        raise GitError('must specify a commit sha, branch, remote tracking branch to merge from.  or, need to set-upstream branch using git branch --set-upstream <remote>[/<branch>]')
     print 'get head sha'
     head=find_revision_sha(repo.active_branch)
     print 'finding merge base'  
@@ -171,7 +185,18 @@ def merge(args):
     merge_head_tree=repo[merge_head].tree
     head_tree=repo[head].tree
     print base_tree, head_tree, merge_head_tree
-    merge_trees(repo.repo.object_store, base_tree,head_tree,merge_head_tree)
+    num_conflicts,added,removed=merge_trees(repo.repo.object_store, base_tree,head_tree,merge_head_tree)
+    # update index
+    if added: 
+        porcelain.add(repo.repo, added)
+    if removed: 
+        porcelain.rm(repo.repo, removed)
+    if num_conflicts:
+        repo.refs['MERGE_HEAD']=merge_head
+        repo._put_named_file('MERGE_MSG','Merged from {}({})'.format(merge_head, result.commit))
+    print 'Merge complete with {} conflicted files'.format(num_conflicts)
+        
+
         
 if __name__=='__main__':
     print 'in main'
