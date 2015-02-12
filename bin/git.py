@@ -93,6 +93,7 @@ command_help={    'init':  'initialize a new Git repository'
     ,'push': 'git push [http(s)://<remote repo> or remote] [-u username[:password]] - push changes back to remote'
     ,'pull': 'git pull [http(s)://<remote repo> or remote] - pull changes from a remote repository'
     ,'fetch': 'git fetch [uri or remote] - fetch changes from remote'
+    , 'merge': 'git merge <merge_commit> - merge another branch or commit and head into current working tree.   see git merge -h'
     ,'checkout': 'git checkout <branch> - check out a particular branch in the Git tree'
     ,'branch': 'git branch - show and manage branches.  see git branch -h'
     ,'remote': 'git remote [remotename remoteuri] list or add remote repos '
@@ -241,7 +242,9 @@ def launch_subcmd(cmd,args):
     
 def git_branch(args):
     launch_subcmd('git-branch.py',args)
-
+    
+def git_merge(args):
+    launch_subcmd('git-merge.py',args)
 
 def git_reset(args):
     ap=argparse.ArgumentParser('reset')
@@ -551,6 +554,7 @@ commands = {
     ,'pull': git_pull
     ,'fetch': git_fetch
     ,'branch': git_branch
+    ,'merge': git_merge
     ,'checkout': git_checkout
     ,'remote': git_remote
     ,'reset': git_reset

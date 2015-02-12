@@ -43,15 +43,16 @@ def find_revision_sha(rev):
     '''
     repo=_get_repo()
     o=repo.repo.object_store
-    shalist=[sha for sha in o if sha.startswith(rev) and isinstance(o[sha],dulwich.objects.Commit)]
-    if len(shalist)==1:
-        return (shalist[0])
-    elif len(shalist)>1:
-        raise GitError('SHA {} is not unique'.format(rev))
+
     returnval = repo.refs.get(rev) or repo.tags.get(rev) or repo.branches.get(rev) or repo.remote_branches.get(rev)
     if returnval:
         return returnval
     else:
+        shalist=[sha for sha in o if sha.startswith(rev) and isinstance(o[sha],dulwich.objects.Commit)]
+        if len(shalist)==1:
+            return (shalist[0])
+        elif len(shalist)>1:
+            raise GitError('SHA {} is not unique'.format(rev))
         raise GitError('could not find rev {}'.format(rev))
         
 def merge_base(rev1,rev2):

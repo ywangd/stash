@@ -12,7 +12,7 @@ from dulwich.walk import Walker
 from gittle import Gittle
 import argparse
 
-from gitutils import _get_repo, find_revision_sha, is_ancestor, merge_base, can_ff, any_one, count_commits_between, get_remote_tracking_branch, GitError
+from git.gitutils import _get_repo, find_revision_sha, is_ancestor, merge_base, can_ff, any_one, count_commits_between, get_remote_tracking_branch, GitError
 
 
 def branch(args):

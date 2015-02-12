@@ -1,8 +1,13 @@
+print 'importing dulwich'
 from dulwich.diff_tree import _tree_entries, _NULL_ENTRY, TreeEntry, _is_tree
+print 'importing gittle'
 from gittle import Gittle
+print 'stat'
 import stat
+print 'diff3'
 import diff3
-from gitutils import _get_repo, find_revision_sha, can_ff, merge_base, count_commits_between, is_ancestor, get_remote_tracking_branch, GitError
+print 'gitutils'
+from git.gitutils import _get_repo, find_revision_sha, can_ff, merge_base, count_commits_between, is_ancestor, get_remote_tracking_branch, GitError
 
 
 
@@ -84,29 +89,36 @@ def merge_trees(store, base, mine, theirs):
     ''' takes tree ids for base, mine, and theirs.  merge trees into current working tee'''
 
     w=walk_trees(store,[base,mine, theirs],True)
-
+    count = 0
     for b,m,t in w:
+        
         if _is_tree(b) or _is_tree(m) or _is_tree(t):
         #todo... handle mkdir, rmdir
             continue 
         
         # if mine == theirs match, use either
         elif m==t: 
+            if not b:
+                print m.path, 'was added, but matches already'
             continue    #leave workng tree alone
         # if base==theirs, but not mine, already deleted (do nothing)
         elif b==t and not m:
+            print b.path, ' already deleted in head'
             continue
         # if base==mine, but not theirs, delete
         elif b==m and not t:
+            print m.path, ' was deleted in theirs.'
             os.remove(m.path)
         elif not b and m and not t:  #add in mine
+            print m.path ,'added in mine'
             continue 
         elif not b and t and not m: # add theirs to mine
             # add theirs
+            print t.path, ': adding to head'
             with open(t.path,'w') as f:
                 f.write(store[t.sha].data)
         elif not m == t: # conflict
-            print 'merging...'
+            print 'merging...', m.path
             result=diff3.merge(store[m.sha].data.splitlines(True)
                         ,store[b.sha].data.splitlines(True)
                         ,store[t.sha].data.splitlines(True))
@@ -117,7 +129,8 @@ def merge_trees(store, base, mine, theirs):
                     f.write(line)
             if had_conflict:
                 print('{} had a conflict.  conflict markers added.  resolve manually '.format(m.path))
-            
+
+
 def mergecommits(store,base,mine,theirs):
     merge_trees(store,store[base].tree,store[mine].tree,store[theirs].tree)
     
@@ -129,43 +142,39 @@ def merge(args):
     'git merge' --abort
     '''
     repo=_get_repo()
-    
+    print 'get remote'
     default_merge_head = get_remote_tracking_branch(repo.active_branch)
-    
+    print 'remote:', default_merge_head
+    print 'parsing args'
     parser=argparse.ArgumentParser(prog='merge')
     parser.add_argument('commit',action='store',nargs='?')
     result=parser.parse_args(args)
-    
+    print 'parsed. get mergehead'
     #todo: check for uncommitted changes and confirm
     
     # first, determine merge head
     merge_head = find_revision_sha(result.commit or default_merge_head)
+    print 'get head sha'
     head=find_revision_sha(repo.active_branch)
-    if can_ff(head,merge_head):
+    print 'finding merge base'  
+    base_sha=merge_base(head,merge_head)[0]  #fixme, what if multiple bases
+    if base_sha==head:
         print 'Fast forwarding {} to {}'.format(repo.active_branch,merge_head)
-        repo.refs[head]=repo.refs[merge_head]
+        repo.refs[head]=merge_head
         return 
-    if count_commits_between(merge_head,head)[0]:
+    if base_sha == merge_head:
         print 'head is already up to date'
         return  
-        
-    base_sha=merge_base(head,merge_head)[0]  #fixme, what if multiple bases
     
-    merge_head_sha=find_revision_sha(merge_head)
-    head_sha=find_revision_sha(head)
-    base_tree=repo[repo[base_sha].tree]
-    merge_head_tree=repo[repo[merge_head].tree]
-    head_tree=repo[repo[head_sha].tree]
-    
-    merge_trees(base_tree,head_tree,merge_head_tree)
+    print 'merging {} into {} [{}] anead of {}'.format(merge_head,head,count_commits_between(merge_head,head),base_sha)
+    base_tree=repo[base_sha].tree
+    merge_head_tree=repo[merge_head].tree
+    head_tree=repo[head].tree
+    print base_tree, head_tree, merge_head_tree
+    merge_trees(repo.repo.object_store, base_tree,head_tree,merge_head_tree)
         
 if __name__=='__main__':
+    print 'in main'
     import sys
-
-    print sys.argv
-    repo=Gittle('.')
-    store=repo.repo.object_store
-
-
-    mergecommits(store, *sys.argv[1:])
+    merge(sys.argv[1:])
     
