@@ -7,7 +7,7 @@
 class GitError(Exception):
     def __init__(self,arg):
         Exception.__init__(self,arg)
-        
+import sys,os
 import dulwich
 from dulwich import porcelain
 from dulwich.walk import Walker
@@ -93,6 +93,38 @@ def is_ancestor(rev1,rev2):
     return True if sha1 in merge_base(sha1,sha2) else False
 def can_ff(oldrev,newrev):
     return merge_base(oldrev,newrev)==[oldrev]
+def merge(args):
+    ''''git merge' [-n] [--stat] [--no-commit] [--squash] [--[no-]edit]
+	[-s <strategy>] [-X <strategy-option>] [-S[<key-id>]]
+	 [-m <msg>] [<commit>...]
+    'git merge' <msg> HEAD <commit>...
+    'git merge' --abort
+    '''
+    repo=_get_repo()
+    
+    default_merge_head = get_remote_tracking_branch(repo.active_branch)
+    
+    parser=argparse.ArgumentParser(prog='merge')
+    parser.add_argument('commit',action='store',nargs='?')
+    result=parser.parse_args(args)
+    
+    # first, determine merge head
+    merge_head = find_revision_sha(result.commit or default_merge_head)
+    head=find_revision_sha(repo.active_branch)
+    if can_ff(head,merge_head):
+        repo.refs[head]=repo.refs[merge_head]
+        return 
+    if count_commits_between(merge_head,head)[0]:
+        print 'head is already up to date'
+        return  
+    base_sha=merge_base(head,merge_head)[0]  #fixme, multiple bases
+    
+    merge_head_sha=find_revision_sha(merge_head)
+    head_sha=find_revision_sha(head)
+    base_tree=repo[repo[base_sha].tree]
+    merge_head_tree=repo[repo[merge_head].tree]
+    head_tree=repo[repo[head_sha].tree]
+    return head_tree,merge_head_tree, base_tree
 def branch(args):
     repo=_get_repo()
     
