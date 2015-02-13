@@ -97,28 +97,28 @@ def merge_trees(store, base, mine, theirs):
         # if mine == theirs match, use either
         elif m==t: 
             if not b.path:
-                print m.path, 'was added, but matches already'
+                print '  ',m.path, 'was added, but matches already'
             continue    #leave workng tree alone
         # if base==theirs, but not mine, already deleted (do nothing)
         elif b==t and not m.path:
-            print b.path, ' already deleted in head'
+            print '   ',b.path, ' already deleted in head'
             continue
         # if base==mine, but not theirs, delete
         elif b==m and not t.path:
-            print m.path, ' was deleted in theirs.'
+            print '  -',m.path, ' was deleted in theirs.'
             os.remove(m.path)
             removed.append(m.path)
         elif not b.path and m.path and not t.path:  #add in mine
-            print m.path ,'added in mine'
+            print '  ',m.path ,'added in mine'
             continue 
         elif not b.path and t.path and not m.path: # add theirs to mine
             # add theirs
-            print t.path, ': adding to head'
+            print '  +',t.path, ': adding to head'
             with open(t.path,'w') as f:
                 f.write(store[t.sha].data)
             added.append(t.path)
         elif not m == t: # conflict
-            print 'merging...', m.path
+            print '  ?',m.path, ': merging conflicts'
             result=diff3.merge(store[m.sha].data.splitlines(True)
                         ,store[b.sha].data.splitlines(True) if b.sha else ['']
                         ,store[t.sha].data.splitlines(True))
@@ -129,7 +129,7 @@ def merge_trees(store, base, mine, theirs):
                     f.write(line)
             if had_conflict:
                 num_conflicts+=1
-                print('{} had a conflict.  conflict markers added.  resolve manually '.format(m.path))
+                print('    !!! {} had a conflict that could not be resolved.\n    conflict markers added to file in working tree.\n    you need to resolve manually '.format(m.path))
             added.append(m.path)
     return num_conflicts, added, removed
 
@@ -137,37 +137,50 @@ def mergecommits(store,base,mine,theirs):
     merge_trees(store,store[base].tree,store[mine].tree,store[theirs].tree)
     
 def merge(args):
-    ''''git merge' [-n] [--stat] [--no-commit] [--squash] [--[no-]edit]
-	[-s <strategy>] [-X <strategy-option>] [-S[<key-id>]]
-	 [-m <msg>] [<commit>...]
-    'git merge' <msg> HEAD <commit>...
-    'git merge' --abort
+    helptext='''git merge' [--msg <msg>] [<commit>]
+    git merge --abort\n
+    
+    merges <commit> into HEAD, or remote tracking branch if commit not specified.
+    <commit> can be a local or remote ref, or an existing commit sha.
+
+    merge will handle unambiguous conflicts between head and other 
+    merge head, and will insert conflict markers if conflicts cannot be resolved.  
+    note that the strategy used will prefer changes in the local head.  
+    for instance, if HEAD deleted a section, while MERGE_HEAD modified the same 
+    action, the section will be deleted from the final without indicating a conflict.
+      
+    be sure to commit any local changes before running merge, as files in working tree (i.e on disk) are changed, and checked in, which will probably overwrite any local uncomitted changes.
+    
+    note merge will not actually commit anything.  run git commit to commit a successful merge.
+    
+    --abort will remove the MERGE_HEAD and MERGE_MSG files, and will reset staging area, but wont affect files on disk.  use git reset --hard or git checkout if this is desired.
     '''
     repo=_get_repo()
+    print '_'*30
 
-    print 'parsing args'
-    parser=argparse.ArgumentParser(prog='merge')
-    parser.add_argument('commit',action='store',nargs='?')
+    parser=argparse.ArgumentParser(prog='merge', usage=helptext)
+    parser.add_argument('commit',action='store',nargs='?', help='commit sha, local branch, or remote branch name to merge from')
     parser.add_argument('--msg',nargs=1,action='store',help='commit message to store')
     parser.add_argument('--abort',action='store_true',help='abort in progress merge attempt')
     result=parser.parse_args(args)
     
     if result.abort:
-        print 'attempting to undo merge'
+        print 'attempting to undo merge.  beware, files in working tree are not touched.  \nused git reset --hard to revert particular files'
         git_reset([])
         os.remove(os.path.join(repo.repo.controldir(),'MERGE_HEAD'))
         os.remove(os.path.join(repo.repo.controldir(),'MERGE_MSG'))
-    print 'parsed. get mergehead'
+
     #todo: check for uncommitted changes and confirm
     
     # first, determine merge head
     merge_head = find_revision_sha(repo,result.commit or get_remote_tracking_branch(repo,repo.active_branch))
     if not merge_head:
         raise GitError('must specify a commit sha, branch, remote tracking branch to merge from.  or, need to set-upstream branch using git branch --set-upstream <remote>[/<branch>]')
-    print 'get head sha'
+
     head=find_revision_sha(repo,repo.active_branch)
-    print 'finding merge base'  
+
     base_sha=merge_base(repo,head,merge_head)[0]  #fixme, what if multiple bases
+
     if base_sha==head:
         print 'Fast forwarding {} to {}'.format(repo.active_branch,merge_head)
         repo.refs[head]=merge_head
@@ -176,11 +189,11 @@ def merge(args):
         print 'head is already up to date'
         return  
     
-    print 'merging {} into {} [{}] anead of {}'.format(merge_head,head,count_commits_between(repo,merge_head,head),base_sha)
+    print 'merging <{}> into <{}>\n{} commits ahead of merge base <{}> respectively'.format(merge_head[0:7],head[0:7],count_commits_between(repo,merge_head,head),base_sha[0:7])
     base_tree=repo[base_sha].tree
     merge_head_tree=repo[merge_head].tree
     head_tree=repo[head].tree
-    print base_tree, head_tree, merge_head_tree
+
     num_conflicts,added,removed=merge_trees(repo.repo.object_store, base_tree,head_tree,merge_head_tree)
     # update index
     if added: 
@@ -191,11 +204,10 @@ def merge(args):
         repo.repo._put_named_file('MERGE_HEAD',merge_head)
         repo.repo._put_named_file('MERGE_MSG','Merged from {}({})'.format(merge_head, result.commit))
     print 'Merge complete with {} conflicted files'.format(num_conflicts)
-        
+    print 'Merged files checked into index, but have not yet been comitted.   be sure to git add any files changed when resolving conflicts, then run git commit to complete the merge.'
 
         
 if __name__=='__main__':
-    print 'in main'
     import sys
     merge(sys.argv[1:])
     

@@ -9,6 +9,7 @@ commands:
     add: git add <file1> .. [file2] .. - stage one or more files
     rm: git rm <file1> .. [file2] .. - unstage one or more files
     commit: git commit <message> <name> <email> - commit staged files
+    merge:  git merge [--abort] [--msg <msg>] [<commit>]  merge another commit into HEAD
     clone: git clone <url> [path] - clone a remote repository
     modified: git modified - show what files have been modified
     log: git log - Options:\n\t[-l|--length  numner_of _results]\n\t[-f|--format format string can use {message}{author}{author_email}{committer}{committer_email}{merge}{commit}]\n\t[-o|--output]  file_name
@@ -19,6 +20,7 @@ commands:
     remote: git remote [remotename remoteuri]- list or add remote repos 
     status: git status - show status of files (staged unstaged untracked)
     reset: git reset - reset a repo to its pre-change state
+    diff: git diff - show changes in staging area
     help: git help
 '''
 
@@ -99,6 +101,7 @@ command_help={    'init':  'initialize a new Git repository'
     ,'remote': 'git remote [remotename remoteuri] list or add remote repos '
     ,'status': 'git status - show status of files (staged unstaged untracked)'
     ,'reset': 'git reset [<commit>] <paths>  reset <paths> in staging area back to their state at <commit>.  this does not affect files in the working area.  \ngit reset [ --mixed | --hard ] [<commit>] reset a repo to its pre-change state. default resets index, but not working tree.  i.e unstages all files.   --hard is dangerous, overwriting index and working tree to <commit>'
+    , 'diff': 'git diff  show changed files in staging area'
     ,'help': 'git help'
           }
 
@@ -515,6 +518,15 @@ def git_log(args):
     except ValueError:
         print command_help['log']
 
+def git_diff(args):
+    '''prints diff of currently staged files to console.. '''
+    repo=_get_repo()
+
+    index=repo.repo.open_index()
+    store=repo.repo.object_store
+    index_sha=index.commit(store)
+    #tree_ver=store[tree.lookup_path(store.peel_sha,file)[1]].data
+    porcelain.diff_tree('.',repo[repo['HEAD'].tree].id,repo[index_sha].id, sys.stdout)
 
 
 def git_checkout(args):
@@ -598,6 +610,7 @@ commands = {
     ,'remote': git_remote
     ,'reset': git_reset
     ,'status': git_status
+    ,'diff': git_diff
     ,'help': git_help
     }
 if __name__=='__main__':
