@@ -2,10 +2,11 @@ print 'importing dulwich'
 from dulwich.diff_tree import _tree_entries, _NULL_ENTRY, TreeEntry, _is_tree
 print 'importing gittle'
 from gittle import Gittle
+from dulwich import porcelain
 print 'stat'
 import stat
 print 'diff3'
-import diff3
+from git import diff3
 print 'gitutils'
 from git.gitutils import _get_repo, find_revision_sha, can_ff, merge_base, count_commits_between, is_ancestor, get_remote_tracking_branch, GitError
 
@@ -159,8 +160,8 @@ def merge(args):
     if result.abort:
         print 'attempting to undo merge'
         git_reset([])
-        del repo.repo.refs['MERGE_HEAD']     
-        repo._put_named_file('MERGE_MSG','')
+        os.remove(os.path.join(repo.repo.controldir(),'MERGE_HEAD'))
+        os.remove(os.path.join(repo.repo.controldir(),'MERGE_MSG'))
     print 'parsed. get mergehead'
     #todo: check for uncommitted changes and confirm
     
@@ -192,8 +193,8 @@ def merge(args):
     if removed: 
         porcelain.rm(repo.repo, removed)
     if num_conflicts:
-        repo.refs['MERGE_HEAD']=merge_head
-        repo._put_named_file('MERGE_MSG','Merged from {}({})'.format(merge_head, result.commit))
+        repo.repo._put_named_file('MERGE_HEAD',merge_head)
+        repo.repo._put_named_file('MERGE_MSG','Merged from {}({})'.format(merge_head, result.commit))
     print 'Merge complete with {} conflicted files'.format(num_conflicts)
         
 

@@ -188,7 +188,13 @@ def git_status(args):
     if len(args) == 0:
         repo = _get_repo()
         status = porcelain.status(repo.repo)
-        print status
+        print 'STAGED'
+        for k,v in status.staged.iteritems():
+            if v:
+                print k,v
+        print 'UNSTAGED LOCAL MODS'
+        print status.unstaged
+        
     else:
         print command_help['status']
 
@@ -261,8 +267,11 @@ def git_reset(args):
     repo = _get_repo().repo
     
     if ns.merge:
-        del repo.refs['MERGE_HEAD']
-        repo._put_named_file('MERGE_MSG','')
+        try:
+            os.remove(os.path.join(repo.repo.controldir(),'MERGE_HEAD'))
+            os.remove(os.path.join(repo.repo.controldir(),'MERGE_MSG'))
+        except OSError:
+            pass  #todo, just no such file
         
     #handle optionals
     commit= ns.commit
@@ -304,14 +313,14 @@ def git_commit(args):
     ns=ap.parse_args(args)
     
     repo = _get_repo()
-    merging = 'MERGE_HEAD' in repo.repo.refs
+    merging = repo.repo.get_named_file('MERGE_HEAD')
     merge_head=None
     if merging:
         print 'merging in process:' 
-        merge_head= [repo['MERGE_HEAD']]
-        merge_msg= repo.repo.get_named_file('MERGE_MSG')
+        merge_head= merging.read() or ''
+        merge_msg= repo.repo.get_named_file('MERGE_MSG').read() or ''
         print merge_msg
-        ns.message += merge_msg
+        ns.message = ns.message or '' + merge_msg
     if not ns.message:
         ns.message=raw_input('Commit Message: ')
     if not ns.name:
@@ -322,10 +331,16 @@ def git_commit(args):
     try:
 
         author = "{0} <{1}>".format(ns.name, ns.email)
-        print repo.repo.do_commit(message=ns.message, author=author, committer=author , merge_heads=merge_head)
+        print repo.repo.do_commit(message=ns.message, author=author, committer=author , merge_heads=[merge_head])
+        if merging:
+            try:
+                os.remove(os.path.join(repo.repo.controldir(),'MERGE_HEAD'))
+                os.remove(os.path.join(repo.repo.controldir(),'MERGE_MSG'))
+            except OSError:
+                pass  #todo, just no such file
     except:
         print 'Error: {0}'.format(sys.exc_value)
-
+    
 
 def git_clone(args):
     if len(args) > 0:
@@ -502,10 +517,10 @@ def git_checkout(args):
     if len(args) in [1,2]:
         repo = _get_repo()
         _confirm_dangerous()
-        if 'MERGE_HEAD' in repo.repo.refs:
+        if os.path.exists(os.path.join(repo.repo.controldir(),'MERGE_HEAD')) :
             #just cancel in progress merge
-            del repo.repo.refs['MERGE_HEAD']
-            repo.repo._put_named_file('MERGE_MSG','')
+            os.remove(repo.repo.controldir(),'MERGE_HEAD')
+            os.remove(repo.repo.controldir(),'MERGE_MSG')
         if len(args) == 1:
             branchname=args[0]
             if branchname in repo.branches:

@@ -23,6 +23,7 @@
     P. Heckel. ``A technique for isolating differences between files.''
     Communications of the ACM, Vol. 21, No. 4, page 264, April 1978.
 
+    jsb: added newlines for conflict markers
 """
 
 from operator import xor
@@ -144,16 +145,16 @@ def _conflict_range(text3, r3, res):
     d = diff(text_a, text_b)
     if _assoc_range(d, 'c') and r3[5] <= r3[6]:
         res['conflict'] += 1
-        res['body'].append('<<<<<<<')
+        res['body'].append('<<<<<<<\n')
         for lineno in range(r3[1], r3[2] + 1):
             res['body'].append(text3[0][lineno - 1])
-        res['body'].append('|||||||')
+        res['body'].append('|||||||\n')
         for lineno in range(r3[5], r3[6] + 1):
             res['body'].append(text3[2][lineno - 1])
-        res['body'].append('=======')
+        res['body'].append('=======\n')
         for lineno in range(r3[3], r3[4] + 1):
             res['body'].append(text3[1][lineno - 1])
-        res['body'].append('>>>>>>>')
+        res['body'].append('>>>>>>>\n')
         return res
     ia = 1
     for r2 in d:
@@ -161,13 +162,13 @@ def _conflict_range(text3, r3, res):
             res['body'].append(text_a[lineno - 1])
         if r2[0] == 'c':
             res['conflict'] += 1
-            res['body'].append('<<<<<<<')
+            res['body'].append('<<<<<<<\n')
             for lineno in range(r2[3], r2[4] + 1):
                 res['body'].append(text_b[lineno - 1])
-            res['body'].append('=======')
+            res['body'].append('=======\n')
             for lineno in range(r2[1], r2[2] + 1):
                 res['body'].append(text_a[lineno - 1])
-            res['body'].append('>>>>>>>')
+            res['body'].append('>>>>>>>\n')
         elif r2[0] == 'a':
             for lineno in range(r2[3], r2[4] + 1):
                 res['body'].append(text_b[lineno - 1])
