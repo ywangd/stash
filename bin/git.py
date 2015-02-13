@@ -329,9 +329,12 @@ def git_commit(args):
         ns.email=raw_input('Author Email')
          
     try:
-
+    
         author = "{0} <{1}>".format(ns.name, ns.email)
-        print repo.repo.do_commit(message=ns.message, author=author, committer=author , merge_heads=[merge_head])
+        print repo.repo.do_commit(message=ns.message
+                                  , author=author
+                                  , committer=author 
+                                  , merge_heads=[merge_head] if merge_head else None)
         if merging:
             try:
                 os.remove(os.path.join(repo.repo.controldir(),'MERGE_HEAD'))
@@ -339,7 +342,8 @@ def git_commit(args):
             except OSError:
                 pass  #todo, just no such file
     except:
-        print 'Error: {0}'.format(sys.exc_value)
+        print 'commit Error: {0}'.format(sys.exc_value)
+
     
 
 def git_clone(args):
