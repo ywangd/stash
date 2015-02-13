@@ -98,12 +98,12 @@ def branch(args):
             create_branch(no_track[0],no_track[1],force,True)
             
     #print result
-def format_tracking_branch_desc(branchname):
+def format_tracking_branch_desc(repo,branchname):
     try:
-        remote=get_remote_tracking_branch(branchname)
-        mysha=_get_repo().branches[branchname]
-        theirsha=_get_repo().remote_branches[remote]
-        ahead,behind=count_commits_between(mysha, theirsha)
+        remote=get_remote_tracking_branch(repo,branchname)
+        mysha=repo.branches[branchname]
+        theirsha=repo.remote_branches[remote]
+        ahead,behind=count_commits_between(repo,mysha, theirsha)
         return '+{}/-{} relative to {} ({})'.format(ahead,behind,remote,theirsha)
     except KeyError:
         return ''
@@ -123,12 +123,12 @@ def branch_list(result):
             for key,value in repo.branches.iteritems():
                 dispval=value[0:N]  #todo, --abbrev=n
                 commitmsg=(repo[value].message if result.verbose else '').strip()
-                tracking=get_remote_tracking_branch(key)
+                tracking=get_remote_tracking_branch(repo,key)
                 trackmsg=''
                 diffmsg=trackingsha=''
                 if tracking:
                     trackingsha=repo.remote_branches[tracking]
-                    ahead,behind= count_commits_between(value,trackingsha)
+                    ahead,behind= count_commits_between(repo,value,trackingsha)
                     diffmsg='+{}/-{} compare to'.format(ahead,behind) if result.verbose else ''
                     trackmsg='[{} {} {}]'.format(diffmsg,tracking,trackingsha[0:N])
                 print ('* ' if repo.active_branch == key else '') + key, dispval, trackmsg, commitmsg
@@ -153,11 +153,11 @@ def delete_branch(delete_branchname,force=False,remote=None, verbose=0):
             GitError('Cannot delete active branch.  ')
 
 
-    remote_tracking_branch=get_remote_tracking_branch(delete_branchname)
+    remote_tracking_branch=get_remote_tracking_branch(repo,delete_branchname)
 
     if remote_tracking_branch and not force:
         #see if local is ahead of remote
-        commits_ahead=count_commits_between(
+        commits_ahead=count_commits_between(repo,
                                  repo.refs[qualified_branch],
                                  repo.remote_branches[remote_tracking_branch] 
                                  )[0]
@@ -231,7 +231,7 @@ def create_branch(new_branch, base_rev, force=False ,no_track=False  ):
        
          # fork with new sha
         new_ref = repo._format_ref_branch(new_branch)
-        base_sha=find_revision_sha(base_rev)
+        base_sha=find_revision_sha(repo,base_rev)
         repo.repo.refs[new_ref] = base_sha
         
         #handle tracking, only if this was a remote

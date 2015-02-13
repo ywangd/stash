@@ -28,7 +28,7 @@ def any_one(iterable):
     it = iter(iterable)
     return any(it) and not any(it)
 
-def find_revision_sha(rev):
+def find_revision_sha(repo,rev):
     '''rev may refer to the following ways to "spell" a commit object:
     <sha1>  full or abbreviated sha, only if unique
     <ref>  search in local refs, then remote refs.
@@ -41,7 +41,10 @@ def find_revision_sha(rev):
     . otherwise, 'refs/remotes/<refname>' if it exists;
     . otherwise, 'refs/remotes/<refname>/HEAD' if it exists.
     '''
-    repo=_get_repo()
+
+    if rev in repo:
+        return repo[rev].id
+        
     o=repo.repo.object_store
 
     returnval = repo.refs.get(rev) or repo.tags.get(rev) or repo.branches.get(rev) or repo.remote_branches.get(rev)
@@ -55,16 +58,15 @@ def find_revision_sha(rev):
             raise GitError('SHA {} is not unique'.format(rev))
         raise GitError('could not find rev {}'.format(rev))
         
-def merge_base(rev1,rev2):
+def merge_base(repo,rev1,rev2):
     ''''git merge-base' finds best common ancestor(s) between two commits to use
 in a three-way merge.  One common ancestor is 'better' than another common
 ancestor if the latter is an ancestor of the former.  A common ancestor
 that does not have any better common ancestor is a 'best common
 ancestor', i.e. a 'merge base'.  Note that there can be more than one
 merge base for a pair of commits.'''
-    sha1=find_revision_sha(rev1)
-    sha2=find_revision_sha(rev2)
-    repo=_get_repo()
+    sha1=find_revision_sha(repo,rev1)
+    sha2=find_revision_sha(repo,rev2)
           
     sha2_ancestors,_=repo.repo.object_store._collect_ancestors([sha2],[])
     merge_bases=[]
@@ -81,28 +83,27 @@ merge base for a pair of commits.'''
                 queue.extend(repo[elt].parents)
     return merge_bases
     
-def count_commits_between(rev1,rev2):
+def count_commits_between(repo,rev1,rev2):
     '''find common ancestor. then count ancestor->sha1, and ancestor->sha2 '''
-    repo=_get_repo()
-    sha1=find_revision_sha(rev1)
-    sha2=find_revision_sha(rev2)
+    sha1=find_revision_sha(repo,rev1)
+    sha2=find_revision_sha(repo,rev2)
     if sha1==sha2:
         return (0,0)
     sha1_ahead= sum(1 for _ in Walker(repo.repo.object_store,(sha1,),(sha2,)))
     sha1_behind=sum(1 for _ in Walker(repo.repo.object_store,(sha2,),(sha1,)))
     return (sha1_ahead,sha1_behind)
     
-def is_ancestor(rev1,rev2):
+def is_ancestor(repo,rev1,rev2):
     '''return true if rev1 is an ancestor of rev2'''
-    sha1=find_revision_sha(rev1)
-    sha2=find_revision_sha(rev2)
-    return True if sha1 in merge_base(sha1,sha2) else False
+    sha1=find_revision_sha(repo,rev1)
+    sha2=find_revision_sha(repo,rev2)
+    return True if sha1 in merge_base(repo,sha1,sha2) else False
     
-def can_ff(oldrev,newrev):
-    return merge_base(oldrev,newrev)==[oldrev]
+def can_ff(repo,oldrev,newrev):
+    return merge_base(repo,oldrev,newrev)==[oldrev]
     
-def get_remote_tracking_branch(branchname):
-    config = _get_repo().repo.get_config()
+def get_remote_tracking_branch(repo,branchname):
+    config = repo.repo.get_config()
     try:
         remote=config.get(('branch',branchname),'remote')
         merge=config.get(('branch',branchname),'merge')

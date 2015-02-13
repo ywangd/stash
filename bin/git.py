@@ -524,8 +524,8 @@ def git_checkout(args):
         _confirm_dangerous()
         if os.path.exists(os.path.join(repo.repo.controldir(),'MERGE_HEAD')) :
             #just cancel in progress merge
-            os.remove(repo.repo.controldir(),'MERGE_HEAD')
-            os.remove(repo.repo.controldir(),'MERGE_MSG')
+            os.remove(os.path.join(repo.repo.controldir(),'MERGE_HEAD'))
+            os.remove(os.path.join(repo.repo.controldir(),'MERGE_MSG'))
         if len(args) == 1:
             branchname=args[0]
             if branchname in repo.branches:
