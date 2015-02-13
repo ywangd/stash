@@ -482,6 +482,7 @@ def git_push(args):
 
     else:
         porcelain.push(repo.repo, result.url, branch_name)
+    print 'success!'
 
 def git_modified(args):
     repo = _get_repo()

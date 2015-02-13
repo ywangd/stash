@@ -1,13 +1,9 @@
-print 'importing dulwich'
+
 from dulwich.diff_tree import _tree_entries, _NULL_ENTRY, TreeEntry, _is_tree
-print 'importing gittle'
 from gittle import Gittle
 from dulwich import porcelain
-print 'stat'
 import stat
-print 'diff3'
 from git import diff3
-print 'gitutils'
 from git.gitutils import _get_repo, find_revision_sha, can_ff, merge_base, count_commits_between, is_ancestor, get_remote_tracking_branch, GitError
 
 
@@ -54,15 +50,14 @@ def first_nonempty(entries):
     return result
     
 def walk_trees(store, tree_ids,prune_identical=False):
-    """Recursively walk all the entries of two trees.
+    """Recursively walk all the entries of N trees.
 
     Iteration is depth-first pre-order, as in e.g. os.walk.
 
     :param store: An ObjectStore for looking up objects.
-    :param tree1_id: The SHA of the first Tree object to iterate, or None.
-    :param tree2_id: The SHA of the second Tree object to iterate, or None.
+    :param trees: iterable of SHAs for N trees
     :param prune_identical: If True, identical subtrees will not be walked.
-    :return: Iterator over Pairs of TreeEntry objects for each pair of entries
+    :return: Iterator over tuple contsining N TreeEntry objects for each of entries
         in the trees and their subtrees recursively. If an entry exists in one
         tree but not the other, the other entry will have all attributes set
         to None. If neither entry's path is None, they are guaranteed to
