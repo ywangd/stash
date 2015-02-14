@@ -1,5 +1,6 @@
 '''
-mail - send messages/files from stash.
+Send messages/files from stash.
+
 Calling mail without params will prompt for input.
 Passing '-' in the message param will read from stdin pipe.
 

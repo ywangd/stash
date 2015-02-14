@@ -1,5 +1,5 @@
 '''
-md5sum - Get md5 hash of a file or string. 
+Get md5 hash of a file or string. 
 
 usage: md5sum.py [-h] [-c] [file [file ...]]
 

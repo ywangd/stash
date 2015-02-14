@@ -1,5 +1,5 @@
 '''
-Used used with tar, gzip, bz2 files.
+Create and extract tar, gzip, bz2 archives.
 
 Examples:
     Create a gzip compressed archive:

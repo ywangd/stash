@@ -1,5 +1,5 @@
 '''
-sha256sum - Get sha256 hash of a file or string. 
+Get sha256 hash of a file or string. 
 
 usage: sha256sum.py [-h] [-c] [file [file ...]]
 

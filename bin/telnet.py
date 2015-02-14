@@ -1,9 +1,9 @@
-''' telnet hostname [port] [timeout]
+''' 
+A very simple telnet client.
 
-a very simple telnet client.
-
-
+usage: telnet hostname [port] [timeout]
 '''
+
 import socket, select, string, sys, telnetlib,time,argparse
 #main function
 if __name__ == "__main__":
