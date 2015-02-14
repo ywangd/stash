@@ -1,5 +1,7 @@
 '''
-serach - Searches for packages
+Install and manage python packages
+
+search - Searches for packages
 versions - Lists all versions for a package
 install - Installs the package off pypi
 list - Lists currently installed backages.
@@ -10,7 +12,7 @@ usage: pip.py [-h] [-n RESULT_COUNT]
               {search,versions,install,list} [package] [version]
 
 positional arguments:
-  {search,versions,install,list}
+  {search, versions, install, list, remove, update}
   package
   version
 
