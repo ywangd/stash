@@ -41,6 +41,15 @@ _subcmd_cfg = {
 
     },
 
+    "pcsm": {
+        "1": {
+            'candidates': ['info', 'install', 'list', 'remove'],
+            'blank_completion': True,
+            'with_normal_completion': False,
+        },
+
+    },
+
 }
 
 
@@ -63,45 +72,45 @@ def _select_from_candidate_groups(candidate_groups, tok, after=None):
     return None
 
 
-def subcmd_complete(toks, has_trailing_white):
-    if len(toks) == 1 and not has_trailing_white:
+def subcmd_complete(toks):
+    # Only one token, this is still command, not sub-command yet
+    if len(toks) == 1:
         return None, None
+
+    word_to_complete = toks[-1]
+    is_blank_completion = word_to_complete == ''
 
     cmd_word = toks[0]
     if cmd_word.endswith('.py'):
         cmd_word = cmd_word[:-3]
 
-    if has_trailing_white:
-        pos = str(len(toks))
-    else:
-        pos = str(len(toks) - 1)
+    pos = str(len(toks) - 1)
 
     try:
         cfg = _subcmd_cfg[cmd_word]
 
         if pos in cfg.keys() \
-                and (not has_trailing_white
-                     or (has_trailing_white and cfg[pos]['blank_completion'])):
+                and (not is_blank_completion
+                     or (is_blank_completion and cfg[pos]['blank_completion'])):
             cands = _select_from_candidates(cfg[pos]['candidates'],
-                                            '' if has_trailing_white else toks[-1])
+                                            '' if is_blank_completion else word_to_complete)
             return cands, cfg[pos]['with_normal_completion']
 
         elif '-' in cfg.keys() \
-                and ((not has_trailing_white and toks[-1].startswith('-'))
-                     or (has_trailing_white and cfg['-']['blank_completion'])):
+                and ((not is_blank_completion and word_to_complete.startswith('-'))
+                     or (is_blank_completion and cfg['-']['blank_completion'])):
             subcmd = None
-            for t in toks[-2:0:-1]:
+            for t in toks[-1:0:-1]:
                 if not t.startswith('-'):
                     subcmd = t
                     break
             cands = _select_from_candidate_groups(cfg['-']['candidate_groups'],
-                                                  '' if has_trailing_white else toks[-1],
+                                                  '' if is_blank_completion else word_to_complete,
                                                   subcmd)
             if cands is not None:
                 return cands, cfg['-']['with_normal_completion']
 
     except KeyError as e:
-        #print repr(e), e
         pass
 
     return None, None

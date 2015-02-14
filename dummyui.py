@@ -9,7 +9,7 @@ def in_background(func):
     return func
 
 def get_screen_size():
-    return (100, 100)
+    return 100, 100
 
 
 class View(object):
@@ -26,6 +26,9 @@ class View(object):
         self.subviews.append(v)
         v.superview = self
 
+    def remove_subview(self, v):
+        self.subviews.remove(v)
+
     def present(self, style='popover'):
         pass
 
@@ -41,8 +44,6 @@ class View(object):
     def bring_to_front(self):
         pass
 
-    def begin_editing(self):
-        pass
 
 class TextField(View):
     def __init__(self, *args, **kwargs):
@@ -53,6 +54,22 @@ class TextView(View):
     def __init__(self, *args, **kwargs):
         super(TextView, self).__init__(*args, **kwargs)
         self.text = ''
+        self.selected_range = (0, 0)
+
+    def replace_range(self, rng, s):
+        self.text = self.text[:rng[0]] + s + self.text[rng[1]:]
+        tot_len = len(self.text)
+        self.selected_range = (tot_len, tot_len)
+
+    def begin_editing(self):
+        pass
+
+    def end_editing(self):
+        pass
+
+class ScrollView(View):
+    pass
+
 
 class Button(View):
     def __init__(self, *args, **kwargs):

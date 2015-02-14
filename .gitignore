@@ -67,3 +67,5 @@ tmp*
 .stashrc
 .stash_config
 
+.mailrc
+.pcsm.json

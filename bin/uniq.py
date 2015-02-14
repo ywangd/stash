@@ -1,29 +1,37 @@
-"""Print standard input or file, omitting repeated lines"""
+"""Print standard input or files, omitting repeated lines"""
 
 import os
 import sys
 import fileinput
 import argparse
 
-ap = argparse.ArgumentParser()
-ap.add_argument('file', nargs='?', help='the file to be uniqued. must be sorted first.')
-args = ap.parse_args()
+def main(args):
+    ap = argparse.ArgumentParser()
+    ap.add_argument('files', nargs='*', help='files to unique (must be sorted first)')
+    ns = ap.parse_args(args)
 
-thefile = args.file if args.file else None
+    def _print(lines):
+        if lines is not None:
+            print ''.join(lines)
 
-if thefile is not None and os.path.isdir(thefile):
-    print '%s: Is a directory' % thefile
-
-else:
+    fileinput.close()  # in case it is not closed
     try:
-        fileinput.close()  # in case it is not closed
         prev_line = None
-        lines = []
-        for line in fileinput.input(thefile):
+        lines = None
+        for line in fileinput.input(ns.files):
+            if fileinput.isfirstline():
+                _print(lines)
+                lines = []
+                prev_line = None
             if prev_line is None or line != prev_line:
-               lines.append(line)
+                lines.append(line)
             prev_line = line
 
-        print ''.join(lines)
+        _print(lines)
+
     finally:
         fileinput.close()
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
