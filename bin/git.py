@@ -32,27 +32,41 @@ import sys,os,posix
 
 GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
 FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
-DULWICH_URL='https://github.com/transistor1/dulwich/archive/master.zip'
+DULWICH_URL='https://github.com/jsbain/dulwich/archive/master.zip'
 
 if True:
     libpath=os.path.join(_stash.runtime.envars['STASH_ROOT'] ,'lib')
     if not libpath in sys.path:
         sys.path.insert(1,libpath)
+    download_dulwich = False 
     try:  
         import dulwich
         from dulwich.client import default_user_agent_string
         from dulwich import porcelain
         from dulwich.index import index_entry_from_stat
-    except ImportError:
+        if not hasattr(porcelain, 'fetch'):
+            download_dulwich = True
+    except ImportError as e:
+        download_dulwich = True 
+    
+    if download_dulwich:
         _stash('wget {} -o $TMPDIR/dulwich.zip'.format(DULWICH_URL))
         _stash('unzip $TMPDIR/dulwich.zip -d $TMPDIR/dulwich')
+        _stash('rm -r $STASH_ROOT/lib/dulwich.old')
+        _stash('mv $STASH_ROOT/lib/dulwich $STASH_ROOT/lib/dulwich.old')
         _stash('mv $TMPDIR/dulwich/dulwich $STASH_ROOT/lib/')
         _stash('rm  $TMPDIR/dulwich.zip')
         _stash('rm -r $TMPDIR/dulwich')
+        _stash('rm -r $STASH_ROOT/lib/dulwich.old')
+        try: 
+            reload(dulwich)
+            reload(dulwich.porcelain)
+        except NameError:
+            pass 
         import dulwich
         from dulwich import porcelain
         from dulwich.client import default_user_agent_string
-    
+                
     try:
         gittle_path=os.path.join(libpath,'gittle')
         funky_path=os.path.join(libpath,'funky')
