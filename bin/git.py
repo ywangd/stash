@@ -319,6 +319,20 @@ def git_reset(args):
             with open(str(path),'w') as f:
                 f.write(file_contents)
 
+def get_config_or_prompt(repo, section, name, prompt, save=None):
+    config = repo.repo.get_config()
+    try:
+        value = config.get(section, name)
+    except KeyError:
+        value = raw_input(prompt)
+        if save == None:
+            reply = raw_input('Save this setting? [y/n]')
+            save = reply == 'y'
+        if save:
+            config.set(section, name, value)
+            config.write_to_path()
+    return value
+        
 def git_commit(args):
     ap=argparse.ArgumentParser('Commit current working tree.')
     ap.add_argument('message',default=None,nargs='?')
@@ -337,10 +351,9 @@ def git_commit(args):
         ns.message = ns.message or '' + merge_msg
     if not ns.message:
         ns.message=raw_input('Commit Message: ')
-    if not ns.name:
-        ns.name=raw_input('Author Name: ')
-    if not ns.email:
-        ns.email=raw_input('Author Email: ')
+
+    ns.name = ns.name or get_config_or_prompt(repo, 'user', 'name', 'Author Name: ')
+    ns.email = ns.email or get_config_or_prompt(repo, 'user', 'email', 'Author Email: ')
          
     try:
     
