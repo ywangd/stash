@@ -138,9 +138,9 @@ def _confirm_dangerous():
         repo = _get_repo()
         status=porcelain.status(repo.path)
         if any(status.staged.values()+status.unstaged):
-            force=raw_input('WARNING:  there are uncommitted modified files files and/or staged changes.  these could be overwritten by this command.  continue anyway? [y/n] ')
+            force=raw_input('WARNING: there are uncommitted modified files and/or staged changes. These could be overwritten by this command. Continue anyway? [y/n] ')
             if not force=='y':
-                raise Exception('use cancelled dangerous operation')
+                raise Exception('User cancelled dangerous operation')
                 
 def unstage(commit='HEAD',paths=[]):
     repo=_get_repo().repo
@@ -338,9 +338,9 @@ def git_commit(args):
     if not ns.message:
         ns.message=raw_input('Commit Message: ')
     if not ns.name:
-        ns.name=raw_input('Author Name:')
+        ns.name=raw_input('Author Name: ')
     if not ns.email:
-        ns.email=raw_input('Author Email')
+        ns.email=raw_input('Author Email: ')
          
     try:
     
@@ -476,8 +476,8 @@ def git_push(args):
         try:
             user = dict(keychain.get_services())[keychainservice]
         except KeyError:
-            user = raw_input('enter username:')
-            pw = raw_input('enter password')
+            user = raw_input('Enter username: ')
+            pw = raw_input('Enter password: ')
             #user, pw = console.login_alert('Enter credentials for {0}'.format(netloc))
 
     if user:
