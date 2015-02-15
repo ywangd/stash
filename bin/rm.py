@@ -1,4 +1,6 @@
 """
+Remove (delete) files and directories.
+
 usage: rm.py [-h] [-r] [-i] [-f] [-v] paths [paths ...]
 
 positional arguments:

@@ -1,10 +1,7 @@
-
 '''
-git
-------------
-basic git functionality
+Distributed version control system
 
-commands:
+Commands:
     init:  git init <directory> - initialize a new Git repository
     add: git add <file1> .. [file2] .. - stage one or more files
     rm: git rm <file1> .. [file2] .. - unstage one or more files

@@ -1,4 +1,4 @@
-""" wget: downloads a file from a url
+""" Download a file from a url.
 """
 
 import os
