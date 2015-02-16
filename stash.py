@@ -78,6 +78,9 @@ class ShBadSubstitution(Exception):
 class ShInternalError(Exception):
     pass
 
+class ShKeyboardInterrupt(Exception):
+    pass
+
 
 def sh_delay(func, nseconds):
     t = threading.Timer(nseconds, func)
@@ -1235,18 +1238,24 @@ class ShRuntime(object):
             self.envars['?'] = e.code
 
         except Exception as e:
-            etype, evalue, tb = sys.exc_info()
-            err_msg = '%s: %s\n' % (repr(etype), evalue)
-            _debug_runtime(err_msg)
-            self.app.term.write_with_prefix(err_msg)
             self.envars['?'] = 1
 
-            if self.py_traceback or self.py_pdb:
-                import traceback
-                traceback.print_exception(etype, evalue, tb)
-                if self.py_pdb:
-                    import pdb
-                    pdb.post_mortem(tb)
+            # If the Exception is a simulated Keyboard Interrupt, the thread
+            # can be terminated normally
+            if type(e) is ShKeyboardInterrupt:
+                self.app.term.write_with_prefix('^C\nShKeyboardInterrupt:%s\n' % e.message)
+
+            else:
+                etype, evalue, tb = sys.exc_info()
+                err_msg = '%s: %s\n' % (repr(etype), evalue)
+                _debug_runtime(err_msg)
+                self.app.term.write_with_prefix(err_msg)
+                if self.py_traceback or self.py_pdb:
+                    import traceback
+                    traceback.print_exception(etype, evalue, tb)
+                    if self.py_pdb:
+                        import pdb
+                        pdb.post_mortem(tb)
 
         finally:
             sys.path = _SYS_PATH
@@ -1466,6 +1475,7 @@ class ShTerm(ui.View):
         self.write_pos = 0
         self.input_did_return = False  # For readline, e.g. raw_input
         self.input_did_eof = False  # For read and readlines
+        self.input_did_interrupt = False  # For C-C termination
 
         self.prompt = '$ '
 
@@ -1803,7 +1813,9 @@ class ShTerm(ui.View):
 
     def readline(self, size=-1):  # raw_input
         while not self.input_did_return and not self.input_did_eof:
-            pass
+            if self.input_did_interrupt:  # Simulate Keyboard Interrupt
+                self.input_did_interrupt = False
+                raise ShKeyboardInterrupt()
         self.input_did_return = self.input_did_eof = False
         # Read from input buffer instead of term directly.
         # This allows the term to response more quickly to user interactions.
@@ -1817,7 +1829,9 @@ class ShTerm(ui.View):
 
     def readlines(self, size=-1):
         while not self.input_did_eof:
-            pass
+            if self.input_did_interrupt:  # Simulate Keyboard Interrupt
+                self.input_did_interrupt = False
+                raise ShKeyboardInterrupt()
         self.input_did_return = self.input_did_eof = False
         lines = [self.encode(line) for line in self.inp_buf]
         self.inp_buf = []
@@ -2052,6 +2066,7 @@ class StaSh(object):
                 self.tab_action = None  # reset tab action for new command
                 self.term.input_did_return = False
                 self.term.input_did_eof = False
+                self.term.input_did_interrupt = False
                 self.runtime.run(line)
             else:
                 self.runtime.reset_idx_to_history()
@@ -2188,19 +2203,25 @@ class StaSh(object):
                 self.term.new_inp_line()
 
             else:  # ctrl-c terminates the entire stack of threads
-                for worker in self.runtime.worker_stack[::-1]:
-                    worker._Thread__stop()
-                    time.sleep(0.5)
-                    if worker.isAlive():
-                        self.term.write_with_prefix('failed to terminate thread: %s\n' % worker)
-                        self.term.write_with_prefix('%d threads are still running ...' % len(self.runtime.worker_stack))
-                        self.term.write_with_prefix('Try Ctrl-C again or restart the shell or even Pythonista\n')
-                        break
-                    else:
-                        self.runtime.restore_state()  # Manually stopped thread does not restore state
-                        self.runtime.worker_stack.pop()
-                        self.term.write_with_prefix('successfully terminated thread %s\n' % worker)
-                self.term.new_inp_line()
+                self.term.input_did_interrupt = True
+                time.sleep(0.5)  # wait to see if a Keyboard Interrupt can be simulated
+                # This is only an approximation. If worker stack is not cleaned up after
+                # the wait, it is most likely that a Keyboard Interrupt cannot be simulated.
+                # So we do manual clean up.
+                if self.runtime.worker_stack:
+                    for worker in self.runtime.worker_stack[::-1]:
+                        worker._Thread__stop()
+                        time.sleep(0.5)
+                        if worker.isAlive():
+                            self.term.write_with_prefix('failed to terminate thread: %s\n' % worker)
+                            self.term.write_with_prefix('%d threads are still running ...' % len(self.runtime.worker_stack))
+                            self.term.write_with_prefix('Try Ctrl-C again or restart the shell or even Pythonista\n')
+                            break
+                        else:
+                            self.runtime.restore_state()  # Manually stopped thread does not restore state
+                            self.runtime.worker_stack.pop()
+                            self.term.write_with_prefix('successfully terminated thread %s\n' % worker)
+                    self.term.new_inp_line()
 
         elif vk == self.term.k_KB:
             if self.term.editing:
