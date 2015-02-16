@@ -152,6 +152,7 @@ def merge(args):
     be sure to commit any local changes before running merge, as files in working tree (i.e on disk) are changed, and checked in, which will probably overwrite any local uncomitted changes.
     
     note merge will not actually commit anything.  run git commit to commit a successful merge.
+
     
     --abort will remove the MERGE_HEAD and MERGE_MSG files, and will reset staging area, but wont affect files on disk.  use git reset --hard or git checkout if this is desired.
     '''
@@ -197,14 +198,21 @@ def merge(args):
     num_conflicts,added,removed=merge_trees(repo.repo.object_store, base_tree,head_tree,merge_head_tree)
     # update index
     if added: 
-        porcelain.add(repo.repo, added)
+        porcelain.add(repo.path, added)
     if removed: 
-        porcelain.rm(repo.repo, removed)
-    if num_conflicts:
-        repo.repo._put_named_file('MERGE_HEAD',merge_head)
-        repo.repo._put_named_file('MERGE_MSG','Merged from {}({})'.format(merge_head, result.commit))
+        porcelain.rm(repo.path, removed)
+
+    repo.repo._put_named_file('MERGE_HEAD',merge_head)
+    repo.repo._put_named_file('MERGE_MSG','Merged from {}({})'.format(merge_head, result.commit))
     print 'Merge complete with {} conflicted files'.format(num_conflicts)
-    print 'Merged files checked into index, but have not yet been comitted.   be sure to git add any files changed when resolving conflicts, then run git commit to complete the merge.'
+    print '''Merged files were added to the staging area, but have not yet been comitted.   
+    Review changes (e.g.   git diff   or   git diff>changes.txt; edit changes.txt    ), and 
+    resolve any conflict markers before comitting.  
+    
+    Use   git add     on any files updated after resolving conflicts.  
+    Run   git commit  to complete the merge process.
+    
+    '''
 
         
 if __name__=='__main__':
