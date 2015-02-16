@@ -1,5 +1,5 @@
 '''
-sha1sum - Get sha1 hash of a file or string. 
+Get sha1 hash of a file or string. 
 
 usage: sha1sum.py [-h] [-c] [file [file ...]]
 

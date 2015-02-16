@@ -1,5 +1,5 @@
 '''
-crypt - File encryption for stash
+File encryption for stash
 Uses AES in CBC mode.
 
 usage: crypt.py [-h] [-k KEY] [-d] infile [outfile]

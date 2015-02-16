@@ -864,6 +864,7 @@ class ShRuntime(object):
         self.py_traceback = config.getint('system', 'py_traceback')
         self.py_pdb = config.getint('system', 'py_pdb')
         self.input_encoding_utf8 = config.getint('system', 'input_encoding_utf8')
+        self.ipython_style_history_search = config.getint('system', 'ipython_style_history_search')
 
         # load history from last session
         # NOTE the first entry in history is the latest one
@@ -1333,7 +1334,6 @@ class ShRuntime(object):
             raise ShEventNotFound(tok)
 
     def history_up(self):
-        # self.app.term.dbgout.text += 'up: %d %d\n' % (self.idx_to_history, len(self.history))
         # Save the unfinished line user is typing before showing entries from history
         if self.idx_to_history == -1:
             self.history_templine = self.app.term.read_inp_line().rstrip()
@@ -1350,6 +1350,15 @@ class ShRuntime(object):
                     self.app.term.set_cursor(0, whence=2)
         else:
             entry = self.history[self.idx_to_history]
+            # If move up away from an unfinished input line, try search history for
+            # a line starts with the unfinished line
+            if self.idx_to_history == 0 and self.ipython_style_history_search:
+                for idx, hs in enumerate(self.history):
+                    if hs.startswith(self.history_templine):
+                        entry = hs
+                        self.idx_to_history = idx
+                        break
+
             if self.ex_kb_history_requested:
                 self.ex_kb_history_requested = False
                 self.app.term.set_inp_line(entry + self.ex_kb_history_suffix, cursor_at=len(entry))
@@ -1357,7 +1366,6 @@ class ShRuntime(object):
                 self.app.term.set_inp_line(entry)
 
     def history_dn(self):
-        # self.app.term.dbgout.text += 'down: %d %d\n' % (self.idx_to_history, len(self.history))
         self.idx_to_history -= 1
         if self.idx_to_history < -1:
             self.idx_to_history = -1
@@ -1944,6 +1952,7 @@ historyfile=.stash_history
 py_traceback=0
 py_pdb=0
 input_encoding_utf8=1
+ipython_style_history_search=1
 
 [display]
 TEXT_FONT=('DejaVuSansMono', 12)
