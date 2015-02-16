@@ -32,27 +32,41 @@ import sys,os,posix
 
 GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
 FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
-DULWICH_URL='https://github.com/transistor1/dulwich/archive/master.zip'
+DULWICH_URL='https://github.com/jsbain/dulwich/archive/master.zip'
 
 if True:
     libpath=os.path.join(_stash.runtime.envars['STASH_ROOT'] ,'lib')
     if not libpath in sys.path:
         sys.path.insert(1,libpath)
+    download_dulwich = False 
     try:  
         import dulwich
         from dulwich.client import default_user_agent_string
         from dulwich import porcelain
         from dulwich.index import index_entry_from_stat
-    except ImportError:
+        if not hasattr(porcelain, 'fetch'):
+            download_dulwich = True
+    except ImportError as e:
+        download_dulwich = True 
+    
+    if download_dulwich:
         _stash('wget {} -o $TMPDIR/dulwich.zip'.format(DULWICH_URL))
         _stash('unzip $TMPDIR/dulwich.zip -d $TMPDIR/dulwich')
+        _stash('rm -r $STASH_ROOT/lib/dulwich.old')
+        _stash('mv $STASH_ROOT/lib/dulwich $STASH_ROOT/lib/dulwich.old')
         _stash('mv $TMPDIR/dulwich/dulwich $STASH_ROOT/lib/')
         _stash('rm  $TMPDIR/dulwich.zip')
         _stash('rm -r $TMPDIR/dulwich')
+        _stash('rm -r $STASH_ROOT/lib/dulwich.old')
+        try: 
+            reload(dulwich)
+            reload(dulwich.porcelain)
+        except NameError:
+            pass 
         import dulwich
         from dulwich import porcelain
         from dulwich.client import default_user_agent_string
-    
+                
     try:
         gittle_path=os.path.join(libpath,'gittle')
         funky_path=os.path.join(libpath,'funky')
@@ -124,9 +138,9 @@ def _confirm_dangerous():
         repo = _get_repo()
         status=porcelain.status(repo.path)
         if any(status.staged.values()+status.unstaged):
-            force=raw_input('WARNING:  there are uncommitted modified files files and/or staged changes.  these could be overwritten by this command.  continue anyway? [y/n] ')
+            force=raw_input('WARNING: there are uncommitted modified files and/or staged changes. These could be overwritten by this command. Continue anyway? [y/n] ')
             if not force=='y':
-                raise Exception('use cancelled dangerous operation')
+                raise Exception('User cancelled dangerous operation')
                 
 def unstage(commit='HEAD',paths=[]):
     repo=_get_repo().repo
@@ -305,6 +319,20 @@ def git_reset(args):
             with open(str(path),'w') as f:
                 f.write(file_contents)
 
+def get_config_or_prompt(repo, section, name, prompt, save=None):
+    config = repo.repo.get_config()
+    try:
+        value = config.get(section, name)
+    except KeyError:
+        value = raw_input(prompt)
+        if save == None:
+            reply = raw_input('Save this setting? [y/n]')
+            save = reply == 'y'
+        if save:
+            config.set(section, name, value)
+            config.write_to_path()
+    return value
+        
 def git_commit(args):
     ap=argparse.ArgumentParser('Commit current working tree.')
     ap.add_argument('message',default=None,nargs='?')
@@ -323,10 +351,9 @@ def git_commit(args):
         ns.message = ns.message or '' + merge_msg
     if not ns.message:
         ns.message=raw_input('Commit Message: ')
-    if not ns.name:
-        ns.name=raw_input('Author Name:')
-    if not ns.email:
-        ns.email=raw_input('Author Email')
+
+    ns.name = ns.name or get_config_or_prompt(repo, 'user', 'name', 'Author Name: ')
+    ns.email = ns.email or get_config_or_prompt(repo, 'user', 'email', 'Author Email: ')
          
     try:
     
@@ -462,8 +489,8 @@ def git_push(args):
         try:
             user = dict(keychain.get_services())[keychainservice]
         except KeyError:
-            user = raw_input('enter username:')
-            pw = raw_input('enter password')
+            user = raw_input('Enter username: ')
+            pw = raw_input('Enter password: ')
             #user, pw = console.login_alert('Enter credentials for {0}'.format(netloc))
 
     if user:
