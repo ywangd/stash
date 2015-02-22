@@ -1,7 +1,6 @@
 """ Download a file from a url.
 """
 
-import os
 import sys
 import urllib2
 import argparse
