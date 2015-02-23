@@ -90,7 +90,7 @@ def branch(args):
         edit_branch_description(edit_description)
     elif set_upstream:
         add_tracking(set_upstream[0], *( ['origin']+set_upstream[1].split('/'))[-2:])
-        print set_upstream[0], format_tracking_branch_desc(set_upstream[0])
+        print set_upstream[0], format_tracking_branch_desc(repo,set_upstream[0])
     elif no_track:
         if len(no_track)==1:
             remove_tracking(no_track[0])

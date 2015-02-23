@@ -51,13 +51,25 @@ if AUTODOWNLOAD_DEPENDENCIES:
         from dulwich import porcelain
         from dulwich.index import index_entry_from_stat
         if not dulwich.__version__ ==  REQUIRED_DULWICH_VERSION:
-            print 'Dulwich version was {}.  Required is {}.  will download'.format(dulwich.__version__,REQUIRED_DULWICH_VERSION)
-            download_dulwich = True
+            print 'Dulwich version was {}.  Required is {}.  Attempting to reload'.format(dulwich.__version__,REQUIRED_DULWICH_VERSION)
+            for m in [m for m in sys.modules if m.startswith('dulwich')]:
+                del sys.modules[m]
+            import dulwich
+            from dulwich.client import default_user_agent_string
+            from dulwich import porcelain
+            from dulwich.index import index_entry_from_stat
+            if not dulwich.__version__ ==  REQUIRED_DULWICH_VERSION:
+                print 'Could not find correct version. Will download proper fork now'
+                download_dulwich = True
+            else:
+                print 'Correct version loaded.'
     except ImportError as e:
         print 'dulwich was not found.  Will attempt to download. '
         download_dulwich = True 
     try:
         if download_dulwich:
+            if not raw_input('Need to download dulwich.  OK to download [y/n]?') == 'y':
+                raise ImportError()
             _stash('wget {} -o $TMPDIR/dulwich.zip'.format(DULWICH_URL))
             _stash('unzip $TMPDIR/dulwich.zip -d $TMPDIR/dulwich')
             _stash('rm -r $STASH_ROOT/lib/dulwich.old')
