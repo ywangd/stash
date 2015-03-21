@@ -337,8 +337,10 @@ def git_reset(args):
     
     if not paths:
         #reset HEAD, if commit in branches
-        if commit in repo.branches or commit == 'HEAD':
-            print 'updating head'
+        if commit == 'HEAD':
+            commit = repo.head
+        elif commit in repo.branches:
+            print 'updating HEAD to ', commit
             repo.repo.refs.set_symbolic_ref('HEAD',repo._format_ref_branch(commit))
         else:
             print commit, 'is not a valid branchname.  head was not updated'
@@ -361,7 +363,7 @@ def git_reset(args):
         for path in paths:
             print 'resetting '+path
             relpath=repo.relpath(path)
-            file_contents=repo[treeobj[relpath][1]].as_raw_string()
+            file_contents=repo[treeobj.lookup_path(repo.__getitem__,relpath)[1]].as_raw_string()
             with open(str(path),'w') as f:
                 f.write(file_contents)
 
