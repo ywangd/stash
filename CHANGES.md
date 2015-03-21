@@ -1,5 +1,36 @@
 # Change Log #
 
+### Version 0.4.1 - 2015-03-06
+* New Features
+    * StaSh now provides localized input history for running scripts.
+    * New `py_pdb` config option to enable dropping into pdb when a runing
+      script errors out. This makes it convenient to debug Python scripts
+      inside StaSh.
+    * Added ipython style (up-key) history search
+
+* Improvements
+    * Started overhaul of the `git` command.
+        * It now takes a more modular approach to separate complex sub-command
+          into its own module.
+        * `branch`, `merge`, `reset`, `fetch` sub-commands significantly
+          improved.
+        * Updated dependancies on latest dulwich release.
+    * Press `CC` (Control-C) while script is waiting for user input no longer
+      breaks sub-sequent user input.
+    * Better docstring for scripts
+    * Various bug fixes
+
+* Command Scripts
+    * New scripts
+        - `stashconf.py` - Change StaSh configuration on the fly
+        - `telnet.py` - Simple telnet client
+    * Changed scripts
+        - `pcsm.py` - Removed. The scope of the design has been broadened to
+          target all pythonista scripts. The script will be back when it is
+          ready for the design change (under a different name). In the mean
+          time, [psiclient](https://github.com/ywangd/psiclient) is a
+          proof-of-concept client for Pythonista Script Index.
+
 ### Version 0.4.0 - 2015-01-29
 * New Features
 	* **New UI design with unified Input/Output areas**

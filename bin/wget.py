@@ -1,7 +1,6 @@
 """ Download a file from a url.
 """
 
-import os
 import sys
 import urllib2
 import argparse
@@ -19,23 +18,14 @@ def main(args):
     ap.add_argument('url', nargs='?', help='the url to read from (default to clipboard)')
 
     ns = ap.parse_args(args)
-
-    if ns.url:
-        url = ns.url
-    else:
-        url = clipboard.get()
-
-    if not ns.output_file:
-        file_name, ext = os.path.splitext(url.split('/')[-1])
-        output_file = file_name + ext
-    else:
-        output_file = ns.output_file
+    url = ns.url or clipboard.get()
+    output_file = ns.output_file or url.split('/')[-1]
 
     try:
         console.show_activity()
 
-        u = urllib2.urlopen(url)
         print 'Opening: %s' % url
+        u = urllib2.urlopen(url)
 
         meta = u.info()
         try:
@@ -44,10 +34,7 @@ def main(args):
             file_size = 0
 
         print "Save as: %s " % output_file,
-        if file_size:
-            print "(%s bytes)" % file_size
-        else:
-            print
+        print "(%s bytes)" % file_size if file_size else ""
 
         with open(output_file, 'wb') as f:
             file_size_dl = 0
@@ -62,7 +49,6 @@ def main(args):
                     status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
                 else:
                     status = "%10d" % file_size_dl
-
                 print status
 
     except:
@@ -74,7 +60,3 @@ def main(args):
 
 if __name__ == '__main__':
     main(sys.argv[1:])
-
-
-
-

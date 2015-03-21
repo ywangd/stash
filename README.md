@@ -8,8 +8,8 @@ Since its initial release, valuable contributions and advices have been received
 constantly from the Pythonista community (especially from
 [@briarfox](https://github.com/briarfox),
 [@dgelessus](https://github.com/dgelessus),
-[@jsbain](https://github.com/jsbain), [@pudquick](https://github.com/pudquick)
-and [@oefe](https://github.com/oefe)).
+[@jsbain](https://github.com/jsbain), [@pudquick](https://github.com/pudquick),
+[@oefe](https://github.com/oefe)) and [@cclauss](https://github.com/cclauss).
 
 StaSh stands for Pythoni**sta** **Sh**ell. While **Sta** may not be the best
 abbreviation for Pythonista, it forms a concise and meaningful word with the
@@ -134,25 +134,22 @@ features are what really set the difference from shellista.
 
 
 ## Installation
-The code is hosted on GitHub (https://github.com/ywangd/stash). 
+StaSh can be installed easily via a single line of python commands (courtesy of
+@whitone). Simply copy and paste the following line into Pythonista interactive
+prompt and run.
 
-A gist file is also provided as a single file installation
-(https://gist.github.com/ywangd/7fbb2c1aa17e8734defd).
+```Python
+import urllib2; exec urllib2.urlopen('http://bit.ly/get-stash').read()
+```
 
-### Single File Installation with Gist
-* Either use the [New from
-  Gist](https://gist.github.com/omz/b0644f5ed1d94bd32805) script or simply
-  copy/paste to get the gist file, `getstash.py`, at
-  https://gist.github.com/ywangd/7fbb2c1aa17e8734defd
-* Run `getstash.py` to download and install StaSh.
-    * It by default installs to a folder named **stash** under your document
-      root, i.e. `~/Documents/stash`.
+The above command installs StaSh to a folder named **stash** under your
+document root, i.e. `~/Documents/stash`.
 
-### Install from GitHub
-If you have a GitHub tool available in Pythonista, such as
+(If you have a GitHub tool available in Pythonista, such as
 [gitview](http://omz-forums.appspot.com/pythonista/post/5810965861892096) or
 [gitrepo](http://omz-forums.appspot.com/pythonista/post/5795611756462080),
-simply clone or download the repository.
+you can choose to directly clone or download the
+[repository](https://github.com/ywangd/stash).)
 
 ## Usage
 The usage of StaSh is in principle similar to Bash. A few things to note are:
@@ -207,8 +204,6 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `mv.py`
     * `openin.py` - Show the **open in** dialog to open a file in external apps.
     * `paste.py` - Paste from iOS clipboard
-    * `pcsm.py` - Client program for [Pythonista Command Script
-      Index](https://github.com/ywangd/Pythonista-Command-Script-Index) 
     * `pip.py` - Search, download, install, update and uninstall pure Python
       packages from PyPI.
     * `printenv.py` - List environment variables
@@ -227,6 +222,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
       used for terminal emulation and gives the command the feel of a
       full-fledged SSH client. 
     * `ssh-keygen.py` - Generate RSA/DSA SSH Keys.
+    * `stashconf.py` - Change StaSh configuration on the fly
     * `tar.py` - Manipulate archive files
     * `touch.py` - Update timestamp of the given file or create it if not exist
     * `uniq.py`
