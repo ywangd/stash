@@ -468,6 +468,8 @@ def git_fetch(args):
     if result.url in repo.remotes:
         origin=result.url
         result.url=repo.remotes.get(origin)
+    if not urlparse.urlparse(result.url).scheme:
+        raise Exception('url must match a remote name, or must start with http:// or https://')
     remote_refs=porcelain.fetch(repo.repo.path,result.url)
 
     remote_tags = gittle.utils.git.subrefs(remote_refs, 'refs/tags')
