@@ -20,7 +20,7 @@ def main(args):
             status = 1
         else:
             try:
-                with open(ns.file) as f:
+                with open(ns.file, 'w') as f:
                     f.write(clipboard.get())
             except Exception as err:
                 print("paste: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
