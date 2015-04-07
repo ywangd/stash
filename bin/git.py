@@ -152,9 +152,13 @@ command_help={    'init':  'initialize a new Git repository'
 
 
     
-    #Find a git repo dir
+#Find a git repo dir
 def _find_repo(path):
-    subdirs = os.walk(path).next()[1]
+    try:
+        subdirs = os.walk(path).next()[1]
+    except StopIteration: # happens if path is not listable
+        return None
+        
     if '.git' in subdirs:
         return path
     else:
@@ -166,7 +170,10 @@ def _find_repo(path):
 
 #Get the parent git repo, if there is one
 def _get_repo():
-    return Gittle(_find_repo(os.getcwd()))
+    repo_dir = _find_repo(os.getcwd())
+    if not repo_dir:
+        raise Exception("Current directory isn't a git repository")
+    return Gittle(repo_dir)
 
 def _confirm_dangerous():
         repo = _get_repo()
