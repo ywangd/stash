@@ -228,6 +228,6 @@ if __name__ == '__main__':
         SqliteCMD(sys.argv[1]).cmdloop()
         
     elif len(sys.argv) > 2:
-        SqliteCMD(sys.argv[1]).onecmd(sys.argv[2]))
+        SqliteCMD(sys.argv[1]).onecmd(sys.argv[2])
     else:
         SqliteCMD().cmdloop()

@@ -4,7 +4,7 @@ StaSh - Shell for Pythonista
 
 https://github.com/ywangd/stash
 """
-__version__ = '0.4.2'
+__version__ = '0.4.3'
 
 import ast
 import functools
