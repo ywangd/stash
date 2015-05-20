@@ -636,14 +636,14 @@ class ShExpander(object):
                             state = 'a'
                         elif nextchar == '$':
                             es += str(threading.currentThread()._Thread__ident)
-                        elif nextchar in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxy':
+                        elif nextchar in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz':
                             varname += nextchar
                         else:
                             es += '$' + nextchar
                             state = 'a'
 
                     else:
-                        if nextchar in '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxy':
+                        if nextchar in '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz':
                             varname += nextchar
                         else:
                             _debug_parser('envar sub: %s\n' % varname)
@@ -657,7 +657,7 @@ class ShExpander(object):
                         else:
                             es += os.environ.get(varname, '')
                             state = 'a'
-                    elif nextchar in '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxy':
+                    elif nextchar in '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz':
                         varname += nextchar
                     else:
                         raise ShBadSubstitution('bad envars substitution')
