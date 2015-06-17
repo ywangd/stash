@@ -20,7 +20,11 @@ def main(args):
     status = 0
     
     try:
-        os.chdir(ns.dir[0])
+       #chdir does not raise exception until listdir is called, so check for access here
+       if os.access(ns.dir[0],os.R_OK):
+          os.chdir(ns.dir[0])
+       else:
+          print('cd: {} access denied'.format(ns.dir[0]))
     except Exception as err:
         print("cd: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
         status = 1
