@@ -9,7 +9,7 @@ constantly from the Pythonista community (especially from
 [@briarfox](https://github.com/briarfox),
 [@dgelessus](https://github.com/dgelessus),
 [@jsbain](https://github.com/jsbain), [@pudquick](https://github.com/pudquick),
-[@oefe](https://github.com/oefe)) and [@cclauss](https://github.com/cclauss).
+[@oefe](https://github.com/oefe) and [@cclauss](https://github.com/cclauss)).
 
 StaSh stands for Pythoni**sta** **Sh**ell. While **Sta** may not be the best
 abbreviation for Pythonista, it forms a concise and meaningful word with the
@@ -28,7 +28,7 @@ features are what really set the difference from shellista.
       **panel** UI program and the new UI will simply replace StaSh (not really
       a good use case but it is possible).
     * Being a pure UI program, it is possible to launch and forget. The program
-      **stays active indefinitely**. Non-UI scripts can only run for 10 minuntes
+      **stays active indefinitely**. Non-UI scripts can only run for 10 minutes
       in background. But StaSh can stay up forever (till memory runs out due to
       other Apps). You can just launch StaSh to run a few commands and leave it.
       It will still be there for you when you return later.
@@ -49,13 +49,13 @@ features are what really set the difference from shellista.
       `!!` and `!-1` also works.
 
 * Smart **auto-completion** just as expected
-    * A UI button, "Tab", is provided to enable command line auto-completion.
-    * It is clever to auto-completes either commands or files based on the
+    * One UI button, "Tab", is provided to enable command line auto-completion.
+    * It is smart to auto-completes either commands or files based on the
       **cursor** position
     * It also completes environment variables and aliases.
     * It also features a sub-command auto-completion system. For an example,
       type `git sta` and press `Tab`. It will auto-completes to `git status `.
-      You can easily add your own sub-commands completion via a JSON file.
+      You can easily add your own sub-commands completion via JSON files.
 
 * **Command line history** management. Three UI buttons are provided to navigate
   through the history.
@@ -260,8 +260,11 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   corrupted namespaces and leaves StaSh unusable. However, running scripts from
   "Action Menu" is OK.
     - This is because Pythonista clears all global variables before running a
-      script. This is the default behaviour and can be turned off in
-      "Interpreter Options" in settings.
+      script. This is the default behaviour in Pythonista v1.5 and can be 
+      turned off in "Interpreter Options" in settings.
+    - In current Pythonista v1.6 beta, it is no longer possible to turn off
+      the "global clearing" feature. To allow StaSh survive through the clearing,
+      please run StaSh using the provided `launch_stash.py` script.
 * Pickled objects are not restored correctly and generate `AttributeError` as
   if the class definition cannot be found. An example is the
   [DropboxSync](https://gist.github.com/freekrai/4183134) script.
