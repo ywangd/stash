@@ -2281,6 +2281,5 @@ if __name__ == '__main__':
                     help='do not load external resource file')
     ap.parse_args(namespace=_STARTUP_OPTIONS)
 
-    _stash = StaSh()
-    _stash.run()
+    StaSh().run()
 
