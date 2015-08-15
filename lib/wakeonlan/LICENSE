@@ -1,0 +1,17 @@
+# Based on https://github.com/remcohaszing/pywakeonlan as of 2015-08-13
+# Adapted and extended by Georg Viehoever, 2015-08-13
+#
+# License as in original:
+#            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+#                    Version 2, December 2004
+#
+# Copyright (C) 2012 Remco Haszing <remcohaszing@gmail.com>
+#
+# Everyone is permitted to copy and distribute verbatim or modified
+# copies of this license document, and changing it is allowed as long
+# as the name is changed.
+#
+#            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+#   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+#
+#  0. You just DO WHAT THE FUCK YOU WANT TO.
