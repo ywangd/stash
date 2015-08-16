@@ -9,7 +9,8 @@ constantly from the Pythonista community (especially from
 [@briarfox](https://github.com/briarfox),
 [@dgelessus](https://github.com/dgelessus),
 [@jsbain](https://github.com/jsbain), [@pudquick](https://github.com/pudquick),
-[@oefe](https://github.com/oefe) and [@cclauss](https://github.com/cclauss)).
+[@oefe](https://github.com/oefe), [@cclauss](https://github.com/cclauss) and
+[@georg.viehoever] (https://github.com/GeorgViehoever) ).
 
 StaSh stands for Pythoni**sta** **Sh**ell. While **Sta** may not be the best
 abbreviation for Pythonista, it forms a concise and meaningful word with the
@@ -181,41 +182,41 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   script collection will be gradually expanded should the need arise. It is
   also expected and appreciated that the community would come up with more
   scripts.
-    * `alias.py`
-    * `cat.py`
-    * `cd.py`
-    * `clear.py`
+    * `alias.py` - Define or print aliases
+    * `cat.py` - Print contents of file
+    * `cd.py` - Change current directory
+    * `clear.py` - Clear console
     * `copy.py` - Copy to iOS clipboard
-    * `cp.py`
+    * `cp.py` - Copy file
     * `crypt.py` - File encryption using AES in CBC mode
     * `cut.py` - Cut out selection portions of each line of a file
-    * `echo.py`
+    * `echo.py` - Output text to console
     * `edit.py` - Open any text type files in Pythonista editor
     * `find.py` - Powerful file searching tool
     * `git.py` - Git client ported from shellista
-    * `grep.py`
+    * `grep.py` - search contents of file(s)
     * `httpserver.py` - A simple HTTP server with upload function (ripped from
       https://gist.github.com/UniIsland/3346170)
-    * `ls.py`
+    * `ls.py` - List files
     * `mail.py` - Send emails with optional file attachment
     * `man.py` - Show help message (docstring) of a given command
     * `md5sum.py` - Print or check MD5 checksums
-    * `mkdir.py`
-    * `mv.py`
+    * `mkdir.py` - Create directory
+    * `mv.py` - Move file
     * `openin.py` - Show the **open in** dialog to open a file in external apps.
     * `paste.py` - Paste from iOS clipboard
     * `pip.py` - Search, download, install, update and uninstall pure Python
       packages from PyPI.
     * `printenv.py` - List environment variables
     * `printhex.py` - Print hexadecimal dump of the given file 
-    * `pwd.py`
+    * `pwd.py` - Print current directory
     * `python.py` - Run python scripts or modules
     * `quicklook.py` - iOS quick look for files of known types
-    * `rm.py`
+    * `rm.py` - delete (remove) file
     * `scp.py` - Copy files from/to remote servers. 
     * `sha1sum.py` - Print of check SHA1 checksums
     * `sha256sum.py` - Print of check SHA256 checksums
-    * `sort.py`
+    * `sort.py` - Sort a list, also see unique
     * `source.py` - Evaluate a script in the current environment
     * `ssh.py` - SSH client to either execute a command or spawn an interactive
       session on remote servers. [pyte](https://github.com/selectel/pyte) is
@@ -225,14 +226,15 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `stashconf.py` - Change StaSh configuration on the fly
     * `tar.py` - Manipulate archive files
     * `touch.py` - Update timestamp of the given file or create it if not exist
-    * `uniq.py`
-    * `unzip.py`
+    * `uniq.py` - Remove duplicates from list, also see sort
+    * `unzip.py` - Unzip file, also see zip
     * `version.py` - Show StaSh installation and version information
     * `wc.py` - Line, word, character counting
-    * `wget.py`
+    * `wget.py` - get data from the net
     * `which.py` - Find the exact path to a command script
+    * `wol.py`- Wake on LAN using MAC address for launching a sleeping system
     * `xargs.py` - Command constructing and executing utility
-    * `zip.py`
+    * `zip.py` - Zip file, also see unzip
 
 * One StaSh script, `selfupdate.sh`, is provided to download the latest zip from
   GitHub and extract it locally to update corresponding files. 
