@@ -159,15 +159,19 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   called `BIN_PATH` as `PATH` is used by the system. The default `BIN_PATH` is
   `~/Documents/bin:$STASH_ROOT/bin`.
 
-* The executable files are either Python scripts or StaSh scripts, with `.py`
-  and `.sh` extensions respectively. Note the extensions are important as StaSh
-  relies on them to tell the file type and whether the file is executable. 
+* The executable files are either Python scripts or StaSh scripts. The type of
+  script is determined by first looking at the first line of the file - following the common
+  UNIX/Linux convention of determining the type of a script by specifying a line
+  with `#!pathToInterpreterExecutable`. If the first line contains
+  `#! ... python...`, it is considered a python script, if it is `#! ... bash...`, it is
+  a shell script.  If this does not work, the file name extensions `.py`
+  and `.sh` respectively are considered. Default is shell script.
   * When
   Invoking a script, you can omit the extension, StaSh will try find the file
   with one of the extensions. For an example, StaSh interprets the command
   `selfupdate` and find the file `selfupdate.sh` to execute.
-  * Note a file without extension is considered as a shell script. It just
-    won't show up as an auto-completion possibility.
+  * Note a file without "#!" or extension is considered as a shell script.
+  * Files without extension won't show up as an auto-completion possibility.
 
 * Command can only be written in a single line. No line continuation is
   available. However, multiple commands can be written in a single line by
@@ -176,8 +180,8 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
 * There are many Python scripts provided along with StaSh (special thanks to
   [@briarfox](https://github.com/briarfox),
   [@dgelessus](https://github.com/dgelessus) and
-  [@jsbain](https://github.com/jsbain). These scripts range from performing
-  regular shell tasks to advanced utilities like `ssh`and `git`. Note the
+  [@jsbain](https://github.com/jsbain)). These scripts range from performing
+  regular shell tasks to advanced utilities like `ssh` and `git`. Note the
   scripts are by no means complete when compared to a real Linux shell. The
   script collection will be gradually expanded should the need arise. It is
   also expected and appreciated that the community would come up with more

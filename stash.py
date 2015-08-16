@@ -1114,6 +1114,34 @@ class ShRuntime(object):
         worker.start()
         return worker
 
+    @staticmethod
+    def _decideScriptOrPy(fileName):
+        """ decide if this is a python or a shell file
+        :returns '.py' if python, '.sh' if shell, throws ValueError otherwise
+        """
+        import re
+        shId='.sh'
+        pyId='.py'
+        # decide based on first line in file with #!
+        try:
+            with open(fileName) as f:
+                firstLine=f.readline()
+            if re.match('^#!.*python.*',firstLine):
+                return pyId
+            elif re.match('^#!.*bash.*',firstLine):
+                return shId
+        except:
+            # cannot read file. continue based on suffix
+            pass
+        # traditional determination by file suffix
+        if fileName.endswith('.py'):
+            return pyId
+        if fileName.endswith('.sh'):
+            return shId
+        # currently always return .sh as default, as was done previously
+        return shId
+        raise ValueError("unknown filetype of file {0}".format(fileName))
+
     def run_pipe_sequence(self, pipe_sequence, final_ins=None, final_outs=None, final_errs=None):
         _debug_runtime(str(pipe_sequence))
 
@@ -1180,11 +1208,13 @@ class ShRuntime(object):
                     else:
                         simple_command_args = simple_command.args
 
-                    if script_file.endswith('.py'):
+                    fileType=self._decideScriptOrPy(script_file)
+                    if fileType=='.py':
                         self.exec_py_file(script_file, simple_command_args, ins, outs, errs)
-
-                    else:
+                    elif fileType=='.sh':
                         self.exec_sh_file(script_file, simple_command_args, ins, outs, errs)
+                    else:
+                        raise ValueError("Could not determine file type of {0}".format(script_file))
 
                 else:
                     self.envars['?'] = 0
