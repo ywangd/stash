@@ -1218,7 +1218,7 @@ class ShRuntime(object):
         if 'PYTHONPATH' in self.envars.keys():
             try:
                 idxdot = sys.path.index('.') + 1
-            except IndexError:
+            except ValueError:
                 idxdot = 0
             for pth in self.envars['PYTHONPATH'].split(':'):
                 sys.path.insert(idxdot, os.path.expanduser(pth))
