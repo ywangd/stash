@@ -4,7 +4,7 @@ StaSh - Shell for Pythonista
 
 https://github.com/ywangd/stash
 """
-__version__ = '0.4.3'
+__version__ = '0.4.4'
 
 import ast
 import functools
@@ -833,6 +833,7 @@ _DEFAULT_RC = r"""
 PROMPT='[\W]$ '
 BIN_PATH=~/Documents/bin:$BIN_PATH
 SELFUPDATE_BRANCH=master
+PYTHONPATH=$STASH_ROOT/lib
 alias env='printenv'
 alias logout='echo "Use the close button in the upper right corner to exit StaSh."'
 alias help='man'
@@ -1212,9 +1213,15 @@ class ShRuntime(object):
         if args is None:
             args = []
 
-        # Prepend any user set python paths
+        sys.path = _SYS_PATH[:]
+        # Add any user set python paths right after the dot or at the begining
         if 'PYTHONPATH' in self.envars.keys():
-            sys.path = [os.path.expanduser(pth) for pth in self.envars['PYTHONPATH'].split(':')] + _SYS_PATH
+            try:
+                idxdot = sys.path.index('.') + 1
+            except IndexError:
+                idxdot = 0
+            for pth in self.envars['PYTHONPATH'].split(':'):
+                sys.path.insert(idxdot, os.path.expanduser(pth))
 
         try:
             if ins:
