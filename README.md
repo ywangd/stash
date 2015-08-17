@@ -160,17 +160,11 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   `~/Documents/bin:$STASH_ROOT/bin`.
 
 * The executable files are either Python scripts or StaSh scripts. The type of
-  script is determined by first looking at the first line of the file - following the common
-  UNIX/Linux convention of determining the type of a script by specifying a line
-  with `#!pathToInterpreterExecutable`. If the first line contains
-  `#! ... python...`, it is considered a python script, if it is `#! ... bash...`, it is
-  a shell script.  If this does not work, the file name extensions `.py`
-  and `.sh` respectively are considered. Default is shell script.
-  * When
-  Invoking a script, you can omit the extension, StaSh will try find the file
+  script is determined by looking at the file extensions ".py" and ".sh".
+  A file without extension is considered a  shell script.
+  * When invoking a script, you can omit the extension, StaSh will try find the file
   with one of the extensions. For an example, StaSh interprets the command
   `selfupdate` and find the file `selfupdate.sh` to execute.
-  * Note a file without "#!" or extension is considered as a shell script.
   * Files without extension won't show up as an auto-completion possibility.
 
 * Command can only be written in a single line. No line continuation is
