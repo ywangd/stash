@@ -40,23 +40,14 @@ import sys
 import os
 import os.path
 
-# manipulate sys.path to include stash lib directory (where wakeonlan is found)
-# and have stdlib before .
-pythonLibPath=os.path.join(os.path.split(sys.executable)[0],'lib')
-sys.path.insert(0,pythonLibPath)
-
-try:
-    # while running in stash environment
-    stashLibPath=os.path.join(_stash.runtime.envars['STASH_ROOT'] ,'lib')
-except NameError:
-    # while running on PC
-    stashLibPath=os.path.join(os.environ['STASH_ROOT'],'lib')
-if not stashLibPath in sys.path:
+if sys.platform=="win32":
+    #for tests on Windows
+    stashLibPath=os.path.join(os.environ['STASH_ROOT'] ,'lib')
     sys.path.insert(0,stashLibPath)
+    sys.path.remove(os.getcwd())
 
 import argparse
 from wakeonlan import wol
-
 
 parser = argparse.ArgumentParser(
     description="""Wake one or more computers using the wake on lan protocol.
