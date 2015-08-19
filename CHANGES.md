@@ -1,5 +1,22 @@
 # Change Log #
 
+### Version 0.4.x
+* Improvements
+    * Added `launch_stash.py` to run StaSh in a way that can survive through
+      "global variable clearing" in Pythonista.
+
+* Command Scripts
+    * New scripts
+        - `wol.py` - Wake computer on LAN
+    * Changed scripts
+        - `pbcopy.py` - renamed from `copy.py` to avoid name conflict and to be consistent with the OSX tool.
+        - `pbpaste.py` - renamed from `paste.py`.
+        
+* Bug Fixes
+    * `sys.path` is now correctly restored at command scripts exit.
+    * Change directory no longer crashes when accessing folders inaccessible.
+        
+
 ### Version 0.4.1 - 2015-03-06
 * New Features
     * StaSh now provides localized input history for running scripts.

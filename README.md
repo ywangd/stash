@@ -184,7 +184,6 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `cat.py` - Print contents of file
     * `cd.py` - Change current directory
     * `clear.py` - Clear console
-    * `copy.py` - Copy to iOS clipboard
     * `cp.py` - Copy file
     * `crypt.py` - File encryption using AES in CBC mode
     * `cut.py` - Cut out selection portions of each line of a file
@@ -202,7 +201,8 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `mkdir.py` - Create directory
     * `mv.py` - Move file
     * `openin.py` - Show the **open in** dialog to open a file in external apps.
-    * `paste.py` - Paste from iOS clipboard
+    * `pbcopy.py` - Copy to iOS clipboard
+    * `pbpaste.py` - Paste from iOS clipboard
     * `pip.py` - Search, download, install, update and uninstall pure Python
       packages from PyPI.
     * `printenv.py` - List environment variables

@@ -17,7 +17,7 @@ def main(args):
     try:
         clipboard.set(''.join(line for line in fileinput.input(ns.file)))
     except Exception as err:
-        print("copy: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+        print("pbcopy: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
     finally:
         fileinput.close()
 

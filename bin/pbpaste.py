@@ -16,14 +16,14 @@ def main(args):
     
     if ns.file:
         if os.path.exists(ns.file):
-            print("paste: {}: file exists".format(ns.file), file=sys.stderr)
+            print("pbpaste: {}: file exists".format(ns.file), file=sys.stderr)
             status = 1
         else:
             try:
                 with open(ns.file, 'w') as f:
                     f.write(clipboard.get())
             except Exception as err:
-                print("paste: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+                print("pbpaste: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
     else:
         print(clipboard.get())
     
