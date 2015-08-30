@@ -182,7 +182,7 @@ def _confirm_dangerous():
             force=raw_input('WARNING: there are uncommitted modified files and/or staged changes. These could be overwritten by this command. Continue anyway? [y/n] ')
             if not force=='y':
                 raise Exception('User cancelled dangerous operation')
-                
+              
 def unstage(commit='HEAD',paths=[]):
     repo=_get_repo().repo
     for somepath in paths:
@@ -261,6 +261,7 @@ def git_remote(args):
             print key, value
     elif len(args)==2:
         repo=_get_repo()
+        checkurl(args[1])
         repo.add_remote(args[0],args[1])
     else:
         print command_help['remote']
@@ -426,13 +427,17 @@ def git_commit(args):
                 pass  #todo, just no such file
     except:
         print 'commit Error: {0}'.format(sys.exc_value)
-
+        
+def checkurl(url):
+   valid_schemes=['git','http','https']
+   if not urlparse.urlparse(url).scheme in valid_schemes:
+      raise Exception('url argument should either reference a remote name, or start with ' + 'or '.join(valid_schemes)) 
     
 
 def git_clone(args):
     if len(args) > 0:
         url = args[0]
-
+        checkurl(url)
         repo = Gittle.clone(args[0], args[1] if len(args)>1 else '.', bare=False)
 
         #Set the origin
@@ -447,11 +452,11 @@ def git_pull(args):
         repo = _get_repo()
         _confirm_dangerous()
         url = args[0] if len(args)==1 else repo.remotes.get('origin','')
-        
+
         if url in repo.remotes:
             origin=url
             url=repo.remotes.get(origin)
-        
+        checkurl(url)
         if url:
             repo.pull(origin_uri=url)
         else:
@@ -475,8 +480,7 @@ def git_fetch(args):
     if result.url in repo.remotes:
         origin=result.url
         result.url=repo.remotes.get(origin)
-    if not urlparse.urlparse(result.url).scheme:
-        raise Exception('url must match a remote name, or must start with http:// or https://')
+    checkurl(result.url)
     remote_refs=porcelain.fetch(repo.repo.path,result.url)
 
     remote_tags = gittle.utils.git.subrefs(remote_refs, 'refs/tags')
@@ -527,7 +531,7 @@ def git_push(args):
     if result.url in repo.remotes:
         origin=result.url
         result.url=repo.remotes.get(origin)
-
+    checkurl(result.url)
     branch_name = os.path.join('refs','heads', repo.active_branch)  #'refs/heads/%s' % repo.active_branch
 
     print "Attempting to push to: {0}, branch: {1}".format(result.url, branch_name)
