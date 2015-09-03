@@ -839,6 +839,8 @@ alias logout='echo "Use the close button in the upper right corner to exit StaSh
 alias help='man'
 alias la='ls -a'
 alias ll='ls -la'
+alias copy='pbcopy'
+alias paste='pbpaste'
 """
 
 class ShRuntime(object):
