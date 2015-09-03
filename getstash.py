@@ -72,17 +72,18 @@ with open(TEMP_ZIPFILE, 'rb') as ins:
 print 'Preparing the folder structure ...'
 shutil.move(os.path.join(TARGET_DIR, 'launch_stash.py'),
             os.path.join(BASE_DIR, 'Documents/launch_stash.py'))
-shutil.rmtree(os.path.join(TARGET_DIR, 'tests'))
 
-unwanted_files = ['getstash.py', 'run_tests.py', 'testing.py',
-                  'dummyui.py', 'dummyconsole.py',
-                  'bin/pcsm.py', 'bin/bh.py', 'bin/pythonista.py', 'bin/cls.py']
+try:
+    shutil.rmtree(os.path.join(TARGET_DIR, 'tests'))
 
-for fname in unwanted_files:
-    try:
+    unwanted_files = ['getstash.py', 'run_tests.py', 'testing.py', 
+                      'dummyui.py', 'dummyconsole.py', 
+                      'bin/pcsm.py', 'bin/bh.py', 'bin/pythonista.py', 'bin/cls.py']
+
+    for fname in unwanted_files:
         os.remove(os.path.join(TARGET_DIR, fname))
-    except:
-        pass
+except:
+    pass
 
 if not _IS_UPDATE:
     print 'Installation completed.'
