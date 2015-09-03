@@ -70,7 +70,7 @@ with open(TEMP_ZIPFILE, 'rb') as ins:
         sys.exit(1)
 
 print 'Preparing the folder structure ...'
-shutil.move(os.path.join(TARGET_DIR, 'launch_stash.py'),
+shutil.copy(os.path.join(TARGET_DIR, 'launch_stash.py'),
             os.path.join(BASE_DIR, 'Documents/launch_stash.py'))
 
 try:
