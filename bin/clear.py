@@ -1,2 +1,2 @@
 """Clear the stash console output window"""
-_stash.term.truncate(size=0)
+_stash.stream.feed(u'\u009b2J')

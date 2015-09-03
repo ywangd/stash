@@ -1,0 +1,35 @@
+title: User Input
+participant User [icon=human]
+User->TvDelegate: type text
+TvDelegate->MiniBuffer: feed(range, replacement)
+MiniBuffer->MiniBuffer: adjust_range
+MiniBuffer->MainScreen: lock
+MiniBuffer->MainScreen: ensure consistency
+alt: [range span > 1]
+    MiniBuffer->MiniBuffer: delete
+    MiniBuffer->MainScreen: delete
+end
+MiniBuffer->MainScreen: release lock
+alt: [replacement == '']
+    MiniBuffer->Renderer: render
+elsealt: [replacement == '\\t']
+    MiniBuffer->Completer: complete
+    MiniBuffer->MainScreen: lock
+    MiniBuffer->MiniBuffer: modify chars
+    MiniBuffer->MainScreen: draw chars
+    MiniBuffer->MainScreen: release lock
+    MiniBuffer->Renderer: render
+else:
+    MiniBuffer->MainScreen: lock
+    MiniBuffer->MiniBuffer: add chars
+    MiniBuffer->MainScreen: draw chars
+    MiniBuffer->MainScreen: release lock
+    MiniBuffer->Renderer: render
+    alt: [chars contains '\\0' or '\\n']
+        MiniBuffer->IO: push chars
+        MiniBuffer->Runtime: callback
+        Runtime-->>Right: execute command
+    end
+end
+MiniBuffer-->TvDelegate: done
+TvDelegate-->User:

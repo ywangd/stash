@@ -8,6 +8,7 @@ This module builds on BaseHTTPServer by implementing the standard GET
 and HEAD requests in a fairly straightforward manner.
 """
 
+from __future__ import absolute_import
 
 __version__ = "0.1"
 __all__ = ["SimpleHTTPRequestHandler"]
@@ -291,6 +292,7 @@ def main(port=8000):
     
     try:
         print 'Serving HTTP on 0.0.0.0 port %d ...' % port
+        print 'local IP address is %s' % _stash.libcore.get_lan_ip()
         server.serve_forever()
 
     except KeyboardInterrupt:

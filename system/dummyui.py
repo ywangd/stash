@@ -5,6 +5,9 @@ Stub ui to allow debug on PC
 AUTOCAPITALIZE_NONE = 0
 
 
+def measure_string(*args, **kwargs):
+    return 12.0
+
 def in_background(func):
     return func
 

@@ -65,7 +65,7 @@ def open_editor(file=''):
         editor.open_file(os.getcwd()+'/'+file)
         console.hide_output()
     else:
-        print 'File not found.'
+        editor.make_new_file(file if file else 'untitled.py')
         
 if __name__=='__main__':
     if args.temp and args.file:

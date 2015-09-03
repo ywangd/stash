@@ -11,6 +11,8 @@ import console
 import sys
 import ui
 
+from objc_util import on_main_thread
+
 
 class ConsoleQuicklook(object):
 
@@ -20,18 +22,9 @@ class ConsoleQuicklook(object):
         ns = p.parse_args(args)
         self.filename = ns.file
 
-    @ui.in_background
-    def preamble(self):
-        print('WARNING: Do not switch window or Pythonista may freeze')
-        print('Opening %s ...' % self.filename)
-
-    @ui.in_background
-    def _quicklook(self):
-        console.quicklook(self.filename)
-
+    @on_main_thread
     def quicklook(self):
-        self.preamble()
-        ui.delay(self._quicklook, 1)
+        console.quicklook(self.filename)
 
 
 if __name__ == "__main__":

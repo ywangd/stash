@@ -126,8 +126,8 @@ class StashSSH(object):
                 break
             count -=1
         text = '\n'.join(self.screen.display[:count]).rstrip() + ' '
-        self.stash.term.truncate(0, flush=False)
-        self.stash.term.write(text)
+        _stash.stream.feed(u'\u009b2J', render_it=False)
+        _stash.stream.feed(text, no_wait=True)
 
     def single_exec(self,command):
         sin,sout,serr = self.ssh.exec_command(command)
@@ -197,11 +197,8 @@ class StashSSH(object):
         
         
     def interactive(self):
-        self.transport = self.ssh.get_transport()
-        self.chan = self.transport.open_session()
-        self.chan.get_pty()
+        self.chan = self.ssh.invoke_shell()
         self.chan.set_combine_stderr(True)
-        self.chan.exec_command('bash -s')
         t1 = threading.Thread(target=self.stdout_thread)
         t1.start()
         while True:
@@ -240,6 +237,8 @@ class StashSSH(object):
         
     def exit(self):
         self.ssh_running = False
+        self.chan.close()
+        self.ssh.close()
 
         
 if __name__=='__main__':

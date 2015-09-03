@@ -5,4 +5,4 @@ python:
 install:
   - "pip install pyparsing==2.0.1"
 # command to run tests
-script: python testing.py -v
+script: python run_tests.py -v

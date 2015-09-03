@@ -9,8 +9,8 @@ import os
 import sys
 
 def bin_paths():
-	return os.environ["BIN_PATH"].split(os.pathsep)
-	
+    return os.environ["BIN_PATH"].split(os.pathsep)
+
 def all_commands():
     cmds = []
     for path in bin_paths():
@@ -29,7 +29,7 @@ def find_command(cmd):
         if os.path.exists(path) and cmd + ".py" in os.listdir(path):
             return os.path.join(path, cmd + ".py")
     return None
-	
+
 def get_docstring(filename):
     with open(filename) as f:
         tree = ast.parse(f.read(), os.path.basename(filename))
@@ -38,7 +38,7 @@ def get_docstring(filename):
 def get_summary(filename):
     docstring = get_docstring(filename)
     return docstring.splitlines()[0] if docstring else ''
-		
+
 def main(args):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("cmd", nargs="?", help="the command to get the docstring from")
@@ -50,7 +50,7 @@ def main(args):
             if raw_input("List all {} commands?".format(len(cmds))).strip().lower() not in ("y", "yes"):
                 sys.exit(0)
         for cmd in cmds:
-            print('{:>10}: {}'.format(cmd, get_summary(find_command(cmd))))
+            print(_stash.text_bold('{:>10}: '.format(cmd)) + get_summary(find_command(cmd)))
     else:
         filename = find_command(ns.cmd)
         

@@ -1,63 +1,121 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 """
-StaSh - Shell for Pythonista
+StaSh - Pythonista Shell
 
 https://github.com/ywangd/stash
 """
-__version__ = '0.4.4'
 
-import ast
+__version__ = '0.5.0'
+
+import os
+import sys
+import weakref
+from ConfigParser import ConfigParser
+from StringIO import StringIO
 import functools
 import glob
-import os
+import ast
+import imp as pyimp  # rename to avoid name conflict with objc_util
 import string
-import sys
 import threading
-import time
-import imp
-import argparse
+import logging
+import logging.handlers
 
 import pyparsing as pp
 
-from ConfigParser import ConfigParser
-from StringIO import StringIO
-
+# Detecting environments
+IN_PYTHONISTA = True
 try:
     import ui
     import console
-    _IN_PYTHONISTA = True
 except ImportError:
-    import dummyui as ui
-    import dummyconsole as console
-    _IN_PYTHONISTA = False
+    import system.dummyui as ui
+    import system.dummyconsole as console
+    IN_PYTHONISTA = False
+
+PYTHONISTA_VERSION = '1.6'
+try:
+    from objc_util import *
+except ImportError:
+    from system.dummyobjc_util import *
+    PYTHONISTA_VERSION = '1.5'
+
+from platform import platform
+if platform().find('iPad') != -1:
+    ON_IPAD = True
+else:
+    ON_IPAD = False
 
 
-_STDIN = sys.stdin
-_STDOUT = sys.stdout
-_STDERR = sys.stderr
+from system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
+
+from system.shstreams import ShMiniBuffer, ShStream
+from system.shscreens import ShSequentialScreen, ShSequentialRenderer
+from system.shui import ShUI
+from system.shio import ShIO
+
+# Save the true IOs
+_SYS_STDOUT = sys.stdout
+_SYS_STDERR = sys.stderr
+_SYS_STDIN = sys.stdin
 _SYS_PATH = sys.path
 _OS_ENVIRON = os.environ
 
-APP_DIR = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
+# Setup logging
+LOGGER = logging.getLogger('StaSh')
 
-_STARTUP_OPTIONS = argparse.Namespace(
-    debug_parser=False,
-    debug_completer=False,
-    debug_runtime=False,
-    debug_console=False,
-    no_rcfile=False)
+# Debugging constants
+_DEBUG_STREAM = 200
+_DEBUG_RENDERER = 201
+_DEBUG_MAIN_SCREEN = 202
+_DEBUG_MINI_BUFFER = 203
+_DEBUG_IO = 204
+_DEBUG_UI = 300
+_DEBUG_TERMINAL = 301
+_DEBUG_TV_DELEGATE = 302
+_DEBUG_RUNTIME = 400
+_DEBUG_PARSER = 401
+_DEBUG_EXPANDER = 402
+_DEBUG_COMPLETER = 403
 
-def _debug_parser(msg):
-    if _STARTUP_OPTIONS.debug_parser:
-        _STDOUT.write(msg if msg.endswith('\n') else (msg + '\n'))
+_STASH_ROOT = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
+# Resource files
+_STASH_CONFIG_FILE = '.stash_config'
+_STASH_RCFILE = '.stashrc'
+_STASH_HISTORY_FILE = '.stash_history'
 
-def _debug_completer(msg):
-    if _STARTUP_OPTIONS.debug_completer:
-        _STDOUT.write(msg if msg.endswith('\n') else (msg + '\n'))
+# Default configuration (can be overridden by external configuration file)
+_DEFAULT_CONFIG = """[system]
+py_traceback=0
+py_pdb=0
+input_encoding_utf8=1
+ipython_style_history_search=1
 
-def _debug_runtime(msg):
-    if _STARTUP_OPTIONS.debug_runtime:
-        _STDOUT.write(msg if msg.endswith('\n') else (msg + '\n'))
+[display]
+TEXT_FONT_SIZE={text_size}
+BUTTON_FONT_SIZE=14
+BACKGROUND_COLOR=(0.0, 0.0, 0.0)
+TEXT_COLOR=(1.0, 1.0, 1.0)
+TINT_COLOR=(0.0, 0.0, 1.0)
+INDICATOR_STYLE=white
+HISTORY_MAX=50
+BUFFER_MAX=150
+AUTO_COMPLETION_MAX=50
+VK_SYMBOLS=~/.-*|>$'=!&_"\?`
+""".format(text_size=14 if ON_IPAD else 12)
+
+# Default .stashrc file
+_DEFAULT_RC = r"""BIN_PATH=~/Documents/bin:$BIN_PATH
+SELFUPDATE_BRANCH=master
+PYTHONPATH=$STASH_ROOT/lib
+alias env='printenv'
+alias logout='echo "Use the close button in the upper right corner to exit StaSh."'
+alias help='man'
+alias la='ls -a'
+alias ll='ls -la'
+alias copy='pbcopy'
+alias paste='pbpaste'
+"""
 
 
 class ShFileNotFound(Exception):
@@ -75,17 +133,14 @@ class ShEventNotFound(Exception):
 class ShBadSubstitution(Exception):
     pass
 
+class ShSyntaxError(Exception):
+    pass
+
 class ShInternalError(Exception):
     pass
 
 class ShKeyboardInterrupt(Exception):
     pass
-
-
-def sh_delay(func, nseconds):
-    t = threading.Timer(nseconds, func)
-    t.start()
-    return t
 
 def sh_background(name=None):
     def wrap(func):
@@ -191,6 +246,8 @@ class ShToken(object):
     _PIPE_OP = '_PIPE_OP'
     _IO_REDIRECT_OP = '_IO_REDIRECT_OP'
     _ESCAPED = '_ESCAPED'
+    _ESCAPED_OCT = '_ESCAPED_OCT'
+    _ESCAPED_HEX = '_ESCAPED_HEX'
     _UQ_WORD = '_UQ_WORD'
     _BQ_WORD = '_BQ_WORD'
     _DQ_WORD = '_DQ_WORD'
@@ -219,14 +276,25 @@ class ShParser(object):
     _NEXT_WORD_VAL = '_NEXT_WORD_VAL'  # rhs of assignment
     _NEXT_WORD_FILE = '_NEXT_WORD_FILE'
 
-    def __init__(self):
+    def __init__(self, debug=False):
+
+        self.debug = debug
+        self.logger = logging.getLogger('StaSh.Parser')
 
         escaped = pp.Combine("\\" + pp.Word(pp.printables + ' ', exact=1)).setParseAction(self.escaped_action)
+        escaped_oct = pp.Combine(
+            "\\" + pp.Word('01234567', max=3)
+        ).setParseAction(self.escaped_oct_action)
+        escaped_hex = pp.Combine(
+            "\\x" + pp.Word('0123456789abcdefABCDEF', exact=2)
+        ).setParseAction(self.escaped_hex_action)
         uq_word = pp.Word(_word_chars).setParseAction(self.uq_word_action)
         bq_word = pp.QuotedString('`', escChar='\\', unquoteResults=False).setParseAction(self.bq_word_action)
         dq_word = pp.QuotedString('"', escChar='\\', unquoteResults=False).setParseAction(self.dq_word_action)
         sq_word = pp.QuotedString("'", escChar='\\', unquoteResults=False).setParseAction(self.sq_word_action)
-        word = pp.Combine(pp.OneOrMore(escaped ^ uq_word ^ bq_word ^ dq_word ^ sq_word))\
+        # The ^ operator means longest match (as opposed to | which means first match)
+        word = pp.Combine(pp.OneOrMore(escaped ^ escaped_oct ^ escaped_hex
+                                       ^ uq_word ^ bq_word ^ dq_word ^ sq_word))\
             .setParseAction(self.word_action)
 
         identifier = pp.Word(pp.alphas + '_', pp.alphas + pp.nums + '_').setParseAction(self.identifier_action)
@@ -262,7 +330,7 @@ class ShParser(object):
         # --- special parser for inside double quotes
         uq_word_in_dq = pp.Word(pp.printables.replace('`', ' ').replace('\\', ''))\
             .setParseAction(self.uq_word_action)
-        word_in_dq = pp.Combine(pp.OneOrMore(escaped ^ bq_word ^ uq_word_in_dq))
+        word_in_dq = pp.Combine(pp.OneOrMore(escaped ^ escaped_oct ^ escaped_hex ^ bq_word ^ uq_word_in_dq))
         # ---
 
         self.parser = complete_command.parseWithTabs().ignore(pp.pythonStyleComment)
@@ -272,6 +340,8 @@ class ShParser(object):
         self.parts = []
 
     def parse(self, line):
+        if self.debug:
+            self.logger.debug('line: %s' % repr(line))
         self.next_word_type = ShParser._NEXT_WORD_CMD
         self.tokens = []
         self.parts = []
@@ -287,40 +357,59 @@ class ShParser(object):
 
     def identifier_action(self, s, pos, toks):
         """ This function is only needed for debug """
-        _debug_parser('identifier: %d, %s' % (pos, toks[0]))
+        if self.debug:
+            self.logger.debug('identifier: %d, %s' % (pos, toks[0]))
 
     def assign_op_action(self, s, pos, toks):
-        _debug_parser('assign_op: %s' % toks[0])
+        if self.debug:
+            self.logger.debug(toks[0])
         self.next_word_type = ShParser._NEXT_WORD_VAL
 
     def assignment_word_action(self, s, pos, toks):
-        _debug_parser('assignment_word: %s' % toks[0])
+        if self.debug:
+            self.logger.debug(toks[0])
         self.add_token(toks[0], pos, ShToken._ASSIGN_WORD, self.parts)
         self.parts = []
         self.next_word_type = ShParser._NEXT_WORD_CMD
 
     def escaped_action(self, s, pos, toks):
-        _debug_parser('escaped: %s' % toks[0])
+        if self.debug:
+            self.logger.debug(toks[0])
         self.add_part(toks[0], pos, ShToken._ESCAPED)
 
+    def escaped_oct_action(self, s, pos, toks):
+        if self.debug:
+            self.logger.debug(toks[0])
+        self.add_part(toks[0], pos, ShToken._ESCAPED_OCT)
+
+    def escaped_hex_action(self, s, pos, toks):
+        if self.debug:
+            self.logger.debug(toks[0])
+        self.add_part(toks[0], pos, ShToken._ESCAPED_HEX)
+
     def uq_word_action(self, s, pos, toks):
-        _debug_parser('uq_word: %s' % toks[0])
+        if self.debug:
+            self.logger.debug(toks[0])
         self.add_part(toks[0], pos, ShToken._UQ_WORD)
 
     def bq_word_action(self, s, pos, toks):
-        _debug_parser('bq_word: %s' % toks[0])
+        if self.debug:
+            self.logger.debug(toks[0])
         self.add_part(toks[0], pos, ShToken._BQ_WORD)
 
     def dq_word_action(self, s, pos, toks):
-        _debug_parser('dq_word: %s' % toks[0])
+        if self.debug:
+            self.logger.debug(toks[0])
         self.add_part(toks[0], pos, ShToken._DQ_WORD)
 
     def sq_word_action(self, s, pos, toks):
-        _debug_parser('sq_word: %s' % toks[0])
+        if self.debug:
+            self.logger.debug(toks[0])
         self.add_part(toks[0], pos, ShToken._SQ_WORD)
 
     def word_action(self, s, pos, toks):
-        _debug_parser('word: %s' % toks[0])
+        if self.debug:
+            self.logger.debug(toks[0])
 
         if self.next_word_type == ShParser._NEXT_WORD_VAL:
             self.parts = ShToken(toks[0], pos, ShToken._WORD, self.parts)
@@ -340,7 +429,8 @@ class ShParser(object):
             self.next_word_type = None
 
     def cmd_word_action(self, s, pos, toks):
-        _debug_parser('cmd_word: %s' % toks[0])
+        if self.debug:
+            self.logger.debug(toks[0])
         # toks[0] is the whole cmd_word while parts do not include leading modifier if any
         self.add_token(toks[0], pos, ShToken._CMD, self.parts)
         self.next_word_type = None
@@ -348,17 +438,20 @@ class ShParser(object):
 
     def punctuator_action(self, s, pos, toks):
         if self.tokens[-1].ttype != ShToken._PUNCTUATOR and self.tokens[-1].spos != pos:
-            _debug_parser('punctuator: %s' % toks[0])
+            if self.debug:
+                self.logger.debug(toks[0])
             self.add_token(toks[0], pos, ShToken._PUNCTUATOR)
             self.next_word_type = ShParser._NEXT_WORD_CMD
 
     def pipe_op_action(self, s, pos, toks):
-        _debug_parser('pipe_op: %s' % toks[0])
+        if self.debug:
+            self.logger.debug(toks[0])
         self.add_token(toks[0], pos, ShToken._PIPE_OP)
         self.next_word_type = ShParser._NEXT_WORD_CMD
 
     def io_redirect_op_action(self, s, pos, toks):
-        _debug_parser('io_redirect_op: %s' % toks[0])
+        if self.debug:
+            self.logger.debug(toks[0])
         self.add_token(toks[0], pos, ShToken._IO_REDIRECT_OP)
         self.next_word_type = ShParser._NEXT_WORD_FILE
 
@@ -372,13 +465,18 @@ class ShParser(object):
 # noinspection PyProtectedMember
 class ShExpander(object):
 
-    def __init__(self, runtime):
-        self.runtime = runtime
+    def __init__(self, stash, debug=False):
+        self.stash = stash
+        self.debug = debug
+        self.logger = logging.getLogger('StaSh.Expander')
 
     def expand(self, line):
 
+        if self.debug:
+            self.logger.debug('line: %s' % repr(line))
+
         # Parse the line
-        tokens, parsed = self.runtime.parser.parse(line)
+        tokens, parsed = self.stash.runtime.parser.parse(line)
 
         # History (bang) check
         tokens, parsed = self.history_subs(tokens, parsed)
@@ -390,6 +488,8 @@ class ShExpander(object):
 
         pseq_indices = range(0, len(parsed), 2)
         n_pipe_sequences = len(pseq_indices)
+
+        # First yield here to report a summary about incoming commands
         yield line, n_pipe_sequences  # line for history management
 
         # Start expanding
@@ -461,31 +561,39 @@ class ShExpander(object):
         history_found = False
         for t in tokens:
             if t.ttype == ShToken._CMD and t.tok.startswith('!'):
-                t.tok = self.runtime.search_history(t.tok)
+                t.tok = self.stash.runtime.search_history(t.tok)
                 history_found = True
         if history_found:
             # The line is set to the string with history replaced
             # Re-parse the line
             line = ' '.join(t.tok for t in tokens)
-            _debug_parser('history found: %s' % line)
-            tokens, parsed = self.runtime.parser.parse(line)
+            if self.debug:
+                self.logger.debug('history found: %s' % line)
+            tokens, parsed = self.stash.runtime.parser.parse(line)
         return tokens, parsed
 
     def alias_subs(self, tokens, parsed, exclude=None):
+        # commands have leading backslash will not be alias is expanded
+        # because an alias cannot begin with a backslash and the matching
+        # here is done using the whole word of the command, i.e. including
+        # any possible leading backslash or bang, e.g. \ls will not match
+        # any alias because it is not a valid alias form.
         alias_found = False
         for t in tokens:
-            if t.ttype == ShToken._CMD and t.tok in self.runtime.aliases.keys() and t.tok != exclude:
-                t.tok = self.runtime.aliases[t.tok][1]
+            if t.ttype == ShToken._CMD and t.tok in self.stash.runtime.aliases.keys() and t.tok != exclude:
+                t.tok = self.stash.runtime.aliases[t.tok][1]
                 alias_found = True
         if alias_found:
             # Replace all alias and re-parse the new line
             line = ' '.join(t.tok for t in tokens)
-            _debug_parser('alias found: %s' % line)
-            tokens, parsed = self.runtime.parser.parse(line)
+            if self.debug:
+                self.logger.debug('alias found: %s' % line)
+            tokens, parsed = self.stash.runtime.parser.parse(line)
         return tokens, parsed
 
     def expand_word(self, word):
-        _debug_parser('expand_word: %s' % word.tok)
+        if self.debug:
+            self.logger.debug(word.tok)
 
         words_expanded = []
         words_expanded_globable = []
@@ -494,6 +602,9 @@ class ShExpander(object):
         for i, p in enumerate(word.parts):
             if p.ttype == ShToken._ESCAPED:
                 ex, exg = self.expand_escaped(p.tok)
+
+            elif p.ttype in [ShToken._ESCAPED_OCT, ShToken._ESCAPED_HEX]:
+                ex, exg = self.expand_escaped_oct_or_hex(p.tok)
 
             elif p.ttype == ShToken._UQ_WORD:
                 if i == 0:  # first part in the word
@@ -539,36 +650,51 @@ class ShExpander(object):
         return fields
 
     def expand_escaped(self, tok):
-        _debug_parser('expand_escaped: %s' % tok)
+        # TODO: more escape characters, e.g. ESC
+        if self.debug:
+            self.logger.debug(tok)
 
         c = tok[1]
         if c == 't':
-            return '\t', '\t'
+            return u'\t', u'\t'
         elif c == 'r':
-            return '\r', '\r'
+            return u'\r', u'\r'
         elif c == 'n':
-            return '\n', '\n'
+            return u'\n', u'\n'
         elif c in '[]?*':
-            return c, '[%s]' % c
+            return c, u'[%s]' % c
         else:
             return c, c
 
+    def expand_escaped_oct_or_hex(self, tok):
+        if self.debug:
+            self.logger.debug(tok)
+
+        ret = tok.decode('unicode_escape')
+        return ret, ret
+
     def expand_uq_word(self, tok):
-        _debug_parser('expand_uq_word: %s' % tok)
+        if self.debug:
+            self.logger.debug(tok)
         s = self.expandvars(tok)
         return s
 
     def expand_sq_word(self, tok):
-        _debug_parser('expand_sq_word: %s' % tok)
+        if self.debug:
+            self.logger.debug(tok)
         return tok[1:-1], self.escape_wildcards(tok[1:-1])
 
     def expand_dq_word(self, tok):
-        _debug_parser('expand_dq_word: %s' % tok)
-        parts, parsed = self.runtime.parser.parse_within_dq(tok[1:-1])
+        if self.debug:
+            self.logger.debug(tok)
+        parts, parsed = self.stash.runtime.parser.parse_within_dq(tok[1:-1])
         ex = exg = ''
         for p in parts:
             if p.ttype == ShToken._ESCAPED:
                 ex1, exg1 = self.expand_escaped(p.tok)
+
+            elif p.ttype in [ShToken._ESCAPED_OCT, ShToken._ESCAPED_HEX]:
+                ex1, exg1 = self.expand_escaped_oct_or_hex(p.tok)
 
             elif p.ttype == ShToken._UQ_WORD:
                 ex1 = self.expand_uq_word(p.tok)
@@ -587,20 +713,22 @@ class ShExpander(object):
         return ex, exg
 
     def expand_bq_word(self, tok):
-        _debug_parser('expand_bq_word: %s' % tok)
+        if self.debug:
+            self.logger.debug(tok)
 
         outs = StringIO()
-        worker = self.runtime.run(tok[1:-1], final_outs=outs)
+        worker = self.stash.runtime.run(tok[1:-1], final_outs=outs)
         while worker.isAlive():
             pass
         ret = ' '.join(outs.getvalue().splitlines())
         return ret
 
     def expanduser(self, s):
-        _debug_parser('expanduser: %s' % s)
+        if self.debug:
+            self.logger.debug(s)
         saved_environ = os.environ
         try:
-            os.environ = self.runtime.envars
+            os.environ = self.stash.runtime.envars
             s = os.path.expanduser(s)
             # Command substitution is done by bq_word_action
             # Pathname expansion (glob) is done in word_action
@@ -609,11 +737,12 @@ class ShExpander(object):
         return s
 
     def expandvars(self, s):
-        _debug_parser('expandvars: %s' % s)
+        if self.debug:
+            self.logger.debug(s)
 
         saved_environ = os.environ
         try:
-            os.environ = self.runtime.envars
+            os.environ = self.stash.runtime.envars
 
             state = 'a'
             es = ''
@@ -646,7 +775,8 @@ class ShExpander(object):
                         if nextchar in '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz':
                             varname += nextchar
                         else:
-                            _debug_parser('envar sub: %s\n' % varname)
+                            if self.debug:
+                                self.logger.debug('envar sub: %s\n' % varname)
                             es += os.environ.get(varname, '') + nextchar
                             state = 'a'
 
@@ -667,7 +797,8 @@ class ShExpander(object):
 
             if state == '$':
                 if varname != '':
-                    _debug_parser('envar sub: %s\n' % varname)
+                    if self.debug:
+                        self.logger.debug('envar sub: %s\n' % varname)
                     es += os.environ.get(varname, '')
                 else:
                     es += '$'
@@ -678,7 +809,8 @@ class ShExpander(object):
             os.environ = saved_environ
 
         if s != es:
-            _debug_parser('expandvars: %s -> %s\n' % (repr(s), repr(es)))
+            if self.debug:
+                self.logger.debug('expandvars: %s -> %s\n' % (repr(s), repr(es)))
 
         return es
 
@@ -689,22 +821,25 @@ class ShExpander(object):
 # noinspection PyProtectedMember
 class ShCompleter(object):
 
-    def __init__(self, app):
-        self.app = app
-        self.np_max = app.config.getint('display', 'AUTO_COMPLETION_MAX')
+    def __init__(self, stash, debug=False):
+        self.stash = stash
+        self.debug = debug
+        self.max_possibilities = stash.config.getint('display', 'AUTO_COMPLETION_MAX')
+        self.logger = logging.getLogger('StaSh.Completer')
 
-    def complete(self, line, cursor_at=None):
+    def complete(self, line):
+        """
+        Attempt to auto-completes the given line. Returns the completed
+        line and a list of possibilities.
+
+        :param str line: The line to complete
+        :rtype: (str, [str])
+        """
         len_line = len(line)
         try:
-            tokens, _ = self.app.runtime.parser.parse(line)
+            tokens, _ = self.stash.runtime.parser.parse(line)
         except pp.ParseException as e:
-            self.app.term.write('\n', flush=False)
-            self.app.term.write_with_prefix('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
-            self.app.term.new_inp_line(with_text=line)
-            return
-
-        if cursor_at is None:
-            cursor_at = len_line
+            raise ShSyntaxError(e.message)
 
         toks = []  # this is only for sub-cmd completion
         is_cmd_word = True
@@ -713,9 +848,9 @@ class ShCompleter(object):
                 toks = []
                 is_cmd_word = True
 
-            if t.spos <= cursor_at <= t.epos:
-                word_to_complete = t.tok[:cursor_at - t.spos]
-                replace_range = (t.spos, cursor_at)
+            if t.epos == len_line:
+                word_to_complete = t.tok
+                replace_from = t.spos
                 break
 
             toks.append(t.tok)
@@ -723,14 +858,15 @@ class ShCompleter(object):
 
         else:
             word_to_complete = ''
-            replace_range = (cursor_at, cursor_at)
+            replace_from = len_line
 
         toks.append(word_to_complete)
 
-        _debug_completer('is_cmd_word: %s, word_to_complete: %s, replace_range: %s\n' %
-                         (is_cmd_word, word_to_complete, repr(replace_range)))
+        if self.debug:
+            self.logger.debug('is_cmd_word: %s, word_to_complete: %s, replace_from: %d\n' %
+                              (is_cmd_word, word_to_complete, replace_from))
 
-        cands, with_normal_completion = self.app.libcompleter.subcmd_complete(toks)
+        cands, with_normal_completion = self.stash.libcompleter.subcmd_complete(toks)
 
         if cands is None or with_normal_completion:
 
@@ -739,15 +875,15 @@ class ShCompleter(object):
             if is_cmd_word:
                 path_names = [p for p in path_names
                               if p.endswith('/') or p.endswith('.py') or p.endswith('.sh')]
-                script_names = self.app.runtime.get_all_script_names()
-                script_names.extend(self.app.runtime.aliases.keys())
+                script_names = self.stash.runtime.get_all_script_names()
+                script_names.extend(self.stash.runtime.aliases.keys())
                 if word_to_complete != '':
                     script_names = [name for name in script_names if name.startswith(word_to_complete)]
             else:
                 script_names = []
 
             if word_to_complete.startswith('$'):
-                envar_names = ['$' + varname for varname in self.app.runtime.envars.keys()
+                envar_names = ['$' + varname for varname in self.stash.runtime.envars.keys()
                                if varname.startswith(word_to_complete[1:])]
             else:
                 envar_names = []
@@ -759,35 +895,22 @@ class ShCompleter(object):
 
         all_names = sorted(set(all_names))
 
-        if len(all_names) > self.np_max:
-            self.app.term.write('\nMore than %d possibilities\n' % self.np_max, flush=False)
-            self.app.term.new_inp_line(with_text=line, cursor_at=cursor_at)
-            _debug_completer(self.format_all_names(all_names))
-            newline = line  # for debug on pc
+        # Do not show hidden files when matching for an empty string
+        if word_to_complete == '':
+            all_names = [name for name in all_names if not name.startswith('.')]
 
+        # Complete up to the longest common prefix of all possibilities
+        prefix = os.path.commonprefix(all_names)
+
+        # TODO: check max number possibilities
+        if prefix != '':
+            if len(all_names) == 1 and not prefix.endswith('/'):
+                prefix += ' '
+            newline = line[:replace_from] + prefix
         else:
-            # Complete up to the longest common prefix of all possibilities
-            prefix = os.path.commonprefix(all_names)
+            newline = line
 
-            if prefix != '':
-                if len(all_names) == 1 and not prefix.endswith('/'):
-                    prefix += ' '
-                newline = line[:replace_range[0]] + prefix + line[replace_range[1]:]
-                cursor_at += len(prefix) - (replace_range[1] - replace_range[0])
-            else:
-                newline = line
-
-            if newline != line:
-                # No need to show available possibilities if some completion can be done
-                self.app.term.set_inp_line(newline, cursor_at=cursor_at)
-                _debug_completer('%s -> %s' % (repr(line), repr(newline)))
-
-            elif len(all_names) > 0:  # no completion available, show all possibilities if exist
-                self.app.term.write('\n%s\n' % self.format_all_names(all_names))
-                self.app.term.new_inp_line(with_text=line, cursor_at=cursor_at)
-                _debug_completer(self.format_all_names(all_names))
-
-        return newline, all_names, cursor_at  # for debug on pc
+        return newline, all_names
 
     def path_match(self, word_to_complete):
         # os.path.xxx functions do not like escaped whitespace
@@ -797,7 +920,7 @@ class ShCompleter(object):
         # recognise path with embedded environment variable, e.g. $STASH_ROOT/
         head, tail = os.path.split(word_to_complete_normal_whites)
         if head != '':
-            full_path2 = self.app.runtime.expander.expandvars(full_path)
+            full_path2 = self.stash.runtime.expander.expandvars(full_path)
             if full_path2 != full_path and full_path2 != '':
                 full_path = full_path2
 
@@ -829,25 +952,60 @@ class ShCompleter(object):
                          for name in all_names) + '\n'
 
 
-_DEFAULT_RC = r"""
-PROMPT='[\W]$ '
-BIN_PATH=~/Documents/bin:$BIN_PATH
-SELFUPDATE_BRANCH=master
-PYTHONPATH=$STASH_ROOT/lib
-alias env='printenv'
-alias logout='echo "Use the close button in the upper right corner to exit StaSh."'
-alias help='man'
-alias la='ls -a'
-alias ll='ls -la'
-alias copy='pbcopy'
-alias paste='pbpaste'
-"""
+class ShThread(threading.Thread):
+    """A subclass of threading.Thread, with a kill() method."""
+
+    def __init__(self, name=None, target=None, args=(), kwargs=None, verbose=None):
+        super(ShThread, self).__init__(name=name, target=target,
+                                       group=None, args=args, kwargs=kwargs, verbose=verbose)
+        self.killed = False
+        self.child_threads = []
+
+    def start(self):
+        """Start the thread."""
+        self.__run_backup = self.run
+        self.run = self.__run  # Force the Thread to install our trace.
+        threading.Thread.start(self)
+
+    def __run(self):
+        """Hacked run function, which installs the trace."""
+        sys.settrace(self.globaltrace)
+        self.__run_backup()
+        self.run = self.__run_backup
+
+    def globaltrace(self, frame, why, arg):
+        if why == 'call':
+            return self.localtrace
+        else:
+            return None
+
+    def localtrace(self, frame, why, arg):
+        if self.killed:
+            if why == 'line':
+                for ct in self.child_threads:
+                    ct.kill()
+                if PYTHONISTA_VERSION == '1.5':
+                    raise ShKeyboardInterrupt()
+                else:
+                    raise KeyboardInterrupt()
+        return self.localtrace
+
+    def kill(self):
+        self.killed = True
+
 
 class ShRuntime(object):
 
-    def __init__(self, app):
+    """
+    Runtime class responsible for parsing and executing commands.
+    """
 
-        self.app = app
+    def __init__(self, stash, parser, expander, debug=False):
+        self.stash = stash
+        self.parser = parser
+        self.expander = expander
+        self.debug = debug
+        self.logger = logging.getLogger('StaSh.Runtime')
 
         self.enclosed_envars = {}
         self.enclosed_aliases = {}
@@ -855,17 +1013,14 @@ class ShRuntime(object):
 
         self.envars = dict(os.environ,
                            HOME2=os.path.join(os.environ['HOME'], 'Documents'),
-                           STASH_ROOT=APP_DIR,
-                           BIN_PATH=os.path.join(APP_DIR, 'bin'))
+                           STASH_ROOT=_STASH_ROOT,
+                           BIN_PATH=os.path.join(_STASH_ROOT, 'bin'),
+                           PROMPT='[\W]$ ')
         self.aliases = {}
-        config = app.config
-        self.rcfile = os.path.join(APP_DIR, config.get('system', 'rcfile'))
-        self.historyfile = os.path.join(APP_DIR, config.get('system', 'historyfile'))
+        config = stash.config
+        self.rcfile = os.path.join(_STASH_ROOT, _STASH_RCFILE)
+        self.historyfile = os.path.join(_STASH_ROOT, _STASH_HISTORY_FILE)
         self.HISTORY_MAX = config.getint('display', 'HISTORY_MAX')
-        # External keyboard support
-        self.ex_kb_selected_range = (0, 0)
-        self.ex_kb_history_suffix = '    '
-        self.ex_kb_history_requested = False
 
         self.py_traceback = config.getint('system', 'py_traceback')
         self.py_pdb = config.getint('system', 'py_pdb')
@@ -881,14 +1036,11 @@ class ShRuntime(object):
         except IOError:
             self.history = []
         self.history_alt = []
-            
+
         self.history_listsource = ui.ListDataSource(self.history)
-        self.history_listsource.action = self.app.history_popover_tapped
+        self.history_listsource.action = self.history_popover_tapped
         self.idx_to_history = -1
         self.history_templine = ''
-
-        self.parser = ShParser()
-        self.expander = ShExpander(self)
 
         self.enclosing_envars = {}
         self.enclosing_aliases = {}
@@ -899,8 +1051,9 @@ class ShRuntime(object):
 
     def save_state(self):
 
-        _debug_runtime('Saving stack %d ----\n' % len(self.state_stack))
-        _debug_runtime('envars = %s\n' % sorted(self.envars.keys()))
+        if self.debug:
+            self.logger.debug('Saving stack %d ----\n' % len(self.state_stack))
+            self.logger.debug('envars = %s\n' % sorted(self.envars.keys()))
 
         self.state_stack.append(
             [dict(self.enclosed_envars),
@@ -939,8 +1092,9 @@ class ShRuntime(object):
                       persist_aliases=False,
                       persist_cwd=False):
 
-        _debug_runtime('Popping stack %d ----\n' % (len(self.state_stack) - 1))
-        _debug_runtime('envars = %s\n' % sorted(self.envars.keys()))
+        if self.debug:
+            self.logger.debug('Popping stack %d ----\n' % (len(self.state_stack) - 1))
+            self.logger.debug('envars = %s\n' % sorted(self.envars.keys()))
 
         if len(self.worker_stack) == 1:
             self.history, self.history_alt = self.history_alt, self.history
@@ -970,20 +1124,21 @@ class ShRuntime(object):
          sys.stdout,
          sys.stderr) = self.state_stack.pop()
 
-        _debug_runtime('After poping\n')
-        _debug_runtime('enclosed_envars = %s\n' % sorted(self.enclosing_envars.keys()))
-        _debug_runtime('envars = %s\n' % sorted(self.envars.keys()))
+        if self.debug:
+            self.logger.debug('After poping\n')
+            self.logger.debug('enclosed_envars = %s\n' % sorted(self.enclosing_envars.keys()))
+            self.logger.debug('envars = %s\n' % sorted(self.envars.keys()))
 
     def load_rcfile(self):
-        self.app(_DEFAULT_RC.splitlines(), add_to_history=False, add_new_inp_line=False)
+        self.stash(_DEFAULT_RC.splitlines(), add_to_history=False, add_new_inp_line=False)
 
-        if not _STARTUP_OPTIONS.no_rcfile \
-                and os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
+        # TODO: NO RC FILE loading
+        if os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
             try:
                 with open(self.rcfile) as ins:
-                    self.app(ins.readlines(), add_to_history=False, add_new_inp_line=False)
+                    self.stash(ins.readlines(), add_to_history=False, add_new_inp_line=False)
             except IOError:
-                self.app.term.write_with_prefix('%s: error reading rcfile\n' % self.rcfile)
+                self.stash.write_message('%s: error reading rcfile\n' % self.rcfile)
 
     def find_script_file(self, filename):
         dir_match_found = False
@@ -1014,7 +1169,7 @@ class ShRuntime(object):
     def get_all_script_names(self):
         """ This function used for completer, whitespaces in names are escaped"""
         all_names = []
-        for path in ['.'] + self.envars['BIN_PATH'].split(os.pathsep):
+        for path in ['.'] + self.envars['BIN_PATH'].split(':'):
             path = os.path.expanduser(path)
             if os.path.exists(path):
                 for f in os.listdir(path):
@@ -1038,13 +1193,18 @@ class ShRuntime(object):
         #   1. No previous worker thread
         #   2. The last worker thread in stack is the current running one
         if self.worker_stack and self.worker_stack[-1] != threading.currentThread():
-            self.app.term.write_with_prefix('worker threads must be linear\n')
+            self.stash.write_message('worker threads must be linear\n')
 
         def fn():
             self.worker_stack.append(threading.currentThread())
 
             try:
-                lines = input_ if type(input_) is list else input_.splitlines()
+                if type(input_) is list:
+                    lines = input_
+                elif input_ == self.stash.io:
+                    lines = self.stash.io.readline_no_block()
+                else:
+                    lines = input_.splitlines()
 
                 for line in lines:
                     # Ignore empty lines
@@ -1084,41 +1244,68 @@ class ShRuntime(object):
                                                persist_cwd=persist_cwd)
 
             except pp.ParseException as e:
-                _debug_parser('ParseException: %s\n' % repr(e))
-                self.app.term.write_with_prefix('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
+                if self.debug:
+                    self.logger.debug('ParseException: %s\n' % repr(e))
+                self.stash.write_message('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
 
             except ShEventNotFound as e:
-                _debug_parser('%s\n' % repr(e))
-                self.app.term.write_with_prefix('%s: event not found\n' % e.message)
+                if self.debug:
+                    self.logger.debug('%s\n' % repr(e))
+                self.stash.write_message('%s: event not found\n' % e.message)
 
             except ShBadSubstitution as e:
-                _debug_parser('%s\n' % repr(e))
-                self.app.term.write_with_prefix('%s\n' % e.message)
+                if self.debug:
+                    self.logger.debug('%s\n' % repr(e))
+                self.stash.write_message('%s\n' % e.message)
 
             except ShInternalError as e:
-                _debug_runtime('%s\n' % repr(e))
-                self.app.term.write_with_prefix('%s\n' % e.message)
+                if self.debug:
+                    self.logger.debug('%s\n' % repr(e))
+                self.stash.write_message('%s\n' % e.message)
 
             except IOError as e:
-                _debug_runtime('IOError: %s\n' % repr(e))
-                self.app.term.write_with_prefix('%s: %s\n' % (e.filename, e.strerror))
+                if self.debug:
+                    self.logger.debug('IOError: %s\n' % repr(e))
+                self.stash.write_message('%s: %s\n' % (e.filename, e.strerror))
+
+            except ShKeyboardInterrupt as e:
+                self.stash.write_message('^C\nShKeyboardInterrupt:%s\n' % e.message)
+
+            except KeyboardInterrupt as e:
+                self.stash.write_message('^C\nKeyboardInterrupt:%s\n' % e.message)
 
             except Exception as e:
-                _debug_runtime('Exception: %s\n' % repr(e))
-                self.app.term.write_with_prefix('%s\n' % repr(e))
+                etype, evalue, tb = sys.exc_info()
+                if self.debug:
+                    self.logger.debug('Exception: %s\n' % repr(e))
+                self.stash.write_message('%s\n' % repr(e))
+                if self.py_traceback or self.py_pdb:
+                    import traceback
+                    traceback.print_exception(etype, evalue, tb)
 
             finally:
                 if add_new_inp_line or (len(self.worker_stack) == 1 and add_new_inp_line is not False):
-                    self.app.term.new_inp_line()
-                self.app.term.flush()
+                    # self.stash.io.write(self.get_prompt())
+                    self.script_will_end()
                 self.worker_stack.pop()  # remove itself from the stack
 
-        worker = threading.Thread(name='_shruntime_thread', target=fn)
+        worker = ShThread(name='_shruntime', target=fn)
         worker.start()
         return worker
 
+    def run_by_user(self):
+        self.run(self.stash.io)
+
+    def script_will_end(self):
+        self.stash.io.write(self.get_prompt(), no_wait=True)
+        # Config the mini buffer so that user commands can be processed
+        self.stash.mini_buffer.config_runtime_callback(self.run_by_user)
+        # Reset any possible external tab handler setting
+        self.stash.external_tab_handler = None
+
     def run_pipe_sequence(self, pipe_sequence, final_ins=None, final_outs=None, final_errs=None):
-        _debug_runtime(str(pipe_sequence))
+        if self.debug:
+            self.logger.debug(str(pipe_sequence))
 
         n_simple_commands = len(pipe_sequence.lst)
 
@@ -1146,14 +1333,14 @@ class ShRuntime(object):
                 if final_ins:
                     ins = final_ins
                 else:
-                    ins = self.app.term
+                    ins = self.stash.io
 
             if not pipe_sequence.in_background:
-                outs = self.app.term
-                errs = self.app.term
+                outs = self.stash.io
+                errs = self.stash.io
             else:
-                outs = _STDOUT
-                errs = _STDERR
+                outs = _SYS_STDOUT
+                errs = _SYS_STDERR
 
             if simple_command.io_redirect:
                 mode = 'w' if simple_command.io_redirect.operator == '>' else 'a'
@@ -1170,13 +1357,15 @@ class ShRuntime(object):
                 if final_errs:
                     errs = final_errs
 
-            _debug_runtime('io %s %s\n' % (ins, outs))
+            if self.debug:
+                self.logger.debug('io %s %s\n' % (ins, outs))
 
             try:
                 if simple_command.cmd_word != '':
                     script_file = self.find_script_file(simple_command.cmd_word)
 
-                    _debug_runtime('script is %s\n' % script_file)
+                    if self.debug:
+                        self.logger.debug('script is %s\n' % script_file)
 
                     if self.input_encoding_utf8:
                         simple_command_args = [arg.encode('utf-8') for arg in simple_command.args]
@@ -1202,8 +1391,9 @@ class ShRuntime(object):
 
             except Exception as e:
                 err_msg = '%s\n' % e.message
-                _debug_runtime(err_msg)
-                self.app.term.write_with_prefix(err_msg)
+                if self.debug:
+                    self.logger.debug(err_msg)
+                self.stash.write_message(err_msg)
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
             finally:
@@ -1239,7 +1429,7 @@ class ShRuntime(object):
             namespace = dict(locals(), **globals())
             namespace['__name__'] = '__main__'
             namespace['__file__'] = os.path.abspath(file_path)
-            namespace['_stash'] = self.app
+            namespace['_stash'] = self.stash
             execfile(file_path, namespace, namespace)
             self.envars['?'] = 0
 
@@ -1252,13 +1442,14 @@ class ShRuntime(object):
             # If the Exception is a simulated Keyboard Interrupt, the thread
             # can be terminated normally
             if type(e) is ShKeyboardInterrupt:
-                self.app.term.write_with_prefix('^C\nShKeyboardInterrupt:%s\n' % e.message)
+                self.stash.write_message('^C\nShKeyboardInterrupt:%s\n' % e.message)
 
             else:
                 etype, evalue, tb = sys.exc_info()
                 err_msg = '%s: %s\n' % (repr(etype), evalue)
-                _debug_runtime(err_msg)
-                self.app.term.write_with_prefix(err_msg)
+                if self.debug:
+                    self.logger.debug(err_msg)
+                self.stash.write_message(err_msg)
                 if self.py_traceback or self.py_pdb:
                     import traceback
                     traceback.print_exception(etype, evalue, tb)
@@ -1290,11 +1481,11 @@ class ShRuntime(object):
                 self.envars['?'] = 0
 
         except IOError as e:
-            self.app.term.write_with_prefix('%s: %s\n' % (e.filename, e.strerror))
+            self.stash.write_message('%s: %s\n' % (e.filename, e.strerror))
             self.envars['?'] = 1
 
         except:
-            self.app.term.write_with_prefix('%s: error while executing shell script\n' % filename)
+            self.stash.write_message('%s: error while executing shell script\n' % filename)
             self.envars['?'] = 2
 
     def exec_sh_lines(self, lines,
@@ -1315,9 +1506,12 @@ class ShRuntime(object):
             curdir = os.getcwd().replace(self.envars['HOME'], '~')
             prompt = prompt.replace('\\w', curdir)
             prompt = prompt.replace('\\W',
-                                    curdir if os.path.dirname(curdir) == '~' else os.path.basename(curdir))
-        return prompt
+                                    curdir if os.path.dirname(curdir) == '~'
+                                    else os.path.basename(curdir))
 
+        return self.stash.text_color(prompt, 'smoke')
+
+    # TODO: The history stuff should be handled by a separate class
     def add_history(self, s):
         if s.strip() != '' and (self.history == [] or s != self.history[0]):
             self.history.insert(0, s.strip())  # remove any surrounding whites
@@ -1354,18 +1548,12 @@ class ShRuntime(object):
     def history_up(self):
         # Save the unfinished line user is typing before showing entries from history
         if self.idx_to_history == -1:
-            self.history_templine = self.app.term.read_inp_line().rstrip()
+            self.history_templine = self.stash.mini_buffer.modifiable_chars.rstrip()
 
         self.idx_to_history += 1
         if self.idx_to_history >= len(self.history):
             self.idx_to_history = len(self.history) - 1
-            # move cursor back to input line if the request comes from an external keyboard
-            if self.ex_kb_history_requested:
-                self.ex_kb_history_requested = False
-                if self.app.term.read_inp_line().endswith(self.ex_kb_history_suffix):
-                    self.app.term.set_cursor(-len(self.ex_kb_history_suffix), whence=2)
-                else:
-                    self.app.term.set_cursor(0, whence=2)
+
         else:
             entry = self.history[self.idx_to_history]
             # If move up away from an unfinished input line, try search history for
@@ -1377,663 +1565,142 @@ class ShRuntime(object):
                         self.idx_to_history = idx
                         break
 
-            if self.ex_kb_history_requested:
-                self.ex_kb_history_requested = False
-                self.app.term.set_inp_line(entry + self.ex_kb_history_suffix, cursor_at=len(entry))
-            else:
-                self.app.term.set_inp_line(entry)
+            self.stash.mini_buffer.feed(None, entry)
 
     def history_dn(self):
         self.idx_to_history -= 1
         if self.idx_to_history < -1:
             self.idx_to_history = -1
-            # move cursor back to input line if the request comes from an external keyboard
-            if self.ex_kb_history_requested:
-                self.ex_kb_history_requested = False
-                if self.app.term.read_inp_line().endswith(self.ex_kb_history_suffix):
-                    self.app.term.set_cursor(-len(self.ex_kb_history_suffix), whence=2)
-                else:
-                    self.app.term.set_cursor(0, whence=2)
+
         else:
             if self.idx_to_history == -1:
                 entry = self.history_templine
             else:
                 entry = self.history[self.idx_to_history]
-            if self.ex_kb_history_requested:
-                self.ex_kb_history_requested = False
-                self.app.term.set_inp_line(entry + self.ex_kb_history_suffix, cursor_at=len(entry))
-            else:
-                self.app.term.set_inp_line(entry)
+
+            self.stash.mini_buffer.feed(None, entry)
 
     def reset_idx_to_history(self):
         self.idx_to_history = -1
 
-
-class ShVk(ui.View):
-    """
-    The virtual keyboard container, which implements a swipe cursor positioning gesture
-    """
-    def __init__(self, app, name='vks', flex='wh'):
-        if not _IN_PYTHONISTA:
-            super(ShVk, self).__init__()
-
-        self.app = app
-        self.flex = flex
-        self.name = name
-        self.sv = ui.ScrollView(name, flex='wh')
-        super(ShVk, self).add_subview(self.sv)
-        self.sv.delegate = self
-        self.dx = 0
-
-    def layout(self):
-        self.sv.content_size = (self.width + 1, self.height)
-
-    def add_subview(self, subview):
-        self.sv.add_subview(subview)
-
-    def remove_subview(self, subview):
-        self.sv.remove_subview(subview)
-
-    def scrollview_did_scroll(self, scrollview):
-        SCROLL_PER_CHAR = 20.0  # Number of pixels to scroll to move 1 character
-        # integrate small scroll motions, but keep scrollview from actually moving
-        if not scrollview.decelerating:
-            self.dx -= scrollview.content_offset[0] / SCROLL_PER_CHAR
-        scrollview.content_offset = (0.0, 0.0)
-
-        offset = int(self.dx)
-        if offset:
-            self.dx -= offset
-            self.app.term.set_cursor(offset, whence=1)
-
-
-class ShTerm(ui.View):
-    """
-    The View as the terminal of the application
-    """
-
-    STREAM = 0
-    POOL = 1
-
-    def __init__(self, app):
-        if not _IN_PYTHONISTA:
-            super(ShTerm, self).__init__()
-
-        self.app = app
-
-        self.mode = ShTerm.STREAM
-        self.editing = False
-        self.nlines_per_flush_replace = 100
-        self.flush_recheck_delay = 0.1  # seconds
-        self._flush_thread = None
-        self._timer_to_start_flush_thread = None
-        self._n_refresh = 8
-        self._refresh_pause = 0.01
-
-        self.BUFFER_MAX = app.config.getint('display', 'BUFFER_MAX')
-        self.TEXT_FONT = ast.literal_eval(app.config.get('display', 'TEXT_FONT'))
-        self.BUTTON_FONT = ast.literal_eval(app.config.get('display', 'BUTTON_FONT'))
-
-        self.vk_symbols = app.config.get('display', 'VK_SYMBOLS')
-
-        self.inp_buf = []
-        self.out_buf = ''
-        # cursor position count from the end, this is not the same as selected_range[0]
-        self.cursor_rindex = None
-        self.read_pos = 0
-        self.write_pos = 0
-        self.input_did_return = False  # For readline, e.g. raw_input
-        self.input_did_eof = False  # For read and readlines
-        self.input_did_interrupt = False  # For C-C termination
-
-        self.prompt = '$ '
-
-        # Start constructing the view's layout
-        self.name = 'stash'
-        self.flex = 'WH'
-        self.background_color = 0.0
-
-        self.txts = ui.View(name='txts', flex='WH')  # Wrapper view of output and input areas
-        self.add_subview(self.txts)
-        self.txts.background_color = 0.7
-
-        self.vks = ShVk(app=app, name='vks', flex='WT')
-        self.txts.add_subview(self.vks)
-        self.vks.background_color = 0.7
-
-        k_hspacing = 1
-
-        self.k_tab = ui.Button(name='k_tab', title=' Tab ', flex='TB')
-        self.vks.add_subview(self.k_tab)
-        self.k_tab.action = app.vk_tapped
-        self.k_tab.font = self.BUTTON_FONT
-        self.k_tab.border_width = 1
-        self.k_tab.border_color = 0.9
-        self.k_tab.corner_radius = 5
-        self.k_tab.tint_color = 'black'
-        self.k_tab.background_color = 'white'
-        self.k_tab.size_to_fit()
-
-        self.k_grp_0 = ShVk(app=app, name='k_grp_0', flex='WT')  # vk group 0
-        self.vks.add_subview(self.k_grp_0)
-        self.k_grp_0.background_color = 0.7
-        self.k_grp_0.x = self.k_tab.width + k_hspacing
-
-        self.k_hist = ui.Button(name='k_hist', title=' H ', flex='RTB')
-        self.k_grp_0.add_subview(self.k_hist)
-        self.k_hist.action = app.vk_tapped
-        self.k_hist.font = self.BUTTON_FONT
-        self.k_hist.border_width = 1
-        self.k_hist.border_color = 0.9
-        self.k_hist.corner_radius = 5
-        self.k_hist.tint_color = 'black'
-        self.k_hist.background_color = 'white'
-        self.k_hist.size_to_fit()
-
-        self.k_hup = ui.Button(name='k_hup', title=' Up ', flex='RTB')
-        self.k_grp_0.add_subview(self.k_hup)
-        self.k_hup.action = app.vk_tapped
-        self.k_hup.font = self.BUTTON_FONT
-        self.k_hup.border_width = 1
-        self.k_hup.border_color = 0.9
-        self.k_hup.corner_radius = 5
-        self.k_hup.tint_color = 'black'
-        self.k_hup.background_color = 'white'
-        self.k_hup.size_to_fit()
-        self.k_hup.x = self.k_hist.width + k_hspacing
-
-        self.k_hdn = ui.Button(name='k_hdn', title=' Dn ', flex='RTB')
-        self.k_grp_0.add_subview(self.k_hdn)
-        self.k_hdn.action = app.vk_tapped
-        self.k_hdn.font = self.BUTTON_FONT
-        self.k_hdn.border_width = 1
-        self.k_hdn.border_color = 0.9
-        self.k_hdn.corner_radius = 5
-        self.k_hdn.tint_color = 'black'
-        self.k_hdn.background_color = 'white'
-        self.k_hdn.size_to_fit()
-        self.k_hdn.x = self.k_hup.x + self.k_hup.width + k_hspacing
-
-        self.k_CD = ui.Button(name='k_CD', title=' CD ', flex='RTB')
-        self.k_grp_0.add_subview(self.k_CD)
-        self.k_CD.action = app.vk_tapped
-        self.k_CD.font = self.BUTTON_FONT
-        self.k_CD.border_width = 1
-        self.k_CD.border_color = 0.9
-        self.k_CD.corner_radius = 5
-        self.k_CD.tint_color = 'black'
-        self.k_CD.background_color = 'white'
-        self.k_CD.size_to_fit()
-        self.k_CD.x = self.k_hdn.x + self.k_hdn.width + k_hspacing
-
-        self.k_CC = ui.Button(name='k_CC', title=' CC ', flex='RTB')
-        self.k_grp_0.add_subview(self.k_CC)
-        self.k_CC.action = app.vk_tapped
-        self.k_CC.font = self.BUTTON_FONT
-        self.k_CC.border_width = 1
-        self.k_CC.border_color = 0.9
-        self.k_CC.corner_radius = 5
-        self.k_CC.tint_color = 'black'
-        self.k_CC.background_color = 'white'
-        self.k_CC.size_to_fit()
-        self.k_CC.x = self.k_CD.x + self.k_CD.width + k_hspacing
-
-        # Kill line key
-        self.k_CU = ui.Button(name='k_CU', title=' CU ', flex='RTB')
-        self.k_grp_0.add_subview(self.k_CU)
-        self.k_CU.action = app.vk_tapped
-        self.k_CU.font = self.BUTTON_FONT
-        self.k_CU.border_width = 1
-        self.k_CU.border_color = 0.9
-        self.k_CU.corner_radius = 5
-        self.k_CU.tint_color = 'black'
-        self.k_CU.background_color = 'white'
-        self.k_CU.size_to_fit()
-        self.k_CU.x = self.k_CC.x + self.k_CC.width + k_hspacing
-
-        # End Editing key
-        self.k_KB = ui.Button(name='k_KB', title=' KB ', flex='RTB')
-        self.k_grp_0.add_subview(self.k_KB)
-        self.k_KB.action = app.vk_tapped
-        self.k_KB.font = self.BUTTON_FONT
-        self.k_KB.border_width = 1
-        self.k_KB.border_color = 0.9
-        self.k_KB.corner_radius = 5
-        self.k_KB.tint_color = 'black'
-        self.k_KB.background_color = 'white'
-        self.k_KB.size_to_fit()
-        self.k_KB.x = self.k_CU.x + self.k_CU.width + k_hspacing
-
-        self.k_swap = ui.Button(name='k_swap', title='..', flex='LTB')
-        self.vks.add_subview(self.k_swap)
-        self.k_swap.action = app.vk_tapped
-        self.k_swap.font = self.BUTTON_FONT
-        self.k_swap.border_width = 1
-        self.k_swap.border_color = 0.9
-        self.k_swap.corner_radius = 5
-        self.k_swap.tint_color = 'black'
-        self.k_swap.background_color = 'white'
-        self.k_swap.size_to_fit()
-        self.k_swap.width -= 2
-        self.k_swap.x = self.vks.width - self.k_swap.width
-
-        self.k_grp_1 = ShVk(app, name='k_grp_1', flex='WT')  # vk group 1
-        self.vks.add_subview(self.k_grp_1)
-        self.k_grp_1.background_color = 0.7
-        self.k_grp_1.x = self.k_tab.width + k_hspacing
-
-        offset = 0
-        for i, sym in enumerate(self.vk_symbols):
-            if sym == ' ':
-                continue
-            if not app.ON_IPAD and i > 7:
-                break
-
-            k_sym = ui.Button(name='k_sym', title=' %s ' % sym, flex='RTB')
-            self.k_grp_1.add_subview(k_sym)
-            k_sym.action = app.vk_tapped
-            k_sym.font = self.BUTTON_FONT
-            k_sym.border_width = 1
-            k_sym.border_color = 0.9
-            k_sym.corner_radius = 5
-            k_sym.tint_color = 'black'
-            k_sym.background_color = 'white'
-            k_sym.size_to_fit()
-            k_sym.x = offset + k_hspacing * i
-            offset += k_sym.width
-
-        self.k_grp_0.width = self.vks.width - self.k_tab.width - self.k_swap.width - 2 * k_hspacing
-        self.k_grp_1.width = self.vks.width - self.k_tab.width - self.k_swap.width - 2 * k_hspacing
-
-        self.vks.height = self.k_hist.height
-        self.vks.y = self.vks.superview.height - (self.vks.height + 4)
-
-        self.k_grp_1.send_to_back()
-        self.on_k_grp = 0
-
-        self.io = ui.TextView(name='io', flex='WH')
-        self.txts.add_subview(self.io)
-        self.io.height = self.io.superview.height - (self.vks.height + 8)
-        self.io.x = 0
-        self.io.y = 0
-        self.io.auto_content_inset = False
-        self.io.content_inset = (0, 0, 0, 0)
-        self.io.background_color = ast.literal_eval(app.config.get('display', 'BACKGROUND_COLOR'))
-        self.io.indicator_style = app.config.get('display', 'INDICATOR_STYLE')
-        self.io.font = self.TEXT_FONT
-        self.io.text_color = ast.literal_eval(app.config.get('display', 'TEXT_COLOR'))
-        self.io.tint_color = ast.literal_eval(app.config.get('display', 'TINT_COLOR'))
-        self.io.autocapitalization_type = ui.AUTOCAPITALIZE_NONE
-        self.io.autocorrection_type = False
-        self.io.spellchecking_type = False
-        self.io.text = ''
-        self.io.editable = True
-        self.io.delegate = app
-
-        if _STARTUP_OPTIONS.debug_console:
-            self.dbgout = ui.TextView(name='dbgout', flex='H')
-            self.txts.add_subview(self.dbgout)
-            screen_width_by_2 = ui.get_screen_size()[1] / 2
-            self.dbgout.width = screen_width_by_2
-            self.dbgout.height = self.io.height
-            self.dbgout.x = screen_width_by_2
-            self.dbgout.y = 0
-            self.dbgout.editable = False
-            self.dbgout.font = self.TEXT_FONT
-            self.io.flex = 'H'
-            self.io.width = screen_width_by_2
-
-    def toggle_k_grp(self):
-        if self.on_k_grp == 0:
-            self.k_grp_1.bring_to_front()
-        else:
-            self.k_grp_0.bring_to_front()
-        self.on_k_grp = 1 - self.on_k_grp
-        
-    def will_close(self):
-        self.app.will_close()
-
-    def keyboard_frame_did_change(self, frame):
-        if frame[3] > 0:
-            self.txts.height = self.height - frame[3]
-        else:
-            self.txts.height = self.height
-        self.flush()
-
-    def is_flushing(self):
-        return self._flush_thread is not None and self._flush_thread.isAlive()
-
-    def read_inp_line(self):
-        s = self.out_buf[self.read_pos:]
-        return s
-
-    def new_inp_line(self, with_text='', cursor_at=None):
-        self.seek(0, whence=2)  # move to the end
-        self.prompt = self.app.runtime.get_prompt()
-        self.read_pos = self.tell()
-        if with_text:
-            self.write(self.prompt, flush=False)
-            self.set_inp_line(with_text, cursor_at=cursor_at)
-        else:
-            self.write(self.prompt)
-
-    def set_inp_line(self, s, cursor_at=None):
-        if cursor_at is None:
-            self.write(s, rng=(self.read_pos, len(self.out_buf)),
-                       update_read_pos=False)
-        else:
-            self.write(s, rng=(self.read_pos, len(self.out_buf)),
-                       flush=False, update_read_pos=False)
-            pos = self.read_pos + cursor_at
-            self.write('', (pos, pos), update_read_pos=False)
-            self.seek(0, whence=2)  # set write_pos at the end while cursor is in the middle
-
-    def set_read_pos(self, offset, whence=0):
-        if whence == 0:  # from start
-            self.read_pos = offset
-        elif whence == 1:  # current position
-            self.read_pos += offset
-        elif whence == 2:  # from the end
-            self.read_pos = len(self.out_buf) + offset
-
-        if self.read_pos < 0:
-            self.read_pos = 0
-        elif self.read_pos > len(self.out_buf):
-            self.read_pos = len(self.out_buf)
-
-    def set_cursor(self, offset, whence=0):
-        # Do nothing if screen is flushing
-        if self.is_flushing():
-            return
-        if whence == 0:  # from start
-            pos = offset
-        elif whence == 1:  # current position
-            pos = self.io.selected_range[0] + offset
-        elif whence == 2:  # from the end
-            pos = len(self.out_buf) + offset
-        else:
-            pos = None
-
-        if pos is not None:
-            if pos < self.read_pos:
-                pos = self.read_pos
-            elif pos > len(self.out_buf):
-                pos = len(self.out_buf)
-            try:
-                self.io.replace_range((pos, pos), '')
-            except:
-                pass
-
-    def replace_out_buf(self, replacement, rng=None):
-        rpl_len = len(replacement)
-        # If range is not set, default to replace from the current
-        # write position for length of the replacement
-        if rng is None:
-            rng = (self.write_pos, self.write_pos + rpl_len)
-        # If there are more text to the right of the replace bounds,
-        # this means we have a replacement in between texts, mark the
-        # cursor position so it can be displayed properly later
-        if rng[1] < len(self.out_buf):
-            self.cursor_rindex = len(self.out_buf) - rng[1]
-        else:
-            self.cursor_rindex = None
-        # The new write position is at the end of the replacement.
-        # This is necessary because the string to be replaced may not
-        # be the same size as the replacement
-        self.write_pos = rng[0] + rpl_len
-        # Finally perform the replace
-        self.out_buf = self.out_buf[:rng[0]] + replacement + self.out_buf[rng[1]:]
-
-    # file-like methods for TextView to perform IO redirect
-    # They are called by external scripts, e.g. on issuing raw_input()
-    def seek(self, offset, whence=0):
-        if whence == 0:  # from start
-            self.write_pos = offset
-        elif whence == 1:  # current position
-            self.write_pos += offset
-        elif whence == 2:  # from the end
-            self.write_pos = len(self.out_buf) + offset
-
-        if self.write_pos < 0:
-            self.write_pos = 0
-        elif self.write_pos > len(self.out_buf):
-            self.write_pos = len(self.out_buf)
-
-    def tell(self):
-        return self.write_pos
-
-    def truncate(self, size=None, flush=True):
-        if size is None:
-            self.out_buf = self.out_buf[0:self.write_pos]
-        else:
-            self.out_buf = self.out_buf[0:size]
-        self.write_pos = self.read_pos = len(self.out_buf)
-        if flush:
-            self.flush()
-
-    def encode(self, s):
-        return s.encode('utf-8') if self.app.runtime.input_encoding_utf8 else s
-
-    def read(self, size=-1):
-        ret = ''.join(self.readlines())
-        if size >= 0:
-            ret = ret[:size]
-        return ret
-
-    def readline(self, size=-1):  # raw_input
-        while not self.input_did_return and not self.input_did_eof:
-            if self.input_did_interrupt:  # Simulate Keyboard Interrupt
-                self.input_did_interrupt = False
-                raise ShKeyboardInterrupt()
-        self.input_did_return = self.input_did_eof = False
-        # Read from input buffer instead of term directly.
-        # This allows the term to response more quickly to user interactions.
-        if self.inp_buf:
-            line = self.inp_buf.pop()
-            line = line[:size] if size >= 0 else line
-        else:
-            line = '\n'
-
-        return self.encode(line)
-
-    def readlines(self, size=-1):
-        while not self.input_did_eof:
-            if self.input_did_interrupt:  # Simulate Keyboard Interrupt
-                self.input_did_interrupt = False
-                raise ShKeyboardInterrupt()
-        self.input_did_return = self.input_did_eof = False
-        lines = [self.encode(line) for line in self.inp_buf]
-        self.inp_buf = []
-        if size >= 0:
-            lines = lines[:size]
-        return lines
-
-    def clear(self):
-        self.seek(0)
-        self.truncate()
-        self.flush()
-
-    def write(self, s, rng=None, update_read_pos=True, flush=True):
-        _debug_runtime('Write Called: [%s]\n' % repr(s))
-        if not _IN_PYTHONISTA:
-            _STDOUT.write(s)
-        self.replace_out_buf(s, rng=rng)
-        # In most cases, the read position should be the write position.
-        # There are cases when read position shouldn't be updated, e.g.
-        # when manipulating input line with completer.
-        # Also read position can never decrease in a stream like output.
-        if update_read_pos and self.write_pos > self.read_pos:
-            self.read_pos = self.write_pos
-        if flush:
-            self.flush()
-
-    def write_with_prefix(self, s, **kwargs):
-        self.write('stash: ' + s, **kwargs)
-
-    def writelines(self, lines, **kwargs):
-        _debug_runtime('Writeline Called: [%s]\n' % repr(lines))
-        self.write(''.join(lines), **kwargs)
-
-    def flush(self):
-        # Throttle the flush by allowing only one running _flush thread
-        if not self.is_flushing():
-            # No running flush thread, create one
-            self._flush_thread = self._flush()  # in background
-
-        else:  # A flush thread is running, make sure we check back after a delay
-            if self._timer_to_start_flush_thread is None \
-                    or not self._timer_to_start_flush_thread.isAlive() \
-                    or threading.currentThread() == self._timer_to_start_flush_thread:
-                # A timer is set if:
-                #     1. No timer is set
-                #     2. Timer is not alive (expired)
-                #     3. Timer is alive but we are now in the thread of the time, i.e.
-                #        the timer will stop right after this function ends
-                self._timer_to_start_flush_thread = sh_delay(self.flush, self.flush_recheck_delay)
-
-    # Always run in background, otherwise it may crash the app when external script
-    # print many lines.
-    @sh_background('_flush_thread')
-    def _flush(self):
-
-        lines = self.out_buf.splitlines(True)
-
-        if len(lines) > 2 * self.BUFFER_MAX:
-            lines = lines[:-self.BUFFER_MAX]
-            rng = (0, len(''.join(lines)))
-            self.replace_out_buf('', rng=rng)
-
-            self.write_pos -= rng[1]
-            if self.write_pos < 0:
-                self.write_pos = len(self.out_buf)
-
-            self.read_pos -= rng[1]
-            if self.read_pos < 0:
-                self.read_pos = len(self.out_buf)
-
-            self.io.replace_range((0, len(self.io.text)), self.out_buf)
-
-            # don't bother with rindex if screen text is being halved
-            # because it seems to sometimes make cursor not shown after
-            # a long output, e.g. cat a large file
-            self.cursor_rindex = None
-
-        else:
-            prefix = os.path.commonprefix([self.out_buf, self.io.text])
-            replacement = self.out_buf[len(prefix):]
-            rng = (len(prefix), len(self.io.text))
-            if replacement == '':
-                self.io.replace_range(rng, '')
-            else:
-                lines = replacement.splitlines(True)
-                while lines:
-                    self.io.replace_range(rng, ''.join(lines[:self.nlines_per_flush_replace]))
-                    lines = lines[self.nlines_per_flush_replace:]
-                    rbound = len(self.io.text)
-                    rng = (rbound, rbound)
-
-        # Set the cursor position
-        if self.cursor_rindex is not None:
-            try:
-                cursor_rindex = len(self.io.text) - self.cursor_rindex
-                self.io.replace_range((cursor_rindex, cursor_rindex), '')
-            except:
-                # TypeError could happen here because cursor_rindex may be
-                # set to None by another write call
-                pass
-
-        self._scroll_to_end()
-
-    def _scroll_to_end(self, n_refresh=None):
-        # Have to scroll multiple times to get the correct scroll to the end effect.
-        # This is because content_size reported by the ui system is not reliable.
-        # It is either a bug or due to the asynchronous nature of the ui system.
-        if self.io.content_size[1] > self.io.height:
-            if n_refresh is None:
-                n_refresh = self._n_refresh
-            for i in range(n_refresh):
-                self.io.content_offset = (0, self.io.content_size[1] - self.io.height)
-                if i < n_refresh - 1:
-                    time.sleep(self._refresh_pause)
-              
-    def history_present(self, listsource):
-        table = ui.TableView()
-        listsource.font = self.BUTTON_FONT
-        table.data_source = listsource
-        table.delegate = listsource
-        table.width = 300
-        table.height = 300
-        table.row_height = self.BUTTON_FONT[1] + 4
-        table.present('popover')
-        table.wait_modal()
-          
-
-_DEFAULT_CONFIG = """[system]
-cfgfile=.stash_config
-rcfile=.stashrc
-historyfile=.stash_history
-py_traceback=0
-py_pdb=0
-input_encoding_utf8=1
-ipython_style_history_search=1
-
-[display]
-TEXT_FONT=('DejaVuSansMono', 12)
-BUTTON_FONT=('DejaVuSansMono', 14)
-BACKGROUND_COLOR=(0.0, 0.0, 0.0)
-TEXT_COLOR=(1.0, 1.0, 1.0)
-TINT_COLOR=(0.0, 0.0, 1.0)
-INDICATOR_STYLE=white
-HISTORY_MAX=30
-BUFFER_MAX=200
-AUTO_COMPLETION_MAX=50
-VK_SYMBOLS=~/.-*|>$'=!&_"\?`
-"""
+    def history_popover_tapped(self, sender):
+        if sender.selected_row >= 0:
+            # Save the unfinished line user is typing before showing entries from history
+            if self.idx_to_history == -1:
+                self.history_templine = self.stash.mini_buffer.modifiable_chars.rstrip()
+            self.stash.mini_buffer.feed(None, sender.items[sender.selected_row])
+            self.idx_to_history = sender.selected_row
 
 
 class StaSh(object):
     """
-    The application class, also acts as the controller.
+    Main application class. It initialize and wires the components and provide
+    utility interfaces to running scripts.
     """
 
-    def __init__(self):
+    def __init__(self, debug=(), log_setting=None):
 
-        self.thread = threading.currentThread()
+        self.config = self._load_config()
+        self.logger = self._config_logging(log_setting)
 
-        #TODO: Better way to detect iPad
-        self.ON_IPAD = ui.get_screen_size()[1] >= 708
+        # Wire the components
+        self.main_screen = ShSequentialScreen(self,
+                                              nlines_max=self.config.getint('display', 'BUFFER_MAX'),
+                                              debug=_DEBUG_MAIN_SCREEN in debug)
 
-        self.config = self.load_config()
-        self.term = ShTerm(self)
-        self.runtime = ShRuntime(self)
-        self.completer = ShCompleter(self)
+        self.mini_buffer = ShMiniBuffer(self,
+                                        self.main_screen,
+                                        debug=_DEBUG_MINI_BUFFER in debug)
 
-        self.tab_action = None
+        self.stream = ShStream(self,
+                               self.main_screen,
+                               debug=_DEBUG_STREAM in debug)
+
+        self.io = ShIO(self, debug=_DEBUG_IO in debug)
+
+        self.terminal = None  # will be set during UI initialisation
+        self.ui = ShUI(self, debug=_DEBUG_UI in debug)
+        self.renderer = ShSequentialRenderer(self.main_screen, self.terminal,
+                                             debug=_DEBUG_RENDERER in debug)
+
+        parser = ShParser(debug=_DEBUG_PARSER in debug)
+        expander = ShExpander(self, debug=_DEBUG_EXPANDER in debug)
+        self.runtime = ShRuntime(self, parser, expander, debug=_DEBUG_RUNTIME in debug)
+        self.completer = ShCompleter(self, debug=_DEBUG_COMPLETER in debug)
 
         # Navigate to the startup folder
-        if _IN_PYTHONISTA:
+        if IN_PYTHONISTA:
             os.chdir(self.runtime.envars['HOME2'])
-        # parse rc file
         self.runtime.load_rcfile()
-        self.term.write('StaSh v%s\n' % __version__)
-        self.term.new_inp_line()  # prompt
+        self.io.write(self.text_style('StaSh v%s\n' % __version__,
+                                      {'color': 'blue', 'traits': ['bold']}))
+        self.runtime.script_will_end()  # configure the read callback
 
         # Load shared libraries
-        self.load_lib()
+        self._load_lib()
+
+        # Register tab handler for running scripts
+        self.external_tab_handler = None
 
     def __call__(self, *args, **kwargs):
         """ This function is to be called by external script for
          executing shell commands """
         worker = self.runtime.run(*args, **kwargs)
-        try:
-            while worker.isAlive():
-                pass
-        except KeyboardInterrupt:  # This is for debug on PC
-            self.term.input_did_return = self.term.input_did_eof = True
+        while worker.isAlive():
+            pass
 
-    def load_lib(self):
-        # Load library files as modules and save each of them as attributes
-        lib_path = os.path.join(APP_DIR, 'lib')
+    @staticmethod
+    def _load_config():
+        config = ConfigParser()
+        config.optionxform = str  # make it preserve case
+        # defaults
+        config.readfp(StringIO(_DEFAULT_CONFIG))
+        # update from config file
+        config.read(os.path.join(_STASH_ROOT, _STASH_CONFIG_FILE))
+
+        return config
+
+    @staticmethod
+    def _config_logging(log_setting):
+
+        logger = logging.getLogger('StaSh')
+
+        _log_setting = {
+            'level': 'DEBUG',
+            'stdout': True,
+        }
+
+        _log_setting.update(log_setting or {})
+
+        level = {
+            'CRITICAL': logging.CRITICAL,
+            'ERROR': logging.ERROR,
+            'WARNING': logging.WARNING,
+            'INFO': logging.INFO,
+            'DEBUG': logging.DEBUG,
+            'NOTEST': logging.NOTSET,
+        }.get(_log_setting['level'], logging.DEBUG)
+
+        logger.setLevel(level)
+
+        if not logger.handlers:
+            if IN_PYTHONISTA or _log_setting['stdout']:
+                _log_handler = logging.StreamHandler(_SYS_STDOUT)
+            else:
+                _log_handler = logging.handlers.RotatingFileHandler('stash.log', mode='w')
+            _log_handler.setLevel(level)
+            _log_handler.setFormatter(logging.Formatter(
+                '[%(asctime)s] [%(levelname)s] [%(threadName)s] [%(name)s] [%(funcName)s] [%(lineno)d] - %(message)s'
+            ))
+            logger.addHandler(_log_handler)
+
+        return logger
+
+    def _load_lib(self):
+        """
+        Load library files as modules and save each of them as attributes
+        """
+        lib_path = os.path.join(_STASH_ROOT, 'lib')
         saved_environ = dict(os.environ)
         os.environ.update(self.runtime.envars)
         try:
@@ -2042,253 +1709,78 @@ class StaSh(object):
                         and os.path.isfile(os.path.join(lib_path, f)):
                     name, _ = os.path.splitext(f)
                     try:
-                        self.__dict__[name] = imp.load_source(name, os.path.join(lib_path, f))
-                    except:
-                        self.term.write_with_prefix('%s: failed to load library file' % f)
+                        self.__dict__[name] = pyimp.load_source(name, os.path.join(lib_path, f))
+                    except Exception as e:
+                        self.write_message('%s: failed to load library file (%s)' % (f, repr(e)))
         finally:
             os.environ = saved_environ
 
+    def write_message(self, s):
+        self.io.write('stash: %s\n' % s)
+
+    def launch(self, style='panel'):
+        self.ui.present(style)
+        self.terminal.begin_editing()
+
+    # noinspection PyProtectedMember
     @staticmethod
-    def load_config():
-        config = ConfigParser()
-        config.optionxform = str # make it preserve case
-        # defaults
-        config.readfp(StringIO(_DEFAULT_CONFIG))
-        # update from config file
-        config.read(os.path.expanduser(config.get('system', 'cfgfile')))
-        return config
+    def text_style(s, style, always=False):
+        """
+        Style the given string with ASCII escapes.
 
-    def textview_did_begin_editing(self, tv):
-        self.term.editing = True
+        :param str s: String to decorate
+        :param dict style: A dictionary of styles
+        :return:
+        """
+        # No color for pipes
+        if isinstance(sys.stdout, StringIO) and not always:
+            return s
 
-    def textview_did_end_editing(self, tv):
-        self.term.editing = False
+        fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)
+        for style_name, style_value in style.items():
+            if style_name == 'color':
+                color_id = graphics._SGR.get(style_value.lower())
+                if color_id is not None:
+                    s = fmt_string % (color_id, s, graphics._SGR['default'])
+            elif style_name == 'bgcolor':
+                color_id = graphics._SGR.get('bg-' + style_value.lower())
+                if color_id is not None:
+                    s = fmt_string % (color_id, s, graphics._SGR['default'])
+            elif style_name == 'traits':
+                for val in style_value:
+                    val = val.lower()
+                    if val == 'bold':
+                        s = fmt_string % (graphics._SGR['+bold'], s, graphics._SGR['-bold'])
+                    elif val == 'italic':
+                        s = fmt_string % (graphics._SGR['+italics'], s, graphics._SGR['-italics'])
+                    elif val == 'underline':
+                        s = fmt_string % (graphics._SGR['+underscore'], s, graphics._SGR['-underscore'])
+                    elif val == 'strikethrough':
+                        s = fmt_string % (graphics._SGR['+strikethrough'], s, graphics._SGR['-strikethrough'])
 
-    def textview_should_return(self, tv):
-        if not self.runtime.worker_stack:
-            # No thread is running. We are to process the command entered
-            # from the GUI.
-            line = self.term.read_inp_line()
-            self.term.read_pos += len(line)
-            if line.strip() != '':
-                self.term.inp_buf = []  # clear input buffer for new command
-                self.tab_action = None  # reset tab action for new command
-                self.term.input_did_return = False
-                self.term.input_did_eof = False
-                self.term.input_did_interrupt = False
-                self.runtime.run(line)
-            else:
-                self.runtime.reset_idx_to_history()
-                self.term.new_inp_line()
+        return s
 
-        else:
-            # we have a running threading, all inputs are considered as
-            # directed to the thread, NOT the main GUI program
-            s = self.term.read_inp_line()
-            self.term.read_pos += len(s)
-            self.term.inp_buf.append(s)
-            self.runtime.add_history(s.rstrip())
-            self.term.input_did_return = True
+    def text_color(self, s, color_name='default', **kwargs):
+        return self.text_style(s, {'color': color_name}, **kwargs)
 
-        return True
+    def text_bgcolor(self, s, color_name='default', **kwargs):
+        return self.text_style(s, {'bgcolor': color_name}, **kwargs)
 
-    def textview_should_change(self, tv, rng, replacement, is_virtual_key=False):
-        # do nothing when pressing delete key right before the read position
-        if replacement == '' and rng[1] == self.term.read_pos and rng[0] == rng[1] - 1:
-            return False
+    def text_bold(self, s, **kwargs):
+        return self.text_style(s, {'traits': ['bold']}, **kwargs)
 
-        # If range is invalid, simply append replacement at the end
-        saved_rng = rng
-        tot_len = len(self.term.out_buf)
+    def text_italic(self, s, **kwargs):
+        return self.text_style(s, {'traits': ['italic']}, **kwargs)
 
-        if rng[0] < self.term.read_pos or rng[1] > tot_len:
-            rng = (tot_len, tot_len)
+    def text_bold_italic(self, s, **kwargs):
+        return self.text_style(s, {'traits': ['bold', 'italic']}, **kwargs)
 
-        if replacement == '\t':
-            self.vk_tapped(self.term.k_tab)
+    def text_underline(self, s, **kwargs):
+        return self.text_style(s, {'traits': ['underline']}, **kwargs)
 
-        elif replacement.find('\n') == -1:
-            # let valid changes go through the builtin update for performance
-            if rng == saved_rng and not is_virtual_key:
-                self.term.write(replacement, rng=rng, update_read_pos=False, flush=False)
-                return True
-            # Do nothing if screen is flushing
-            # This is to guarantee that the input texts appear in order
-            elif self.term.is_flushing():
-                return False
-            else:
-                self.term.write(replacement, rng=rng, update_read_pos=False)
+    def text_strikethrough(self, s, **kwargs):
+        return self.text_style(s, {'traits': ['strikethrough']}, **kwargs)
 
-        else:
-            trailer = self.term.out_buf[rng[1]:]
-            rng = (rng[0], len(self.term.out_buf))
-            rpl = replacement.splitlines(True)[0]
-            self.term.write(rpl[:-1] + trailer + '\n',
-                            rng=rng, update_read_pos=False)
-            self.textview_should_return(tv)
 
-        return False
-
-    def textview_did_change(self, tv):
-        if self.term.is_flushing():  # do nothing if screen is flushing
-            return
-        # The following code is a fix to a possible UI system bug:
-        # Some key-combos that delete texts, e.g. alt-delete, cmd-delete, from external
-        # keyboard do not trigger textview_should_change event. So following checks
-        # are added to ensure consistency between out_buf and io.text, also the prompt
-        # do not get erased.
-        rng = tv.selected_range
-        if rng[0] == rng[1] and self.term.out_buf[rng[0]:] != self.term.io.text[rng[0]:]:
-            if rng[0] >= self.term.read_pos:
-                self.term.out_buf = self.term.out_buf[:rng[0]] + self.term.io.text[rng[0]:]
-            else:
-                s = self.term.out_buf[self.term.read_pos:]
-                if s == self.term.io.text[len(self.term.io.text) - len(s):]:
-                    self.term.flush()
-                else:
-                    self.term.set_inp_line(self.term.io.text[rng[0]:], cursor_at=0)
-
-    def textview_did_change_selection(self, tv):
-        rng = tv.selected_range
-        saved_ex_kb_selected_range = self.runtime.ex_kb_selected_range
-        self.runtime.ex_kb_selected_range = rng
-
-        # Do nothing if screen is flushing
-        if self.term.is_flushing():
-            return
-
-        tot_len = len(self.term.out_buf)
-        if rng == (0, 0):
-            if saved_ex_kb_selected_range[0] >= self.term.read_pos:
-                self.runtime.ex_kb_history_requested = True
-                self.runtime.ex_kb_selected_range = (self.term.read_pos, self.term.read_pos)
-                self.vk_tapped(self.term.k_hup)
-
-        elif rng == (tot_len, tot_len):
-            inp_line = self.term.read_inp_line()
-            if inp_line.endswith(self.runtime.ex_kb_history_suffix) \
-                and saved_ex_kb_selected_range[0] >= self.term.read_pos \
-                and rng[0] - saved_ex_kb_selected_range[1] >= len(self.runtime.ex_kb_history_suffix):
-                self.runtime.ex_kb_history_requested = True
-                self.runtime.ex_kb_selected_range = (self.term.read_pos, self.term.read_pos)
-                self.vk_tapped(self.term.k_hdn)
-
-    def vk_tapped(self, vk):
-        if vk == self.term.k_tab:  # Tab completion
-            if not self.runtime.worker_stack:
-                rng = self.term.io.selected_range
-                cursor_at = None
-                # Valid cursor positions are only when non-selection
-                # and after the read position
-                if rng[0] == rng[1] and rng[0] >= self.term.read_pos:
-                    cursor_at = rng[0] - self.term.read_pos
-                self.completer.complete(self.term.read_inp_line(), cursor_at=cursor_at)
-            else:
-                if callable(self.tab_action):
-                    self.tab_action()
-                else:
-                    console.hud_alert('Not available', 'error', 1.0)
-
-        elif vk == self.term.k_swap:
-            self.term.toggle_k_grp()
-
-        elif vk == self.term.k_hist:
-            self.term.history_present(self.runtime.history_listsource)
-
-        elif vk == self.term.k_hup:
-            self.runtime.history_up()
-
-        elif vk == self.term.k_hdn:
-            self.runtime.history_dn()
-
-        elif vk == self.term.k_CD:
-            if self.runtime.worker_stack:
-                self.term.input_did_eof = True
-
-        elif vk == self.term.k_CC:
-            if not self.runtime.worker_stack:
-                self.term.write('\n')
-                self.term.write_with_prefix('no thread to terminate\n')
-                self.term.new_inp_line()
-
-            else:  # ctrl-c terminates the entire stack of threads
-                self.term.input_did_interrupt = True
-                time.sleep(0.5)  # wait to see if a Keyboard Interrupt can be simulated
-                # This is only an approximation. If worker stack is not cleaned up after
-                # the wait, it is most likely that a Keyboard Interrupt cannot be simulated.
-                # So we do manual clean up.
-                if self.runtime.worker_stack:
-                    for worker in self.runtime.worker_stack[::-1]:
-                        worker._Thread__stop()
-                        time.sleep(0.5)
-                        if worker.isAlive():
-                            self.term.write_with_prefix('failed to terminate thread: %s\n' % worker)
-                            self.term.write_with_prefix('%d threads are still running ...' % len(self.runtime.worker_stack))
-                            self.term.write_with_prefix('Try Ctrl-C again or restart the shell or even Pythonista\n')
-                            break
-                        else:
-                            self.runtime.restore_state()  # Manually stopped thread does not restore state
-                            self.runtime.worker_stack.pop()
-                            self.term.write_with_prefix('successfully terminated thread %s\n' % worker)
-                    self.term.new_inp_line()
-
-        elif vk == self.term.k_KB:
-            if self.term.editing:
-                self.term.io.end_editing()
-            else:
-                self.term.io.begin_editing()
-                
-        elif vk == self.term.k_CU:
-            self.term.set_inp_line('')
-
-        elif vk.name == 'k_sym':
-            self.textview_should_change(self.term.io,
-                                        self.term.io.selected_range,
-                                        vk.title.strip(),
-                                        is_virtual_key=True)
-
-    def history_popover_tapped(self, sender):
-        if sender.selected_row >= 0:
-            # Save the unfinished line user is typing before showing entries from history
-            if self.runtime.idx_to_history == -1:
-                self.runtime.history_templine = self.term.read_inp_line().rstrip()
-            self.term.set_inp_line(sender.items[sender.selected_row])
-            self.runtime.idx_to_history = sender.selected_row
-
-    def will_close(self):
-        for worker in self.runtime.worker_stack[::-1]:
-            worker._Thread__stop()
-            self.runtime.restore_state()  # Manually stopped thread does not restore state
-            self.runtime.worker_stack.pop()
-        self.runtime.save_history()
-
-    def run(self):
-        self.term.present('panel')
-        self.term.io.begin_editing()
-   
-   
 if __name__ == '__main__':
-    ap = argparse.ArgumentParser(description='Pythonista Shell',
-                                 version=__version__)
-    ap.add_argument('--debug-parser',
-                    action='store_true',
-                    help='display parser debugging message'
-                    )
-    ap.add_argument('--debug-completer',
-                    action='store_true',
-                    help='display completer debugging message'
-                    )
-    ap.add_argument('--debug-runtime',
-                    action='store_true',
-                    help='display runtime debugging message'
-                    )
-    ap.add_argument('--debug-console',
-                    action='store_true',
-                    help='show debug console')
-    ap.add_argument('--no-rcfile',
-                    action='store_true',
-                    help='do not load external resource file')
-    ap.parse_args(namespace=_STARTUP_OPTIONS)
-
-    StaSh().run()
-
+    StaSh().launch()
