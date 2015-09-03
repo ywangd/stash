@@ -67,37 +67,45 @@ stash
         cmp_str = r"""[stash]$ AA is{0}
 --- direct execution without sourcing ---
 From tobesourced AA is sourced
+copy=pbcopy
 env=printenv
 help=man
 l1=ls -1
 la=ls -a
 ll=ls -la
 logout=echo "Use the close button in the upper right corner to exit StaSh."
+paste=pbpaste
 
 AA is{0}
+copy=pbcopy
 env=printenv
 help=man
 la=ls -a
 ll=ls -la
 logout=echo "Use the close button in the upper right corner to exit StaSh."
+paste=pbpaste
 
 
 --- source the file ---
 From tobesourced AA is sourced
+copy=pbcopy
 env=printenv
 help=man
 l1=ls -1
 la=ls -a
 ll=ls -la
 logout=echo "Use the close button in the upper right corner to exit StaSh."
+paste=pbpaste
 
 AA is sourced
+copy=pbcopy
 env=printenv
 help=man
 l1=ls -1
 la=ls -a
 ll=ls -la
 logout=echo "Use the close button in the upper right corner to exit StaSh."
+paste=pbpaste
 
 [stash]$ """.format(' ')
         self.do_test('test06.sh', cmp_str, ensure_undefined=('A',))
