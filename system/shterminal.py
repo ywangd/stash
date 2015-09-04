@@ -1,7 +1,6 @@
 # coding: utf-8
 import ast
 import logging
-import weakref
 
 try:
     import ui

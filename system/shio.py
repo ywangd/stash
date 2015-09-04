@@ -1,18 +1,8 @@
 # coding: utf-8
-import weakref
 import functools
 import logging
 import time
 from collections import deque
-
-
-def encode(func):
-    @functools.wraps(func)
-    def wrapped_func(*args, **kwargs):
-        s = func(*args, **kwargs)
-        return s.encode('utf-8')
-
-    return wrapped_func
 
 
 class ShIO(object):

@@ -1,7 +1,5 @@
 # coding: utf-8
-import ast
 import time
-import weakref
 import logging
 
 IN_PYTHONISTA = True

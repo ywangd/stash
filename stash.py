@@ -9,12 +9,10 @@ __version__ = '0.5.0'
 
 import os
 import sys
-import weakref
 from ConfigParser import ConfigParser
 from StringIO import StringIO
 import functools
 import glob
-import ast
 import imp as pyimp  # rename to avoid name conflict with objc_util
 import string
 import threading
@@ -47,8 +45,8 @@ else:
     ON_IPAD = False
 
 
+# noinspection PyPep8Naming
 from system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
-
 from system.shstreams import ShMiniBuffer, ShStream
 from system.shscreens import ShSequentialScreen, ShSequentialRenderer
 from system.shui import ShUI
@@ -272,6 +270,10 @@ class ShToken(object):
 # noinspection PyProtectedMember
 class ShParser(object):
 
+    """
+    Parse the command line input to provide basic semantic analysis.
+    The results will be further expanded by `ShExpander`.
+    """
     _NEXT_WORD_CMD = '_NEXT_WORD_CMD'
     _NEXT_WORD_VAL = '_NEXT_WORD_VAL'  # rhs of assignment
     _NEXT_WORD_FILE = '_NEXT_WORD_FILE'
@@ -464,6 +466,10 @@ class ShParser(object):
 
 # noinspection PyProtectedMember
 class ShExpander(object):
+
+    """
+    Expand variables, wildcards, escapes, quotes etc. based on parsed results.
+    """
 
     def __init__(self, stash, debug=False):
         self.stash = stash
@@ -820,6 +826,10 @@ class ShExpander(object):
 
 # noinspection PyProtectedMember
 class ShCompleter(object):
+
+    """
+    This class provides command line auto-completion for the shell.
+    """
 
     def __init__(self, stash, debug=False):
         self.stash = stash
@@ -1730,6 +1740,7 @@ class StaSh(object):
 
         :param str s: String to decorate
         :param dict style: A dictionary of styles
+        :param bool always: If true, style will be applied even for pipes.
         :return:
         """
         # No color for pipes
@@ -1783,4 +1794,5 @@ class StaSh(object):
 
 
 if __name__ == '__main__':
-    StaSh().launch()
+    _stash = StaSh()
+    _stash.launch()

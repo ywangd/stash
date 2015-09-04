@@ -1,8 +1,8 @@
 # coding: utf-8
 import logging
-import weakref
 import re
 
+# noinspection PyPep8Naming
 from shcommon import Control as ctrl, Escape as esc
 
 class ShMiniBuffer(object):

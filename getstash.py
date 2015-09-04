@@ -8,7 +8,7 @@ import zipfile
 try:
     branch = locals()['branch']
 except KeyError:
-    branch = 'master'
+    branch = 'beta16'
 
 _IS_UPDATE = '_IS_UPDATE' in locals()
 

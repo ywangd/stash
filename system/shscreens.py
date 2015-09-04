@@ -2,7 +2,6 @@
 import logging
 from time import time
 
-import weakref
 import threading
 from collections import deque, namedtuple
 from contextlib import contextmanager
