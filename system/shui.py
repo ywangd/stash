@@ -269,7 +269,6 @@ class ShUI(ui.View):
         """
         for worker in self.stash.runtime.worker_stack[::-1]:
             worker.kill()
-            self.stash.runtime.worker_stack.pop()
         self.stash.runtime.save_history()
 
     def did_load(self):
