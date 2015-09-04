@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Launch StaSh in a way that it survives through the "globals clearing".
 Globals clearing is enabled by default in Pythonista. In current v1.6
@@ -11,5 +12,6 @@ if 'stash' in sys.modules:
 else:
     import stash
 
-stash.StaSh().run()
+_stash = stash.StaSh()
+_stash.run()
 

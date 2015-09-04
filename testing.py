@@ -192,15 +192,15 @@ A is{0}
 
     def test_completion_10(self):
         newline, all_names, cursor_at = self.complete('$STASH_ROOT/bi')
-        assert newline == '$STASH_ROOT/bin/'
+        assert newline.replace('\\', '/') == '$STASH_ROOT/bin/'
 
     def test_completion_11(self):
         newline, all_names, cursor_at = self.complete('ls $STASH_ROOT/bi')
-        assert newline == 'ls $STASH_ROOT/bin/'
+        assert newline.replace('\\', '/') == 'ls $STASH_ROOT/bin/'
 
     def test_completion_12(self):
         newline, all_names, cursor_at = self.complete('ls $STASH_ROOT/bin/ls.')
-        assert newline == 'ls $STASH_ROOT/bin/ls.py '
+        assert newline.replace('\\', '/') == 'ls $STASH_ROOT/bin/ls.py '
 
 
 if __name__ == '__main__':

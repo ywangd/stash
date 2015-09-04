@@ -4,7 +4,7 @@ StaSh - Shell for Pythonista
 
 https://github.com/ywangd/stash
 """
-__version__ = '0.4.4'
+__version__ = '0.4.5'
 
 import ast
 import functools
@@ -1014,7 +1014,7 @@ class ShRuntime(object):
     def get_all_script_names(self):
         """ This function used for completer, whitespaces in names are escaped"""
         all_names = []
-        for path in ['.'] + self.envars['BIN_PATH'].split(os.pathsep):
+        for path in ['.'] + self.envars['BIN_PATH'].split(':'):
             path = os.path.expanduser(path)
             if os.path.exists(path):
                 for f in os.listdir(path):
@@ -2290,5 +2290,6 @@ if __name__ == '__main__':
                     help='do not load external resource file')
     ap.parse_args(namespace=_STARTUP_OPTIONS)
 
-    StaSh().run()
+    _stash = StaSh()
+    _stash.run()
 
