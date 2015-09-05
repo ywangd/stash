@@ -267,9 +267,10 @@ class ShUI(ui.View):
         Save stuff here
         :return:
         """
+        self.stash.runtime.save_history()
+        # Clear the stack or the stdout becomes unusable for interactive prompt
         for worker in self.stash.runtime.worker_stack[::-1]:
             worker.kill()
-        self.stash.runtime.save_history()
 
     def did_load(self):
         self.single_char_size = ui.measure_string('S',

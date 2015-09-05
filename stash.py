@@ -1358,7 +1358,7 @@ class ShRuntime(object):
                 # Note this is different from a real shell.
                 errs = outs = open(simple_command.io_redirect.filename, mode)
 
-            elif idx < n_simple_commands - 1: # before the last piped command
+            elif idx < n_simple_commands - 1:  # before the last piped command
                 outs = StringIO()
 
             else:
@@ -1744,7 +1744,7 @@ class StaSh(object):
         :return:
         """
         # No color for pipes
-        if isinstance(sys.stdout, StringIO) and not always:
+        if not always and (isinstance(sys.stdout, StringIO) or isinstance(sys.stdout, file)):
             return s
 
         fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)
