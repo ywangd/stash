@@ -38,8 +38,7 @@ def main(args):
                             persist_envars=True,
                             persist_aliases=True,
                             persist_cwd=True)
-            while worker.isAlive():
-                pass
+            worker.join()
     except IOError as e:
         print '%s: %s' % (e.filename, e.strerror)
     except Exception as e:

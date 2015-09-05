@@ -724,8 +724,7 @@ class ShExpander(object):
 
         outs = StringIO()
         worker = self.stash.runtime.run(tok[1:-1], final_outs=outs)
-        while worker.isAlive():
-            pass
+        worker.join()
         ret = ' '.join(outs.getvalue().splitlines())
         return ret
 
@@ -1507,8 +1506,7 @@ class ShRuntime(object):
                           final_errs=errs,
                           add_to_history=add_to_history,
                           add_new_inp_line=False)
-        while worker.isAlive():
-            pass
+        worker.join()
 
     def get_prompt(self):
         prompt = self.envars['PROMPT']
@@ -1656,8 +1654,7 @@ class StaSh(object):
         """ This function is to be called by external script for
          executing shell commands """
         worker = self.runtime.run(*args, **kwargs)
-        while worker.isAlive():
-            pass
+        worker.join()
 
     @staticmethod
     def _load_config():
