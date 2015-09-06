@@ -14,7 +14,8 @@ _stash = globals()['_stash']
 try:
     SELFUPDATE_BRANCH = sys.argv[1]
 except IndexError:
-    SELFUPDATE_BRANCH = os.environ.get('SELFUPDATE_BRANCH', 'master')
+    # SELFUPDATE_BRANCH = os.environ.get('SELFUPDATE_BRANCH', 'master')
+    SELFUPDATE_BRANCH = 'beta16'  # default to the beta branch for now
 
 print _stash.text_style('StaSh is trying to selfupdate ...',
                         {'color': 'yellow', 'traits': ['bold']})

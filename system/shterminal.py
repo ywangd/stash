@@ -89,6 +89,7 @@ class ShTerminal(object):
 
         def keyCommands(_self, _cmd):
             ctrl_key_flag = (1 << 18)  # Control key
+            cmd_key_flag = (1 << 20)  # Command key
             key_commands = [
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('C', ctrl_key_flag, 'controlCAction'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('D', ctrl_key_flag, 'controlDAction'),
@@ -98,6 +99,12 @@ class ShTerminal(object):
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('A', ctrl_key_flag, 'controlAAction'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('E', ctrl_key_flag, 'controlEAction'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W', ctrl_key_flag, 'controlWAction'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputUpArrow',
+                                                                       0,
+                                                                       'arrowUpAction'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputDownArrow',
+                                                                       0,
+                                                                       'arrowDownAction'),
             ]
             commands = ns(key_commands)
             return commands.ptr
@@ -132,12 +139,21 @@ class ShTerminal(object):
         def controlWAction(_self, _cmd):  # delete one word backwards
             stash.mini_buffer.delete_word(self.selected_range)
 
+        def arrowUpAction(_self, _cmd):
+            ui = stash.ui
+            ui.vk_tapped(ui.k_hup)
+
+        def arrowDownAction(_self, _cmd):
+            ui = stash.ui
+            ui.vk_tapped(ui.k_hdn)
+
         _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView'),
                                         [keyCommands,
                                          controlCAction, controlDAction,
                                          controlPAction, controlNAction,
                                          controlUAction, controlAAction, controlEAction,
-                                         controlWAction])
+                                         controlWAction,
+                                         arrowUpAction, arrowDownAction])
 
         self.is_editing = False
 
