@@ -20,7 +20,7 @@ class ShIO(object):
         self.tell_pos = 0
         # The input buffer, push from the Left end, read from the right end
         self.buffer = deque()
-        self.chunk_size = 1024
+        self.chunk_size = 4096
         # When buffer is empty, hold back for certain before read again
         # This is to lower the cpu usage of the reading thread so it does
         # not affect the UI thread by noticeable amount

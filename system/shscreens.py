@@ -502,12 +502,11 @@ class ShSequentialRenderer(object):
             # Set the cursor position
             self.terminal.selected_range = (cursor_x, cursor_x)
 
-            # Ensure cursor line is visible by set scroll position to the end of the text
-            # Note this is not a scroll action which would otherwise causes a bit bumpy
-            # visual effect.
-            self.terminal.set_content_offset_to_end()
-
+            # End of the batch of changes
             self.terminal.tso.endEditing()
+
+            # Ensure cursor line is visible by scroll  to the end of the text
+            self.terminal.scroll_to_end()
 
         else:  # For debugging on PC
             self.terminal.text = self.screen.text

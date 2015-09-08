@@ -373,18 +373,17 @@ class ShTerminal(object):
         return rect.size.width, rect.size.height, rect.origin.x, rect.origin.y
 
     @on_main_thread
-    def set_content_offset_to_end(self):
+    def scroll_to_end(self):
         content_height = self.content_size[1]
         # rect_height is the visible rect's height
         # rect_y is the y location where the visible rect locates in the
         # coordinate of content_size
         _, rect_height, _, rect_y = self.visible_rect
         # If the space below rect_y is more than the visible rect's height,
-        # or if the visible rect is over-scrolled (does not seem to work),
-        # scroll position needs to be re-set.
+        # or if the visible rect is over-scrolled, scroll to the last line.
         if content_height - rect_y > rect_height or \
                 (content_height > rect_height > content_height - rect_y):  # over-scroll
-            self.tvo.setContentOffset_((0, content_height - rect_height))
+            self.tvo.scrollRangeToVisible_((len(self.text), 0))
 
     @on_main_thread
     def begin_editing(self):
