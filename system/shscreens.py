@@ -140,7 +140,8 @@ class ShSequentialScreen(object):
         Trailing characters that need to be re-rendered.
         :rtype: [ShChar]
         """
-        return [self.buffer[x] for x in range(self.intact_right_bound, len(self.buffer))]
+        _, rbound = self.get_bounds()
+        return [self.buffer[x] for x in range(rbound, len(self.buffer))]
 
     @property
     def x_modifiable(self):
@@ -187,6 +188,16 @@ class ShSequentialScreen(object):
             self.lock.release()
             # if self.debug:
             #     self.logger.debug('Lock Released')
+            
+    def get_bounds(self):
+        """
+        The bounds could become negative if entire screen is flushed out before
+        any rendering. In this case, the bounds need to be adjusted accordingly.
+        :rtype (int, int):
+        """
+        rbound = self.intact_right_bound if self.intact_right_bound >= 0 else 0
+        lbound = self.intact_left_bound if rbound > 0 else 0
+        return lbound, rbound
 
     def clean(self):
         """
@@ -463,7 +474,7 @@ class ShSequentialRenderer(object):
 
         # Lock screen to get atomic information
         with self.screen.acquire_lock():
-            intact_left_bound, intact_right_bound = self.screen.intact_left_bound, self.screen.intact_right_bound
+            intact_left_bound, intact_right_bound = self.screen.get_bounds()
             screen_buffer_length = len(self.screen.buffer)
             cursor_x = self.screen.cursor_x
             renderable_chars = self.screen.renderable_chars
@@ -480,8 +491,7 @@ class ShSequentialRenderer(object):
                     ''
                 )
 
-            tv_text = self.terminal.text
-            tv_text_length = len(tv_text)
+            tv_text_length = len(self.terminal.text)
 
             # Second (re)render any modified trailing texts
             # When there are contents beyond the right bound, either on screen

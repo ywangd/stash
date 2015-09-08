@@ -1510,7 +1510,7 @@ class ShRuntime(object):
 
     def get_prompt(self):
         prompt = self.envars['PROMPT']
-        if prompt.find('\\w') or prompt.find('\\W'):
+        if prompt.find('\\W') != -1 or prompt.find('\\w') != -1:
             curdir = os.getcwd().replace(self.envars['HOME'], '~')
             prompt = prompt.replace('\\w', curdir)
             prompt = prompt.replace('\\W',
