@@ -282,25 +282,30 @@ class ShStream(object):
         esc.SGR: "select_graphic_rendition",
     }
 
+    STATE_STREAM = 0
+    STATE_ESCAPE = 1
+    STATE_ARGUMENTS = 2
+
     def __init__(self, stash, main_screen, debug=False):
 
-        self.handlers = {
-            "stream": self._stream,
-            'escape': self._escape,
-            "arguments": self._arguments,
-        }
+        self.consume_handlers = (self._stream, self._escape, self._arguments)
 
         self.stash = stash
         self.main_screen = main_screen
         self.debug = debug
         self.logger = logging.getLogger('StaSh.Stream')
 
+        self.dispatch_handler = {
+            'draw': self.main_screen.draw,
+            'erase_in_display': self.main_screen.erase_in_display,
+            'select_graphic_rendition': self.main_screen.select_graphic_rendition,
+        }
+
         self.reset()
 
     def reset(self):
         """Reset state to ``"stream"`` and empty parameter attributes."""
-        self.state = "stream"
-        self.flags = {}
+        self.state = self.STATE_STREAM
         self.params = []
         self.current = ''
 
@@ -310,22 +315,10 @@ class ShStream(object):
 
         :param str char: a character to consume.
         """
-        # if not isinstance(char, str):
-        #     raise TypeError("%s requires str input" % self.__class__.__name__)
-
         try:
-            self.handlers.get(self.state)(char)
-        except TypeError:
-            pass
-        except KeyError:
-            if __debug__:
-                self.flags["state"] = self.state
-                self.flags["unhandled"] = char
-                self.dispatch("unknown_event", *self.params)
-                self.reset()
-                raise  # TODO: better error handling
-            else:
-                raise
+            self.consume_handlers[self.state](char)
+        except Exception as e:  # TODO: better error handling
+            self.reset()
 
     def feed(self, chars, render_it=True, no_wait=False):
         """Consumes a string and advance the state as necessary.
@@ -352,36 +345,26 @@ class ShStream(object):
         :param str event: event to dispatch.
         :param list args: arguments to pass to event handlers.
         """
-        try:
-            handler = getattr(self.main_screen, event)
-        except AttributeError:
-            return
 
-        if hasattr(self.main_screen, "__before__"):
-            self.main_screen.__before__(event)
-
-        handler(*args, **self.flags)
-
-        if hasattr(self.main_screen, "__after__"):
-            self.main_screen.__after__(event)
+        self.dispatch_handler[event](*args)
 
         if kwargs.get("reset", True):
             self.reset()
 
     def _stream(self, char):
         """Processes a character when in the default ``"stream"`` state."""
-        if char == ctrl.ESC:
-            self.state = "escape"
+        if char not in (ctrl.NUL, ctrl.DEL, ctrl.ESC, ctrl.CSI):
+            self.dispatch("draw", char, reset=False)
+        elif char == ctrl.ESC:
+            self.state = self.STATE_ESCAPE
         elif char == ctrl.CSI:
-            self.state = "arguments"
-        elif char not in [ctrl.NUL, ctrl.DEL]:
-            self.dispatch("draw", char)
+            self.state = self.STATE_ARGUMENTS
 
     def _escape(self, char):
         """Handles characters seen when in an escape sequence.
         """
         if char == "[":
-            self.state = "arguments"
+            self.state = self.STATE_ARGUMENTS
         else:  # TODO: all other escapes are ignored
             self.dispatch('draw', char)
 

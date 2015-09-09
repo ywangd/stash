@@ -147,6 +147,8 @@ class ShIO(object):
                 break
 
     def write(self, s, no_wait=False):
+        if len(s) == 0:  # skip empty string
+            return
         idx = 0
         while True:
             self.stash.stream.feed(s[idx: idx + self.chunk_size], no_wait=no_wait)  # main screen only

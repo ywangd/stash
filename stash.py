@@ -979,8 +979,18 @@ class ShThread(threading.Thread):
     def __run(self):
         """Hacked run function, which installs the trace."""
         sys.settrace(self.globaltrace)
+
+        # import cProfile as profile
+        # import pstats
+        # self._prof = profile.Profile()
+        # self._prof.enable()
+
         self.__run_backup()
         self.run = self.__run_backup
+
+        # self._prof.disable()
+        # self.stats = pstats.Stats(self._prof)
+        # self.stats.dump_stats(os.path.expanduser('~/Documents/stash-cat.prof'))
 
     def globaltrace(self, frame, why, arg):
         if why == 'call':

@@ -296,16 +296,20 @@ class ShSequentialScreen(object):
         """
         Keep number of lines under control
         """
+        char_count = line_count = 0
         for _ in range(self.nlines_max, self.nlines):
             # Remove the top line
             for idx in range(len(self.buffer)):
-                self.intact_left_bound += 1
-                self.intact_right_bound -= 1
-                self.cursor_x -= 1
-                self.x_drawend -= 1
+                char_count += 1
                 if self.buffer.popleft().data == '\n':
-                    self.nlines -= 1
+                    line_count += 1
                     break
+
+        self.intact_left_bound += char_count
+        self.intact_right_bound -= char_count
+        self.cursor_x -= char_count
+        self.x_drawend -= char_count
+        self.nlines -= line_count
 
     # noinspection PyProtectedMember
     def select_graphic_rendition(self, *attrs):
