@@ -78,12 +78,12 @@ _DEBUG_COMPLETER = 403
 
 _STASH_ROOT = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
 # Resource files
-_STASH_CONFIG_FILE = '.stash_config'
-_STASH_RCFILE = '.stashrc'
+_STASH_CONFIG_FILES = ('.stash_config', 'stash.cfg')
 _STASH_HISTORY_FILE = '.stash_history'
 
 # Default configuration (can be overridden by external configuration file)
 _DEFAULT_CONFIG = """[system]
+rcfile=.stashrc
 py_traceback=0
 py_pdb=0
 input_encoding_utf8=1
@@ -1037,7 +1037,7 @@ class ShRuntime(object):
                            PROMPT='[\W]$ ')
         self.aliases = {}
         config = stash.config
-        self.rcfile = os.path.join(_STASH_ROOT, _STASH_RCFILE)
+        self.rcfile = os.path.join(_STASH_ROOT, config.get('system', 'rcfile'))
         self.historyfile = os.path.join(_STASH_ROOT, _STASH_HISTORY_FILE)
         self.HISTORY_MAX = config.getint('display', 'HISTORY_MAX')
 
@@ -1673,7 +1673,7 @@ class StaSh(object):
         # defaults
         config.readfp(StringIO(_DEFAULT_CONFIG))
         # update from config file
-        config.read(os.path.join(_STASH_ROOT, _STASH_CONFIG_FILE))
+        config.read(os.path.join(_STASH_ROOT, f) for f in _STASH_CONFIG_FILES)
 
         return config
 
