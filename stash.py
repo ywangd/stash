@@ -1729,7 +1729,7 @@ class StaSh(object):
         logger.setLevel(level)
 
         if not logger.handlers:
-            if IN_PYTHONISTA or _log_setting['stdout']:
+            if _log_setting['stdout']:
                 _log_handler = logging.StreamHandler(_SYS_STDOUT)
             else:
                 _log_handler = logging.handlers.RotatingFileHandler('stash.log', mode='w')

@@ -1,11 +1,11 @@
-'''
+"""
 Used to create/open and edit files.
 [-t --temp] - Opens the file as a temporary file. Allowing editing and renaming. Previous script in the pythonista editor will be restored.
-    
+
 usage:
     edit [-t --temp] [file]
     Follow prompt for instructions.
-'''
+"""
 import os
 import tempfile
 import console
@@ -13,10 +13,6 @@ import editor
 import time
 import argparse
 
-ap = argparse.ArgumentParser()
-ap.add_argument('-t','--temp',action='store_true',default=False,help='Open file to a temp file.')
-ap.add_argument('file', action='store',nargs='?',default=False,help='File to open')
-args = ap.parse_args()
 
 def open_temp(file=''):
     try:
@@ -59,7 +55,7 @@ def open_temp(file=''):
         
     finally:
         temp.close()
-    
+
 def open_editor(file=''):
     if os.path.isfile(os.getcwd()+'/'+file):
         editor.open_file(os.getcwd()+'/'+file)
@@ -68,11 +64,21 @@ def open_editor(file=''):
         editor.make_new_file(file if file else 'untitled.py')
         
 if __name__=='__main__':
-    if args.temp and args.file:
-        print args.file
-        open_temp(args.file)
-    elif args.file:
-        open_editor(args.file)
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-t','--temp',action='store_true',default=False,help='Open file to a temp file.')
+    ap.add_argument('file', action='store',nargs='?',default=False,help='File to open')
+    ns = ap.parse_args()
+
+    # Calculate the relative path because absolute path crashes Pythonista
+    # most likely due to access right for iOS root path.
+    filename = os.path.relpath(ns.file, '.')
+
+    if ns.temp and ns.file:
+        open_temp(filename)
+
+    elif ns.file:
+        open_editor(filename)
+
     else:
         open_temp()
 
