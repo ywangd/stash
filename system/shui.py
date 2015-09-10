@@ -325,8 +325,7 @@ class ShUI(ui.View):
 
             else:  # ctrl-c terminates the entire stack of threads
                 self.stash.runtime.worker_stack[0].kill()
-                time.sleep(0.5)  # wait to see if a Keyboard Interrupt can be simulated
-                self.stash.io.write(self.stash.runtime.get_prompt())
+                time.sleep(0.5)  # wait a moment for the thread to terminate
 
         elif vk == self.k_KB:
             if self.terminal.is_editing:

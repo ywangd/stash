@@ -69,3 +69,19 @@ def ns(*args, **kwargs):
 
 def on_main_thread(func):
     return func
+
+
+class ctypes(object):
+
+    class pythonapi(object):
+        @staticmethod
+        def PyThreadState_SetAsyncExc(tid, exectype,):
+            return 1
+
+    @staticmethod
+    def c_long(val):
+        return val
+
+    @staticmethod
+    def py_object(val):
+        return val

@@ -6,7 +6,7 @@ import urllib2
 import zipfile
 
 try:
-    branch = locals()['branch']
+    branch = locals()['_br']
 except KeyError:
     branch = 'beta16'
 

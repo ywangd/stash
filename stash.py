@@ -33,16 +33,15 @@ except ImportError:
 
 PYTHONISTA_VERSION = '1.6'
 try:
+    import ctypes
     from objc_util import *
 except ImportError:
-    from system.dummyobjc_util import *
+    from system.dummyobjc_util import *  # dummy ctypes here as well
     PYTHONISTA_VERSION = '1.5'
 
 from platform import platform
-if platform().find('iPad') != -1:
-    ON_IPAD = True
-else:
-    ON_IPAD = False
+ON_IPAD = True if platform().find('iPad') != -1 else False
+M_64 = True if platform().find('64bit') != -1 else False
 
 
 # noinspection PyPep8Naming
@@ -88,6 +87,7 @@ py_traceback=0
 py_pdb=0
 input_encoding_utf8=1
 ipython_style_history_search=1
+thread_type=ctypes
 
 [display]
 TEXT_FONT_SIZE={text_size}
@@ -961,13 +961,13 @@ class ShCompleter(object):
                          for name in all_names) + '\n'
 
 
-class ShThread(threading.Thread):
+class ShThreadTrace(threading.Thread):
     """A subclass of threading.Thread, with a kill() method."""
 
     def __init__(self, name=None, target=None, args=(), kwargs=None, verbose=None):
-        super(ShThread, self).__init__(name=name, target=target,
-                                       group=None, args=args, kwargs=kwargs, verbose=verbose)
         self.killed = False
+        super(ShThreadTrace, self).__init__(name=name, target=target,
+                                            group=None, args=args, kwargs=kwargs, verbose=verbose)
         self.child_threads = []
 
     def start(self):
@@ -979,24 +979,11 @@ class ShThread(threading.Thread):
     def __run(self):
         """Hacked run function, which installs the trace."""
         sys.settrace(self.globaltrace)
-
-        # import cProfile as profile
-        # import pstats
-        # self._prof = profile.Profile()
-        # self._prof.enable()
-
         self.__run_backup()
         self.run = self.__run_backup
 
-        # self._prof.disable()
-        # self.stats = pstats.Stats(self._prof)
-        # self.stats.dump_stats(os.path.expanduser('~/Documents/stash-cat.prof'))
-
     def globaltrace(self, frame, why, arg):
-        if why == 'call':
-            return self.localtrace
-        else:
-            return None
+        return self.localtrace if why == 'call' else None
 
     def localtrace(self, frame, why, arg):
         if self.killed:
@@ -1011,6 +998,43 @@ class ShThread(threading.Thread):
 
     def kill(self):
         self.killed = True
+
+
+class ShThreadCtypes(threading.Thread):
+    """
+    A thread class that supports raising exception in the thread from
+    another thread.
+    """
+
+    def __init__(self, name=None, target=None, args=(), kwargs=None, verbose=None):
+        self.killed = False
+        super(ShThreadCtypes, self).__init__(name=name, target=target,
+                                             group=None, args=args, kwargs=kwargs, verbose=verbose)
+        self.child_threads = []
+
+    def _async_raise(self):
+        tid = self.ident
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid) if M_64 else tid,
+                                                         ctypes.py_object(KeyboardInterrupt))
+        if res == 0:
+            raise ValueError("invalid thread id")
+        elif res != 1:
+            # "if it returns a number greater than one, you're in trouble,
+            # and you should call it again with exc=NULL to revert the effect"
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), 0)
+            raise SystemError("PyThreadState_SetAsyncExc failed")
+
+        return res
+
+    def kill(self):
+        if not self.killed:
+            self.killed = True
+            for ct in self.child_threads:
+                ct.kill()
+            try:
+                res = self._async_raise()
+            except (ValueError, SystemError):
+                self.killed = False
 
 
 class ShRuntime(object):
@@ -1045,6 +1069,10 @@ class ShRuntime(object):
         self.py_pdb = config.getint('system', 'py_pdb')
         self.input_encoding_utf8 = config.getint('system', 'input_encoding_utf8')
         self.ipython_style_history_search = config.getint('system', 'ipython_style_history_search')
+        self.ShThread = {'trace': ShThreadTrace, 'ctypes': ShThreadCtypes}.get(
+            config.get('system', 'thread_type'),
+            ShThreadTrace
+        )
 
         # load history from last session
         # NOTE the first entry in history is the latest one
@@ -1308,7 +1336,7 @@ class ShRuntime(object):
                     self.script_will_end()
                 self.worker_stack.pop()  # remove itself from the stack
 
-        worker = ShThread(name='_shruntime', target=fn)
+        worker = self.ShThread(name='_shruntime', target=fn)
         worker.start()
         return worker
 
