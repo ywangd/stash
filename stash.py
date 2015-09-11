@@ -1071,7 +1071,7 @@ class ShRuntime(object):
         self.ipython_style_history_search = config.getint('system', 'ipython_style_history_search')
         self.ShThread = {'trace': ShThreadTrace, 'ctypes': ShThreadCtypes}.get(
             config.get('system', 'thread_type'),
-            ShThreadTrace
+            ShThreadCtypes
         )
 
         # load history from last session
@@ -1649,6 +1649,9 @@ class StaSh(object):
         self.config = self._load_config()
         self.logger = self._config_logging(log_setting)
 
+        # Tab handler for running scripts
+        self.external_tab_handler = None
+
         # Wire the components
         self.main_screen = ShSequentialScreen(self,
                                               nlines_max=self.config.getint('display', 'BUFFER_MAX'),
@@ -1684,9 +1687,6 @@ class StaSh(object):
 
         # Load shared libraries
         self._load_lib()
-
-        # Register tab handler for running scripts
-        self.external_tab_handler = None
 
     def __call__(self, *args, **kwargs):
         """ This function is to be called by external script for
