@@ -278,7 +278,7 @@ class ShStream(object):
 
     #: CSI escape sequences -- ``CSI P1;P2;...;Pn <fn>``.
     csi = {
-        esc.ED: "erase_in_display",
+        esc.RIS: "reset",
         esc.SGR: "select_graphic_rendition",
     }
 
@@ -297,7 +297,7 @@ class ShStream(object):
 
         self.dispatch_handler = {
             'draw': self.main_screen.draw,
-            'erase_in_display': self.main_screen.erase_in_display,
+            'reset': self.main_screen.reset,
             'select_graphic_rendition': self.main_screen.select_graphic_rendition,
         }
 
@@ -380,7 +380,7 @@ class ShStream(object):
             self.current += char
         else:
             self.params.append(min(int(self.current or 0), 9999))
-            if char == ";":
+            if char == ";":  # multiple parameters
                 self.current = ""
             else:
                 self.dispatch(self.csi[char], *self.params)

@@ -106,7 +106,12 @@ class ShSequentialScreen(object):
 
         self.reset()
 
-    def reset(self):
+    def reset(self, *args):  # *args is a necessary placeholder
+        """
+        Clear the screen and reset its state.
+        *args is needed because dispatch from stream always call handlers
+        with at least one parameter (even it is a dummy 0).
+        """
         # empty the buffer
         self.buffer.clear()
 
@@ -205,13 +210,6 @@ class ShSequentialScreen(object):
         """
         self.intact_left_bound = 0
         self.intact_right_bound = len(self.buffer)
-
-    def erase_in_display(self, type_of=0):
-        """
-        Clear the screen
-        :return:
-        """
-        self.reset()
 
     # noinspection PyProtectedMember
     def draw(self, c):

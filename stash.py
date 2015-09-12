@@ -1332,7 +1332,6 @@ class ShRuntime(object):
 
             finally:
                 if add_new_inp_line or (len(self.worker_stack) == 1 and add_new_inp_line is not False):
-                    # self.stash.io.write(self.get_prompt())
                     self.script_will_end()
                 self.worker_stack.pop()  # remove itself from the stack
 

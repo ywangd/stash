@@ -126,7 +126,7 @@ class StashSSH(object):
                 break
             count -=1
         text = '\n'.join(self.screen.display[:count]).rstrip() + ' '
-        _stash.stream.feed(u'\u009b2J', render_it=False)
+        _stash.stream.feed(u'\u009bc', render_it=False)
         _stash.stream.feed(text, no_wait=True)
 
     def single_exec(self,command):
