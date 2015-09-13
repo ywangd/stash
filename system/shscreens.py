@@ -426,7 +426,7 @@ class ShSequentialRenderer(object):
         attributed_text = NSMutableAttributedString.alloc().initWithString_attributes_(
             ''.join(char.data for char in chars),
             self._build_attributes(DEFAULT_CHAR),
-        )
+        ).autorelease()
 
         prev_char = chars[0]
         location = length = 0

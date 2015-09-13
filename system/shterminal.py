@@ -168,7 +168,7 @@ class ShTerminal(object):
         self._delegate_view = ui.TextView()
         self._delegate_view.delegate = ShTVDelegate(stash, self, stash.mini_buffer, stash.main_screen)
 
-        self.tvo = _ShTerminal.alloc().initWithFrame_(((0, 0), (width, height)))
+        self.tvo = _ShTerminal.alloc().initWithFrame_(((0, 0), (width, height))).autorelease()
         self.tvo.setAutoresizingMask_(1 << 1 | 1 << 4)  # flex Width and Height
         self.content_inset = (0, 0, 0, 0)
         self.auto_content_inset = False
