@@ -105,7 +105,7 @@ VK_SYMBOLS=~/.-*|>$'=!&_"\?`
 # Default .stashrc file
 _DEFAULT_RC = r"""BIN_PATH=~/Documents/bin:$BIN_PATH
 SELFUPDATE_BRANCH=master
-PYTHONPATH=$STASH_ROOT/lib
+PYTHONPATH=$STASH_ROOT/lib:$PYTHONPATH
 alias env='printenv'
 alias logout='echo "Use the close button in the upper right corner to exit StaSh."'
 alias help='man'
@@ -1452,14 +1452,18 @@ class ShRuntime(object):
             args = []
 
         sys.path = _SYS_PATH[:]
-        # Add any user set python paths right after the dot or at the begining
+        # Add any user set python paths right after the dot or at the beginning
         if 'PYTHONPATH' in self.envars.keys():
             try:
                 idxdot = sys.path.index('.') + 1
             except ValueError:
                 idxdot = 0
-            for pth in self.envars['PYTHONPATH'].split(':'):
-                sys.path.insert(idxdot, os.path.expanduser(pth))
+            for pth in reversed(self.envars['PYTHONPATH'].split(':')):
+                if pth == '':  # this for when existing PYTHONPATH is empty
+                    continue
+                pth = os.path.expanduser(pth)
+                if pth not in sys.path:
+                    sys.path.insert(idxdot, pth)
 
         try:
             if ins:
