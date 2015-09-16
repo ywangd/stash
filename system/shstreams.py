@@ -119,13 +119,14 @@ class ShMiniBuffer(object):
 
                     # Update the mini buffer and the main_screen buffer
                     if rpln.endswith('\n'):  # LF is always added to the end of the line
-                        self.main_screen.replace_in_range(
-                            (x - self.x_modifiable, x - self.x_modifiable),
-                            rpln[:-1],
-                            relative_to_x_modifiable=True)
+                        if len(rpln) > 1:  # not a pure return char
+                            self.main_screen.replace_in_range(
+                                (x - self.x_modifiable, x - self.x_modifiable),
+                                rpln[:-1],
+                                relative_to_x_modifiable=True)
                         self.main_screen.replace_in_range(
                             None,
-                            '\n',
+                            u'\n',
                             relative_to_x_modifiable=False)
                         self.chars = self.chars[:x] + rpln[:-1] + self.chars[x:] + '\n'
                     else:

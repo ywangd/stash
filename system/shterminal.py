@@ -264,7 +264,7 @@ class ShTerminal(object):
 
     @property
     def text(self):
-        return str(self.tvo.text())
+        return unicode(self.tvo.text())
 
     @text.setter
     @on_main_thread
