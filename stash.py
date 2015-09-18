@@ -45,7 +45,7 @@ M_64 = True if platform().find('64bit') != -1 else False
 
 
 # noinspection PyPep8Naming
-from system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
+from system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc, is_binary_file
 from system.shstreams import ShMiniBuffer, ShStream
 from system.shscreens import ShSequentialScreen, ShSequentialRenderer
 from system.shui import ShUI
@@ -121,6 +121,10 @@ class ShFileNotFound(Exception):
 
 class ShIsDirectory(Exception):
     pass
+
+class ShNotExecutable(Exception):
+    def __init__(self, filename):
+        super(Exception, self).__init__('Not executable: {}'.format(filename))
 
 class ShSingleExpansionRequired(Exception):
     pass
@@ -1421,6 +1425,9 @@ class ShRuntime(object):
                     if script_file.endswith('.py'):
                         self.exec_py_file(script_file, simple_command_args, ins, outs, errs)
 
+                    elif is_binary_file(script_file):
+                        raise ShNotExecutable(script_file)
+
                     else:
                         self.exec_sh_file(script_file, simple_command_args, ins, outs, errs)
 
@@ -1434,6 +1441,9 @@ class ShRuntime(object):
                     outs.seek(0)  # rewind for next command in the pipe sequence
 
                 prev_outs = outs
+
+            except ShNotExecutable as e:
+                self.stash.write_message(e.message)
 
             except Exception as e:
                 err_msg = '%s\n' % e.message

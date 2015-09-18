@@ -5,6 +5,22 @@ The Control, Escape and Graphics are taken from pyte (https://github.com/selecte
 from itertools import chain
 
 
+def is_binary_file(filename, nbytes=1024):
+    """
+    An approximate way to tell whether a file is binary.
+    :param str filename: The name of the file to be tested.
+    :param int nbytes: number of bytes to read for test
+    :return:
+    """
+    with open(filename, 'rb') as ins:
+        for c in ins.read(nbytes):
+            oc = ord(c)
+            if 127 < oc < 256 or (oc < 32 and oc not in (9, 10, 13)):
+                return True
+        else:
+            return False
+
+
 class Control(object):
 
     """
