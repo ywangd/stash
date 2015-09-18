@@ -1186,6 +1186,9 @@ class ShRuntime(object):
                     if script_file.endswith('.py'):
                         self.exec_py_file(script_file, simple_command_args, ins, outs, errs)
 
+                    elif self.is_binary_file(script_file):
+                        raise RuntimeError('Not executable file: {}'.format(script_file))
+
                     else:
                         self.exec_sh_file(script_file, simple_command_args, ins, outs, errs)
 
@@ -1308,6 +1311,16 @@ class ShRuntime(object):
                           add_new_inp_line=False)
         while worker.isAlive():
             pass
+
+    @staticmethod
+    def is_binary_file(filename):
+        with open(filename, 'rb') as ins:
+            for c in ins.read(512):
+                oc = ord(c)
+                if 127 < oc < 256 or (oc < 32 and oc not in (9, 10, 13)):
+                    return True
+            else:
+                return False
 
     def get_prompt(self):
         prompt = self.envars['PROMPT']
