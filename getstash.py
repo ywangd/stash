@@ -37,6 +37,11 @@ except:
     sys.exit(1)
 
 print 'Bootstrapping ...'
+
+# Pythonista 1.6 beta does not have dot in sys.path by default
+if '.' not in sys.path:
+    sys.path.insert(0, '.')
+
 from stash import StaSh
 stash = StaSh()
 stash('selfupdate', final_outs=sys.stdout)
