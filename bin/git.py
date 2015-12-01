@@ -35,7 +35,7 @@ import editor #for reloading current file
 GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
 FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
 DULWICH_URL='https://github.com/jsbain/dulwich/archive/master.zip'
-REQUIRED_DULWICH_VERSION = (0,9,9,'jsbain_fork')
+REQUIRED_DULWICH_VERSION = (0,11,3)
 AUTODOWNLOAD_DEPENDENCIES = True 
 
 if AUTODOWNLOAD_DEPENDENCIES:
@@ -103,6 +103,9 @@ if AUTODOWNLOAD_DEPENDENCIES:
     try:
         gittle_path=os.path.join(libpath,'gittle')
         funky_path=os.path.join(libpath,'funky')
+        #i have no idea why this is getting cleared...
+        if libpath not in sys.path:
+           sys.path.insert(1,libpath)
         import gittle
         Gittle=gittle.Gittle
     except ImportError:
@@ -477,8 +480,9 @@ def git_fetch(args):
         result.url=repo.remotes.get(origin)
     if not urlparse.urlparse(result.url).scheme:
         raise Exception('url must match a remote name, or must start with http:// or https://')
+    print 'Starting fetch, this could take a while'
     remote_refs=porcelain.fetch(repo.repo.path,result.url)
-
+    print 'Fetch successful.  Importing refs'
     remote_tags = gittle.utils.git.subrefs(remote_refs, 'refs/tags')
     remote_heads = gittle.utils.git.subrefs(remote_refs, 'refs/heads')
         
@@ -503,11 +507,13 @@ def git_fetch(args):
     )
     for k,v in clean_remote_tags.items():
         print 'imported {}/{} {}'.format('refs/tags',k,v) 
+    print 'Checking for deleted remote refs'
     #delete unused remote refs
     for k in gittle.utils.git.subrefs(repo.refs,heads_base):
-        if k not in gittle.utils.git.subrefs(clean_remote_heads,origin):
+        if k not in clean_remote_heads:
+            print 'Deleting {}'.format('/'.join([heads_base,k]))
             del repo.refs['/'.join([heads_base,k])]
-    
+    print 'Fetch complete'
 
 def git_push(args):
     parser = argparse.ArgumentParser(prog='git push'
@@ -596,7 +602,7 @@ def git_log(args):
 
     try:
         repo = _get_repo()
-        porcelain.log(repo.repo.path, max_entries=results.max_entries,format=results.format,outstream=results.output)
+        porcelain.log(repo.repo.path, max_entries=results.max_entries,outstream=results.output)
     except ValueError:
         print command_help['log']
 
