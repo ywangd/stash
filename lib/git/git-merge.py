@@ -184,7 +184,7 @@ def merge(args):
 
     if base_sha==head:
         print 'Fast forwarding {} to {}'.format(repo.active_branch,merge_head)
-        repo.refs[head]=merge_head
+        repo.refs['HEAD']=merge_head
         return 
     if base_sha == merge_head:
         print 'head is already up to date'
