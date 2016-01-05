@@ -35,7 +35,7 @@ import editor #for reloading current file
 GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
 FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
 DULWICH_URL='https://github.com/jsbain/dulwich/archive/master.zip'
-REQUIRED_DULWICH_VERSION = (0,11,3)
+REQUIRED_DULWICH_VERSION = (0,12,1,'jsbain_fork')
 AUTODOWNLOAD_DEPENDENCIES = True 
 
 if AUTODOWNLOAD_DEPENDENCIES:
@@ -565,10 +565,13 @@ def git_push(args):
         if not pw:
             user, pw = console.login_alert('Enter credentials for {0}'.format(netloc), login=user)
             #pw = getpass.getpass('Enter password for {0}: '.format(user))
-
-        opener = auth_urllib2_opener(None, result.url, user, pw)
-
-        porcelain.push(repo.repo.path, result.url, branch_name, opener=opener)
+        host_with_auth='{}:{}@{}'.format(user,pw,netloc)
+        print host_with_auth
+        url=urlparse.urlunparse(
+            urlparse.urlparse(result.url)._replace(
+                netloc=host_with_auth))
+        #opener = auth_urllib2_opener(None, result.url, user, pw)
+        porcelain.push(repo.repo.path, url, branch_name)
         keychain.set_password(keychainservice, user, pw)
 
     else:
