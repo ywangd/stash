@@ -35,7 +35,7 @@ import editor #for reloading current file
 GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
 FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
 DULWICH_URL='https://github.com/jsbain/dulwich/archive/master.zip'
-REQUIRED_DULWICH_VERSION = (0,12,'1_jsbain_fork')
+REQUIRED_DULWICH_VERSION = (0,12,1)
 AUTODOWNLOAD_DEPENDENCIES = True 
 
 if AUTODOWNLOAD_DEPENDENCIES:
@@ -566,11 +566,9 @@ def git_push(args):
             user, pw = console.login_alert('Enter credentials for {0}'.format(netloc), login=user)
             #pw = getpass.getpass('Enter password for {0}: '.format(user))
         host_with_auth='{}:{}@{}'.format(user,pw,netloc)
-        print host_with_auth
         url=urlparse.urlunparse(
             urlparse.urlparse(result.url)._replace(
                 netloc=host_with_auth))
-        #opener = auth_urllib2_opener(None, result.url, user, pw)
         porcelain.push(repo.repo.path, url, branch_name)
         keychain.set_password(keychainservice, user, pw)
 
@@ -669,35 +667,8 @@ def git_help(args):
     for key, value in command_help.items():
         print value
             
-#Urllib2 opener for dulwich
-def auth_urllib2_opener(config, top_level_url, username, password):
-    if config is not None:
-        proxy_server = config.get("http", "proxy")
-    else:
-        proxy_server = None
+           
 
-    # create a password manager
-        password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-
-        # Add the username and password.
-        # If we knew the realm, we could use it instead of None.
-        #top_level_url = "http://example.com/foo/"
-        password_mgr.add_password(None, top_level_url, username, password)
-
-        handler = urllib2.HTTPBasicAuthHandler(password_mgr)
-
-    handlers = [handler]
-    if proxy_server is not None:
-        handlers.append(urllib2.ProxyHandler({"http": proxy_server}))
-    opener = urllib2.build_opener(*handlers)
-    if config is not None:
-        user_agent = config.get("http", "useragent")
-    else:
-        user_agent = None
-    if user_agent is None:
-        user_agent = default_user_agent_string()
-    opener.addheaders = [('User-agent', user_agent)]
-    return opener
 
 commands = {
     'init': git_init
