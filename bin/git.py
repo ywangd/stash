@@ -34,8 +34,8 @@ import editor #for reloading current file
 
 GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
 FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
-DULWICH_URL='https://github.com/jsbain/dulwich/archive/master.zip'
-REQUIRED_DULWICH_VERSION = (0,12,1)
+DULWICH_URL='https://github.com/jsbain/dulwich/archive/ForStaSH_0.12.2.zip'
+REQUIRED_DULWICH_VERSION = (0,12,2)
 AUTODOWNLOAD_DEPENDENCIES = True 
 
 if AUTODOWNLOAD_DEPENDENCIES:
