@@ -35,7 +35,7 @@ import editor #for reloading current file
 GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
 FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
 DULWICH_URL='https://github.com/jsbain/dulwich/archive/master.zip'
-REQUIRED_DULWICH_VERSION = (0,12,1,'jsbain_fork')
+REQUIRED_DULWICH_VERSION = (0,12,'1_jsbain_fork')
 AUTODOWNLOAD_DEPENDENCIES = True 
 
 if AUTODOWNLOAD_DEPENDENCIES:
