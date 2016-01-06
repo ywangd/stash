@@ -77,7 +77,6 @@ def branch(args):
     if not any_one((list_flag,)+ mutual_exclusive_list):
         raise GitError('too many options specified.\n'+parser.print_help())
         
-    
     if list_flag:
         branch_list(result) 
     elif delete_branchname:

@@ -6,12 +6,11 @@ beta, it can no longer be disabled as in v1.5.
 """
 import sys
 
-if 'stash' in sys.modules:
-    stash = sys.modules['stash']
-    reload(stash)  # reload to ensure any changes to be honoured
+if '__stash' in sys.modules:
+    stash = sys.modules['__stash']
+    reload(__stash)  # reload to ensure any changes to be honoured
 else:
-    import stash
+    import stash as __stash
 
-_stash = stash.StaSh()
+_stash = __stash.StaSh()
 _stash.run()
-

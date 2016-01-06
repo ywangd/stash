@@ -1707,11 +1707,12 @@ class ShTerm(ui.View):
         self.app.will_close()
 
     def keyboard_frame_did_change(self, frame):
-        if frame[3] > 0:
-            self.txts.height = self.height - frame[3]
-        else:
-            self.txts.height = self.height
-        self.flush()
+        if self.on_screen:
+           if frame[3] > 0:
+               self.txts.height = self.height - frame[3]
+           else:
+               self.txts.height = self.height
+           self.flush()
 
     def is_flushing(self):
         return self._flush_thread is not None and self._flush_thread.isAlive()
@@ -2305,4 +2306,3 @@ if __name__ == '__main__':
 
     _stash = StaSh()
     _stash.run()
-
