@@ -256,11 +256,12 @@ class ShUI(ui.View):
         :param frame:
         :return:
         """
-        if frame[3] > 0:
-            self.txts.height = self.height - frame[3]
-        else:
-            self.txts.height = self.height
-        # TODO: Scroll to end? may not be necessary
+        if self.on_screen:
+            if frame[3] > 0:
+                self.txts.height = self.height - frame[3]
+            else:
+                self.txts.height = self.height
+            # TODO: Scroll to end? may not be necessary
 
     def will_close(self):
         """

@@ -89,8 +89,8 @@ def count_commits_between(repo,rev1,rev2):
     sha2=find_revision_sha(repo,rev2)
     if sha1==sha2:
         return (0,0)
-    sha1_ahead= sum(1 for _ in Walker(repo.repo.object_store,(sha1,),(sha2,)))
-    sha1_behind=sum(1 for _ in Walker(repo.repo.object_store,(sha2,),(sha1,)))
+    sha1_ahead= sum(1 for _ in Walker(repo.repo.object_store,[sha1],[sha2]))
+    sha1_behind=sum(1 for _ in Walker(repo.repo.object_store,[sha2],[sha1]))
     return (sha1_ahead,sha1_behind)
     
 def is_ancestor(repo,rev1,rev2):
