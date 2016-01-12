@@ -6,6 +6,8 @@ import sys
 import threading
 import ctypes
 
+from platform import platform
+M_64 = True if platform().find('64bit') != -1 else False
 
 class ShThreadTrace(threading.Thread):
     """ Killable thread implementation with trace """

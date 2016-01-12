@@ -41,7 +41,6 @@ except ImportError:
 
 from platform import platform
 ON_IPAD = True if platform().find('iPad') != -1 else False
-M_64 = True if platform().find('64bit') != -1 else False
 
 
 # noinspection PyPep8Naming
