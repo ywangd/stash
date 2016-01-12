@@ -1,21 +1,47 @@
 # StaSh - Shell Like an Expert in Pythonista
+**NOTE: This is a legacy version mainly for Pythonista 1.5.**
+
 Inspired by
 [shellista](http://omz-forums.appspot.com/pythonista/post/5302343285342208) and
 its variants, [StaSh](https://github.com/ywangd/stash) is a serious attempt to
 implement a Bash-like shell for [Pythonista](http://omz-software.com/pythonista/).
 
 Since its initial release, valuable contributions and advices have been received
-constantly from the Pythonista community (especially from
-[@briarfox](https://github.com/briarfox),
+constantly from the Pythonista community.
+The two most popular utilities are 
+**pip** (authored by [@briarfox](https://github.com/briarfox)) and 
+**git** (authored by [@jsbain](https://github.com/jsbain)). 
+Remarkable contributions are also made by
 [@dgelessus](https://github.com/dgelessus),
-[@jsbain](https://github.com/jsbain), [@pudquick](https://github.com/pudquick),
-[@oefe](https://github.com/oefe), [@cclauss](https://github.com/cclauss) and
-[@georg.viehoever] (https://github.com/GeorgViehoever) ).
+[@pudquick](https://github.com/pudquick),
+[@oefe](https://github.com/oefe), 
+[@cclauss](https://github.com/cclauss) and
+[@georg.viehoever] (https://github.com/GeorgViehoever).
 
 StaSh stands for Pythoni**sta** **Sh**ell. While **Sta** may not be the best
 abbreviation for Pythonista, it forms a concise and meaningful word with the
 following **Sh** part. So the name StaSh was chose to indicate it is a confined
 environment and great treasures may be found within.
+
+
+## Installation
+StaSh can be installed easily via a single line of python commands (courtesy of
+@whitone). Simply copy and paste the following line into Pythonista interactive
+prompt and run.
+
+```Python
+import urllib2; exec urllib2.urlopen('http://j.mp/gs0_4').read()
+```
+
+The above command installs StaSh to a folder named **stash** under your
+document root, i.e. `~/Documents/stash`.
+
+(If you have a GitHub tool available in Pythonista, such as
+[gitview](http://omz-forums.appspot.com/pythonista/post/5810965861892096) or
+[gitrepo](http://omz-forums.appspot.com/pythonista/post/5795611756462080),
+you can choose to directly clone or download the
+[repository](https://github.com/ywangd/stash).)
+
 
 ## Notable Features
 StaSh has a pile of features which are to be expected from a real shell. These
@@ -133,24 +159,6 @@ features are what really set the difference from shellista.
       `httpserver` command. It releases the binding port when terminated and
       allows subsequent calls to the same command without restarting Pythonista.
 
-
-## Installation
-StaSh can be installed easily via a single line of python commands (courtesy of
-@whitone). Simply copy and paste the following line into Pythonista interactive
-prompt and run.
-
-```Python
-import urllib2; exec urllib2.urlopen('http://bit.ly/get-stash').read()
-```
-
-The above command installs StaSh to a folder named **stash** under your
-document root, i.e. `~/Documents/stash`.
-
-(If you have a GitHub tool available in Pythonista, such as
-[gitview](http://omz-forums.appspot.com/pythonista/post/5810965861892096) or
-[gitrepo](http://omz-forums.appspot.com/pythonista/post/5795611756462080),
-you can choose to directly clone or download the
-[repository](https://github.com/ywangd/stash).)
 
 ## Usage
 The usage of StaSh is in principle similar to Bash. A few things to note are:

@@ -3,7 +3,7 @@ import sys
 import urllib2
 import random
 
-URLBASE = 'https://raw.githubusercontent.com/ywangd/stash/master'
+URLBASE = 'https://raw.githubusercontent.com/ywangd/stash/v0.4'
 
 FNAMES = 'stash.py bin/selfupdate.sh bin/echo.py bin/wget.py bin/unzip.py bin/rm.py bin/alias.py'.split()
 

@@ -832,7 +832,7 @@ class ShCompleter(object):
 _DEFAULT_RC = r"""
 PROMPT='[\W]$ '
 BIN_PATH=~/Documents/bin:$BIN_PATH
-SELFUPDATE_BRANCH=master
+SELFUPDATE_BRANCH=v0.4
 PYTHONPATH=$STASH_ROOT/lib
 alias env='printenv'
 alias logout='echo "Use the close button in the upper right corner to exit StaSh."'
