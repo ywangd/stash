@@ -15,6 +15,8 @@ import paramiko
 #import patchparamiko
 
 
+APP_DIR = os.environ['STASH_ROOT']
+
 key_mode = {'rsa': 'rsa',
             'dsa': 'dss'}
 

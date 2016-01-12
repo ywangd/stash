@@ -29,6 +29,8 @@ from socket import timeout as SocketTimeout
 
 DEBUG = False
 
+APP_DIR = os.environ['STASH_ROOT']
+
 # this is quote from the shlex module, added in py3.3
 _find_unsafe = re.compile(br'[^\w@%+=:,./~-]').search
 
@@ -466,9 +468,12 @@ class SCPException(Exception):
 def find_ssh_keys():
     #dir = os.path.expanduser('~/Documents/.ssh/')
     files = []
-    for file in os.listdir(APP_DIR+'/.ssh'):
-        if '.' not in file:
-            files.append(APP_DIR+'/.ssh/'+file)
+    try:
+        for file in os.listdir(APP_DIR+'/.ssh'):
+            if '.' not in file:
+                files.append(APP_DIR+'/.ssh/'+file)
+    except OSError:
+        pass
     return files    
     
 def parse_host(arg):
@@ -504,7 +509,13 @@ if __name__ == '__main__':
     ssh = SSHClient()
     #ssh.load_system_host_keys()
     ssh.set_missing_host_key_policy(AutoAddPolicy())
-    ssh.connect(host,username=user,key_filename=find_ssh_keys())
+
+    key_filename = find_ssh_keys()
+    if len(key_filename) == 0:  # no key file found
+        password = raw_input('Enter passsword:')
+        ssh.connect(host, username=user, password=password)
+    else:
+        ssh.connect(host,username=user,key_filename=key_filename)
 
     # SCPCLient takes a paramiko transport as its only argument
     scp = SCPClient(ssh.get_transport(),progress=scp_callback)

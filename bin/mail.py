@@ -30,6 +30,8 @@ from email.MIMEBase import MIMEBase
 from email.MIMEMultipart import MIMEMultipart
 from email.Utils import formatdate
 from email.MIMEText import MIMEText
+
+APP_DIR = os.environ['STASH_ROOT']
  
 class Mail(object):
     def __init__(self,cfg_file='',verbose=False):
