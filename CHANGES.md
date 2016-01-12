@@ -1,5 +1,23 @@
 # Change Log #
 
+### Version 0.5.0 - 2016-01-11
+* New Features
+    * Attributed text (color and style) support
+        - Default font size is now 14 on iPad (increased from 12)
+    * True external keyboard support
+    * Killable threads
+    * StaSh is now installed as a Python module under `~/Documents/site-packages/stash`
+        - Also adds a launch script as `~/Documents/launch_stash.py` for easy access 
+    
+* Improvements
+    * Largely redesigned the logic of user/script IO handling (modelled after [pyte](https://github.com/selectel/pyte))
+    * Better scrolling
+    
+* Command Scripts
+    * Replace `selfupdate.sh` with `selfupdate.py` to enable more sophisticated 
+      installation functions.
+    
+
 ### Version 0.4.x
 * Improvements
     * Added `launch_stash.py` to run StaSh in a way that can survive through

@@ -12,6 +12,7 @@ module_names = (
     'system.shterminal',
     'system.shui',
     'system.shio',
+    'system.shthreads',
 )
 
 # Find out where the launch script is located and import differently
