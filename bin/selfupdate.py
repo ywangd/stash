@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 Selfupdate StaSh from the GitHub repo.
 
