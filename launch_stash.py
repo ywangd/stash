@@ -57,7 +57,7 @@ debug = (
 )
 
 log_setting = {
-    'level': 'INFO'
+    'level': 'INFO',
 }
 
 _stash = stash.StaSh(debug=debug, log_setting=log_setting)

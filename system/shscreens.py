@@ -483,39 +483,43 @@ class ShSequentialRenderer(object):
             self.screen.clean()
 
         if IN_PYTHONISTA:
-            # Batch the changes
-            self.terminal.tso.beginEditing()
+
+            # Get a copy of the terminal text object
+            tvo_texto = NSMutableAttributedString.alloc().initWithAttributedString_(
+                self.terminal.attributed_text
+            ).autorelease()
 
             # First remove any leading texts that are rotated out
             if intact_left_bound > 0:
-                self.terminal.tso.replaceCharactersInRange_withString_(
+                tvo_texto.replaceCharactersInRange_withString_(
                     (0, intact_left_bound),
                     ''
                 )
 
-            tv_text_length = len(self.terminal.text)
+            tvo_texto_length = tvo_texto.length()
 
             # Second (re)render any modified trailing texts
             # When there are contents beyond the right bound, either on screen
             # or on terminal, the contents need to be re-rendered.
-            if intact_right_bound < max(tv_text_length, screen_buffer_length):
+            if intact_right_bound < max(tvo_texto_length, screen_buffer_length):
                 if len(renderable_chars) > 0:
-                    self.terminal.tso.replaceCharactersInRange_withAttributedString_(
+                    tvo_texto.replaceCharactersInRange_withAttributedString_(
                         (intact_right_bound,
-                         tv_text_length - intact_right_bound),
+                         tvo_texto_length - intact_right_bound),
                         self._build_attributed_string(renderable_chars)
                     )
                 else:  # empty string, pure deletion
-                    self.terminal.tso.replaceCharactersInRange_withString_(
+                    tvo_texto.replaceCharactersInRange_withString_(
                         (intact_right_bound,
-                         tv_text_length - intact_right_bound),
+                         tvo_texto_length - intact_right_bound),
                         ''
                     )
+
+            # Assign the modified text object back to the terminal
+            self.terminal.attributed_text = tvo_texto
+
             # Set the cursor position
             self.terminal.selected_range = (cursor_x, cursor_x)
-
-            # End of the batch of changes
-            self.terminal.tso.endEditing()
 
             # Ensure cursor line is visible by scroll  to the end of the text
             self.terminal.scroll_to_end()

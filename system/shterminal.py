@@ -272,6 +272,15 @@ class ShTerminal(object):
         self.tvo.setText_(value)
 
     @property
+    def attributed_text(self):
+        return self.tvo.attributedText()
+
+    @attributed_text.setter
+    @on_main_thread
+    def attributed_text(self, value):
+        self.tvo.setAttributedText_(value)
+
+    @property
     def selected_range(self):
         nsrange = self.tvo.selectedRange()
         return nsrange.location, nsrange.location + nsrange.length
