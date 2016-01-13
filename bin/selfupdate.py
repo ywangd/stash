@@ -31,7 +31,7 @@ try:
     exec urllib2.urlopen(
         'https://raw.githubusercontent.com/ywangd/stash/%s/getstash.py?q=%s' % (SELFUPDATE_BRANCH,
                                                                                 randint(1, 999999))
-    ).read() in {'_IS_UPDATE': True, 'branch': SELFUPDATE_BRANCH}
+    ).read() in {'_IS_UPDATE': True, '_br': SELFUPDATE_BRANCH}
     print _stash.text_color('Update completed.', 'green')
     print _stash.text_color('Please restart StaSh to ensure changes becoming effective.', 'green')
 except SystemExit:

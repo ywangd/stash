@@ -15,8 +15,7 @@ URL_ZIPFILE = 'https://github.com/ywangd/stash/archive/%s.zip' % branch
 TEMP_ZIPFILE = os.path.join(os.environ.get('TMPDIR', os.environ.get('TMP')),
                             '%s.zip' % branch)
 
-if not _IS_UPDATE:
-    print 'Downloading %s ...' % URL_ZIPFILE
+print 'Downloading %s ...' % URL_ZIPFILE
 
 try:
     u = urllib2.urlopen(URL_ZIPFILE)
