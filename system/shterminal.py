@@ -272,6 +272,10 @@ class ShTerminal(object):
         self.tvo.setText_(value)
 
     @property
+    def text_length(self):
+        return self.tvo.text().length()
+
+    @property
     def attributed_text(self):
         return self.tvo.attributedText()
 
