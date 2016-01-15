@@ -21,26 +21,21 @@ import logging.handlers
 
 import pyparsing as pp
 
+from system.shcommon import IN_PYTHONISTA, ON_IPAD
+
 # Detecting environments
-IN_PYTHONISTA = True
 try:
     import ui
     import console
 except ImportError:
     import system.dummyui as ui
     import system.dummyconsole as console
-    IN_PYTHONISTA = False
 
-PYTHONISTA_VERSION = '1.6'
 try:
     import ctypes
     from objc_util import *
 except ImportError:
     from system.dummyobjc_util import *  # dummy ctypes here as well
-    PYTHONISTA_VERSION = '1.5'
-
-from platform import platform
-ON_IPAD = True if platform().find('iPad') != -1 else False
 
 
 # noinspection PyPep8Naming

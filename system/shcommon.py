@@ -2,7 +2,15 @@
 """
 The Control, Escape and Graphics are taken from pyte (https://github.com/selectel/pyte)
 """
+import sys
+import platform
 from itertools import chain
+
+
+IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
+
+ON_IPAD = platform.platform().find('iPad') >= 0
+ON_IOS_8 = platform.platform().split('-')[1].startswith('14')
 
 
 def is_binary_file(filename, nbytes=1024):
