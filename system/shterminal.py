@@ -4,15 +4,11 @@ import logging
 
 try:
     import ui
-    import console
-except ImportError:
-    import dummyui as ui
-    import dummyconsole as console
-
-try:
     from objc_util import *
 except ImportError:
+    import dummyui as ui
     from .dummyobjc_util import *
+
 
 # ObjC related stuff
 UIFont = ObjCClass('UIFont')

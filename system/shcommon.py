@@ -9,8 +9,11 @@ from itertools import chain
 
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 
-ON_IPAD = platform.platform().find('iPad') >= 0
-ON_IOS_8 = platform.platform().split('-')[1].startswith('14')
+platform_string = platform.platform()
+
+ON_IPAD = platform_string.find('iPad') >= 0
+ON_IOS_8 = platform_string.split('-')[1].startswith('14')
+M_64 = platform_string.find('64bit') != -1
 
 
 def is_binary_file(filename, nbytes=1024):

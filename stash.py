@@ -21,24 +21,17 @@ import logging.handlers
 
 import pyparsing as pp
 
-from system.shcommon import IN_PYTHONISTA, ON_IPAD
-
 # Detecting environments
 try:
     import ui
-    import console
-except ImportError:
-    import system.dummyui as ui
-    import system.dummyconsole as console
-
-try:
     import ctypes
     from objc_util import *
 except ImportError:
+    import system.dummyui as ui
     from system.dummyobjc_util import *  # dummy ctypes here as well
 
-
 # noinspection PyPep8Naming
+from system.shcommon import IN_PYTHONISTA, ON_IPAD
 from system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc, is_binary_file
 from system.shstreams import ShMiniBuffer, ShStream
 from system.shscreens import ShSequentialScreen, ShSequentialRenderer

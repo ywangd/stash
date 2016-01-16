@@ -1,5 +1,4 @@
 # coding: utf-8
-import functools
 import logging
 import time
 from collections import deque

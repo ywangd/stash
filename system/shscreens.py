@@ -6,14 +6,13 @@ import threading
 from collections import deque, namedtuple
 from contextlib import contextmanager
 
-from .shcommon import IN_PYTHONISTA, ON_IOS_8
-
 try:
     from objc_util import *
 except ImportError:
     from dummyobjc_util import *
 
-from shcommon import Graphics as graphics, Control as ctrl, Escape as esc
+from .shcommon import IN_PYTHONISTA, ON_IOS_8
+from .shcommon import Graphics as graphics, Control as ctrl, Escape as esc
 
 NSMutableAttributedString = ObjCClass('NSMutableAttributedString')
 UIFont = ObjCClass('UIFont')

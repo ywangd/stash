@@ -2,23 +2,15 @@
 import time
 import logging
 
-IN_PYTHONISTA = True
+
 try:
     import ui
-    import console
 except ImportError:
     import dummyui as ui
-    import dummyconsole as console
-    IN_PYTHONISTA = False
 
-from platform import platform
-if platform().find('iPad') != -1:
-    ON_IPAD = True
-else:
-    ON_IPAD = False
+from .shcommon import IN_PYTHONISTA, ON_IPAD
+from .shterminal import ShTerminal, StubTerminal
 
-
-from shterminal import ShTerminal, StubTerminal
 
 class ShVk(ui.View):
     """
