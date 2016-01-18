@@ -60,7 +60,7 @@ def input_stream(files=()):
         fileinput.close()
 
 
-def install_module_from_github(username, package_name, version, append_version=True):
+def install_module_from_github(username, package_name, version):
     """
     Download and install a module from github using its release zip file.
     The module is install in $STASH_ROOT/lib to separate from system
@@ -76,12 +76,11 @@ def install_module_from_github(username, package_name, version, append_version=T
     mkdir $TMPDIR/{1}_src
     unzip $TMPDIR/{1}.zip -d $TMPDIR/{1}_src
     rm -f $TMPDIR/{1}.zip
-    mv $TMPDIR/{1}_src/{1} $STASH_ROOT/lib/{1}{3}
+    mv $TMPDIR/{1}_src/{1} $STASH_ROOT/lib/
     rm -rf $TMPDIR/{1}_src
     echo Done
     """.format(username,
                package_name,
-               version,
-               '_' + version.replace('.', '_') if append_version else ''
+               version
     )
     globals()['_stash'](cmd_string)
