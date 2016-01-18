@@ -59,29 +59,3 @@ def input_stream(files=()):
     finally:
         fileinput.close()
 
-
-def install_module_from_github(username, package_name, version):
-    """
-    Download and install a module from github using its release zip file.
-    The module is install in $STASH_ROOT/lib to separate from system
-    paths. Thus the module is only usable from within StaSh.
-    :param username:
-    :param package_name:
-    :param version:
-    :return:
-    """
-    cmd_string = """
-    echo Installing {1} 1.16.0 ...
-    wget https://github.com/{0}/{1}/archive/v{2}.zip -o $TMPDIR/{1}.zip
-    mkdir $TMPDIR/{1}_src
-    unzip $TMPDIR/{1}.zip -d $TMPDIR/{1}_src
-    rm -f $TMPDIR/{1}.zip
-    mv $TMPDIR/{1}_src/{1} $STASH_ROOT/lib/
-    rm -rf $TMPDIR/{1}_src
-    echo Done
-    echo You may need restart Pythonista for changes to take full effect
-    """.format(username,
-               package_name,
-               version
-    )
-    globals()['_stash'](cmd_string)

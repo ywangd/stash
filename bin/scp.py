@@ -29,15 +29,33 @@ import re
 from socket import timeout as SocketTimeout
 from distutils.version import StrictVersion
 
+
+def install_module_from_github(username, package_name, version):
+    cmd_string = """
+        echo Installing {1} {2} ...
+        wget https://github.com/{0}/{1}/archive/v{2}.zip -o $TMPDIR/{1}.zip
+        mkdir $TMPDIR/{1}_src
+        unzip $TMPDIR/{1}.zip -d $TMPDIR/{1}_src
+        rm -f $TMPDIR/{1}.zip
+        mv $TMPDIR/{1}_src/{1} $STASH_ROOT/lib/
+        rm -rf $TMPDIR/{1}_src
+        echo Done
+        """.format(username,
+                   package_name,
+                   version
+                   )
+    globals()['_stash'](cmd_string)
+
+
 try:
     import paramiko
     if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
         raise ImportError
 except ImportError:
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
-    globals()['_stash'].libcore.install_module_from_github(
-        'paramiko', 'paramiko', '1.16.0')
-    import paramiko
+    install_module_from_github('paramiko', 'paramiko', '1.16.0')
+    print 'Please restart Pythonista for changes to take full effect'
+    sys.exit(0)
 
 
 DEBUG = False

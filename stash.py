@@ -1680,8 +1680,6 @@ class StaSh(object):
                     name, _ = os.path.splitext(f)
                     try:
                         self.__dict__[name] = pyimp.load_source(name, os.path.join(lib_path, f))
-                        # make stash available in lib functions
-                        self.__dict__[name]._stash = self
                     except Exception as e:
                         self.write_message('%s: failed to load library file (%s)' % (f, repr(e)))
         finally:
