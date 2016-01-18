@@ -27,19 +27,14 @@ import os
 import sys
 import re
 from socket import timeout as SocketTimeout
-from distutils.version import StrictVersion
 
-
-import paramiko
-if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
-    cmd_string = """echo Installing paramiko 1.16.0
-    pip install paramiko 1.16.0
-    echo "\nPlease restart Pythonista for changes to take full effect"
-    """
-    globals()['_stash'](cmd_string)
-    sys.exit(0)
-
-from paramiko import SSHClient, AutoAddPolicy
+try:
+    import paramiko_1_16_0 as paramiko
+except ImportError:
+    # Install paramiko 1.16.0 to fix a bug with version < 1.15
+    globals()['_stash'].libcore.install_module_from_github(
+        'paramiko', 'paramiko', '1.16.0')
+    import paramiko_1_16_0 as paramiko
 
 
 DEBUG = False
@@ -520,9 +515,9 @@ if __name__ == '__main__':
         else:
             files.append(file)
             
-    ssh = SSHClient()
+    ssh = paramiko.SSHClient()
     #ssh.load_system_host_keys()
-    ssh.set_missing_host_key_policy(AutoAddPolicy())
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     key_filename = find_ssh_keys()
     if len(key_filename) == 0:  # no key file found

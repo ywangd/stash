@@ -25,52 +25,27 @@ import argparse
 import threading
 import time
 import re
-from distutils.version import StrictVersion
 
-import paramiko
-if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
-    cmd_string = """echo Installing paramiko 1.16.0
-    pip install paramiko 1.16.0
-    echo "\nPlease restart Pythonista for changes to take full effect"
-    """
-    globals()['_stash'](cmd_string)
-    sys.exit(0)
 
-from paramiko import SSHClient, AutoAddPolicy, SFTPClient
+try:
+    import paramiko_1_16_0 as paramiko
+except ImportError:
+    # Install paramiko 1.16.0 to fix a bug with version < 1.15
+    globals()['_stash'].libcore.install_module_from_github(
+        'paramiko', 'paramiko', '1.16.0')
+    import paramiko_1_16_0 as paramiko
 
-def get_pyte():
-    """
-    Install pyte 0.4.10. Newer version requires wcwidth. While it can also be
-    installed, it is easier to installed an older version without worrying
-    about any external dependencies
-    :return:
-    """
-    import tempfile
-    commands = '''
-    echo StaSh ssh installing pyte 0.4.10 ...
-    wget https://github.com/selectel/pyte/archive/0.4.10.zip -o $TMP/pyte.zip
-    mkdir $TMP/pyte_src
-    unzip $TMP/pyte.zip -d $TMP/pyte_src
-    rm -f $TMP/pyte.zip
-    mv $TMP/pyte_src/pyte ~/Documents/site-packages/
-    rm -rf $TMP/pyte_src
-    echo done
-    '''
-    temp = tempfile.NamedTemporaryFile()
-    try:
-        temp.write(commands)
-        temp.seek(0)
-        globals()['_stash'].runtime.exec_sh_file(temp.name)
-    finally:
-    # Automatically cleans up the file
-        temp.close()
 
 try:
     import pyte
-except:
-    print 'pyte module not found.'
-    get_pyte()
-    import pyte
+except ImportError:
+    # Install pyte 0.4.10. Newer version requires wcwidth. While it can also be
+    # installed, it is easier to installed an older version without worrying
+    # about any external dependencies
+    globals()['_stash'].libcore.install_module_from_github(
+        'selectel', 'pyte', '0.4.10')
+    import pyte_0_14_10 as pyte
+
 
 class StashSSH(object):
     
@@ -89,8 +64,8 @@ class StashSSH(object):
         self.stash = globals()['_stash']
         self.passwd = passwd
         self.port = port
-        self.ssh = SSHClient()
-        self.ssh.set_missing_host_key_policy(AutoAddPolicy())
+        self.ssh = paramiko.SSHClient()
+        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
             print 'Looking for SSH keys...'
             self.ssh.connect(self.host,
