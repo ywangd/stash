@@ -27,14 +27,17 @@ import os
 import sys
 import re
 from socket import timeout as SocketTimeout
+from distutils.version import StrictVersion
 
 try:
-    import paramiko_1_16_0 as paramiko
+    import paramiko
+    if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
+        raise ImportError
 except ImportError:
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
     globals()['_stash'].libcore.install_module_from_github(
         'paramiko', 'paramiko', '1.16.0')
-    import paramiko_1_16_0 as paramiko
+    import paramiko
 
 
 DEBUG = False

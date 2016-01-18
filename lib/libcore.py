@@ -79,6 +79,7 @@ def install_module_from_github(username, package_name, version):
     mv $TMPDIR/{1}_src/{1} $STASH_ROOT/lib/
     rm -rf $TMPDIR/{1}_src
     echo Done
+    echo You may need restart Pythonista for changes to take full effect
     """.format(username,
                package_name,
                version
