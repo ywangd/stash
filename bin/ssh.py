@@ -25,20 +25,35 @@ import argparse
 import threading
 import time
 import re
-import sys
+from distutils.version import StrictVersion
+
+import paramiko
+if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
+    cmd_string = """echo Installing paramiko 1.16.0
+    pip install paramiko 1.16.0
+    echo "\nPlease restart Pythonista for changes to take full effect"
+    """
+    globals()['_stash'](cmd_string)
+    sys.exit(0)
 
 from paramiko import SSHClient, AutoAddPolicy, SFTPClient
 
 def get_pyte():
+    """
+    Install pyte 0.4.10. Newer version requires wcwidth. While it can also be
+    installed, it is easier to installed an older version without worrying
+    about any external dependencies
+    :return:
+    """
     import tempfile
     commands = '''
-    echo StaSh ssh installing pyte...
-    wget https://codeload.github.com/selectel/pyte/zip/master -o ~/Documents/site-packages/pyte.zip
-    mkdir ~/Documents/site-packages/pyte_folder
-    unzip ~/Documents/site-packages/pyte.zip -d ~/Documents/site-packages/pyte_folder
-    rm -r ~/Documents/site-packages/pyte.zip
-    mv ~/Documents/site-packages/pyte_folder/pyte ~/Documents/site-packages/
-    rm -r ~/Documents/site-packages/pyte_folder
+    echo StaSh ssh installing pyte 0.4.10 ...
+    wget https://github.com/selectel/pyte/archive/0.4.10.zip -o $TMP/pyte.zip
+    mkdir $TMP/pyte_src
+    unzip $TMP/pyte.zip -d $TMP/pyte_src
+    rm -f $TMP/pyte.zip
+    mv $TMP/pyte_src/pyte ~/Documents/site-packages/
+    rm -rf $TMP/pyte_src
     echo done
     '''
     temp = tempfile.NamedTemporaryFile()
@@ -86,6 +101,9 @@ class StashSSH(object):
         except:
             try:
                 print 'No SSH key found. Trying password...'
+                if self.passwd is None:
+                    self.passwd = raw_input("Enter password:")
+
                 self.ssh.connect(self.host,
                                  username=self.user,
                                  password=self.passwd,

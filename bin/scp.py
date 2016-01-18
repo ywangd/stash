@@ -24,8 +24,23 @@ __version__ = '0.8.0'
 
 import locale
 import os
+import sys
 import re
 from socket import timeout as SocketTimeout
+from distutils.version import StrictVersion
+
+
+import paramiko
+if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
+    cmd_string = """echo Installing paramiko 1.16.0
+    pip install paramiko 1.16.0
+    echo "\nPlease restart Pythonista for changes to take full effect"
+    """
+    globals()['_stash'](cmd_string)
+    sys.exit(0)
+
+from paramiko import SSHClient, AutoAddPolicy
+
 
 DEBUG = False
 
@@ -487,7 +502,6 @@ def scp_callback(filename, size, sent):
     
 
 if __name__ == '__main__':
-    from paramiko import SSHClient, AutoAddPolicy
     files = []
     
     ap = argparse.ArgumentParser()
