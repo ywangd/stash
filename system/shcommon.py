@@ -2,12 +2,19 @@
 """
 The Control, Escape and Graphics are taken from pyte (https://github.com/selectel/pyte)
 """
+import os
 import sys
 import platform
 from itertools import chain
 
 
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
+
+PYTHONISTA_VERSION = '0.0'
+if IN_PYTHONISTA:
+    import plistlib
+    PYTHONISTA_VERSION = plistlib.readPlist(
+        os.path.join(os.path.dirname(sys.executable), 'Info.plist'))['CFBundleShortVersionString']
 
 platform_string = platform.platform()
 

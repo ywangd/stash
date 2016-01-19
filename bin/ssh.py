@@ -1,6 +1,6 @@
-'''
+"""
 ssh client for stash. ssh looks for a valid key generated buy ssh-keygen in .ssh.
-You can open an intereactive shell by not passing a command. If a command is passed,
+You can open an interactive shell by not passing a command. If a command is passed,
 the single command is ran with output then ssh exits.
 
 Once a valid ssh session has been created the special command pythonista [get|put|edit] file1 [file2]
@@ -18,7 +18,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --password PASSWORD   Password for rsa/dsa key or password login
   -p PORT, --port PORT  port for ssh default: 22
-'''
+"""
 import os
 import sys
 import argparse
@@ -29,6 +29,9 @@ from distutils.version import StrictVersion
 
 
 def install_module_from_github(username, package_name, version):
+    """
+    Install python module from github zip files
+    """
     cmd_string = """
         echo Installing {1} {2} ...
         wget https://github.com/{0}/{1}/archive/v{2}.zip -o $TMPDIR/{1}.zip
@@ -45,7 +48,6 @@ def install_module_from_github(username, package_name, version):
     globals()['_stash'](cmd_string)
 
 
-
 try:
     import pyte
 except ImportError:
@@ -56,11 +58,8 @@ except ImportError:
     import pyte
 
 
-try:
-    import paramiko
-    if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
-        raise ImportError
-except ImportError:
+import paramiko
+if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
     install_module_from_github('paramiko', 'paramiko', '1.16.0')
     print 'Please restart Pythonista for changes to take full effect'

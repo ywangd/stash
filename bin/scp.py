@@ -1,14 +1,14 @@
-'''
+"""
 Secure Copy
 Copies files from local to remote
 
 usage:
     GET
     scp [user@host:dir/file] [files/dir]
-    
+
     PUT
     scp [file/dir] [file/dir] [user@host:dir]
-'''
+"""
 
 import argparse
 # scp.py
@@ -31,6 +31,9 @@ from distutils.version import StrictVersion
 
 
 def install_module_from_github(username, package_name, version):
+    """
+    Install python module from github zip files
+    """
     cmd_string = """
         echo Installing {1} {2} ...
         wget https://github.com/{0}/{1}/archive/v{2}.zip -o $TMPDIR/{1}.zip
@@ -47,11 +50,8 @@ def install_module_from_github(username, package_name, version):
     globals()['_stash'](cmd_string)
 
 
-try:
-    import paramiko
-    if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
-        raise ImportError
-except ImportError:
+import paramiko
+if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
     install_module_from_github('paramiko', 'paramiko', '1.16.0')
     print 'Please restart Pythonista for changes to take full effect'

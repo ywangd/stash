@@ -5,7 +5,7 @@ StaSh - Pythonista Shell
 https://github.com/ywangd/stash
 """
 
-__version__ = '0.5.1'
+__version__ = '0.5.2'
 
 import os
 import sys
@@ -974,7 +974,8 @@ class ShRuntime(object):
                            HOME2=os.path.join(os.environ['HOME'], 'Documents'),
                            STASH_ROOT=_STASH_ROOT,
                            BIN_PATH=os.path.join(_STASH_ROOT, 'bin'),
-                           PROMPT='[\W]$ ')
+                           PROMPT='[\W]$ ',
+                           PYTHONISTA_ROOT=os.path.dirname(sys.executable))
         self.aliases = {}
         config = stash.config
         self.rcfile = os.path.join(_STASH_ROOT, config.get('system', 'rcfile'))
