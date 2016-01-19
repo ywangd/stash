@@ -521,7 +521,8 @@ if __name__ == '__main__':
     files = []
     
     ap = argparse.ArgumentParser()
-    ap.add_argument('files',nargs='*', help='file or module name')
+    ap.add_argument('-p', '--password', help='login password')
+    ap.add_argument('files', nargs='*', help='file or module name')
     args = ap.parse_args()
     
     #scp_mode 0 put 1 get
@@ -541,11 +542,15 @@ if __name__ == '__main__':
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     key_filename = find_ssh_keys()
-    if len(key_filename) == 0:  # no key file found
-        password = raw_input('Enter passsword:')
-        ssh.connect(host, username=user, password=password)
+    if args.password is not None:
+        ssh.connect(host, username=user, password=args.password)
+
     else:
-        ssh.connect(host,username=user,key_filename=key_filename)
+        if len(key_filename) == 0:  # no key file found
+            password = raw_input('Enter passsword:')
+            ssh.connect(host, username=user, password=password)
+        else:
+            ssh.connect(host,username=user,key_filename=key_filename)
 
     # SCPCLient takes a paramiko transport as its only argument
     scp = SCPClient(ssh.get_transport(),progress=scp_callback)
@@ -558,6 +563,8 @@ if __name__ == '__main__':
     else:
         print 'Copying to server...'
         scp.put(files, recursive=True, remote_path=host_path)
+
+    ssh.close()
 
 
 
