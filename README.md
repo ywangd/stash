@@ -24,17 +24,17 @@ environment and great treasures may be found within.
 
 ## Installation
 **StaSh can be easily installed via one line of python command**
-(courtesy of @whitone). 
+(courtesy of [@whitone](https://forum.omz-software.com/user/whitone)). 
 ```Python
 import requests as r; exec r.get('http://bit.ly/get-stash').text
 ```
-Simply copy the above line, paste into Pythonista interactive prompt and execute.
-It installs StaSh as a Python module under the `site-packages` 
+Simply copy the above line, paste into Pythonista interactive prompt and
+execute. It installs StaSh as a Python module under the `site-packages` 
 folder (`~/Documents/site-packages/stash`) and copies **a launching script, 
 `~/Documents/launch_stash.py`** for easy access.
 
 *If you have previous versions of StaSh installed (e.g. v0.4.x), 
-You may need to restart Pythonista before the installation.*
+You may need to restart Pythonista BEFORE the installation.*
 
 *If you have a GitHub tool available in Pythonista, such as
 [gitview](http://omz-forums.appspot.com/pythonista/post/5810965861892096) or
@@ -46,6 +46,25 @@ you can choose to directly clone or download the
 older Pythonista 1.5 compatible version, please refer to the
 [v0.4](https://github.com/ywangd/stash/tree/v0.4) branch.*
 
+
+## Upgrade
+Once StaSh is installed, it can be easily updated by running the `selfupdate`
+command from within the shell. 
+* `selfupdate` defaults to the `master` branch. To update from a different
+  branch, e.g. `dev`, use `selfupdate dev`.
+* By default, `selfupdate` compares local and remote versions and only performs
+  update if newer version is found. You can however force the update without
+  version checking via `selfupdate -f`.
+* To check for newer version without actually install it, use `selfupdate -n`.
+* `selfupdate` manages StaSh installation folder and may delete files in the
+  process. It is therefore recommended to **not** place your own scripts under
+  `$STASH_ROOT/bin`. Instead, save your own scripts in`~/Documents/bin` or
+  customise the locations with the `BIN_PATH` environment variable. 
+* You may need to restart Pythonista after the update for changes to take full
+  effects.
+
+*selfupdate cannot be used for version 0.4.x and under. A fresh
+[installation](#installation) is needed.*
 
 ## Notable Features
 StaSh has a pile of features that are expected from a real shell. These
@@ -138,15 +157,6 @@ features are what really set the difference from shellista.
 
 * **Easy self update** to keep update with the development by running a single
   `selfupdate` command from within the shell.
-    - The `selfupdate` script manages StaSh installation folder and may delete
-      files in the process. It is therefore recommend to **not** put your own
-      scripts under `$STASH_ROOT/bin`. Instead, save your own scripts
-      in`~/Documents/bin` or customise the locations with `BIN_PATH` environment
-      variable. 
-    - Self-update defaults to the master branch. To update from a different
-      branch, e.g. the **dev** branch, run **`selfupdate dev`**
-    - You may need to restart StaSh after the update to changes to take full
-      effects.
 
 * The UI can be configured via **configuration file** to customize its font
   size and color. The default config file is `.stash_config` or `stash.cfg` 
@@ -267,8 +277,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
 
 ## Known Issues
 * Pickled objects are not restored correctly and generate `AttributeError` as
-  if the class definition cannot be found. An example is the
-  [DropboxSync](https://gist.github.com/freekrai/4183134) script.
+  if the class definition cannot be found. 
 
 
 ## Contributing
