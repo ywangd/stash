@@ -475,43 +475,47 @@ class ShSequentialRenderer(object):
 
         if IN_PYTHONISTA:
 
-            # The following line is to fix a potential crash on iOS 8
+            # Specific code for ios 8 to fix possible crash
             if ON_IOS_8:
-                self.terminal.selected_range = (0, 0)
-
-            # Batch the changes
-            self.terminal.tso.beginEditing()
+                tvo_texts = NSMutableAttributedString.alloc().initWithAttributedString_(
+                    self.terminal.tvo.attributedText()).autorelease()
+            else:
+                tvo_texts = self.terminal.tso
+                tvo_texts.beginEditing()  # batch the changes
 
             # First remove any leading texts that are rotated out
             if intact_left_bound > 0:
-                self.terminal.tso.replaceCharactersInRange_withString_(
+                tvo_texts.replaceCharactersInRange_withString_(
                     (0, intact_left_bound),
                     ''
                 )
 
-            tv_text_length = self.terminal.text_length
+            tv_text_length = tvo_texts.length()
 
             # Second (re)render any modified trailing texts
             # When there are contents beyond the right bound, either on screen
             # or on terminal, the contents need to be re-rendered.
             if intact_right_bound < max(tv_text_length, screen_buffer_length):
                 if len(renderable_chars) > 0:
-                    self.terminal.tso.replaceCharactersInRange_withAttributedString_(
+                    tvo_texts.replaceCharactersInRange_withAttributedString_(
                         (intact_right_bound,
                          tv_text_length - intact_right_bound),
                         self._build_attributed_string(renderable_chars)
                     )
                 else:  # empty string, pure deletion
-                    self.terminal.tso.replaceCharactersInRange_withString_(
+                    tvo_texts.replaceCharactersInRange_withString_(
                         (intact_right_bound,
                          tv_text_length - intact_right_bound),
                         ''
                     )
+
+            if ON_IOS_8:
+                self.terminal.tvo.setAttributedText_(tvo_texts)  # set the text
+            else:
+                tvo_texts.endEditing()  # end of batched changes
+
             # Set the cursor position
             self.terminal.selected_range = (cursor_x, cursor_x)
-
-            # End of the batch of changes
-            self.terminal.tso.endEditing()
 
             # Ensure cursor line is visible by scroll  to the end of the text
             self.terminal.scroll_to_end()
