@@ -8,17 +8,6 @@ import imghdr
 from argparse import ArgumentParser
 
 
-def sizeof_fmt(num):
-    for x in ['B', 'KB', 'MB', 'GB']:
-        if num < 1024.0:
-            if (x == 'bytes'):
-                return "%s %s" % (num, x)
-            else:
-                return "%3.1f %s" % (num, x)
-        num /= 1024.0
-    return "%3.1f%s" % (num, 'TB')
-
-
 def main(args):
 
     ap = ArgumentParser()
@@ -26,18 +15,20 @@ def main(args):
     ap.add_argument('-a', '--all', action='store_true', help='do not ignore entries starting with .')
     ap.add_argument('-l', '--long', action='store_true', help='use a long listing format')
     ap.add_argument('files', nargs='*', help='files to be listed')
-    args = ap.parse_args(args)
+    ns = ap.parse_args(args)
 
-    joiner = '\n' if args.one_line or args.long else ' '
+    sizeof_fmt = globals()['_stash'].libcore.sizeof_fmt
 
-    if args.all:
+    joiner = '\n' if ns.one_line or ns.long else ' '
+
+    if ns.all:
         def _filter(filename):
             return True
     else:
         def _filter(filename):
             return False if filename.startswith('.') else True
 
-    if args.long:
+    if ns.long:
         def _fmt(filename, dirname=''):
             _stat = os.stat(os.path.join(dirname, filename))
 
@@ -71,7 +62,7 @@ def main(args):
             else:
                 return filename
 
-    if len(args.files) == 0:
+    if len(ns.files) == 0:
         out = joiner.join(_fmt(f) for f in os.listdir('.') if _filter(f))
         print out
 
@@ -79,7 +70,7 @@ def main(args):
         out_dir = []
         out_file = []
         out_miss = []
-        for f in args.files:
+        for f in ns.files:
             if not os.path.exists(f):
                 out_miss.append('ls: %s: No such file or directory' % f)
             elif os.path.isdir(f):

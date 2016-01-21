@@ -59,3 +59,10 @@ def input_stream(files=()):
     finally:
         fileinput.close()
 
+
+def sizeof_fmt(num):
+    for unit in ['B', 'K', 'M', 'G']:
+        if num < 1024:
+            return "%3.1f%s" % (num, unit)
+        num /= 1024.0
+    return "%3.1f%s" % (num, 'T')
