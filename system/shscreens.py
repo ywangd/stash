@@ -90,7 +90,7 @@ class ShSequentialScreen(object):
         self.debug = debug
         self.logger = logging.getLogger('StaSh.Screen')
 
-        self.buffer = deque()  # buffer to hold chars
+        self._buffer = deque()  # buffer to hold chars
         self.lock = threading.Lock()
 
         self.attrs = ShChar(' ')
@@ -104,7 +104,7 @@ class ShSequentialScreen(object):
         with at least one parameter (even it is a dummy 0).
         """
         # empty the buffer
-        self.buffer.clear()
+        self._buffer.clear()
 
         # The cursor position
         self.cursor_x = 0
@@ -127,7 +127,7 @@ class ShSequentialScreen(object):
         """
         :rtype: str
         """
-        return ''.join(char.data for char in self.buffer)
+        return ''.join(char.data for char in self._buffer)
 
     @property
     def renderable_chars(self):
@@ -137,7 +137,7 @@ class ShSequentialScreen(object):
         :rtype: [ShChar]
         """
         _, rbound = self.get_bounds()
-        return [self.buffer[x] for x in range(rbound, len(self.buffer))]
+        return [self._buffer[x] for x in range(rbound, len(self._buffer))]
 
     @property
     def x_modifiable(self):
@@ -148,8 +148,8 @@ class ShSequentialScreen(object):
         """
         # The position is either the x_drawend or last LF location plus one,
         # whichever is larger.
-        for idx in reversed(range(self.x_drawend, len(self.buffer))):
-            if self.buffer[idx].data == '\n':
+        for idx in reversed(range(self.x_drawend, len(self._buffer))):
+            if self._buffer[idx].data == '\n':
                 return idx + 1
         else:
             return self.x_drawend
@@ -159,8 +159,8 @@ class ShSequentialScreen(object):
         """
         :rtype: str
         """
-        return ''.join(self.buffer[idx].data
-                       for idx in range(self.x_modifiable, len(self.buffer)))
+        return ''.join(self._buffer[idx].data
+                       for idx in range(self.x_modifiable, len(self._buffer)))
 
     @modifiable_chars.setter
     def modifiable_chars(self, s):
@@ -168,7 +168,7 @@ class ShSequentialScreen(object):
         Set the modifiable_chars to the given string.
         :param str s: A new value for modifiable_chars.
         """
-        self.replace_in_range((self.x_modifiable, len(self.buffer)), s)
+        self.replace_in_range((self.x_modifiable, len(self._buffer)), s)
 
     @contextmanager
     def acquire_lock(self):
@@ -200,7 +200,7 @@ class ShSequentialScreen(object):
         Mark everything is rendered.
         """
         self.intact_left_bound = 0
-        self.intact_right_bound = len(self.buffer)
+        self.intact_right_bound = len(self._buffer)
 
     # noinspection PyProtectedMember
     def draw(self, c):
@@ -209,11 +209,11 @@ class ShSequentialScreen(object):
         location. This method should ONLY be called by ShStream.
         :param str c: A new character to draw
         """
-        if len(self.buffer) < self.intact_right_bound:
-            self.intact_right_bound = len(self.buffer)
+        if len(self._buffer) < self.intact_right_bound:
+            self.intact_right_bound = len(self._buffer)
 
-        self.buffer.append(self.attrs._replace(data=c))
-        self.cursor_x = self.x_drawend = len(self.buffer)
+        self._buffer.append(self.attrs._replace(data=c))
+        self.cursor_x = self.x_drawend = len(self._buffer)
 
         if c == '\n':
             self.nlines += 1
@@ -232,7 +232,7 @@ class ShSequentialScreen(object):
         :return:
         """
         if rng is None:
-            rng = (len(self.buffer), len(self.buffer))
+            rng = (len(self._buffer), len(self._buffer))
 
         elif relative_to_x_modifiable:  # Convert to absolute location if necessary
             rng = rng[0] + self.x_modifiable, rng[1] + self.x_modifiable
@@ -241,16 +241,16 @@ class ShSequentialScreen(object):
         if rng[0] < self.intact_right_bound:
             self.intact_right_bound = rng[0]
 
-        rotate_n = max(len(self.buffer) - rng[1], 0)
+        rotate_n = max(len(self._buffer) - rng[1], 0)
         try:
-            self.buffer.rotate(rotate_n)  # rotate buffer first so deletion is possible
+            self._buffer.rotate(rotate_n)  # rotate buffer first so deletion is possible
             if rng[0] != rng[1]:  # delete chars if necessary
                 self._pop_chars(rng[1] - rng[0])
             # The newly inserted chars are always of default properties
-            self.buffer.extend(DEFAULT_CHAR._replace(data=c) for c in s)
+            self._buffer.extend(DEFAULT_CHAR._replace(data=c) for c in s)
 
         finally:
-            self.buffer.rotate(-rotate_n)
+            self._buffer.rotate(-rotate_n)
 
         # Update cursor to the end of this replacement
         self.cursor_x = rng[0] + len(s)
@@ -265,8 +265,8 @@ class ShSequentialScreen(object):
             self._ensure_nlines_max()
 
     def ensure_cursor_in_modifiable_range(self):
-        if self.cursor_x > len(self.buffer):
-            self.cursor_x = len(self.buffer)
+        if self.cursor_x > len(self._buffer):
+            self.cursor_x = len(self._buffer)
         elif self.cursor_x < self.x_modifiable:
             self.cursor_x = self.x_modifiable
 
@@ -277,9 +277,9 @@ class ShSequentialScreen(object):
         :return:
         """
         for _ in range(n):
-            self.buffer.pop()
-            if len(self.buffer) < self.intact_right_bound:
-                self.intact_right_bound = len(self.buffer)
+            self._buffer.pop()
+            if len(self._buffer) < self.intact_right_bound:
+                self.intact_right_bound = len(self._buffer)
 
     def _ensure_nlines_max(self):
         """
@@ -288,9 +288,9 @@ class ShSequentialScreen(object):
         char_count = line_count = 0
         for _ in range(self.nlines_max, self.nlines):
             # Remove the top line
-            for idx in range(len(self.buffer)):
+            for idx in range(len(self._buffer)):
                 char_count += 1
-                if self.buffer.popleft().data == '\n':
+                if self._buffer.popleft().data == '\n':
                     line_count += 1
                     break
 
@@ -468,7 +468,7 @@ class ShSequentialRenderer(object):
         # Lock screen to get atomic information
         with self.screen.acquire_lock():
             intact_left_bound, intact_right_bound = self.screen.get_bounds()
-            screen_buffer_length = len(self.screen.buffer)
+            screen_buffer_length = len(self.screen._buffer)
             cursor_x = self.screen.cursor_x
             renderable_chars = self.screen.renderable_chars
             self.screen.clean()

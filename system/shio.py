@@ -18,7 +18,7 @@ class ShIO(object):
         self.logger = logging.getLogger('StaSh.IO')
         self.tell_pos = 0
         # The input buffer, push from the Left end, read from the right end
-        self.buffer = deque()
+        self._buffer = deque()
         self.chunk_size = 4096
         # When buffer is empty, hold back for certain before read again
         # This is to lower the cpu usage of the reading thread so it does
@@ -26,7 +26,7 @@ class ShIO(object):
         self.holdback = 0.2
 
     def push(self, s):
-        self.buffer.extendleft(s)
+        self._buffer.extendleft(s)
 
     # Following methods to provide file like object interface
     @property
@@ -61,13 +61,13 @@ class ShIO(object):
         size = size if size != 0 else 1
 
         if size == -1:
-            return ''.join(self.buffer.pop() for _ in len(self.buffer))
+            return ''.join(self._buffer.pop() for _ in len(self._buffer))
 
         else:
             ret = []
             while len(ret) < size:
                 try:
-                    ret.append(self.buffer.pop())
+                    ret.append(self._buffer.pop())
                 except IndexError:
                     # Wait briefly when the buffer is empty to avoid taxing the CPU
                     time.sleep(self.holdback)
@@ -78,7 +78,7 @@ class ShIO(object):
         ret = []
         while True:
             try:
-                ret.append(self.buffer.pop())
+                ret.append(self._buffer.pop())
                 if ret[-1] == '\n':
                     break
             except IndexError:
@@ -95,7 +95,7 @@ class ShIO(object):
         ret = []
         while True:
             try:
-                ret.append(self.buffer.pop())
+                ret.append(self._buffer.pop())
                 if ret[-1] == '\0':
                     break
             except IndexError:
@@ -118,7 +118,7 @@ class ShIO(object):
             self.stash.mini_buffer.cbreak = True
             while True:
                 try:
-                    yield self.buffer.pop()
+                    yield self._buffer.pop()
                 except IndexError:
                     time.sleep(self.holdback)
 
@@ -137,12 +137,12 @@ class ShIO(object):
         ret = []
         while True:
             try:
-                ret.append(self.buffer.pop())
+                ret.append(self._buffer.pop())
                 if ret[-1] == '\n':
                     yield ''.join(ret)
                     ret = []
             except IndexError:
-                self.buffer.extend(ret)
+                self._buffer.extend(ret)
                 break
 
     def write(self, s, no_wait=False):
