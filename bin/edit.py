@@ -1,7 +1,7 @@
 """
 Used to create/open and edit files.
 [-t --temp] - Opens the file as a temporary file. Allowing editing and renaming. Previous script in the pythonista editor will be restored unless a new tab is edited.
-[-o --old_tab] - Open file in an old editor tab (default is new tab, which is possible since Pythonista 1.6, although not for make_new_file; see https://forum.omz-software.com/topic/2428/editor-observations)
+[-o --old_tab] - Open file in an old editor tab (default is new tab, which is possible from Pythonista 1.6, although not for make_new_file; see https://forum.omz-software.com/topic/2428/editor-observations)
 
 usage:
     edit [-t --temp] [-o --old_tab] [file]
