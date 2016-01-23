@@ -37,13 +37,16 @@ def open_temp(file='', new_tab=True):
         input = raw_input('Save Changes? Y,N: ')
     
         if input=='Y' or input=='y':
-            try:
-                save_as = raw_input('Save file as [Enter to confirm]: %s' % file_to_edit) or file_to_edit
-            except:
-                save_as = file_to_edit
-            
+            while True:
+                try:
+                    save_as = raw_input('Save file as [Enter to confirm]: %s' % file_to_edit) or file_to_edit
+                except:
+                    save_as = file_to_edit
+                if save_as:
+                    break
+
             if not new_tab:
-                editor.open_file(cur_path)
+                editor.open_file(cur_path) # restore previous script in editor
             with open(save_as,'w') as f:
                 with open(temp.name,'r') as tmp:
                     f.write(tmp.read())
@@ -51,7 +54,7 @@ def open_temp(file='', new_tab=True):
             print 'File Saved.'
         elif input=='N' or input=='n':
             if not new_tab:
-                editor.open_file(cur_path)
+                editor.open_file(cur_path) # restore previous script in editor
     
     except Exception, e:
         print e
@@ -68,14 +71,15 @@ def open_editor(file='', new_tab=True):
         
 if __name__=='__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('-t','--temp',action='store_true',default=False,help='Open file to a temp file')
-    ap.add_argument('-o','--old_tab',action='store_true',default=False,help='Open file in an old editor tab (default is new tab)')
+    ap.add_argument('-t','--temp',action='store_true',default=False,help='open file to a temp file')
+    ap.add_argument('-o','--old_tab',action='store_true',default=False,help='open file in an old editor tab (default is new tab)')
     ap.add_argument('file', action='store',nargs='?',default=False,help='File to open')
     ns = ap.parse_args()
 
     # Calculate the relative path because absolute path crashes Pythonista
     # most likely due to access right for iOS root path.
-    filename = os.path.relpath(ns.file, '.')
+    if ns.file:
+        filename = os.path.relpath(ns.file, '.')
 
     if ns.temp and ns.file:
         open_temp(filename, new_tab=not ns.old_tab)
