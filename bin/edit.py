@@ -14,7 +14,7 @@ import time
 import argparse
 
 
-def open_temp(file=''):
+def open_temp(file='', new_tab=True):
     try:
         file_to_edit = file
         temp = tempfile.NamedTemporaryFile(dir=os.path.expanduser('~/Documents') , suffix='.py')
@@ -56,16 +56,17 @@ def open_temp(file=''):
     finally:
         temp.close()
 
-def open_editor(file=''):
+def open_editor(file='', new_tab=True):
     if os.path.isfile(os.getcwd()+'/'+file):
-        editor.open_file(os.getcwd()+'/'+file)
+        editor.open_file(os.getcwd()+'/'+file, new_tab)
         console.hide_output()
     else:
         editor.make_new_file(file if file else 'untitled.py')
         
 if __name__=='__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('-t','--temp',action='store_true',default=False,help='Open file to a temp file.')
+    ap.add_argument('-t','--temp',action='store_true',default=False,help='Open file to a temp file')
+    ap.add_argument('-o','--old',action='store_true',default=False,help='Open file in an old tab (default is new)')
     ap.add_argument('file', action='store',nargs='?',default=False,help='File to open')
     ns = ap.parse_args()
 
@@ -74,14 +75,13 @@ if __name__=='__main__':
     filename = os.path.relpath(ns.file, '.')
 
     if ns.temp and ns.file:
-        open_temp(filename)
+        open_temp(filename, new_tab=not ns.old_tab)
 
     elif ns.file:
-        open_editor(filename)
+        open_editor(filename, new_tab=not ns.old_tab)
 
     else:
-        open_temp()
-
+        open_temp(new_tab=not ns.old_tab)
 
 
 
