@@ -1,9 +1,10 @@
 """
 Used to create/open and edit files.
 [-t --temp] - Opens the file as a temporary file. Allowing editing and renaming. Previous script in the pythonista editor will be restored.
+[-o --old_tab] - Open file in an old editor tab (default is new tab, which is possible since Pythonista 1.6, although not for make_new_file; see https://forum.omz-software.com/topic/2428/editor-observations)
 
 usage:
-    edit [-t --temp] [file]
+    edit [-t --temp] [-o --old_tab] [file]
     Follow prompt for instructions.
 """
 import os
@@ -61,12 +62,12 @@ def open_editor(file='', new_tab=True):
         editor.open_file(os.getcwd()+'/'+file, new_tab)
         console.hide_output()
     else:
-        editor.make_new_file(file if file else 'untitled.py')
+        editor.make_new_file(file if file else 'untitled.py') # new_tab not supported by make_new_file
         
 if __name__=='__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('-t','--temp',action='store_true',default=False,help='Open file to a temp file')
-    ap.add_argument('-o','--old',action='store_true',default=False,help='Open file in an old tab (default is new)')
+    ap.add_argument('-o','--old_tab',action='store_true',default=False,help='Open file in an old editor tab (default is new tab)')
     ap.add_argument('file', action='store',nargs='?',default=False,help='File to open')
     ns = ap.parse_args()
 
@@ -82,6 +83,3 @@ if __name__=='__main__':
 
     else:
         open_temp(new_tab=not ns.old_tab)
-
-
-
