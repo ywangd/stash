@@ -112,7 +112,7 @@ class ShIsDirectory(Exception):
 
 class ShNotExecutable(Exception):
     def __init__(self, filename):
-        super(Exception, self).__init__('Not executable: {}'.format(filename))
+        super(Exception, self).__init__('{}: not executable\n'.format(filename))
 
 class ShSingleExpansionRequired(Exception):
     pass
@@ -129,8 +129,6 @@ class ShSyntaxError(Exception):
 class ShInternalError(Exception):
     pass
 
-class ShKeyboardInterrupt(Exception):
-    pass
 
 def sh_background(name=None):
     def wrap(func):
@@ -217,16 +215,6 @@ class ShPipeSequence(object):
         s += 'in_background: %s\n' % self.in_background
         for idx, cmd in enumerate(self.lst):
             s += '------ ShSimpleCommand %d ------\n%s' % (idx, repr(cmd))
-        return s
-
-class ShCompleteCommand(object):
-    def __init__(self):
-        self.lst = []
-
-    def __repr__(self):
-        s = '\n---------- ShCompleteCommand ----------\n'
-        for idx, pipe_sequence in enumerate(self.lst):
-            s += repr(pipe_sequence)
         return s
 
 
@@ -1175,7 +1163,7 @@ class ShRuntime(object):
                     if line.strip() == '':
                         continue
 
-                    # Parse and expand the line (note this function returns a generator object
+                    # Parse and expand the line (note this function returns a generator object)
                     expanded = self.expander.expand(line)
                     # The first member is the history expanded form and number of pipe_sequence
                     newline, n_pipe_sequences = expanded.next()
@@ -1232,12 +1220,13 @@ class ShRuntime(object):
                     self.logger.debug('IOError: %s\n' % repr(e))
                 self.stash.write_message('%s: %s\n' % (e.filename, e.strerror))
 
-            except ShKeyboardInterrupt as e:
-                self.stash.write_message('^C\nShKeyboardInterrupt:%s\n' % e.message)
-
             except KeyboardInterrupt as e:
                 self.stash.write_message('^C\nKeyboardInterrupt:%s\n' % e.message)
 
+            # This catch all exception handler is to handle errors outside of
+            # run_pipe_sequence. The traceback print is mainly for debugging
+            # the shell itself as opposed to the running script (handled inside
+            # exec_py_file)
             except Exception as e:
                 etype, evalue, tb = sys.exc_info()
                 if self.debug:
@@ -1355,9 +1344,9 @@ class ShRuntime(object):
 
                 prev_outs = outs
 
-            except ShNotExecutable as e:
-                self.stash.write_message(e.message)
-
+            # This catch all exception is for when the exception is raised
+            # outside of the actual command execution, i.e. exec_py_file
+            # exec_sh_file, e.g. command not found, not executable etc.
             except Exception as e:
                 err_msg = '%s\n' % e.message
                 if self.debug:
@@ -1368,6 +1357,8 @@ class ShRuntime(object):
             finally:
                 if type(outs) is file:
                     outs.close()
+                if isinstance(ins, StringIO):  # release the string buffer
+                    ins.close()
 
     def exec_py_file(self, filename, args=None,
                      ins=None, outs=None, errs=None):
@@ -1411,24 +1402,17 @@ class ShRuntime(object):
 
         except Exception as e:
             self.envars['?'] = 1
-
-            # If the Exception is a simulated Keyboard Interrupt, the thread
-            # can be terminated normally
-            if type(e) is ShKeyboardInterrupt:
-                self.stash.write_message('^C\nShKeyboardInterrupt:%s\n' % e.message)
-
-            else:
-                etype, evalue, tb = sys.exc_info()
-                err_msg = '%s: %s\n' % (repr(etype), evalue)
-                if self.debug:
-                    self.logger.debug(err_msg)
-                self.stash.write_message(err_msg)
-                if self.py_traceback or self.py_pdb:
-                    import traceback
-                    traceback.print_exception(etype, evalue, tb)
-                    if self.py_pdb:
-                        import pdb
-                        pdb.post_mortem(tb)
+            etype, evalue, tb = sys.exc_info()
+            err_msg = '%s: %s\n' % (repr(etype), evalue)
+            if self.debug:
+                self.logger.debug(err_msg)
+            self.stash.write_message(err_msg)
+            if self.py_traceback or self.py_pdb:
+                import traceback
+                traceback.print_exception(etype, evalue, tb)
+                if self.py_pdb:
+                    import pdb
+                    pdb.post_mortem(tb)
 
         finally:
             sys.path = _SYS_PATH
