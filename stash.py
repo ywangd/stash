@@ -1221,7 +1221,7 @@ class ShRuntime(object):
                 self.stash.write_message('%s: %s\n' % (e.filename, e.strerror))
 
             except KeyboardInterrupt as e:
-                self.stash.write_message('^C\nKeyboardInterrupt:%s\n' % e.message)
+                self.stash.write_message('^C\nKeyboardInterrupt: %s\n' % e.message)
 
             # This catch all exception handler is to handle errors outside of
             # run_pipe_sequence. The traceback print is mainly for debugging
@@ -1429,9 +1429,13 @@ class ShRuntime(object):
             self.enclosing_envars['@'] = '\t'.join(args)
 
             with open(filename) as fins:
-                self.exec_sh_lines(fins.readlines(),
-                                   ins=ins, outs=outs, errs=errs,
-                                   add_to_history=add_to_history)
+                worker = self.run(fins.readlines(),
+                                  final_ins=ins,
+                                  final_outs=outs,
+                                  final_errs=errs,
+                                  add_to_history=add_to_history,
+                                  add_new_inp_line=False)
+                worker.join()
             if '?' in self.enclosing_envars.keys():
                 self.envars['?'] = self.enclosing_envars['?']
             else:
@@ -1444,17 +1448,6 @@ class ShRuntime(object):
         except:
             self.stash.write_message('%s: error while executing shell script\n' % filename)
             self.envars['?'] = 2
-
-    def exec_sh_lines(self, lines,
-                      ins=None, outs=None, errs=None,
-                      add_to_history=None):
-        worker = self.run(lines,
-                          final_ins=ins,
-                          final_outs=outs,
-                          final_errs=errs,
-                          add_to_history=add_to_history,
-                          add_new_inp_line=False)
-        worker.join()
 
     def get_prompt(self):
         prompt = self.envars['PROMPT']
