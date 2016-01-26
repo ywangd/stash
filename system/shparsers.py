@@ -9,7 +9,7 @@ from StringIO import StringIO
 
 import pyparsing as pp
 
-from .shcommon import ShSingleExpansionRequired, ShBadSubstitution, ShSyntaxError, ShInternalError
+from .shcommon import ShSingleExpansionRequired, ShBadSubstitution, ShInternalError
 
 
 _GRAMMAR = r"""
@@ -696,10 +696,7 @@ class ShCompleter(object):
         :rtype: (str, [str])
         """
         len_line = len(line)
-        try:
-            tokens, _ = self.stash.runtime.parser.parse(line)
-        except pp.ParseException as e:
-            raise ShSyntaxError(e.message)
+        tokens, _ = self.stash.runtime.parser.parse(line)
 
         toks = []  # this is only for sub-cmd completion
         is_cmd_word = True
