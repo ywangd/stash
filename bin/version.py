@@ -9,7 +9,7 @@ collapseuser = _stash.libcore.collapseuser
 
 def main():
     STASH_ROOT = os.environ['STASH_ROOT']
-    print _stash.text_style('StaSh v%s' % globals()['__version__'],
+    print _stash.text_style('StaSh v%s' % globals()['_stash'].__version__,
                             {'color': 'blue', 'traits': ['bold']})
     print u'%s: %s' % (_stash.text_bold('root'), collapseuser(STASH_ROOT))
     _stat = os.stat(os.path.join(STASH_ROOT, 'stash.py'))
