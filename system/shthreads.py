@@ -2,14 +2,32 @@
 """
 Killable threads
 """
+import os
 import sys
 import threading
 import ctypes
 
 from .shcommon import M_64
 
+class ShState(object):
 
-class ShThreadTrace(threading.Thread):
+    def __init__(self, enclosed_envars, enclosed_aliases, enclosed_cwd):
+        pass
+
+
+
+
+class ShStatefulThread(threading.Thread):
+
+    def __init__(self, name=None, target=None, args=(), group=None, kwargs=None, verbose=None):
+        super(ShStatefulThread, self).__init__(
+            name=name, target=target,
+            group=group, args=args, kwargs=kwargs, verbose=verbose
+        )
+
+
+
+class ShThreadTrace(ShStatefulThread):
     """ Killable thread implementation with trace """
 
     def __init__(self, name=None, target=None, args=(), kwargs=None, verbose=None):
@@ -45,7 +63,7 @@ class ShThreadTrace(threading.Thread):
         self.killed = True
 
 
-class ShThreadCtypes(threading.Thread):
+class ShThreadCtypes(ShStatefulThread):
     """
     A thread class that supports raising exception in the thread from
     another thread (with ctypes).
