@@ -114,7 +114,7 @@ class StashSSH(object):
             in os.listdir(ssh_dir) if '.' not in file]
 
     def parse_host(self,arg):
-        user,host = arg.split('@')
+        user, host = arg.split('@')
         #host, path = temp.split(':')
         return user, host
         
