@@ -366,13 +366,22 @@ class ShTerminal(object):
         self.tvo.scrollRangeToVisible_(rng)
 
     @property
-    def content_size(self):
-        size = self.tvo.contentSize()
-        return size.width, size.height
-
-    @property
     def size(self):
         size = self.tvo.size()
+        return size.width, size.height
+
+    @size.setter
+    @on_main_thread
+    def size(self, value):
+        """
+        Set the width and height of the view
+        :param value: A tuple of (width, height)
+        """
+        self.tvo.setSize_(value)
+
+    @property
+    def content_size(self):
+        size = self.tvo.contentSize()
         return size.width, size.height
 
     @property

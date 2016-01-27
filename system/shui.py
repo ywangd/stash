@@ -249,10 +249,17 @@ class ShUI(ui.View):
         :return:
         """
         if self.on_screen:
-            if frame[3] > 0:
+            if frame[3] > 0:  # when keyboard appears
+                self.vks.hidden = False
                 self.txts.height = self.height - frame[3]
-            else:
+                # Leave space for the virtual key row
+                self.terminal.size = self.txts.width, self.txts.height - (self.vks.height + 8)
+            else:  # when keyboard goes away
+                # hide the virtual key row as well
+                self.vks.hidden = True
                 self.txts.height = self.height
+                # Take all space as virtual key row is now hidden
+                self.terminal.size = self.txts.width, self.txts.height
             # TODO: Scroll to end? may not be necessary
 
     def will_close(self):
@@ -264,11 +271,6 @@ class ShUI(ui.View):
         # Clear the stack or the stdout becomes unusable for interactive prompt
         for worker in self.stash.runtime.worker_stack[::-1]:
             worker.kill()
-
-    def did_load(self):
-        self.single_char_size = ui.measure_string('S',
-                                                  font=self.TEXT_FONT, max_width=400)
-        print self.txts.width, self.txts.height
 
     def toggle_k_grp(self):
         if self.on_k_grp == 0:
