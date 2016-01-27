@@ -107,15 +107,12 @@ class StashSSH(object):
                 return False
         self.ssh_running = True
         return True
-        
+
     def find_ssh_keys(self):
-        files = []
-        APP_DIR = os.environ['STASH_ROOT']
-        for file in os.listdir(APP_DIR+'/.ssh'):
-            if '.' not in file:
-                files.append(APP_DIR+'/.ssh/'+file)
-        return files    
-        
+        ssh_dir = os.path.join(os.environ['STASH_ROOT'], '.ssh')
+        return [os.path.join(ssh_dir, file) for file
+            in os.listdir(ssh_dir) if '.' not in file]
+
     def parse_host(self,arg):
         user,host = arg.split('@')
         #host, path = temp.split(':')
