@@ -7,9 +7,7 @@ import argparse
 def main(command, fullname=False):
     rt = globals()['_stash'].runtime
     try:
-        filename = rt.find_script_file(command)
-        if not fullname:
-            filename = _stash.libcore.collapseuser(filename)
+        filename = rt.find_script_file(command) or _stash.libcore.collapseuser(filename)
         print filename
     except Exception:
         pass
