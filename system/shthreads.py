@@ -11,19 +11,6 @@ import ctypes
 from .shcommon import M_64
 
 
-class ShChildThreads(object):
-    def __init__(self):
-        self.fg_thread = None
-        self.bg_threads = []
-
-    def __iter__(self):
-        return ([self.fg_thread] + self.bg_threads) if self.fg_thread else self.bg_threads
-
-    def __len__(self):
-        return len(self.bg_threads) + (1 if self.fg_thread else 0)
-
-
-
 class ShState(object):
     def __init__(self, envars=None, aliases=None, enclosed_cwd=None):
         self.envars = envars or {}
@@ -53,8 +40,9 @@ class ShBaseThread(threading.Thread):
 
         self.parent = parent
         self.killed = False
-        self.child_threads = ShChildThreads()
+        self.child_thread = None
         self.state = ShState.new_from_existing(self.parent.state)
+        self.job_id = None  # To be set by ShThreadRegistry
 
     def is_top_level(self):
         """
@@ -67,8 +55,8 @@ class ShBaseThread(threading.Thread):
 class ShTracedThread(ShBaseThread):
     """ Killable thread implementation with trace """
 
-    def __init__(self, target=None, verbose=None):
-        super(ShTracedThread, self).__init__(target=target, verbose=verbose)
+    def __init__(self, parent, target=None, verbose=None):
+        super(ShTracedThread, self).__init__(parent, target=target, verbose=verbose)
 
     def start(self):
         """Start the thread."""
@@ -88,8 +76,8 @@ class ShTracedThread(ShBaseThread):
     def localtrace(self, frame, why, arg):
         if self.killed:
             if why == 'line':
-                for ct in self.child_threads:
-                    ct.kill()
+                if self.child_thread:
+                    self.child_thread.kill()
                 raise KeyboardInterrupt()
         return self.localtrace
 
@@ -103,8 +91,8 @@ class ShCtypesThread(ShBaseThread):
     another thread (with ctypes).
     """
 
-    def __init__(self, target=None, verbose=None):
-        super(ShCtypesThread, self).__init__(target=target, verbose=verbose)
+    def __init__(self, parent, target=None, verbose=None):
+        super(ShCtypesThread, self).__init__(parent, target=target, verbose=verbose)
 
     def _async_raise(self):
         tid = self.ident
@@ -123,8 +111,8 @@ class ShCtypesThread(ShBaseThread):
     def kill(self):
         if not self.killed:
             self.killed = True
-            for ct in self.child_threads:
-                ct.kill()
+            if self.child_thread:
+                self.child_thread.kill()
             try:
                 res = self._async_raise()
             except (ValueError, SystemError):

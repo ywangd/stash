@@ -4,6 +4,7 @@ import sys
 import logging
 import threading
 from StringIO import StringIO
+from collections import OrderedDict
 
 import pyparsing as pp
 
@@ -17,7 +18,7 @@ from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
     ShFileNotFound, ShEventNotFound, ShNotExecutable
 from .shcommon import _SYS_STDOUT, _SYS_STDERR, _SYS_PATH, _STASH_ROOT, _STASH_HISTORY_FILE
 from .shcommon import is_binary_file
-from .shthreads import ShTracedThread, ShCtypesThread, ShState, ShChildThreads
+from .shthreads import ShTracedThread, ShCtypesThread, ShState
 
 
 # Default .stashrc file
@@ -32,6 +33,30 @@ alias ll='ls -la'
 alias copy='pbcopy'
 alias paste='pbpaste'
 """
+
+
+class ShThreadRegistry(object):
+
+    def __init__(self):
+        self.registry = OrderedDict()
+        self._count = 1
+        self._lock = threading.Lock()
+
+    def _get_job_id(self):
+        try:
+            self._lock.acquire()
+            job_id = self._count
+            self._count += 1
+            return job_id
+        finally:
+            self._lock.release()
+
+    def add_thread(self, thread):
+        thread.job_id = self._get_job_id()
+        self.registry[thread.job_id] = thread
+
+    def remove_thread(self, thread):
+        self.registry.pop(thread.job_id)
 
 
 class ShRuntime(object):
@@ -103,7 +128,8 @@ class ShRuntime(object):
                         PROMPT='[\W]$ ',
                         PYTHONISTA_ROOT=os.path.dirname(sys.executable))
         )
-        self.child_threads = ShChildThreads()
+        self.child_thread = None
+        self.thread_registry = ShThreadRegistry()
 
     def save_state(self):
 
@@ -252,7 +278,8 @@ class ShRuntime(object):
 
         # noinspection PyDocstring
         def fn():
-            self.worker_stack.append(threading.currentThread())
+            current_worker = threading.currentThread()
+            # self.worker_stack.append(threading.currentThread())
 
             try:
                 if type(input_) is list:
@@ -340,11 +367,25 @@ class ShRuntime(object):
                     traceback.print_exception(etype, evalue, tb)
 
             finally:
-                if add_new_inp_line or (len(self.worker_stack) == 1 and add_new_inp_line is not False):
-                    self.script_will_end()
-                self.worker_stack.pop()  # remove itself from the stack
+                # if add_new_inp_line or (len(self.worker_stack) == 1 and add_new_inp_line is not False):
 
-        worker = self.ShThread(target=fn)
+                # Prompt is now ready for more user input for commands to run,
+                # if new input line is explicitly specified or when the worker
+                # thread's parent is the runtime itself and new input line is
+                # not explicitly suppressed
+                if add_new_inp_line or \
+                        (current_worker.parent is self and add_new_inp_line is not False):
+                    self.script_will_end()
+                # self.worker_stack.pop()  # remove itself from the stack
+                self.thread_registry.remove_thread(current_worker)
+
+        current_thread = threading.currentThread()
+        if current_thread.name == '_shthread':
+            worker = self.ShThread(current_thread, target=fn)
+        else:  # UI thread is substituted by runtime
+            worker = self.ShThread(self, target=fn)
+
+        self.thread_registry.add_thread(worker)
         worker.start()
         return worker
 

@@ -354,9 +354,7 @@ class ShExpander(object):
         for ipseq in pseq_indices:
             pseq = parsed[ipseq]
 
-            # TODO: Because of the generator changes, complete_command is not necessary
-            # as it simply contains a single pipe_sequence. It can probably be removed
-            # for efficiency.
+            # Due to the generator change, complete_command is redundant and removed
             pipe_sequence = ShPipeSequence()
 
             for isc in range(0, len(pseq), 2):
