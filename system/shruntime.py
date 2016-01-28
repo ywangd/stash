@@ -17,7 +17,7 @@ from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
     ShFileNotFound, ShEventNotFound, ShNotExecutable
 from .shcommon import _SYS_STDOUT, _SYS_STDERR, _SYS_PATH, _STASH_ROOT, _STASH_HISTORY_FILE
 from .shcommon import is_binary_file
-from .shthreads import ShThreadTrace, ShThreadCtypes
+from .shthreads import ShTracedThread, ShCtypesThread, ShState, ShChildThreads
 
 
 # Default .stashrc file
@@ -47,17 +47,18 @@ class ShRuntime(object):
         self.debug = debug
         self.logger = logging.getLogger('StaSh.Runtime')
 
-        self.enclosed_envars = {}
-        self.enclosed_aliases = {}
-        self.enclosed_cwd = ''
+        # self.enclosed_envars = {}
+        # self.enclosed_aliases = {}
+        # self.enclosed_cwd = ''
 
-        self.envars = dict(os.environ,
-                           HOME2=os.path.join(os.environ['HOME'], 'Documents'),
-                           STASH_ROOT=_STASH_ROOT,
-                           BIN_PATH=os.path.join(_STASH_ROOT, 'bin'),
-                           PROMPT='[\W]$ ',
-                           PYTHONISTA_ROOT=os.path.dirname(sys.executable))
-        self.aliases = {}
+        # self.envars = dict(os.environ,
+        #                    HOME2=os.path.join(os.environ['HOME'], 'Documents'),
+        #                    STASH_ROOT=_STASH_ROOT,
+        #                    BIN_PATH=os.path.join(_STASH_ROOT, 'bin'),
+        #                    PROMPT='[\W]$ ',
+        #                    PYTHONISTA_ROOT=os.path.dirname(sys.executable))
+        # self.aliases = {}
+
         config = stash.config
         self.rcfile = os.path.join(_STASH_ROOT, config.get('system', 'rcfile'))
         self.historyfile = os.path.join(_STASH_ROOT, _STASH_HISTORY_FILE)
@@ -67,9 +68,9 @@ class ShRuntime(object):
         self.py_pdb = config.getint('system', 'py_pdb')
         self.input_encoding_utf8 = config.getint('system', 'input_encoding_utf8')
         self.ipython_style_history_search = config.getint('system', 'ipython_style_history_search')
-        self.ShThread = {'trace': ShThreadTrace, 'ctypes': ShThreadCtypes}.get(
+        self.ShThread = {'traced': ShTracedThread, 'ctypes': ShCtypesThread}.get(
             config.get('system', 'thread_type'),
-            ShThreadCtypes
+            ShCtypesThread
         )
 
         # load history from last session
@@ -87,12 +88,22 @@ class ShRuntime(object):
         self.idx_to_history = -1
         self.history_templine = ''
 
-        self.enclosing_envars = {}
-        self.enclosing_aliases = {}
-        self.enclosing_cwd = ''
+        # self.enclosing_envars = {}
+        # self.enclosing_aliases = {}
+        # self.enclosing_cwd = ''
+        #
+        # self.state_stack = []
+        # self.worker_stack = []
 
-        self.state_stack = []
-        self.worker_stack = []
+        self.state = ShState(
+            envars=dict(os.environ,
+                        HOME2=os.path.join(os.environ['HOME'], 'Documents'),
+                        STASH_ROOT=_STASH_ROOT,
+                        BIN_PATH=os.path.join(_STASH_ROOT, 'bin'),
+                        PROMPT='[\W]$ ',
+                        PYTHONISTA_ROOT=os.path.dirname(sys.executable))
+        )
+        self.child_threads = ShChildThreads()
 
     def save_state(self):
 
@@ -227,7 +238,6 @@ class ShRuntime(object):
             final_outs=None,
             final_errs=None,
             add_to_history=None,
-            code_validation_func=None,
             add_new_inp_line=None,
             persist_envars=False,
             persist_aliases=False,
@@ -240,6 +250,7 @@ class ShRuntime(object):
         if self.worker_stack and self.worker_stack[-1] != threading.currentThread():
             self.stash.write_message('worker threads must be linear\n')
 
+        # noinspection PyDocstring
         def fn():
             self.worker_stack.append(threading.currentThread())
 
@@ -272,17 +283,16 @@ class ShRuntime(object):
                         self.save_state()  # State needs to be saved before expansion happens
                         try:
                             pipe_sequence = expanded.next()
-                            if code_validation_func is None or code_validation_func(pipe_sequence):
-                                if pipe_sequence.in_background:
-                                    ui.in_background(self.run_pipe_sequence)(pipe_sequence,
-                                                                             final_ins=final_ins,
-                                                                             final_outs=final_outs,
-                                                                             final_errs=final_errs)
-                                else:
-                                    self.run_pipe_sequence(pipe_sequence,
-                                                           final_ins=final_ins,
-                                                           final_outs=final_outs,
-                                                           final_errs=final_errs)
+                            if pipe_sequence.in_background:
+                                ui.in_background(self.run_pipe_sequence)(pipe_sequence,
+                                                                         final_ins=final_ins,
+                                                                         final_outs=final_outs,
+                                                                         final_errs=final_errs)
+                            else:
+                                self.run_pipe_sequence(pipe_sequence,
+                                                       final_ins=final_ins,
+                                                       final_outs=final_outs,
+                                                       final_errs=final_errs)
                         finally:
                             self.restore_state(persist_envars=persist_envars,
                                                persist_aliases=persist_aliases,
@@ -334,7 +344,7 @@ class ShRuntime(object):
                     self.script_will_end()
                 self.worker_stack.pop()  # remove itself from the stack
 
-        worker = self.ShThread(name='_shruntime', target=fn)
+        worker = self.ShThread(target=fn)
         worker.start()
         return worker
 

@@ -5,36 +5,70 @@ Killable threads
 import os
 import sys
 import threading
+import weakref
 import ctypes
 
 from .shcommon import M_64
 
+
+class ShChildThreads(object):
+    def __init__(self):
+        self.fg_thread = None
+        self.bg_threads = []
+
+    def __iter__(self):
+        return ([self.fg_thread] + self.bg_threads) if self.fg_thread else self.bg_threads
+
+    def __len__(self):
+        return len(self.bg_threads) + (1 if self.fg_thread else 0)
+
+
+
 class ShState(object):
+    def __init__(self, envars=None, aliases=None, enclosed_cwd=None):
+        self.envars = envars or {}
+        self.aliases = aliases or {}
+        self.enclosed_cwd = enclosed_cwd
+        self.sys_argv = sys.argv[:]
+        self.os_environ = dict(os.environ)
+        self.sys_stdin = sys.stdin
+        self.sys_stdout = sys.stdout
+        self.sys_stderr = sys.stderr
 
-    def __init__(self, enclosed_envars, enclosed_aliases, enclosed_cwd):
-        pass
+    @staticmethod
+    def new_from_existing(state):
+        return ShState(envars=dict(state.envars),
+                       aliases=dict(state.aliases),
+                       enclosed_cwd=os.getcwd())
 
 
+class ShBaseThread(threading.Thread):
+    def __init__(self, parent, target=None, verbose=None):
+        super(ShBaseThread, self).__init__(group=None,
+                                           target=target,
+                                           name='_shthread',
+                                           args=(),
+                                           kwargs=None,
+                                           verbose=verbose)
+
+        self.parent = parent
+        self.killed = False
+        self.child_threads = ShChildThreads()
+        self.state = ShState.new_from_existing(self.parent.state)
+
+    def is_top_level(self):
+        """
+        Whether or not the thread is directly under the runtime, aka top level
+        """
+        return not isinstance(self.parent, ShBaseThread)
 
 
-class ShStatefulThread(threading.Thread):
-
-    def __init__(self, name=None, target=None, args=(), group=None, kwargs=None, verbose=None):
-        super(ShStatefulThread, self).__init__(
-            name=name, target=target,
-            group=group, args=args, kwargs=kwargs, verbose=verbose
-        )
-
-
-
-class ShThreadTrace(ShStatefulThread):
+# noinspection PyAttributeOutsideInit
+class ShTracedThread(ShBaseThread):
     """ Killable thread implementation with trace """
 
-    def __init__(self, name=None, target=None, args=(), kwargs=None, verbose=None):
-        self.killed = False
-        super(ShThreadTrace, self).__init__(name=name, target=target,
-                                            group=None, args=args, kwargs=kwargs, verbose=verbose)
-        self.child_threads = []
+    def __init__(self, target=None, verbose=None):
+        super(ShTracedThread, self).__init__(target=target, verbose=verbose)
 
     def start(self):
         """Start the thread."""
@@ -63,17 +97,14 @@ class ShThreadTrace(ShStatefulThread):
         self.killed = True
 
 
-class ShThreadCtypes(ShStatefulThread):
+class ShCtypesThread(ShBaseThread):
     """
     A thread class that supports raising exception in the thread from
     another thread (with ctypes).
     """
 
-    def __init__(self, name=None, target=None, args=(), kwargs=None, verbose=None):
-        self.killed = False
-        super(ShThreadCtypes, self).__init__(name=name, target=target,
-                                             group=None, args=args, kwargs=kwargs, verbose=verbose)
-        self.child_threads = []
+    def __init__(self, target=None, verbose=None):
+        super(ShCtypesThread, self).__init__(target=target, verbose=verbose)
 
     def _async_raise(self):
         tid = self.ident
