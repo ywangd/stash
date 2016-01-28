@@ -5,6 +5,8 @@ The Control, Escape and Graphics are taken from pyte (https://github.com/selecte
 import os
 import sys
 import platform
+import functools
+import threading
 from itertools import chain
 
 
@@ -23,6 +25,20 @@ ON_IOS_8 = platform_string.split('-')[1].startswith('14')
 M_64 = platform_string.find('64bit') != -1
 
 
+_STASH_ROOT = os.path.realpath(os.path.abspath(
+    os.path.dirname(os.path.dirname(__file__))))
+_STASH_CONFIG_FILES = ('.stash_config', 'stash.cfg')
+_STASH_HISTORY_FILE = '.stash_history'
+
+
+# Save the true IOs
+_SYS_STDOUT = sys.stdout
+_SYS_STDERR = sys.stderr
+_SYS_STDIN = sys.stdin
+_SYS_PATH = sys.path
+_OS_ENVIRON = os.environ
+
+
 def is_binary_file(filename, nbytes=1024):
     """
     An approximate way to tell whether a file is binary.
@@ -37,6 +53,43 @@ def is_binary_file(filename, nbytes=1024):
                 return True
         else:
             return False
+
+
+def sh_background(name=None):
+    def wrap(func):
+        @functools.wraps(func)
+        def wrapped_func(*args, **kwargs):
+            t = threading.Thread(name=name, target=func, args=args, kwargs=kwargs)
+            t.start()
+            return t
+        return wrapped_func
+    return wrap
+
+
+class ShFileNotFound(Exception):
+    pass
+
+class ShIsDirectory(Exception):
+    pass
+
+class ShNotExecutable(Exception):
+    def __init__(self, filename):
+        super(Exception, self).__init__('{}: not executable\n'.format(filename))
+
+class ShSingleExpansionRequired(Exception):
+    pass
+
+class ShEventNotFound(Exception):
+    pass
+
+class ShBadSubstitution(Exception):
+    pass
+
+class ShSyntaxError(Exception):
+    pass
+
+class ShInternalError(Exception):
+    pass
 
 
 class Control(object):

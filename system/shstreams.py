@@ -98,9 +98,10 @@ class ShMiniBuffer(object):
                             self.main_screen.cursor_x = self.main_screen.x_modifiable + len(incomplete)
 
                 except Exception as e:  # TODO: better error handling
+                    self.stash.stream.feed(
+                        u'\nauto-completion error: %s\n%s' % (repr(e), self.stash.runtime.get_prompt()),
+                        render_it=False)
                     with self.main_screen.acquire_lock():
-                        self.stash.stream.feed(u'\nAuto-completion error: %s\n' % repr(e),
-                                               render_it=False)
                         self.main_screen.modifiable_chars = self.modifiable_chars
                         self.main_screen.cursor_x = self.main_screen.x_modifiable + len(incomplete)
 

@@ -69,7 +69,7 @@ def main(args):
     has_update = True
     # Check for update if it is not forced updating
     if not ns.force:
-        local_version = globals()['__version__']
+        local_version = globals()['_stash'].__version__
         try:
             print 'Checking for new version ...'
             remote_version = get_remote_version(SELFUPDATE_BRANCH)

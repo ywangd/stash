@@ -18,6 +18,7 @@ def get_screen_size():
 class View(object):
 
     def __init__(self, *args, **kwargs):
+        self.on_screen = True
         self.width = 100
         self.height = 100
         self.content_size = (100, 100)
