@@ -621,6 +621,7 @@ class ShExpander(object):
                             state = 'a'
                         elif nextchar == '$':
                             es += str(threading.currentThread()._Thread__ident)
+                            state = 'a'
                         elif nextchar in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz':
                             varname += nextchar
                         else:
