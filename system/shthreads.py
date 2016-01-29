@@ -12,6 +12,51 @@ from collections import OrderedDict
 from .shcommon import M_64
 
 
+class ShState(object):
+    """ State of the current worker thread
+    """
+    def __init__(self,
+                 envars=None,
+                 aliases=None,
+                 enclosed_cwd=None,
+                 os_environ=None,
+                 sys_argv=None,
+                 sys_path=None,
+                 sys_stdin=None,
+                 sys_stdout=None,
+                 sys_stderr=None):
+
+        self.envars = envars or {}
+        self.aliases = aliases or {}
+        self.enclosed_cwd = enclosed_cwd
+
+        self.os = {
+            'environ': os_environ or dict(os.environ),
+        }
+        self.sys = {
+            'argv': sys_argv or sys.argv[:],
+            'path': sys_path or sys.path[:],
+            'stdin': sys_stdin or sys.stdin,
+            'stdout': sys_stdout or sys.stdout,
+            'stderr': sys_stderr or sys.stderr,
+        }
+        self.enclosing_envars = {}
+
+    @staticmethod
+    def new_from_existing(state):
+        envars = dict(state.envars)
+        envars.update(state.enclosing_envars)
+        return ShState(envars=envars,
+                       aliases=dict(state.aliases),
+                       enclosed_cwd=os.getcwd(),
+                       os_environ=dict(state.os['environ']),
+                       sys_argv=state.sys['argv'][:],
+                       sys_path=state.sys['path'][:],
+                       sys_stdin=state.sys['stdin'],
+                       sys_stdout=state.sys['stdout'],
+                       sys_stderr=state.sys['stderr'])
+
+
 class ShWorkerRegistry(object):
     """ Bookkeeping for all worker threads (both foreground and background).
     This is useful to provide an overview of all running threads.
@@ -39,48 +84,10 @@ class ShWorkerRegistry(object):
         self.registry.pop(worker.job_id)
 
 
-class ShState(object):
-    """ State of the current worker thread
-    """
-    def __init__(self,
-                 envars=None,
-                 aliases=None,
-                 enclosed_cwd=None,
-                 os_environ=None,
-                 sys_argv=None,
-                 sys_stdin=None,
-                 sys_stdout=None,
-                 sys_stderr=None):
-
-        self.envars = envars or {}
-        self.aliases = aliases or {}
-        self.enclosed_cwd = enclosed_cwd
-        self.os_environ = os_environ or dict(os.environ)
-        self.sys_argv = sys_argv or sys.argv[:]
-        self.sys_stdin = sys_stdin or sys.stdin
-        self.sys_stdout = sys_stdout or sys.stdout
-        self.sys_stderr = sys_stderr or sys.stderr
-
-        self.enclosing_envars = {}
-
-    @staticmethod
-    def new_from_existing(state):
-        envars = dict(state.envars)
-        envars.update(state.enclosing_envars)
-        return ShState(envars=envars,
-                       aliases=dict(state.aliases),
-                       enclosed_cwd=os.getcwd(),
-                       os_environ=dict(state.os_environ),
-                       sys_argv=state.sys_argv[:],
-                       sys_stdin=state.sys_stdin,
-                       sys_stdout=state.sys_stdout,
-                       sys_stderr=state.sys_stderr)
-
-
 class ShBaseThread(threading.Thread):
     """ The basic Thread class provides life cycle management.
     """
-    def __init__(self, registry, parent, target=None, verbose=None):
+    def __init__(self, registry, parent, target=None, background=False, verbose=None):
         super(ShBaseThread, self).__init__(group=None,
                                            target=target,
                                            name='_shthread',
@@ -94,10 +101,10 @@ class ShBaseThread(threading.Thread):
         registry.add_worker(self)
 
         # Set up the parent/child relationship
-        if parent:
+        if not background:
             assert parent.child_thread is None, 'parent must have no existing child thread'
             self.parent, parent.child_thread = weakref.proxy(parent), self
-        else:  # background worker has no parent
+        else:  # background worker does not need parent
             self.parent = None
 
         # Set up the state based on parent's state
@@ -105,6 +112,8 @@ class ShBaseThread(threading.Thread):
 
         self.killed = False
         self.child_thread = None
+
+        self.mock_modules = {}
 
     def is_top_level(self):
         """
@@ -127,8 +136,9 @@ class ShBaseThread(threading.Thread):
 class ShTracedThread(ShBaseThread):
     """ Killable thread implementation with trace """
 
-    def __init__(self, registry, parent, target=None, verbose=None):
-        super(ShTracedThread, self).__init__(registry, parent, target=target, verbose=verbose)
+    def __init__(self, registry, parent, target=None, background=False, verbose=None):
+        super(ShTracedThread, self).__init__(
+            registry, parent, target=target,  background=background, verbose=verbose)
 
     def start(self):
         """Start the thread."""
@@ -163,8 +173,9 @@ class ShCtypesThread(ShBaseThread):
     another thread (with ctypes).
     """
 
-    def __init__(self, registry, parent, target=None, verbose=None):
-        super(ShCtypesThread, self).__init__(registry, parent, target=target, verbose=verbose)
+    def __init__(self, registry, parent, target=None, background=False, verbose=None):
+        super(ShCtypesThread, self).__init__(
+            registry, parent, target=target, background=background, verbose=verbose)
 
     def _async_raise(self):
         tid = self.ident
@@ -190,61 +201,3 @@ class ShCtypesThread(ShBaseThread):
             except (ValueError, SystemError):
                 self.killed = False
 
-
-
-import imp
-import __builtin__
-
-mocksys = imp.new_module('sys')
-_mocksys_code = """
-from sys import *
-asdf = 'HERE'
-"""
-exec _mocksys_code in mocksys.__dict__
-
-mockos = imp.new_module('os')
-_mockos_code = """
-from os import *
-asdf = 'HERE'
-"""
-exec _mockos_code in mockos.__dict__
-
-mocks = {
-    'sys': mocksys,
-    'os': mockos,
-}
-
-
-intercept_modules = ('os', 'sys')
-
-if not hasattr(__builtin__, '__baseimport'):
-    __builtin__.__baseimport = __builtin__.__import__
-    __builtin__.__basereload = __builtin__.reload
-
-# noinspection PyUnresolvedReferences
-__baseimport = __builtin__.__baseimport
-# noinspection PyUnresolvedReferences
-__basereload = __builtin__.__basereload
-
-
-def __shimport(name, *args, **kwargs):
-    print 'running through my import: %s' % name
-    if name in intercept_modules \
-            and isinstance(threading.currentThread(), ShBaseThread):
-        print 'returning mock ...'
-        return mocks[name]
-    else:
-        return __baseimport(name, *args, **kwargs)
-
-
-def __shreload(m):
-    print 'running through my reload: %s' % m
-    if m.__name__ in intercept_modules\
-            and isinstance(threading.currentThread(), ShBaseThread):
-        print 'returning mock ...'
-        return mocks[m.__name__]
-    else:
-        return __basereload(m)
-
-__builtin__.__import__ = __shimport
-__builtin__.reload = __shreload
