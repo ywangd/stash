@@ -238,7 +238,6 @@ class ShRuntime(object):
         # noinspection PyDocstring
         def fn():
             current_worker = threading.currentThread()
-            # self.worker_stack.append(threading.currentThread())
 
             try:
                 if type(input_) is list:
@@ -273,12 +272,14 @@ class ShRuntime(object):
                                 # For background command, separate worker is created
                                 bg_worker = self.ShThread(
                                     self.worker_registry,  # bg worker is also registered
-                                    None,  # bg worker has no parent
+                                    current_worker,
                                     target=functools.partial(self.run_pipe_sequence,
                                                              pipe_sequence,
                                                              final_ins=final_ins,
                                                              final_outs=final_outs,
-                                                             final_errs=final_errs))
+                                                             final_errs=final_errs),
+                                    background=True
+                                )
                                 bg_worker.start()
                                 # ui.in_background(self.run_pipe_sequence)(pipe_sequence,
                                 #                                          final_ins=final_ins,
@@ -337,8 +338,6 @@ class ShRuntime(object):
                     traceback.print_exception(etype, evalue, tb)
 
             finally:
-                # if add_new_inp_line or (len(self.worker_stack) == 1 and add_new_inp_line is not False):
-
                 # Prompt is now ready for more user input for commands to run,
                 # if new input line is explicitly specified or when the worker
                 # thread's parent is the runtime itself and new input line is
@@ -346,8 +345,7 @@ class ShRuntime(object):
                 if add_new_inp_line or \
                         (current_worker.is_top_level() and add_new_inp_line is not False):
                     self.script_will_end()
-                # self.worker_stack.pop()  # remove itself from the stack
-                self.worker_registry.remove_worker(current_worker)
+                current_worker.cleanup()
 
         current_thread = threading.currentThread()
         if current_thread.name == '_shthread':
@@ -389,7 +387,8 @@ class ShRuntime(object):
 
             # Only update the worker's env for pure assignments
             if simple_command.cmd_word == '' and idx == 0 and n_simple_commands == 1:
-                current_state.envars.update(current_state.enclosing_envars)
+                current_state.os['environ'].update(current_state.enclosing_envars)
+                # current_state.envars.update(current_state.enclosing_envars)
                 current_state.enclosing_envars = {}
 
             if prev_outs:
@@ -480,14 +479,13 @@ class ShRuntime(object):
         args = args or []
 
         sys.path = _SYS_PATH[:]
-        # Add any user set python paths right after the dot or at the beginning
-        # if 'PYTHONPATH' in self.envars.keys():
+        # Add any user set python paths right after the dot
+        # or at the beginning if dot is not in paths
         if 'PYTHONPATH' in current_state.envars.keys():
             try:
                 idxdot = sys.path.index('.') + 1
             except ValueError:
                 idxdot = 0
-            # for pth in reversed(self.envars['PYTHONPATH'].split(':')):
             for pth in reversed(current_state.envars['PYTHONPATH'].split(':')):
                 if pth == '':  # this for when existing PYTHONPATH is empty
                     continue
@@ -495,22 +493,24 @@ class ShRuntime(object):
                 if pth not in sys.path:
                     sys.path.insert(idxdot, pth)
 
-        try:
-            if ins:
-                sys.stdin = ins
-            if outs:
-                sys.stdout = outs
-            if errs:
-                sys.stderr = errs
-            sys.argv = [os.path.basename(filename)] + args  # First argument is the script name
-            # os.environ = self.envars
-            os.environ = current_state.envars
+        if ins:
+            current_state.sys['stdin'] = ins
+        if outs:
+            current_state.sys['stdout'] = outs
+        if errs:
+            current_state.sys['stderr'] = errs
 
-            file_path = os.path.relpath(filename)
-            namespace = dict(locals(), **globals())
-            namespace['__name__'] = '__main__'
-            namespace['__file__'] = os.path.abspath(file_path)
-            namespace['_stash'] = self.stash
+        # First argument is the script name
+        current_state.sys['argv'] = [os.path.basename(filename)] + args
+        current_state.os['environ'] = current_state.envars
+
+        file_path = os.path.relpath(filename)
+        namespace = dict(locals(), **globals())
+        namespace['__name__'] = '__main__'
+        namespace['__file__'] = os.path.abspath(file_path)
+        namespace['_stash'] = self.stash
+
+        try:
             execfile(file_path, namespace, namespace)
             current_state.envars['?'] = 0
 

@@ -9,10 +9,10 @@ The module proxy does this in a hacky way by replacing the magic
 __import__ and reload functions to intercept import and reload
 calls and return custom modules if calls are from worker threads.
 """
-import imp
 import __builtin__
 import threading
 import logging
+import types
 
 from .shthreads import ShBaseThread
 
@@ -27,6 +27,15 @@ _MOCK_CODE_TEMPLATE = """
 from {} import *
 """
 
+class MockModule(types.ModuleType):
+
+    def __getattribute__(self, item):
+        # logger.debug('getting {}'.format(item))
+        if item in ('path', 'stdinasdfas'):
+            return 'HERE'
+        else:
+            return object.__getattribute__(self, item)
+
 
 def _make_mock_module(name):
     """ make a mock module for the given name by delegating
@@ -34,7 +43,7 @@ def _make_mock_module(name):
     """
     if _DEBUG:
         logger.debug('making mock module: {}'.format(name))
-    mock_module = imp.new_module(name)
+    mock_module = MockModule(name)
     exec _MOCK_CODE_TEMPLATE.format(name) in mock_module.__dict__
     return mock_module
 
@@ -43,6 +52,7 @@ _mock_modules = {
     'sys': _make_mock_module('sys'),
     'os': _make_mock_module('os'),
 }
+
 
 # Save the original import and reload functions
 __baseimport = __builtin__.__baseimport if hasattr(__builtin__, '__baseimport') \
@@ -65,7 +75,7 @@ def __shimport(name, *args, **kwargs):
         if _DEBUG:
             logger.debug('returning mock: {}'.format(name))
         if name not in current_thread.mock_modules:
-            mock_module = imp.new_module(name)  # new mock module
+            mock_module = MockModule(name)
             # populate the new mock module with the template mock
             mock_module.__dict__.update(_mock_modules[name].__dict__)
             # Update for the specific thread
