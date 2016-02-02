@@ -17,6 +17,7 @@ import logging.handlers
 
 
 # noinspection PyPep8Naming
+from system.shimportproxy import enable as enable_import_proxy, disable as disable_import_proxy
 from system.shcommon import IN_PYTHONISTA, ON_IPAD
 from system.shcommon import _STASH_ROOT, _STASH_CONFIG_FILES, _SYS_STDOUT
 from system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
@@ -78,6 +79,8 @@ class StaSh(object):
     def __init__(self, debug=(), log_setting=None):
         self.__version__ = __version__
 
+        enable_import_proxy()
+
         self.config = self._load_config()
         self.logger = self._config_logging(log_setting)
 
@@ -111,7 +114,7 @@ class StaSh(object):
 
         # Navigate to the startup folder
         if IN_PYTHONISTA:
-            os.chdir(self.runtime.envars['HOME2'])
+            os.chdir(self.runtime.state.environ_get('HOME2'))
         self.runtime.load_rcfile()
         self.io.write(self.text_style('StaSh v%s\n' % self.__version__,
                                       {'color': 'blue', 'traits': ['bold']}))
@@ -178,8 +181,7 @@ class StaSh(object):
         Load library files as modules and save each of them as attributes
         """
         lib_path = os.path.join(_STASH_ROOT, 'lib')
-        saved_environ = dict(os.environ)
-        os.environ.update(self.runtime.envars)
+        os.environ['STASH_ROOT'] = _STASH_ROOT  # libcompleter needs this value
         try:
             for f in os.listdir(lib_path):
                 if f.startswith('lib') and f.endswith('.py') \
@@ -189,8 +191,8 @@ class StaSh(object):
                         self.__dict__[name] = pyimp.load_source(name, os.path.join(lib_path, f))
                     except Exception as e:
                         self.write_message('%s: failed to load library file (%s)' % (f, repr(e)))
-        finally:
-            os.environ = saved_environ
+        finally:  # do not modify environ permanently
+            os.environ.pop('STASH_ROOT')
 
     def write_message(self, s):
         self.io.write('stash: %s\n' % s)

@@ -18,6 +18,8 @@ class ShMiniBuffer(object):
 
     def __init__(self, stash, main_screen, debug=False):
         self.stash = stash
+        """:type : StaSh"""
+
         self.main_screen = main_screen
         self.debug = debug
         self.logger = logging.getLogger('StaSh.MiniBuffer')
@@ -68,7 +70,8 @@ class ShMiniBuffer(object):
 
         elif replacement == '\t':  # TODO: Separate tab manager
 
-            tab_handler = (self.stash.completer.complete if not self.stash.runtime.worker_stack
+            # When no foreground script is running, default tab handler is to auto-complete commands
+            tab_handler = (self.stash.completer.complete if not self.stash.runtime.child_thread
                            else self.stash.external_tab_handler)
 
             if callable(tab_handler):

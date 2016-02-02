@@ -320,6 +320,8 @@ class ShExpander(object):
 
     """
     Expand variables, wildcards, escapes, quotes etc. based on parsed results.
+
+    :type stash: StaSh
     """
 
     def __init__(self, stash, debug=False):
@@ -433,10 +435,12 @@ class ShExpander(object):
         # here is done using the whole word of the command, i.e. including
         # any possible leading backslash or bang, e.g. \ls will not match
         # any alias because it is not a valid alias form.
+        _, current_state = self.stash.runtime.get_current_worker_and_state()
+
         alias_found = False
         for t in tokens:
-            if t.ttype == ShToken._CMD and t.tok in self.stash.runtime.aliases.keys() and t.tok != exclude:
-                t.tok = self.stash.runtime.aliases[t.tok][1]
+            if t.ttype == ShToken._CMD and t.tok in current_state.aliases.keys() and t.tok != exclude:
+                t.tok = current_state.aliases[t.tok][1]
                 alias_found = True
         if alias_found:
             # Replace all alias and re-parse the new line
@@ -582,7 +586,7 @@ class ShExpander(object):
             self.logger.debug(s)
         saved_environ = os.environ
         try:
-            os.environ = self.stash.runtime.envars
+            os.environ = self.stash.runtime.state.os['environ']
             s = os.path.expanduser(s)
             # Command substitution is done by bq_word_action
             # Pathname expansion (glob) is done in word_action
@@ -596,7 +600,7 @@ class ShExpander(object):
 
         saved_environ = os.environ
         try:
-            os.environ = self.stash.runtime.envars
+            os.environ = self.stash.runtime.state.os['environ']
 
             state = 'a'
             es = ''
@@ -631,34 +635,34 @@ class ShExpander(object):
                             varname += nextchar
                         else:
                             if self.debug:
-                                self.logger.debug('envar sub: %s\n' % varname)
+                                self.logger.debug('environ sub: %s\n' % varname)
                             es += os.environ.get(varname, '') + nextchar
                             state = 'a'
 
                 elif state == '{':
                     if nextchar == '}':
                         if varname == '':
-                            raise ShBadSubstitution('bad envars substitution')
+                            raise ShBadSubstitution('bad environ substitution')
                         else:
                             es += os.environ.get(varname, '')
                             state = 'a'
                     elif nextchar in '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz':
                         varname += nextchar
                     else:
-                        raise ShBadSubstitution('bad envars substitution')
+                        raise ShBadSubstitution('bad environ substitution')
 
                 else:
-                    raise ShInternalError('syntax error in envars substitution')
+                    raise ShInternalError('syntax error in environ substitution')
 
             if state == '$':
                 if varname != '':
                     if self.debug:
-                        self.logger.debug('envar sub: %s\n' % varname)
+                        self.logger.debug('environ sub: %s\n' % varname)
                     es += os.environ.get(varname, '')
                 else:
                     es += '$'
             elif state == '{':
-                raise ShBadSubstitution('bad envars substitution')
+                raise ShBadSubstitution('bad environ substitution')
 
         finally:
             os.environ = saved_environ
@@ -694,6 +698,8 @@ class ShCompleter(object):
         :param str line: The line to complete
         :rtype: (str, [str])
         """
+        _, current_state = self.stash.runtime.get_current_worker_and_state()
+
         len_line = len(line)
         tokens, _ = self.stash.runtime.parser.parse(line)
 
@@ -732,19 +738,19 @@ class ShCompleter(object):
                 path_names = [p for p in path_names
                               if p.endswith('/') or p.endswith('.py') or p.endswith('.sh')]
                 script_names = self.stash.runtime.get_all_script_names()
-                script_names.extend(self.stash.runtime.aliases.keys())
+                script_names.extend(current_state.aliases.keys())
                 if word_to_complete != '':
                     script_names = [name for name in script_names if name.startswith(word_to_complete)]
             else:
                 script_names = []
 
             if word_to_complete.startswith('$'):
-                envar_names = ['$' + varname for varname in self.stash.runtime.envars.keys()
+                environ_names = ['$' + varname for varname in self.stash.runtime.state.os['environ'].keys()
                                if varname.startswith(word_to_complete[1:])]
             else:
-                envar_names = []
+                environ_names = []
 
-            all_names = path_names + envar_names + script_names
+            all_names = path_names + environ_names + script_names
 
         else:
             all_names = cands

@@ -10,7 +10,7 @@ except ImportError:
 
 from .shcommon import IN_PYTHONISTA, ON_IPAD
 from .shterminal import ShTerminal, StubTerminal
-
+from .shimportproxy import disable as disable_import_proxy
 
 class ShVk(ui.View):
     """
@@ -22,6 +22,8 @@ class ShVk(ui.View):
             ui.View.__init__(self)
 
         self.stash = stash
+        """:type : StaSh"""
+
         self.flex = flex
         self.name = name
         self.sv = ui.ScrollView(name, flex='wh')
@@ -55,6 +57,8 @@ class ShUI(ui.View):
     def __init__(self, stash, debug=False):
 
         self.stash = stash
+        """:type : StaSh"""
+
         self.debug = debug
         self.logger = logging.getLogger('StaSh.UI')
 
@@ -268,9 +272,9 @@ class ShUI(ui.View):
         :return:
         """
         self.stash.runtime.save_history()
+        disable_import_proxy()
         # Clear the stack or the stdout becomes unusable for interactive prompt
-        for worker in self.stash.runtime.worker_stack[::-1]:
-            worker.kill()
+        self.stash.runtime.worker_registry.purge()
 
     def toggle_k_grp(self):
         if self.on_k_grp == 0:
@@ -310,16 +314,16 @@ class ShUI(ui.View):
             self.stash.runtime.history_dn()
 
         elif vk == self.k_CD:
-            if self.stash.runtime.worker_stack:
+            if self.stash.runtime.child_thread:
                 self.stash.mini_buffer.feed(self.stash.mini_buffer.RANGE_BUFFER_END, '\0')
 
         elif vk == self.k_CC:
-            if not self.stash.runtime.worker_stack:
+            if not self.stash.runtime.child_thread:
                 self.stash.write_message('no thread to terminate\n')
                 self.stash.io.write(self.stash.runtime.get_prompt())
 
             else:  # ctrl-c terminates the entire stack of threads
-                self.stash.runtime.worker_stack[0].kill()
+                self.stash.runtime.child_thread.kill()  # this recursively kill any nested child threads
                 time.sleep(0.5)  # wait a moment for the thread to terminate
 
         elif vk == self.k_KB:

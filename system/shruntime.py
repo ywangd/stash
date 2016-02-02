@@ -50,12 +50,13 @@ class ShRuntime(object):
         self.logger = logging.getLogger('StaSh.Runtime')
 
         self.state = ShState(
-            envars=dict(os.environ,
-                        HOME2=os.path.join(os.environ['HOME'], 'Documents'),
-                        STASH_ROOT=_STASH_ROOT,
-                        BIN_PATH=os.path.join(_STASH_ROOT, 'bin'),
-                        PROMPT='[\W]$ ',
-                        PYTHONISTA_ROOT=os.path.dirname(sys.executable))
+            os_environ=dict(os.environ,
+                            HOME2=os.path.join(os.environ['HOME'], 'Documents'),
+                            STASH_ROOT=_STASH_ROOT,
+                            BIN_PATH=os.path.join(_STASH_ROOT, 'bin'),
+                            # Must have a placeholder because it is needed before _DEFAULT_RC is loaded
+                            PROMPT='[\W]$ ',  # referenced stream feed
+                            PYTHONISTA_ROOT=os.path.dirname(sys.executable))
         )
         self.child_thread = None
         self.worker_registry = ShWorkerRegistry()
@@ -89,87 +90,6 @@ class ShRuntime(object):
         self.idx_to_history = -1
         self.history_templine = ''
 
-
-    # def save_state(self):
-    #
-    #     if self.debug:
-    #         self.logger.debug('Saving stack %d ----\n' % len(self.state_stack))
-    #         self.logger.debug('envars = %s\n' % sorted(self.envars.keys()))
-    #
-    #     self.state_stack.append(
-    #         [dict(self.enclosed_envars),
-    #          dict(self.enclosed_aliases),
-    #          self.enclosed_cwd,
-    #          sys.argv[:],
-    #          dict(os.environ),
-    #          sys.stdin,
-    #          sys.stdout,
-    #          sys.stderr,
-    #         ])
-    #
-    #     # new enclosed and enclosing variables
-    #     self.enclosed_envars = dict(self.envars)
-    #     self.enclosed_aliases = dict(self.aliases)
-    #     self.enclosed_cwd = os.getcwd()
-    #
-    #     # envars for next level shell is envars of current level plus all current enclosing
-    #     if self.enclosing_envars:
-    #         self.envars.update(self.enclosing_envars)
-    #         self.enclosing_envars = {}
-    #
-    #     if self.enclosing_aliases:
-    #         self.aliases.update(self.enclosing_aliases)
-    #         self.enclosing_aliases = {}
-    #
-    #     if self.enclosing_cwd and self.enclosing_cwd != os.getcwd():
-    #         os.chdir(self.enclosing_cwd)
-    #         self.enclosing_cwd = ''
-    #
-    #     if len(self.worker_stack) == 1:
-    #         self.history, self.history_alt = self.history_alt, self.history
-    #
-    # def restore_state(self,
-    #                   persist_envars=False,
-    #                   persist_aliases=False,
-    #                   persist_cwd=False):
-    #
-    #     if self.debug:
-    #         self.logger.debug('Popping stack %d ----\n' % (len(self.state_stack) - 1))
-    #         self.logger.debug('envars = %s\n' % sorted(self.envars.keys()))
-    #
-    #     if len(self.worker_stack) == 1:
-    #         self.history, self.history_alt = self.history_alt, self.history
-    #
-    #     # If not persisting, parent shell's envars are set back to this level's
-    #     # enclosed vars. If persisting, envars of this level is then the same
-    #     # as its parent's envars.
-    #     self.enclosing_envars = self.envars
-    #     if not (persist_envars or len(self.worker_stack) == 1):
-    #         self.envars = self.enclosed_envars
-    #
-    #     self.enclosing_aliases = self.aliases
-    #     if not (persist_aliases or len(self.worker_stack) == 1):
-    #         self.aliases = self.enclosed_aliases
-    #
-    #     self.enclosing_cwd = os.getcwd()
-    #     if not (persist_cwd or len(self.worker_stack) == 1):
-    #         if os.getcwd() != self.enclosed_cwd:
-    #             os.chdir(self.enclosed_cwd)
-    #
-    #     (self.enclosed_envars,
-    #      self.enclosed_aliases,
-    #      self.enclosed_cwd,
-    #      sys.argv,
-    #      os.environ,
-    #      sys.stdin,
-    #      sys.stdout,
-    #      sys.stderr) = self.state_stack.pop()
-    #
-    #     if self.debug:
-    #         self.logger.debug('After poping\n')
-    #         self.logger.debug('enclosed_envars = %s\n' % sorted(self.enclosing_envars.keys()))
-    #         self.logger.debug('envars = %s\n' % sorted(self.envars.keys()))
-
     def load_rcfile(self):
         self.stash(_DEFAULT_RC.splitlines(), add_to_history=False, add_new_inp_line=False)
 
@@ -182,6 +102,8 @@ class ShRuntime(object):
                 self.stash.write_message('%s: error reading rcfile\n' % self.rcfile)
 
     def find_script_file(self, filename):
+        _, current_state = self.get_current_worker_and_state()
+
         dir_match_found = False
         # direct match of the filename, e.g. full path, relative path etc.
         for fname in (filename, filename + '.py', filename + '.sh'):
@@ -193,7 +115,8 @@ class ShRuntime(object):
 
         # Match for commands in current dir and BIN_PATH
         # Effectively, current dir is always the first in BIN_PATH
-        for path in ['.'] + self.envars['BIN_PATH'].split(':'):
+
+        for path in ['.'] + current_state.environ_get('BIN_PATH').split(':'):
             path = os.path.expanduser(path)
             if os.path.exists(path):
                 for f in os.listdir(path):
@@ -209,8 +132,9 @@ class ShRuntime(object):
 
     def get_all_script_names(self):
         """ This function used for completer, whitespaces in names are escaped"""
+        _, current_state = self.get_current_worker_and_state()
         all_names = []
-        for path in ['.'] + self.envars['BIN_PATH'].split(':'):
+        for path in ['.'] + current_state.environ_get('BIN_PATH').split(':'):
             path = os.path.expanduser(path)
             if os.path.exists(path):
                 for f in os.listdir(path):
@@ -224,20 +148,28 @@ class ShRuntime(object):
             final_errs=None,
             add_to_history=None,
             add_new_inp_line=None,
-            persist_envars=False,
-            persist_aliases=False,
-            persist_cwd=False):
+            persistent=False):
+        """
+
+        :param input_:
+        :param final_ins:
+        :param final_outs:
+        :param final_errs:
+        :param add_to_history:
+        :param add_new_inp_line:
+        :param persistent: Whether or not the state changes to child shell should be carried over to its parent shell
+        :return:
+        :rtype: ShBaseThread
+        """
 
         # Ensure the linearity of the worker threads.
         # To spawn a new worker thread, it is either
         #   1. No previous worker thread
         #   2. The last worker thread in stack is the current running one
-        # if self.worker_stack and self.worker_stack[-1] != threading.currentThread():
-        #     self.stash.write_message('worker threads must be linear\n')
 
         # noinspection PyDocstring
         def fn():
-            current_worker = threading.currentThread()
+            current_worker, _ = self.get_current_worker_and_state()
 
             try:
                 if type(input_) is list:
@@ -265,7 +197,6 @@ class ShRuntime(object):
 
                     # Subsequent members are actual commands
                     for _ in range(n_pipe_sequences):
-                        # self.save_state()  # State needs to be saved before expansion happens
                         try:
                             pipe_sequence = expanded.next()
                             if pipe_sequence.in_background:
@@ -281,19 +212,12 @@ class ShRuntime(object):
                                     background=True
                                 )
                                 bg_worker.start()
-                                # ui.in_background(self.run_pipe_sequence)(pipe_sequence,
-                                #                                          final_ins=final_ins,
-                                #                                          final_outs=final_outs,
-                                #                                          final_errs=final_errs)
                             else:
                                 self.run_pipe_sequence(pipe_sequence,
                                                        final_ins=final_ins,
                                                        final_outs=final_outs,
                                                        final_errs=final_errs)
                         finally:
-                            # self.restore_state(persist_envars=persist_envars,
-                            #                    persist_aliases=persist_aliases,
-                            #                    persist_cwd=persist_cwd)
                             pass
 
             except pp.ParseException as e:
@@ -338,6 +262,13 @@ class ShRuntime(object):
                     traceback.print_exception(etype, evalue, tb)
 
             finally:
+                # Top level worker saves its state to runtime or if persistent is required
+                if current_worker.is_top_level() or persistent:
+                    self.state.copy(current_worker.state)
+                else:  # otherwise, no changes should be carried over to the parent shell
+                    if os.getcwd() != current_worker.state.enclosed_cwd:
+                        os.chdir(current_worker.state.enclosed_cwd)
+
                 # Prompt is now ready for more user input for commands to run,
                 # if new input line is explicitly specified or when the worker
                 # thread's parent is the runtime itself and new input line is
@@ -370,26 +301,24 @@ class ShRuntime(object):
         if self.debug:
             self.logger.debug(str(pipe_sequence))
 
-        current_worker = threading.currentThread()
-        current_state = current_worker.state
+        _, current_state = self.get_current_worker_and_state()
 
         n_simple_commands = len(pipe_sequence.lst)
 
         prev_outs = None
         for idx, simple_command in enumerate(pipe_sequence.lst):
 
-            # The enclosing_envars needs to be reset for each simple command
+            # The enclosing_environ needs to be reset for each simple command
             # i.e. A=42 script1 | script2
             # The value of A should not be carried to script2
-            current_state.enclosing_envars = {}
+            current_state.enclosing_environ = {}
             for assignment in simple_command.assignments:
-                current_state.enclosing_envars[assignment.identifier] = assignment.value
+                current_state.enclosing_environ[assignment.identifier] = assignment.value
 
             # Only update the worker's env for pure assignments
             if simple_command.cmd_word == '' and idx == 0 and n_simple_commands == 1:
-                current_state.os['environ'].update(current_state.enclosing_envars)
-                # current_state.envars.update(current_state.enclosing_envars)
-                current_state.enclosing_envars = {}
+                current_state.os['environ'].update(current_state.enclosing_environ)
+                current_state.enclosing_environ = {}
 
             if prev_outs:
                 # If previous output has gone to a file, we use a dummy empty string as ins
@@ -444,9 +373,9 @@ class ShRuntime(object):
                         self.exec_sh_file(script_file, simple_command_args, ins, outs, errs)
 
                 else:
-                    current_state.envars['?'] = 0
+                    current_state.return_value = 0
 
-                if current_state.envars['?'] != 0:
+                if current_state.return_value != 0:
                     break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
                 if isinstance(outs, StringIO):
@@ -473,25 +402,13 @@ class ShRuntime(object):
     def exec_py_file(self, filename, args=None,
                      ins=None, outs=None, errs=None):
 
-        current_worker = threading.currentThread()
-        current_state = current_worker.state
+        _, current_state = self.get_current_worker_and_state()
 
-        args = args or []
+        # First argument is the script name
+        current_state.sys['argv'] = [os.path.basename(filename)] + (args or [])
 
-        sys.path = _SYS_PATH[:]
-        # Add any user set python paths right after the dot
-        # or at the beginning if dot is not in paths
-        if 'PYTHONPATH' in current_state.envars.keys():
-            try:
-                idxdot = sys.path.index('.') + 1
-            except ValueError:
-                idxdot = 0
-            for pth in reversed(current_state.envars['PYTHONPATH'].split(':')):
-                if pth == '':  # this for when existing PYTHONPATH is empty
-                    continue
-                pth = os.path.expanduser(pth)
-                if pth not in sys.path:
-                    sys.path.insert(idxdot, pth)
+        # Make sure PYTHONPATH is honored
+        self.handle_PYTHONPATH(current_state)
 
         if ins:
             current_state.sys['stdin'] = ins
@@ -500,25 +417,24 @@ class ShRuntime(object):
         if errs:
             current_state.sys['stderr'] = errs
 
-        # First argument is the script name
-        current_state.sys['argv'] = [os.path.basename(filename)] + args
-        current_state.os['environ'] = current_state.envars
-
         file_path = os.path.relpath(filename)
         namespace = dict(locals(), **globals())
         namespace['__name__'] = '__main__'
         namespace['__file__'] = os.path.abspath(file_path)
         namespace['_stash'] = self.stash
 
+        # Honor any leading vars, e.g. A=42 echo $A
+        current_state.enable_enclosing_environ()
+
         try:
             execfile(file_path, namespace, namespace)
-            current_state.envars['?'] = 0
+            current_state.return_value = 0
 
         except SystemExit as e:
-            current_state.envars['?'] = e.code
+            current_state.return_value = e.code
 
         except Exception as e:
-            current_state.envars['?'] = 1
+            current_state.return_value = 1
             etype, evalue, tb = sys.exc_info()
             err_msg = '%s: %s\n' % (repr(etype), evalue)
             if self.debug:
@@ -532,44 +448,60 @@ class ShRuntime(object):
                     pdb.post_mortem(tb)
 
         finally:
-            sys.path = _SYS_PATH
+            # Remove any variables that are set by leading vars, e.g. A=42 echo $A
+            # This is a simplified solution. Because it is possible that the running
+            # user script set the variable again, i.e. A=42 is set again in the
+            # running script. In this case, the variable A should NOT be removed.
+            # It requires significant additional efforts to fully capture possible user
+            # changes (if not impossible). Since the use case is so rare, a simplified
+            # approach is acceptable.
+            current_state.disable_enclosing_environ()
+            # TODO: fix above issue so user changes are tracked?
 
     def exec_sh_file(self, filename, args=None,
                      ins=None, outs=None, errs=None,
                      add_to_history=None):
+
+        _, current_state = self.get_current_worker_and_state()
+
         if args is None:
             args = []
-        try:
-            for i, arg in enumerate([filename] + args):
-                self.enclosing_envars[str(i)] = arg
-            self.enclosing_envars['#'] = len(args)
-            self.enclosing_envars['@'] = '\t'.join(args)
 
+        for i, arg in enumerate([filename] + args):
+            current_state.enclosing_environ[str(i)] = arg
+        current_state.enclosing_environ['#'] = len(args)
+        current_state.enclosing_environ['@'] = '\t'.join(args)
+
+        # Enclosing variables will be merged to environ when creating new thread
+        try:
             with open(filename) as fins:
-                worker = self.run(fins.readlines(),
-                                  final_ins=ins,
-                                  final_outs=outs,
-                                  final_errs=errs,
-                                  add_to_history=add_to_history,
-                                  add_new_inp_line=False)
-                worker.join()
-            if '?' in self.enclosing_envars.keys():
-                self.envars['?'] = self.enclosing_envars['?']
-            else:
-                self.envars['?'] = 0
+                child_worker = self.run(fins.readlines(),
+                                        final_ins=ins,
+                                        final_outs=outs,
+                                        final_errs=errs,
+                                        add_to_history=add_to_history,
+                                        add_new_inp_line=False)
+                child_worker.join()
+
+            current_state.return_value = child_worker.state.return_value
 
         except IOError as e:
             self.stash.write_message('%s: %s\n' % (e.filename, e.strerror))
-            self.envars['?'] = 1
+            current_state.return_value = 1
 
         except:
             self.stash.write_message('%s: error while executing shell script\n' % filename)
-            self.envars['?'] = 2
+            current_state.return_value = 2
 
     def get_prompt(self):
-        prompt = self.envars['PROMPT']
+        """
+        Get the prompt string. Fill with current working directory if required
+        """
+        _, current_state = self.get_current_worker_and_state()
+
+        prompt = current_state.environ_get('PROMPT')
         if prompt.find('\\W') != -1 or prompt.find('\\w') != -1:
-            curdir = os.getcwd().replace(self.envars['HOME'], '~')
+            curdir = os.getcwd().replace(current_state.environ_get('HOME'), '~')
             prompt = prompt.replace('\\w', curdir)
             prompt = prompt.replace('\\W',
                                     curdir if os.path.dirname(curdir) == '~'
@@ -656,3 +588,36 @@ class ShRuntime(object):
                 self.history_templine = self.stash.mini_buffer.modifiable_chars.rstrip()
             self.stash.mini_buffer.feed(None, sender.items[sender.selected_row])
             self.idx_to_history = sender.selected_row
+
+    def get_current_worker_and_state(self):
+        """
+        Get the current thread and its associated state.
+        :return:
+        :rtype: (ShBaseThread, ShState)
+        """
+        current_worker = threading.currentThread()
+        if current_worker.name == '_shthread':
+            return current_worker, current_worker.state
+        else:  # UI thread uses runtime for its state
+            return None, self.state
+
+    @staticmethod
+    def handle_PYTHONPATH(state):
+        """
+        Add any user set python paths right after the dot or at the beginning
+        if dot is not in the paths.
+        :param ShState state: State variables of a thread
+        :return:
+        """
+        if 'PYTHONPATH' in state.os['environ']:
+            try:
+                idxdot = state.sys['path'].index('.') + 1
+            except ValueError:
+                idxdot = 0
+            # Insert in the reversed order so idxdot does not need to change
+            for pth in reversed(state.os['environ']['PYTHONPATH'].split(':')):
+                if pth == '':
+                    continue
+                pth = os.path.expanduser(pth)
+                if pth not in state.sys['path']:
+                    state.sys['path'].insert(idxdot, pth)

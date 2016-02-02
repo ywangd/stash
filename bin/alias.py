@@ -10,18 +10,20 @@ def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('expr', nargs='?', help='name=value')
     
-    args = ap.parse_args(args)
+    ns = ap.parse_args(args)
     
     app = globals()['_stash']
-    rt = app.runtime
-     
-    if args.expr is None:
-        for k, v in rt.aliases.items():
+    """:type : StaSh"""
+
+    _, current_state = app.runtime.get_current_worker_and_state()
+
+    if ns.expr is None:
+        for k, v in current_state.aliases.items():
             print('{}={}'.format(k, v[0]))
     
     else:
-        if "=" in args.expr:
-            name, value = args.expr.split("=", 1)
+        if "=" in ns.expr:
+            name, value = ns.expr.split("=", 1)
             if name == "" or value == "":
                 raise ValueError("alias: invalid name=value expression")
 
@@ -29,11 +31,11 @@ def main(args):
             # Ensure the actual form of an alias is fully expanded
             tokens, _ = app.runtime.expander.alias_subs(tokens, parsed, exclude=name)
             value_expanded = ' '.join(t.tok for t in tokens)
-            rt.aliases[name] = (value, value_expanded)
+            current_state.aliases[name] = (value, value_expanded)
             sys.exit(0)
         else:
             try:
-                print('{}={}'.format(args.expr, rt.aliases[args.expr]))
+                print('{}={}'.format(ns.expr, current_state.aliases[ns.expr]))
             except KeyError as err:
                 raise KeyError('alias: {} not found'.format(err.message))
 

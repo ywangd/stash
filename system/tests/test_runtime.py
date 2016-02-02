@@ -12,7 +12,7 @@ class RuntimeTests(unittest.TestCase):
         self.stash('BIN_PATH=$STASH_ROOT/system/tests/data:$BIN_PATH')
 
     def tearDown(self):
-        assert len(self.stash.runtime.worker_stack) == 0, 'Worker stack is not clean'
+        assert self.stash.runtime.child_thread is None, 'child thread is not cleaned'
         assert len(self.stash.runtime.state_stack) == 0, 'State stack is not clean'
         del self.stash
 

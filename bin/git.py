@@ -39,7 +39,7 @@ REQUIRED_DULWICH_VERSION = (0,12,2)
 AUTODOWNLOAD_DEPENDENCIES = True 
 
 if AUTODOWNLOAD_DEPENDENCIES:
-    libpath=os.path.join(_stash.runtime.envars['STASH_ROOT'] ,'lib')
+    libpath=os.path.join(os.environ['STASH_ROOT'] ,'lib')
     if not libpath in sys.path:
         sys.path.insert(1,libpath)
     download_dulwich = False 
@@ -299,7 +299,7 @@ def git_rm(args):
     else:
         print command_help['rm']
 def launch_subcmd(cmd,args):
-    cmdpath=os.path.join(_stash.runtime.envars['STASH_ROOT'],'lib','git',cmd)
+    cmdpath=os.path.join(os.environ['STASH_ROOT'],'lib','git',cmd)
 
     _stash.runtime.exec_py_file(cmdpath, args=args,
                      ins=sys.stdin, outs=sys.stdout, errs=sys.stderr)

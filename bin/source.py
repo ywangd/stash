@@ -22,32 +22,21 @@ def main(args):
 
     _stash = globals()['_stash']
     rt = _stash.runtime
+    """:type: ShRuntime"""
 
     # The special thing about source is it persists any environmental changes
-    # in the sub-shell through the parent one. Otherwise, we can use
-    # exec_sh_file to do the job.
-
-    for i, arg in enumerate([ns.file] + ns.args):
-        rt.enclosing_envars[str(i)] = arg
-    rt.enclosing_envars['#'] = len(ns.args)
-    rt.enclosing_envars['@'] = '\t'.join(ns.args)
-
+    # in the sub-shell to the parent shell.
     try:
         with open(ns.file) as ins:
             worker = rt.run(ins.readlines(),
-                            persist_envars=True,
-                            persist_aliases=True,
-                            persist_cwd=True)
+                            persistent=True)
             worker.join()
     except IOError as e:
         print '%s: %s' % (e.filename, e.strerror)
     except Exception as e:
         print 'error: %s' % str(e)
     finally:
-        for i in range(len(ns.args) + 1):
-            rt.envars.pop(str(i))
-        rt.envars.pop('#')
-        rt.envars.pop('@')
+        pass
 
 if __name__ == '__main__':
     main(sys.argv[1:])

@@ -11,12 +11,22 @@ from collections import OrderedDict
 
 from .shcommon import M_64
 
+_STATE_STR_TEMPLATE = """enclosed_cwd: {}
+aliases: {}
+sys.argv: {}
+sys.stidin: {}
+sys.stdout: {}
+sys.stderr: {}
+enclosing_environ: {}
+sys.path: {}
+os.environ: {}
+"""
+
 
 class ShState(object):
     """ State of the current worker thread
     """
     def __init__(self,
-                 envars=None,
                  aliases=None,
                  enclosed_cwd=None,
                  os_environ=None,
@@ -26,7 +36,6 @@ class ShState(object):
                  sys_stdout=None,
                  sys_stderr=None):
 
-        self.envars = envars or {}
         self.aliases = aliases or {}
         self.enclosed_cwd = enclosed_cwd
 
@@ -40,16 +49,70 @@ class ShState(object):
             'stdout': sys_stdout or sys.stdout,
             'stderr': sys_stderr or sys.stderr,
         }
-        self.enclosing_envars = {}
+        self.enclosing_environ = {}
+
+    def __str__(self):
+        s = _STATE_STR_TEMPLATE.format(self.enclosed_cwd,
+                                       self.aliases,
+                                       self.sys['argv'],
+                                       self.sys['stdin'],
+                                       self.sys['stdout'],
+                                       self.sys['stderr'],
+                                       self.enclosing_environ,
+                                       self.sys['path'],
+                                       self.os['environ'])
+        return s
+
+
+    @property
+    def return_value(self):
+        return self.os['environ'].get('?', 0)
+
+    @return_value.setter
+    def return_value(self, value):
+        self.os['environ']['?'] = value
+
+    def environ_get(self, name):
+        return self.os['environ'][name]
+
+    def environ_set(self, name, value):
+        self.os['environ'][name] = value
+
+    def enable_enclosing_environ(self):
+        if self.enclosing_environ:
+            self.os['environ'].update(self.enclosing_environ)
+
+    def disable_enclosing_environ(self):
+        for k in self.enclosing_environ.keys():
+            try:
+                self.os['environ'].pop(k)
+            except KeyError:  # ignore any error
+                pass
+
+    def copy(self, state):
+        """
+
+        :param ShState state: Other state
+        :return:
+        """
+        self.aliases = state.aliases
+        self.enclosed_cwd = os.getcwd()
+        self.os.update(state.os)
+        self.sys.update(state.sys)
 
     @staticmethod
-    def new_from_existing(state):
-        envars = dict(state.envars)
-        envars.update(state.enclosing_envars)
-        return ShState(envars=envars,
-                       aliases=dict(state.aliases),
+    def new_from_parent(state):
+        """
+        Create new state from parent state. Parent's enclosing environ are merged as
+        part of child's environ
+        :param state:
+        :return:
+        """
+        environ = dict(state.os['environ'])
+        environ.update(state.enclosing_environ)
+        return ShState(aliases=dict(state.aliases),
                        enclosed_cwd=os.getcwd(),
-                       os_environ=dict(state.os['environ']),
+                       os_environ=environ,
                        sys_argv=state.sys['argv'][:],
                        sys_path=state.sys['path'][:],
                        sys_stdin=state.sys['stdin'],
@@ -67,6 +130,9 @@ class ShWorkerRegistry(object):
         self._count = 1
         self._lock = threading.Lock()
 
+    def __iter__(self):
+        return self.registry.values()
+
     def _get_job_id(self):
         try:
             self._lock.acquire()
@@ -82,6 +148,15 @@ class ShWorkerRegistry(object):
 
     def remove_worker(self, worker):
         self.registry.pop(worker.job_id)
+
+    def purge(self):
+        """
+        Kill all registered thread and clear the entire registry
+        :return:
+        """
+        for worker in self.registry.values():
+            worker.kill()
+        self.registry.clear()
 
 
 class ShBaseThread(threading.Thread):
@@ -108,7 +183,7 @@ class ShBaseThread(threading.Thread):
             self.parent = None
 
         # Set up the state based on parent's state
-        self.state = ShState.new_from_existing(parent.state)
+        self.state = ShState.new_from_parent(parent.state)
 
         self.killed = False
         self.child_thread = None
