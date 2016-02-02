@@ -13,6 +13,6 @@ s('cd ..')
 
 print
 # following two scripts should not interfere each other
-s('test05_1.sh')
+s('system/tests/data/test05_1.sh')
 
-s('test05_2.sh')
+s('system/tests/data/test05_2.sh')

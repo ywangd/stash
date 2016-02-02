@@ -21,16 +21,17 @@ def main(args):
     ns = ap.parse_args(args)
 
     _stash = globals()['_stash']
-    rt = _stash.runtime
-    """:type: ShRuntime"""
+    """:type : StaSh"""
+
+    _, current_state = _stash.runtime.get_current_worker_and_state()
 
     # The special thing about source is it persists any environmental changes
     # in the sub-shell to the parent shell.
     try:
         with open(ns.file) as ins:
-            worker = rt.run(ins.readlines(),
-                            persistent=True)
-            worker.join()
+            child_worker = _stash(ins.readlines(), persistent=True)
+            current_state.copy(child_worker.state)
+
     except IOError as e:
         print '%s: %s' % (e.filename, e.strerror)
     except Exception as e:

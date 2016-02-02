@@ -130,6 +130,7 @@ class StaSh(object):
          executing shell commands """
         worker = self.runtime.run(*args, **kwargs)
         worker.join()
+        return worker
 
     @staticmethod
     def _load_config():
