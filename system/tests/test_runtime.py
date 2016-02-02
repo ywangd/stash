@@ -13,7 +13,6 @@ class RuntimeTests(unittest.TestCase):
 
     def tearDown(self):
         assert self.stash.runtime.child_thread is None, 'child thread is not cleaned'
-        assert len(self.stash.runtime.state_stack) == 0, 'State stack is not clean'
         del self.stash
 
     def do_test(self, cmd, cmp_str, ensure_same_cwd=True, ensure_undefined=(), ensure_defined=()):
@@ -22,16 +21,18 @@ class RuntimeTests(unittest.TestCase):
         self.stash('clear')
         self.stash(cmd)
 
+        print self.stash.main_screen.text
+
         assert cmp_str == self.stash.main_screen.text, 'output not identical'
 
         if ensure_same_cwd:
             assert os.getcwd() == saved_cwd, 'cwd changed'
 
         for v in ensure_undefined:
-            assert v not in self.stash.runtime.envars.keys(), '%self.stash should be undefined' % v
+            assert v not in self.stash.runtime.state.os['environ'].keys(), '%self.stash should be undefined' % v
 
         for v in ensure_defined:
-            assert v in self.stash.runtime.envars.keys(), '%self.stash should be defined' % v
+            assert v in self.stash.runtime.state.os['environ'].keys(), '%self.stash should be defined' % v
 
     def test_03(self):
         cmp_str = r"""[stash]$ x y

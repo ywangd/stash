@@ -32,9 +32,73 @@ _STASH_HISTORY_FILE = '.stash_history'
 
 
 # Save the true IOs
-_SYS_STDOUT = sys.stdout
-_SYS_STDERR = sys.stderr
-_SYS_STDIN = sys.stdin
+if IN_PYTHONISTA:
+    # The stdio catchers recreation is copied from code written by @dgelessus
+    # https://forum.omz-software.com/topic/1946/pythonista-1-6-beta/167
+    import _outputcapture
+
+    if sys.stdin.__class__.__name__ == 'StdinCatcher':
+        _SYS_STDIN = sys.stdin
+    else:
+        class StdinCatcher(object):
+            def __init__(self):
+                self.encoding = 'utf8'
+
+            def read(self, limit=-1):
+                return _outputcapture.ReadStdin(limit)
+
+            def readline(self):
+                return _outputcapture.ReadStdin()
+
+        _SYS_STDIN = StdinCatcher()
+
+    if sys.stdout.__class__.__name__ == 'StdoutCatcher':
+        _SYS_STDOUT = sys.stdout
+    else:
+        class StdoutCatcher(object):
+            def __init__(self):
+                self.encoding = "utf8"
+
+            def flush(self):
+                pass
+
+            def write(self, s):
+                if isinstance(s, str):
+                    _outputcapture.CaptureStdout(s)
+                elif isinstance(s, unicode):
+                    _outputcapture.CaptureStdout(s.encode('utf8'))
+
+            def writelines(self, lines):
+                self.write(''.join(lines))
+
+        _SYS_STDOUT = StdoutCatcher()
+
+    if sys.stderr.__class__.__name__ == 'StderrCatcher':
+        _SYS_STDERR = sys.stderr
+    else:
+        class StderrCatcher(object):
+            def __init__(self):
+                self.encoding = 'utf8'
+
+            def flush(self):
+                pass
+
+            def write(self, s):
+                if isinstance(s, str):
+                    _outputcapture.CaptureStderr(s)
+                elif isinstance(s, unicode):
+                    _outputcapture.CaptureStderr(s.encode('utf8'))
+
+            def writelines(self, lines):
+                self.write(''.join(lines))
+
+        _SYS_STDERR = StderrCatcher()
+
+else:
+    _SYS_STDOUT = sys.stdout
+    _SYS_STDERR = sys.stderr
+    _SYS_STDIN = sys.stdin
+
 _SYS_PATH = sys.path
 _OS_ENVIRON = os.environ
 

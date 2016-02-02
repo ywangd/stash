@@ -5,7 +5,7 @@ StaSh - Pythonista Shell
 https://github.com/ywangd/stash
 """
 
-__version__ = '0.5.4'
+__version__ = '0.6.0'
 
 import os
 import sys
@@ -18,6 +18,7 @@ import logging.handlers
 
 # noinspection PyPep8Naming
 from system.shimportproxy import enable as enable_import_proxy, disable as disable_import_proxy
+from system.shiowrapper import enable as enable_io_wrapper, disable as disable_io_wrapper
 from system.shcommon import IN_PYTHONISTA, ON_IPAD
 from system.shcommon import _STASH_ROOT, _STASH_CONFIG_FILES, _SYS_STDOUT
 from system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
@@ -79,6 +80,7 @@ class StaSh(object):
     def __init__(self, debug=(), log_setting=None):
         self.__version__ = __version__
 
+        enable_io_wrapper()
         enable_import_proxy()
 
         self.config = self._load_config()
@@ -200,6 +202,10 @@ class StaSh(object):
     def launch(self, style='panel'):
         self.ui.present(style)
         self.terminal.begin_editing()
+
+    def cleanup(self):
+        disable_import_proxy()
+        disable_io_wrapper()
 
     # noinspection PyProtectedMember
     @staticmethod

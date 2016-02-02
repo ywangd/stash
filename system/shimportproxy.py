@@ -5,9 +5,14 @@ e.g. sys.argv, os.environ, etc.
 Each script has its own copy and can make changes to its own copy
 without affecting other script's environment.
 
-The module proxy does this in a hacky way by replacing the magic
+The module proxy does this in a hackish way by replacing the magic
 __import__ and reload functions to intercept import and reload
 calls and return custom modules if calls are from worker threads.
+
+NOTE: Even when the sys module is mocked, its io properties (e.g. stdout)
+are not recognized by print, i.e. all prints still go to the console
+page. So shiowrapper is created to intercept all IO calls when stash is
+running and dispatch them based on the running thread.
 """
 import imp
 import __builtin__
@@ -25,6 +30,7 @@ _INTERCEPT_MODULES = ('os', 'sys')
 # A mock module by delegating the real one
 _MOCK_CODE_TEMPLATE = """
 from {} import *
+ASDF='HAHA'
 """
 
 

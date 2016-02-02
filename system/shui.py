@@ -10,11 +10,12 @@ except ImportError:
 
 from .shcommon import IN_PYTHONISTA, ON_IPAD
 from .shterminal import ShTerminal, StubTerminal
-from .shimportproxy import disable as disable_import_proxy
 
 class ShVk(ui.View):
     """
     The virtual keyboard container, which implements a swipe cursor positioning gesture
+
+    :type stash : StaSh
     """
     def __init__(self, stash, name='vks', flex='wh'):
 
@@ -22,8 +23,6 @@ class ShVk(ui.View):
             ui.View.__init__(self)
 
         self.stash = stash
-        """:type : StaSh"""
-
         self.flex = flex
         self.name = name
         self.sv = ui.ScrollView(name, flex='wh')
@@ -54,11 +53,12 @@ class ShVk(ui.View):
 
 
 class ShUI(ui.View):
+    """
+    :type stash : StaSh
+    """
     def __init__(self, stash, debug=False):
 
         self.stash = stash
-        """:type : StaSh"""
-
         self.debug = debug
         self.logger = logging.getLogger('StaSh.UI')
 
@@ -272,7 +272,7 @@ class ShUI(ui.View):
         :return:
         """
         self.stash.runtime.save_history()
-        disable_import_proxy()
+        self.stash.cleanup()
         # Clear the stack or the stdout becomes unusable for interactive prompt
         self.stash.runtime.worker_registry.purge()
 

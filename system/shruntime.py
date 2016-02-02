@@ -17,9 +17,9 @@ except ImportError:
 from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
     ShFileNotFound, ShEventNotFound, ShNotExecutable
 # noinspection PyProtectedMember
-from .shcommon import _SYS_STDOUT, _SYS_STDERR, _SYS_PATH, _STASH_ROOT, _STASH_HISTORY_FILE
+from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE
 from .shcommon import is_binary_file
-from .shthreads import ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
+from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
 
 
 # Default .stashrc file
@@ -279,7 +279,7 @@ class ShRuntime(object):
                 current_worker.cleanup()
 
         current_thread = threading.currentThread()
-        if current_thread.name == '_shthread':
+        if isinstance(current_thread, ShBaseThread):
             worker = self.ShThread(self.worker_registry, current_thread, target=fn)
         else:  # UI thread is substituted by runtime
             worker = self.ShThread(self.worker_registry, self, target=fn)
@@ -330,7 +330,7 @@ class ShRuntime(object):
             errs = self.stash.io
 
             if simple_command.io_redirect:
-                ## Truncate file or append to file
+                # Truncate file or append to file
                 mode = 'w' if simple_command.io_redirect.operator == '>' else 'a'
                 # For simplicity, stdout redirect works for stderr as well.
                 # Note this is different from a real shell.
@@ -412,10 +412,15 @@ class ShRuntime(object):
 
         if ins:
             current_state.sys['stdin'] = ins
+            # sys.stdin = stdinWrapper
+
         if outs:
             current_state.sys['stdout'] = outs
+            # sys.stdout = stdoutWrapper
+
         if errs:
             current_state.sys['stderr'] = errs
+            # sys.stderr = stderrWrapper
 
         file_path = os.path.relpath(filename)
         namespace = dict(locals(), **globals())
@@ -596,7 +601,7 @@ class ShRuntime(object):
         :rtype: (ShBaseThread, ShState)
         """
         current_worker = threading.currentThread()
-        if current_worker.name == '_shthread':
+        if isinstance(current_worker, ShBaseThread):
             return current_worker, current_worker.state
         else:  # UI thread uses runtime for its state
             return None, self.state
