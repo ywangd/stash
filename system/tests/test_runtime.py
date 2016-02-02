@@ -21,8 +21,6 @@ class RuntimeTests(unittest.TestCase):
         self.stash('clear')
         self.stash(cmd)
 
-        print self.stash.main_screen.text
-
         assert cmp_str == self.stash.main_screen.text, 'output not identical'
 
         if ensure_same_cwd:

@@ -63,7 +63,6 @@ class ShState(object):
                                        self.os['environ'])
         return s
 
-
     @property
     def return_value(self):
         return self.os['environ'].get('?', 0)

@@ -154,7 +154,7 @@ class ShRuntime(object):
         :param input_:
         :param final_ins:
         :param final_outs:
-        :param final_errs:
+        :param final_errs
         :param add_to_history:
         :param add_new_inp_line:
         :param persistent: Whether or not the state changes to child shell should be carried over to its parent shell
@@ -412,15 +412,12 @@ class ShRuntime(object):
 
         if ins:
             current_state.sys['stdin'] = ins
-            # sys.stdin = stdinWrapper
 
         if outs:
             current_state.sys['stdout'] = outs
-            # sys.stdout = stdoutWrapper
 
         if errs:
             current_state.sys['stderr'] = errs
-            # sys.stderr = stderrWrapper
 
         file_path = os.path.relpath(filename)
         namespace = dict(locals(), **globals())
