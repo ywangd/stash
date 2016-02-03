@@ -1,4 +1,4 @@
-s = _stash
+s = globals()['_stash']
 
 # following statements should be correlated
 s('echo AA is $AA')

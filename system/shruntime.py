@@ -17,7 +17,7 @@ except ImportError:
 from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
     ShFileNotFound, ShEventNotFound, ShNotExecutable
 # noinspection PyProtectedMember
-from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE
+from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE, _SYS_PATH
 from .shcommon import is_binary_file
 from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
 
@@ -50,13 +50,16 @@ class ShRuntime(object):
         self.logger = logging.getLogger('StaSh.Runtime')
 
         self.state = ShState(
-            os_environ=dict(os.environ,
-                            HOME2=os.path.join(os.environ['HOME'], 'Documents'),
-                            STASH_ROOT=_STASH_ROOT,
-                            BIN_PATH=os.path.join(_STASH_ROOT, 'bin'),
-                            # Must have a placeholder because it is needed before _DEFAULT_RC is loaded
-                            PROMPT='[\W]$ ',  # referenced stream feed
-                            PYTHONISTA_ROOT=os.path.dirname(sys.executable))
+            environ=dict(os.environ,
+                         HOME2=os.path.join(os.environ['HOME'], 'Documents'),
+                         STASH_ROOT=_STASH_ROOT,
+                         BIN_PATH=os.path.join(_STASH_ROOT, 'bin'),
+                         # Must have a placeholder because it is needed before _DEFAULT_RC is loaded
+                         PROMPT='[\W]$ ',  # referenced stream feed
+                         PYTHONISTA_ROOT=os.path.dirname(sys.executable)),
+            sys_stdin=self.stash.io,
+            sys_stdout=self.stash.io,
+            sys_stderr=self.stash.io,
         )
         self.child_thread = None
         self.worker_registry = ShWorkerRegistry()
@@ -69,7 +72,8 @@ class ShRuntime(object):
         self.py_traceback = config.getint('system', 'py_traceback')
         self.py_pdb = config.getint('system', 'py_pdb')
         self.input_encoding_utf8 = config.getint('system', 'input_encoding_utf8')
-        self.ipython_style_history_search = config.getint('system', 'ipython_style_history_search')
+        self.ipython_style_history_search = config.getint(
+            'system', 'ipython_style_history_search')
         self.ShThread = {'traced': ShTracedThread, 'ctypes': ShCtypesThread}.get(
             config.get('system', 'thread_type'),
             ShCtypesThread
@@ -276,6 +280,9 @@ class ShRuntime(object):
                 if add_new_inp_line or \
                         (current_worker.is_top_level() and add_new_inp_line is not False):
                     self.script_will_end()
+
+                # Housekeeping for the thread, e.g. remove itself from registryina22ken
+
                 current_worker.cleanup()
 
         current_thread = threading.currentThread()
@@ -324,10 +331,10 @@ class ShRuntime(object):
                 # If previous output has gone to a file, we use a dummy empty string as ins
                 ins = StringIO() if type(prev_outs) == file else prev_outs
             else:
-                ins = final_ins or self.stash.io
+                ins = final_ins or current_state.sys_stdin
 
-            outs = self.stash.io
-            errs = self.stash.io
+            outs = current_state.sys_stdout
+            errs = current_state.sys_stderr
 
             if simple_command.io_redirect:
                 # Truncate file or append to file
@@ -404,20 +411,14 @@ class ShRuntime(object):
 
         _, current_state = self.get_current_worker_and_state()
 
-        # First argument is the script name
-        current_state.sys['argv'] = [os.path.basename(filename)] + (args or [])
-
-        # Make sure PYTHONPATH is honored
-        self.handle_PYTHONPATH(current_state)
-
         if ins:
-            current_state.sys['stdin'] = ins
+            current_state.sys_stdin = ins
 
         if outs:
-            current_state.sys['stdout'] = outs
+            current_state.sys_stdout = outs
 
         if errs:
-            current_state.sys['stderr'] = errs
+            current_state.sys_stderr = errs
 
         file_path = os.path.relpath(filename)
         namespace = dict(locals(), **globals())
@@ -425,8 +426,18 @@ class ShRuntime(object):
         namespace['__file__'] = os.path.abspath(file_path)
         namespace['_stash'] = self.stash
 
+        # First argument is the script name
+        sys.argv = [os.path.basename(filename)] + (args or [])
+
         # Honor any leading vars, e.g. A=42 echo $A
+        saved_os_environ = os.environ
         current_state.enable_enclosing_environ()
+        os.environ = current_state.environ
+
+        # Make sure PYTHONPATH is honored
+        saved_sys_path = sys.path
+        current_state.handle_PYTHONPATH()
+        sys.path = current_state.sys_path
 
         try:
             execfile(file_path, namespace, namespace)
@@ -437,6 +448,7 @@ class ShRuntime(object):
 
         except Exception as e:
             current_state.return_value = 1
+
             etype, evalue, tb = sys.exc_info()
             err_msg = '%s: %s\n' % (repr(etype), evalue)
             if self.debug:
@@ -457,8 +469,11 @@ class ShRuntime(object):
             # It requires significant additional efforts to fully capture possible user
             # changes (if not impossible). Since the use case is so rare, a simplified
             # approach is acceptable.
+            current_state.environ = sys.path
             current_state.disable_enclosing_environ()
-            # TODO: fix above issue so user changes are tracked?
+            os.environ = saved_os_environ
+            current_state.sys_path = sys.path
+            sys.path = saved_sys_path
 
     def exec_sh_file(self, filename, args=None,
                      ins=None, outs=None, errs=None,
@@ -602,24 +617,3 @@ class ShRuntime(object):
             return current_worker, current_worker.state
         else:  # UI thread uses runtime for its state
             return None, self.state
-
-    @staticmethod
-    def handle_PYTHONPATH(state):
-        """
-        Add any user set python paths right after the dot or at the beginning
-        if dot is not in the paths.
-        :param ShState state: State variables of a thread
-        :return:
-        """
-        if 'PYTHONPATH' in state.os['environ']:
-            try:
-                idxdot = state.sys['path'].index('.') + 1
-            except ValueError:
-                idxdot = 0
-            # Insert in the reversed order so idxdot does not need to change
-            for pth in reversed(state.os['environ']['PYTHONPATH'].split(':')):
-                if pth == '':
-                    continue
-                pth = os.path.expanduser(pth)
-                if pth not in state.sys['path']:
-                    state.sys['path'].insert(idxdot, pth)

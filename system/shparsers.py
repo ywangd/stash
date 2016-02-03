@@ -588,7 +588,7 @@ class ShExpander(object):
         _, current_state = self.stash.runtime.get_current_worker_and_state()
         saved_environ = os.environ
         try:
-            os.environ = current_state.os['environ']
+            os.environ = current_state.environ
             s = os.path.expanduser(s)
             # Command substitution is done by bq_word_action
             # Pathname expansion (glob) is done in word_action
@@ -603,7 +603,7 @@ class ShExpander(object):
         _, current_state = self.stash.runtime.get_current_worker_and_state()
         saved_environ = os.environ
         try:
-            os.environ = current_state.os['environ']
+            os.environ = current_state.environ
 
             state = 'a'
             es = ''
@@ -748,7 +748,7 @@ class ShCompleter(object):
                 script_names = []
 
             if word_to_complete.startswith('$'):
-                environ_names = ['$' + varname for varname in current_state.os['environ'].keys()
+                environ_names = ['$' + varname for varname in current_state.environ.keys()
                                if varname.startswith(word_to_complete[1:])]
             else:
                 environ_names = []

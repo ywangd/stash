@@ -13,13 +13,11 @@ from .shcommon import M_64
 
 _STATE_STR_TEMPLATE = """enclosed_cwd: {}
 aliases: {}
-sys.argv: {}
 sys.stidin: {}
 sys.stdout: {}
 sys.stderr: {}
 enclosing_environ: {}
-sys.path: {}
-os.environ: {}
+environ: {}
 """
 
 
@@ -28,65 +26,76 @@ class ShState(object):
     """
     def __init__(self,
                  aliases=None,
+                 environ=None,
                  enclosed_cwd=None,
-                 os_environ=None,
-                 sys_argv=None,
-                 sys_path=None,
                  sys_stdin=None,
                  sys_stdout=None,
-                 sys_stderr=None):
+                 sys_stderr=None,
+                 sys_path=None):
 
         self.aliases = aliases or {}
+        self.environ = environ or {}
         self.enclosed_cwd = enclosed_cwd
 
-        self.os = {
-            'environ': os_environ or dict(os.environ),
-        }
-        self.sys = {
-            'argv': sys_argv or sys.argv[:],
-            'path': sys_path or sys.path[:],
-            'stdin': sys_stdin or sys.stdin,
-            'stdout': sys_stdout or sys.stdout,
-            'stderr': sys_stderr or sys.stderr,
-        }
+        self.sys_stdin = sys_stdin or sys.stdin
+        self.sys_stdout = sys_stdout or sys.stdout
+        self.sys_stderr = sys_stderr or sys.stderr
+        self.sys_path = sys_path or sys.path[:]
+
         self.enclosing_environ = {}
 
     def __str__(self):
         s = _STATE_STR_TEMPLATE.format(self.enclosed_cwd,
                                        self.aliases,
-                                       self.sys['argv'],
-                                       self.sys['stdin'],
-                                       self.sys['stdout'],
-                                       self.sys['stderr'],
+                                       self.sys_stdin,
+                                       self.sys_stdout,
+                                       self.sys_stderr,
                                        self.enclosing_environ,
-                                       self.sys['path'],
-                                       self.os['environ'])
+                                       self.environ)
         return s
 
     @property
     def return_value(self):
-        return self.os['environ'].get('?', 0)
+        return self.environ.get('?', 0)
 
     @return_value.setter
     def return_value(self, value):
-        self.os['environ']['?'] = value
+        self.environ['?'] = value
 
     def environ_get(self, name):
-        return self.os['environ'][name]
+        return self.environ[name]
 
     def environ_set(self, name, value):
-        self.os['environ'][name] = value
+        self.environ[name] = value
 
     def enable_enclosing_environ(self):
         if self.enclosing_environ:
-            self.os['environ'].update(self.enclosing_environ)
+            self.environ.update(self.enclosing_environ)
 
     def disable_enclosing_environ(self):
         for k in self.enclosing_environ.keys():
             try:
-                self.os['environ'].pop(k)
+                self.environ.pop(k)
             except KeyError:  # ignore any error
                 pass
+
+    def handle_PYTHONPATH(self):
+        """
+        Add any user set python paths right after the dot or at the beginning
+        if dot is not in the paths.
+        """
+        if 'PYTHONPATH' in self.environ:
+            try:
+                idxdot = self.sys_path.index('.') + 1
+            except ValueError:
+                idxdot = 0
+            # Insert in the reversed order so idxdot does not need to change
+            for pth in reversed(self.environ['PYTHONPATH'].split(':')):
+                if pth == '':
+                    continue
+                pth = os.path.expanduser(pth)
+                if pth not in self.sys_path:
+                    self.sys_path.insert(idxdot, pth)
 
     def copy(self, state):
         """
@@ -94,10 +103,10 @@ class ShState(object):
         :param ShState state: Other state
         :return:
         """
-        self.aliases = state.aliases
+        self.aliases = dict(state.aliases)
         self.enclosed_cwd = os.getcwd()
-        self.os.update(state.os)
-        self.sys.update(state.sys)
+        self.environ = dict(state.environ)
+        self.sys_path = state.sys_path[:]
 
     @staticmethod
     def new_from_parent(state):
@@ -107,16 +116,15 @@ class ShState(object):
         :param state:
         :return:
         """
-        environ = dict(state.os['environ'])
+        environ = dict(state.environ)
         environ.update(state.enclosing_environ)
         return ShState(aliases=dict(state.aliases),
+                       environ=environ,
                        enclosed_cwd=os.getcwd(),
-                       os_environ=environ,
-                       sys_argv=state.sys['argv'][:],
-                       sys_path=state.sys['path'][:],
-                       sys_stdin=state.sys['stdin'],
-                       sys_stdout=state.sys['stdout'],
-                       sys_stderr=state.sys['stderr'])
+                       sys_stdin=state.sys_stdin,
+                       sys_stdout=state.sys_stdout,
+                       sys_stderr=state.sys_stderr,
+                       sys_path=state.sys_path[:])
 
 
 class ShWorkerRegistry(object):
@@ -177,7 +185,9 @@ class ShBaseThread(threading.Thread):
         if not background:
             assert parent.child_thread is None, 'parent must have no existing child thread'
             self.parent, parent.child_thread = weakref.proxy(parent), self
-        else:  # background worker does not need parent
+
+        else:
+            # background worker does not need parent
             self.parent = None
 
         # Set up the state based on parent's state
@@ -186,13 +196,12 @@ class ShBaseThread(threading.Thread):
         self.killed = False
         self.child_thread = None
 
-        self.mock_modules = {}
-
     def is_top_level(self):
         """
-        Whether or not the thread is directly under the runtime, aka top level
+        Whether or not the thread is directly under the runtime, aka top level.
+        A top level thread has the runtime as its parent
         """
-        return not isinstance(self.parent, ShBaseThread)
+        return self.parent and not isinstance(self.parent, ShBaseThread)
 
     def cleanup(self):
         """
