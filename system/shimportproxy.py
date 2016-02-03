@@ -29,8 +29,14 @@ _DEBUG = False
 _ENABLED = False
 _INTERCEPT_MODULES = ('os', 'sys')
 
+# A mock module by delegating the real one
+_MOCK_CODE_TEMPLATE = """
+from {} import *
+ASDF='HAHA'
+"""
 
-def _make_mock_module(name):
+
+def _make_mock_module2(name):
     """ make a mock module for the given name by delegating
     the real module with the same name, e.g. sys.
     """
@@ -39,6 +45,16 @@ def _make_mock_module(name):
     real_module = importlib.import_module(name)
     mock_module = imp.new_module(name)
     mock_module.__dict__.update(real_module.__dict__)
+    return mock_module
+
+def _make_mock_module(name):
+    """ make a mock module for the given name by delegating
+    the real module with the same name, e.g. sys.
+    """
+    if _DEBUG:
+        logger.debug('making mock module: {}'.format(name))
+    mock_module = imp.new_module(name)
+    exec _MOCK_CODE_TEMPLATE.format(name) in mock_module.__dict__
     return mock_module
 
 # Template mock modules
@@ -82,13 +98,12 @@ def __shimport(name, *args, **kwargs):
 
         else:
             if name not in current_thread.mock_modules:
-                if name in sys.modules:
-                    if name == '__builtin__':
-                        current_thread.mock_modules[name] = sys.modules['__builtin__']
-                    else:
-                        current_thread.mock_modules[name] = __basereload(sys.modules[name])
-                else:
-                    current_thread.mock_modules[name] = __baseimport(name)
+                current_thread.mock_modules[name] = __baseimport(name)
+
+                # if name in sys.modules and name != '__builtin__':
+                #     current_thread.mock_modules[name] = __basereload(sys.modules[name])
+                # else:
+                #     current_thread.mock_modules[name] = __baseimport(name)
 
         return current_thread.mock_modules[name]
 

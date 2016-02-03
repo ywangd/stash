@@ -57,7 +57,7 @@ if IN_PYTHONISTA:
     else:
         class StdoutCatcher(object):
             def __init__(self):
-                self.encoding = "utf8"
+                self.encoding = 'utf8'
 
             def flush(self):
                 pass

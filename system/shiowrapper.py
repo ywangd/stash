@@ -32,7 +32,6 @@ class ShStdoutWrapper(object):
 
     def __getattribute__(self, item):
         thread = threading.currentThread()
-        sys.__stdout__.write('type: {}\n'.format(type(item)))
 
         if isinstance(thread, ShBaseThread):
             return getattr(thread.state.sys['stdout'], item)

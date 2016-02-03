@@ -25,6 +25,8 @@ class ShIO(object):
         # not affect the UI thread by noticeable amount
         self.holdback = 0.2
 
+        self.encoding = 'utf8'
+
     def push(self, s):
         self._buffer.extendleft(s)
 
