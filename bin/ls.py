@@ -17,7 +17,8 @@ def main(args):
     ap.add_argument('files', nargs='*', help='files to be listed')
     ns = ap.parse_args(args)
 
-    sizeof_fmt = globals()['_stash'].libcore.sizeof_fmt
+    _stash = globals()['_stash']
+    sizeof_fmt = _stash.libcore.sizeof_fmt
 
     joiner = '\n' if ns.one_line or ns.long else ' '
 

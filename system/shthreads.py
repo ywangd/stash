@@ -155,19 +155,18 @@ class ShWorkerRegistry(object):
         """
         for worker in self.registry.values():
             worker.kill()
-        self.registry.clear()
+        # The worker removes itself from the registry when killed.
 
 
 class ShBaseThread(threading.Thread):
     """ The basic Thread class provides life cycle management.
     """
-    def __init__(self, registry, parent, target=None, background=False, verbose=None):
+    def __init__(self, registry, parent, target=None, background=False):
         super(ShBaseThread, self).__init__(group=None,
                                            target=target,
                                            name='_shthread',
                                            args=(),
-                                           kwargs=None,
-                                           verbose=verbose)
+                                           kwargs=None)
 
         # Registry management
         self.registry = weakref.proxy(registry)
@@ -210,9 +209,9 @@ class ShBaseThread(threading.Thread):
 class ShTracedThread(ShBaseThread):
     """ Killable thread implementation with trace """
 
-    def __init__(self, registry, parent, target=None, background=False, verbose=None):
+    def __init__(self, registry, parent, target=None, background=False):
         super(ShTracedThread, self).__init__(
-            registry, parent, target=target,  background=background, verbose=verbose)
+            registry, parent, target=target,  background=background)
 
     def start(self):
         """Start the thread."""
@@ -247,9 +246,9 @@ class ShCtypesThread(ShBaseThread):
     another thread (with ctypes).
     """
 
-    def __init__(self, registry, parent, target=None, background=False, verbose=None):
+    def __init__(self, registry, parent, target=None, background=False):
         super(ShCtypesThread, self).__init__(
-            registry, parent, target=target, background=background, verbose=verbose)
+            registry, parent, target=target, background=background)
 
     def _async_raise(self):
         tid = self.ident
