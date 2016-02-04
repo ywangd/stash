@@ -37,9 +37,9 @@ class ShState(object):
         self.environ = environ or {}
         self.enclosed_cwd = enclosed_cwd
 
-        self.sys_stdin = sys_stdin or sys.stdin
-        self.sys_stdout = sys_stdout or sys.stdout
-        self.sys_stderr = sys_stderr or sys.stderr
+        self.sys_stdin__ = self.sys_stdin = sys_stdin or sys.stdin
+        self.sys_stdout__ = self.sys_stdout = sys_stdout or sys.stdout
+        self.sys_stderr__ = self.sys_stderr = sys_stderr or sys.stderr
         self.sys_path = sys_path or sys.path[:]
 
         self.enclosing_environ = {}
@@ -68,35 +68,6 @@ class ShState(object):
     def environ_set(self, name, value):
         self.environ[name] = value
 
-    def enable_enclosing_environ(self):
-        if self.enclosing_environ:
-            self.environ.update(self.enclosing_environ)
-
-    def disable_enclosing_environ(self):
-        for k in self.enclosing_environ.keys():
-            try:
-                self.environ.pop(k)
-            except KeyError:  # ignore any error
-                pass
-
-    def handle_PYTHONPATH(self):
-        """
-        Add any user set python paths right after the dot or at the beginning
-        if dot is not in the paths.
-        """
-        if 'PYTHONPATH' in self.environ:
-            try:
-                idxdot = self.sys_path.index('.') + 1
-            except ValueError:
-                idxdot = 0
-            # Insert in the reversed order so idxdot does not need to change
-            for pth in reversed(self.environ['PYTHONPATH'].split(':')):
-                if pth == '':
-                    continue
-                pth = os.path.expanduser(pth)
-                if pth not in self.sys_path:
-                    self.sys_path.insert(idxdot, pth)
-
     def copy(self, state):
         """
 
@@ -121,9 +92,9 @@ class ShState(object):
         return ShState(aliases=dict(state.aliases),
                        environ=environ,
                        enclosed_cwd=os.getcwd(),
-                       sys_stdin=state.sys_stdin,
-                       sys_stdout=state.sys_stdout,
-                       sys_stderr=state.sys_stderr,
+                       sys_stdin=state.sys_stdin__,
+                       sys_stdout=state.sys_stdout__,
+                       sys_stderr=state.sys_stderr__,
                        sys_path=state.sys_path[:])
 
 
@@ -136,6 +107,12 @@ class ShWorkerRegistry(object):
         self.registry = OrderedDict()
         self._count = 1
         self._lock = threading.Lock()
+
+    def __repr__(self):
+        ret = []
+        for job_id, thread in self.registry.items():
+            ret.append('{:>5d}  {}'.format(job_id, thread))
+        return '\n'.join(ret)
 
     def __iter__(self):
         return self.registry.values()
@@ -169,7 +146,12 @@ class ShWorkerRegistry(object):
 class ShBaseThread(threading.Thread):
     """ The basic Thread class provides life cycle management.
     """
-    def __init__(self, registry, parent, target=None, background=False):
+
+    CREATED = 1
+    STARTED = 2
+    STOPPED = 3
+
+    def __init__(self, registry, parent, command, target=None, background=False):
         super(ShBaseThread, self).__init__(group=None,
                                            target=target,
                                            name='_shthread',
@@ -180,6 +162,9 @@ class ShBaseThread(threading.Thread):
         self.registry = weakref.proxy(registry)
         self.job_id = None  # to be set by the registry
         registry.add_worker(self)
+
+        # The command that the thread runs
+        self.command = command
 
         # Set up the parent/child relationship
         if not background:
@@ -195,6 +180,26 @@ class ShBaseThread(threading.Thread):
 
         self.killed = False
         self.child_thread = None
+
+    def __repr__(self):
+        return '<[{}] {} {} {}>'.format(
+            self.job_id, self.ident,
+            {self.CREATED: 'Created', self.STARTED: 'Started', self.STOPPED: 'Stopped'}[self.status()],
+            str(self.command)[:20])
+
+    def status(self):
+        """
+        Status of the thread. Created, Started or Stopped.
+        """
+        if self.isAlive():
+            return self.STARTED
+        elif self._Thread__stopped:
+            return self.STOPPED
+        else:
+            return self.CREATED
+
+    def is_background(self):
+        return self.parent is None
 
     def is_top_level(self):
         """
@@ -218,9 +223,9 @@ class ShBaseThread(threading.Thread):
 class ShTracedThread(ShBaseThread):
     """ Killable thread implementation with trace """
 
-    def __init__(self, registry, parent, target=None, background=False):
+    def __init__(self, registry, parent, command, target=None, background=False):
         super(ShTracedThread, self).__init__(
-            registry, parent, target=target,  background=background)
+            registry, parent, command, target=target, background=background)
 
     def start(self):
         """Start the thread."""
@@ -255,9 +260,9 @@ class ShCtypesThread(ShBaseThread):
     another thread (with ctypes).
     """
 
-    def __init__(self, registry, parent, target=None, background=False):
+    def __init__(self, registry, parent, command, target=None, background=False):
         super(ShCtypesThread, self).__init__(
-            registry, parent, target=target, background=background)
+            registry, parent, command, target=target, background=background)
 
     def _async_raise(self):
         tid = self.ident

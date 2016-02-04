@@ -24,7 +24,7 @@ class ShStdinWrapper(object):
         thread = threading.currentThread()
 
         if isinstance(thread, ShBaseThread):
-            return getattr(thread.state.sys['stdin'], item)
+            return getattr(thread.state.sys_stdin, item)
         else:
             return getattr(_SYS_STDIN, item)
 
@@ -34,7 +34,7 @@ class ShStdoutWrapper(object):
         thread = threading.currentThread()
 
         if isinstance(thread, ShBaseThread):
-            return getattr(thread.state.sys['stdout'], item)
+            return getattr(thread.state.sys_stdout, item)
         else:
             return getattr(_SYS_STDOUT, item)
 
@@ -45,7 +45,7 @@ class ShStderrWrapper(object):
         thread = threading.currentThread()
 
         if isinstance(thread, ShBaseThread):
-            return getattr(thread.state.sys['stderr'], item)
+            return getattr(thread.state.sys_stderr, item)
         else:
             return getattr(_SYS_STDERR, item)
 

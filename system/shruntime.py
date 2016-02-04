@@ -208,6 +208,7 @@ class ShRuntime(object):
                                 bg_worker = self.ShThread(
                                     self.worker_registry,  # bg worker is also registered
                                     current_worker,
+                                    line,
                                     target=functools.partial(self.run_pipe_sequence,
                                                              pipe_sequence,
                                                              final_ins=final_ins,
@@ -266,12 +267,8 @@ class ShRuntime(object):
                     traceback.print_exception(etype, evalue, tb)
 
             finally:
-                # Top level worker saves its state to runtime or if persistent is required
-                if current_worker.is_top_level() or persistent:
-                    self.state.copy(current_worker.state)
-                else:  # otherwise, no changes should be carried over to the parent shell
-                    if os.getcwd() != current_worker.state.enclosed_cwd:
-                        os.chdir(current_worker.state.enclosed_cwd)
+                # Housekeeping for the thread, e.g. remove itself from registry
+                current_worker.cleanup()
 
                 # Prompt is now ready for more user input for commands to run,
                 # if new input line is explicitly specified or when the worker
@@ -281,18 +278,24 @@ class ShRuntime(object):
                         (current_worker.is_top_level() and add_new_inp_line is not False):
                     self.script_will_end()
 
-                # Housekeeping for the thread, e.g. remove itself from registryina22ken
+                # Top level worker saves its state to runtime or if persistent is required
+                if current_worker.is_top_level() or persistent:
+                    current_worker.parent.state.copy(current_worker.state)
+                else:  # otherwise, no changes should be carried over to the parent shell
+                    if os.getcwd() != current_worker.state.enclosed_cwd:
+                        os.chdir(current_worker.state.enclosed_cwd)
 
-                current_worker.cleanup()
+        # Get the parent thread
+        parent_thread = threading.currentThread()
 
-        current_thread = threading.currentThread()
-        if isinstance(current_thread, ShBaseThread):
-            worker = self.ShThread(self.worker_registry, current_thread, target=fn)
-        else:  # UI thread is substituted by runtime
-            worker = self.ShThread(self.worker_registry, self, target=fn)
+        # UI thread is substituted by runtime
+        if not isinstance(parent_thread, ShBaseThread):
+            parent_thread = self
 
-        worker.start()
-        return worker
+        child_thread = self.ShThread(self.worker_registry, parent_thread, input_, target=fn)
+        child_thread.start()
+
+        return child_thread
 
     def run_by_user(self):
         self.run(self.stash.io)
@@ -324,17 +327,17 @@ class ShRuntime(object):
 
             # Only update the worker's env for pure assignments
             if simple_command.cmd_word == '' and idx == 0 and n_simple_commands == 1:
-                current_state.os['environ'].update(current_state.enclosing_environ)
+                current_state.environ.update(current_state.enclosing_environ)
                 current_state.enclosing_environ = {}
 
             if prev_outs:
                 # If previous output has gone to a file, we use a dummy empty string as ins
                 ins = StringIO() if type(prev_outs) == file else prev_outs
             else:
-                ins = final_ins or current_state.sys_stdin
+                ins = final_ins or current_state.sys_stdin__
 
-            outs = current_state.sys_stdout
-            errs = current_state.sys_stderr
+            outs = current_state.sys_stdout__
+            errs = current_state.sys_stderr__
 
             if simple_command.io_redirect:
                 # Truncate file or append to file
@@ -429,15 +432,16 @@ class ShRuntime(object):
         # First argument is the script name
         sys.argv = [os.path.basename(filename)] + (args or [])
 
-        # Honor any leading vars, e.g. A=42 echo $A
+        # Set current os environ to the threading environ
         saved_os_environ = os.environ
-        current_state.enable_enclosing_environ()
-        os.environ = current_state.environ
+        os.environ = dict(current_state.environ)
+        # Honor any leading vars, e.g. A=42 echo $A
+        os.environ.update(current_state.enclosing_environ)
 
-        # Make sure PYTHONPATH is honored
+        # This needs to be done after environ due to possible leading PYTHONPATH var
         saved_sys_path = sys.path
-        current_state.handle_PYTHONPATH()
-        sys.path = current_state.sys_path
+        sys.path = current_state.sys_path[:]
+        self.handle_PYTHONPATH()  # Make sure PYTHONPATH is honored
 
         try:
             execfile(file_path, namespace, namespace)
@@ -462,18 +466,11 @@ class ShRuntime(object):
                     pdb.post_mortem(tb)
 
         finally:
-            # Remove any variables that are set by leading vars, e.g. A=42 echo $A
-            # This is a simplified solution. Because it is possible that the running
-            # user script set the variable again, i.e. A=42 is set again in the
-            # running script. In this case, the variable A should NOT be removed.
-            # It requires significant additional efforts to fully capture possible user
-            # changes (if not impossible). Since the use case is so rare, a simplified
-            # approach is acceptable.
-            current_state.environ = sys.path
-            current_state.disable_enclosing_environ()
-            os.environ = saved_os_environ
-            current_state.sys_path = sys.path
+            # Thread specific vars are not modified, e.g. current_state.environ is unchanged.
+            # This means the vars cannot be changed inside a python script. It can only be
+            # done through shell command, e.g. NEW_VAR=42
             sys.path = saved_sys_path
+            os.environ = saved_os_environ
 
     def exec_sh_file(self, filename, args=None,
                      ins=None, outs=None, errs=None,
@@ -617,3 +614,24 @@ class ShRuntime(object):
             return current_worker, current_worker.state
         else:  # UI thread uses runtime for its state
             return None, self.state
+
+    @staticmethod
+    def handle_PYTHONPATH():
+        """
+        Add any user set python paths right after the dot or at the beginning
+        if dot is not in the paths.
+        """
+        python_path = os.environ.get('PYTHONPATH', None)  # atomic access for check and retrieval
+
+        if python_path:
+            try:
+                idxdot = sys.path.index('.') + 1
+            except ValueError:
+                idxdot = 0
+            # Insert in the reversed order so idxdot does not need to change
+            for pth in reversed(python_path.split(':')):
+                if pth == '':
+                    continue
+                pth = os.path.expanduser(pth)
+                if pth not in sys.path:
+                    sys.path.insert(idxdot, pth)
