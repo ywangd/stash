@@ -74,7 +74,7 @@ Set output to a file default: stdout'''
     def do_headers(self,state):
         '''.headers ?on|off?
 Turn headers on or off, default: on'''
-        self.headers = state.lower() == 'on':
+        self.headers = state.lower() == 'on'
 
     def do_dump(self, line):
         '''.dump ?table?
