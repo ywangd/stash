@@ -96,6 +96,7 @@ class ShTerminal(object):
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('E', ctrl_key_flag, 'controlEAction'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W', ctrl_key_flag, 'controlWAction'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('L', ctrl_key_flag, 'controlLAction'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('Z', ctrl_key_flag, 'controlZAction'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputUpArrow',
                                                                        0,
                                                                        'arrowUpAction'),
@@ -124,7 +125,7 @@ class ShTerminal(object):
             ui.vk_tapped(ui.k_hdn)
 
         def controlUAction(_self, _cmd):
-            ui =stash.ui
+            ui = stash.ui
             ui.vk_tapped(ui.k_CU)
 
         def controlAAction(_self, _cmd):  # Move cursor to beginning of the input
@@ -138,6 +139,9 @@ class ShTerminal(object):
 
         def controlLAction(_self, _cmd):  # delete one word backwards
             stash.stream.feed(u'\u009bc%s' % stash.runtime.get_prompt(), no_wait=True)
+
+        def controlZAction(_self, _cmd):
+            stash.runtime.push_to_background()
 
         def arrowUpAction(_self, _cmd):
             ui = stash.ui
@@ -153,6 +157,7 @@ class ShTerminal(object):
                                          controlPAction, controlNAction,
                                          controlUAction, controlAAction, controlEAction,
                                          controlWAction, controlLAction,
+                                         controlZAction,
                                          arrowUpAction, arrowDownAction])
 
         self.is_editing = False

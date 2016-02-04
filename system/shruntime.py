@@ -10,8 +10,10 @@ import pyparsing as pp
 # Detecting environments
 try:
     import ui
+    from objc_util import on_main_thread
 except ImportError:
     import system.dummyui as ui
+    from dummyobjc_util import on_main_thread
 
 from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
     ShFileNotFound, ShEventNotFound, ShNotExecutable
@@ -175,6 +177,7 @@ class ShRuntime(object):
         # noinspection PyDocstring
         def fn():
             current_worker, _ = self.get_current_worker_and_state()
+            is_top = current_worker.is_top_level()
 
             try:
                 if isinstance(input_, ShPipeSequence):
@@ -204,25 +207,32 @@ class ShRuntime(object):
                         #   1. It is explicitly required
                         #   2. It is the first layer thread directly spawned by the main thread
                         #      and not explicitly required to not add
-                        if (add_to_history is None and current_worker.is_top_level()) or add_to_history:
+                        if (add_to_history is None and is_top) or add_to_history:
                             self.add_history(newline)
 
-                        # Subsequent members are actual commands
-                        for _ in range(n_pipe_sequences):
-                            pipe_sequence = expanded.next()
-                            if pipe_sequence.in_background:
-                                # For background command, separate worker is created
-                                bg_worker = self.run(pipe_sequence,
-                                                     final_ins=final_ins,
-                                                     final_outs=final_outs,
-                                                     final_errs=final_errs,
-                                                     persistent=False)  # bg thread is not persistent
-                                bg_worker.set_background()
-                            else:
-                                self.run_pipe_sequence(pipe_sequence,
-                                                       final_ins=final_ins,
-                                                       final_outs=final_outs,
-                                                       final_errs=final_errs)
+                        if is_top:
+                            self.history_swap()
+
+                        try:
+                            # Subsequent members are actual commands
+                            for _ in range(n_pipe_sequences):
+                                pipe_sequence = expanded.next()
+                                if pipe_sequence.in_background:
+                                    # For background command, separate worker is created
+                                    bg_worker = self.run(pipe_sequence,
+                                                         final_ins=final_ins,
+                                                         final_outs=final_outs,
+                                                         final_errs=final_errs,
+                                                         persistent=False)  # bg thread is not persistent
+                                    bg_worker.set_background()
+                                else:
+                                    self.run_pipe_sequence(pipe_sequence,
+                                                           final_ins=final_ins,
+                                                           final_outs=final_outs,
+                                                           final_errs=final_errs)
+                        finally:
+                            if is_top:
+                                self.history_swap()
 
             except pp.ParseException as e:
                 if self.debug:
@@ -273,12 +283,11 @@ class ShRuntime(object):
                 # if new input line is explicitly specified or when the worker
                 # thread's parent is the runtime itself and new input line is
                 # not explicitly suppressed
-                if add_new_inp_line or \
-                        (current_worker.is_top_level() and add_new_inp_line is not False):
+                if add_new_inp_line or (is_top and add_new_inp_line is not False):
                     self.script_will_end()
 
                 # Top level worker saves its state to runtime or if persistent is required
-                if (current_worker.is_top_level() or persistent) and not current_worker.is_background:
+                if (is_top or persistent) and not current_worker.is_background:
                     current_worker.parent.state.copy(current_worker.state)
                 else:  # otherwise, no changes should be carried over to the parent shell
                     if os.getcwd() != current_worker.state.enclosed_cwd:
@@ -523,6 +532,22 @@ class ShRuntime(object):
 
         return self.stash.text_color(prompt, 'smoke')
 
+    def push_to_background(self):
+        if self.child_thread:
+            self.stash.write_message('pushing current job to background ...\n')
+            self.child_thread.set_background()
+            self.script_will_end()
+        else:
+            self.stash.write_message('no running foreground job\n')
+            self.stash.io.write(self.stash.runtime.get_prompt())
+
+    @on_main_thread
+    def push_to_foreground(self, worker):
+        worker.set_background(False)
+        self.stash.mini_buffer.config_runtime_callback(None)
+        self.stash.write_message(
+            'job {} is now running in foreground ...'.format(worker.job_id))
+
     # TODO: The history stuff should be handled by a separate class
     def add_history(self, s):
         if s.strip() != '' and (self.history == [] or s != self.history[0]):
@@ -602,6 +627,9 @@ class ShRuntime(object):
                 self.history_templine = self.stash.mini_buffer.modifiable_chars.rstrip()
             self.stash.mini_buffer.feed(None, sender.items[sender.selected_row])
             self.idx_to_history = sender.selected_row
+
+    def history_swap(self):
+        self.history, self.history_alt = self.history_alt, self.history
 
     def get_current_worker_and_state(self):
         """

@@ -139,7 +139,14 @@ class ShWorkerRegistry(object):
         self.registry.pop(worker.job_id)
 
     def get_worker(self, job_id):
-        return self.registry[job_id]
+        return self.registry.get(job_id, None)
+
+    def get_first_bg_worker(self):
+        for worker in self.registry.values():
+            if worker.is_background:
+                return worker
+        else:
+            return None
 
     def purge(self):
         """
@@ -172,7 +179,10 @@ class ShBaseThread(threading.Thread):
         registry.add_worker(self)
 
         # The command that the thread runs
-        self.command = command
+        if command.__class__.__name__ == 'ShIO':
+            self.command = ''.join(command._buffer)[::-1].strip()
+        else:
+            self.command = command
 
         self.is_background = False
 
@@ -186,10 +196,7 @@ class ShBaseThread(threading.Thread):
         self.child_thread = None
 
     def __repr__(self):
-        if self.command.__class__.__name__ == 'ShIO':
-            command_str = ''.join(self.command._buffer)
-        else:
-            command_str = str(self.command)
+        command_str = str(self.command)
         return '[{}] {} {}'.format(
             self.job_id,
             {self.CREATED: 'Created', self.STARTED: 'Started', self.STOPPED: 'Stopped'}[self.status()],

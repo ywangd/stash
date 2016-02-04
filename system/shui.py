@@ -177,6 +177,19 @@ class ShUI(ui.View):
         self.k_CU.size_to_fit()
         self.k_CU.x = self.k_CC.x + self.k_CC.width + k_hspacing
 
+        # BG key
+        self.k_CZ = ui.Button(name='k_CZ', title=' CZ ', flex='RTB')
+        self.k_grp_0.add_subview(self.k_CZ)
+        self.k_CZ.action = self.vk_tapped
+        self.k_CZ.font = self.BUTTON_FONT
+        self.k_CZ.border_width = 1
+        self.k_CZ.border_color = 0.9
+        self.k_CZ.corner_radius = 5
+        self.k_CZ.tint_color = 'black'
+        self.k_CZ.background_color = 'white'
+        self.k_CZ.size_to_fit()
+        self.k_CZ.x = self.k_CU.x + self.k_CU.width + k_hspacing
+
         # End Editing key
         self.k_KB = ui.Button(name='k_KB', title=' KB ', flex='RTB')
         self.k_grp_0.add_subview(self.k_KB)
@@ -188,7 +201,7 @@ class ShUI(ui.View):
         self.k_KB.tint_color = 'black'
         self.k_KB.background_color = 'white'
         self.k_KB.size_to_fit()
-        self.k_KB.x = self.k_CU.x + self.k_CU.width + k_hspacing
+        self.k_KB.x = self.k_CZ.x + self.k_CZ.width + k_hspacing
 
         self.k_swap = ui.Button(name='k_swap', title='..', flex='LTB')
         self.vks.add_subview(self.k_swap)
@@ -325,6 +338,9 @@ class ShUI(ui.View):
             else:  # ctrl-c terminates the entire stack of threads
                 self.stash.runtime.child_thread.kill()  # this recursively kill any nested child threads
                 time.sleep(0.5)  # wait a moment for the thread to terminate
+
+        elif vk == self.k_CZ:
+            self.stash.runtime.push_to_background()
 
         elif vk == self.k_KB:
             if self.terminal.is_editing:
