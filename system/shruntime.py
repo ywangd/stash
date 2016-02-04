@@ -19,6 +19,7 @@ from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
 # noinspection PyProtectedMember
 from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE
 from .shcommon import is_binary_file
+from .shparsers import ShPipeSequence
 from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
 
 
@@ -177,51 +178,52 @@ class ShRuntime(object):
             current_worker, _ = self.get_current_worker_and_state()
 
             try:
-                if type(input_) is list:
-                    lines = input_
-                elif input_ == self.stash.io:
-                    lines = self.stash.io.readline_no_block()
+                if isinstance(input_, ShPipeSequence):
+                    self.run_pipe_sequence(input_,
+                                           final_ins=final_ins,
+                                           final_outs=final_outs,
+                                           final_errs=final_errs)
+
                 else:
-                    lines = input_.splitlines()
+                    if type(input_) is list:
+                        lines = input_
+                    elif input_ == self.stash.io:
+                        lines = self.stash.io.readline_no_block()
+                    else:
+                        lines = input_.splitlines()
 
-                for line in lines:
-                    # Ignore empty lines
-                    if line.strip() == '':
-                        continue
+                    for line in lines:
+                        # Ignore empty lines
+                        if line.strip() == '':
+                            continue
 
-                    # Parse and expand the line (note this function returns a generator object)
-                    expanded = self.expander.expand(line)
-                    # The first member is the history expanded form and number of pipe_sequence
-                    newline, n_pipe_sequences = expanded.next()
-                    # Only add history entry if:
-                    #   1. It is explicitly required
-                    #   2. It is the first layer thread directly spawned by the main thread
-                    #      and not explicitly required to not add
-                    if (add_to_history is None and current_worker.is_top_level()) or add_to_history:
-                        self.add_history(newline)
+                        # Parse and expand the line (note this function returns a generator object)
+                        expanded = self.expander.expand(line)
+                        # The first member is the history expanded form and number of pipe_sequence
+                        newline, n_pipe_sequences = expanded.next()
+                        # Only add history entry if:
+                        #   1. It is explicitly required
+                        #   2. It is the first layer thread directly spawned by the main thread
+                        #      and not explicitly required to not add
+                        if (add_to_history is None and current_worker.is_top_level()) or add_to_history:
+                            self.add_history(newline)
 
-                    # Subsequent members are actual commands
-                    for _ in range(n_pipe_sequences):
-                        pipe_sequence = expanded.next()
-                        if pipe_sequence.in_background:
-                            # For background command, separate worker is created
-                            bg_worker = self.ShThread(
-                                self.worker_registry,  # bg worker is also registered
-                                current_worker,
-                                line,
-                                target=functools.partial(self.run_pipe_sequence,
-                                                         pipe_sequence,
-                                                         final_ins=final_ins,
-                                                         final_outs=final_outs,
-                                                         final_errs=final_errs),
-                                background=True
-                            )
-                            bg_worker.start()
-                        else:
-                            self.run_pipe_sequence(pipe_sequence,
-                                                   final_ins=final_ins,
-                                                   final_outs=final_outs,
-                                                   final_errs=final_errs)
+                        # Subsequent members are actual commands
+                        for _ in range(n_pipe_sequences):
+                            pipe_sequence = expanded.next()
+                            if pipe_sequence.in_background:
+                                # For background command, separate worker is created
+                                bg_worker = self.run(pipe_sequence,
+                                                     final_ins=final_ins,
+                                                     final_outs=final_outs,
+                                                     final_errs=final_errs,
+                                                     persistent=False)  # bg thread is not persistent
+                                bg_worker.set_background()
+                            else:
+                                self.run_pipe_sequence(pipe_sequence,
+                                                       final_ins=final_ins,
+                                                       final_outs=final_outs,
+                                                       final_errs=final_errs)
 
             except pp.ParseException as e:
                 if self.debug:
@@ -277,7 +279,7 @@ class ShRuntime(object):
                     self.script_will_end()
 
                 # Top level worker saves its state to runtime or if persistent is required
-                if current_worker.is_top_level() or persistent:
+                if (current_worker.is_top_level() or persistent) and not current_worker.is_background:
                     current_worker.parent.state.copy(current_worker.state)
                 else:  # otherwise, no changes should be carried over to the parent shell
                     if os.getcwd() != current_worker.state.enclosed_cwd:

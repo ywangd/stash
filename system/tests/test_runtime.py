@@ -12,7 +12,8 @@ class RuntimeTests(unittest.TestCase):
         self.stash('BIN_PATH=$STASH_ROOT/system/tests/data:$BIN_PATH', persistent=True)
 
     def tearDown(self):
-        assert self.stash.runtime.child_thread is None, 'child thread is not cleaned'
+        assert self.stash.runtime.child_thread is None, 'child thread is not cleared'
+        assert len(self.stash.runtime.worker_registry) == 0, 'worker registry not empty'
         del self.stash
 
     def do_test(self, cmd, cmp_str, ensure_same_cwd=True, ensure_undefined=(), ensure_defined=()):

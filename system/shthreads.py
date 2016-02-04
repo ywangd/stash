@@ -116,6 +116,9 @@ class ShWorkerRegistry(object):
     def __iter__(self):
         return self.registry.values()
 
+    def __len__(self):
+        return len(self.registry)
+
     def _get_job_id(self):
         try:
             self._lock.acquire()
@@ -150,7 +153,7 @@ class ShBaseThread(threading.Thread):
     STARTED = 2
     STOPPED = 3
 
-    def __init__(self, registry, parent, command, target=None, background=False):
+    def __init__(self, registry, parent, command, target=None):
         super(ShBaseThread, self).__init__(group=None,
                                            target=target,
                                            name='_shthread',
@@ -165,14 +168,10 @@ class ShBaseThread(threading.Thread):
         # The command that the thread runs
         self.command = command
 
-        # Set up the parent/child relationship
-        if not background:
-            assert parent.child_thread is None, 'parent must have no existing child thread'
-            self.parent, parent.child_thread = weakref.proxy(parent), self
+        self.is_background = False
 
-        else:
-            # background worker does not need parent
-            self.parent = None
+        assert parent.child_thread is None, 'spawning child thread from a busy parent'
+        self.parent, parent.child_thread = weakref.proxy(parent), self
 
         # Set up the state based on parent's state
         self.state = ShState.new_from_parent(parent.state)
@@ -197,15 +196,21 @@ class ShBaseThread(threading.Thread):
         else:
             return self.CREATED
 
-    def is_background(self):
-        return self.parent is None
+    def set_background(self, is_background=True):
+        self.is_background = is_background
+        if is_background:
+            if self.parent.child_thread is self:
+                self.parent.child_thread = None
+        else:
+            assert self.parent.child_thread is None, 'parent must have no existing child thread'
+            self.parent.child_thread = self
 
     def is_top_level(self):
         """
         Whether or not the thread is directly under the runtime, aka top level.
         A top level thread has the runtime as its parent
         """
-        return self.parent and not isinstance(self.parent, ShBaseThread)
+        return not isinstance(self.parent, ShBaseThread)
 
     def cleanup(self):
         """
@@ -213,7 +218,7 @@ class ShBaseThread(threading.Thread):
         it self from parent if exists.
         """
         self.registry.remove_worker(self)
-        if self.parent:
+        if not self.is_background:
             assert self.parent.child_thread is self
             self.parent.child_thread = None
 
@@ -222,9 +227,9 @@ class ShBaseThread(threading.Thread):
 class ShTracedThread(ShBaseThread):
     """ Killable thread implementation with trace """
 
-    def __init__(self, registry, parent, command, target=None, background=False):
+    def __init__(self, registry, parent, command, target=None):
         super(ShTracedThread, self).__init__(
-            registry, parent, command, target=target, background=background)
+            registry, parent, command, target=target)
 
     def start(self):
         """Start the thread."""
@@ -259,9 +264,9 @@ class ShCtypesThread(ShBaseThread):
     another thread (with ctypes).
     """
 
-    def __init__(self, registry, parent, command, target=None, background=False):
+    def __init__(self, registry, parent, command, target=None):
         super(ShCtypesThread, self).__init__(
-            registry, parent, command, target=target, background=background)
+            registry, parent, command, target=target)
 
     def _async_raise(self):
         tid = self.ident
