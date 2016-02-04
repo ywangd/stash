@@ -13,6 +13,11 @@ s('cd ..')
 
 print
 # following two scripts should not interfere each other
-s('system/tests/data/test05_1.sh')
+s('test05_1.sh')
 
-s('system/tests/data/test05_2.sh')
+s('test05_2.sh')
+
+# At the end, the definition of AA is carried to the top shell. But B is not.
+# This is because B is defined in a shell script, i.e. test05_1.sh
+# Any variables defined inside a shell script are not carried over to the
+# parent shell.

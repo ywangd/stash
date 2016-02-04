@@ -29,8 +29,7 @@ def main(args):
     # in the sub-shell to the parent shell.
     try:
         with open(ns.file) as ins:
-            child_worker = _stash(ins.readlines(), persistent=True)
-            current_state.copy(child_worker.state)
+            _stash(ins.readlines(), persistent=True)
 
     except IOError as e:
         print '%s: %s' % (e.filename, e.strerror)

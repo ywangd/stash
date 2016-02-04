@@ -17,7 +17,7 @@ except ImportError:
 from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
     ShFileNotFound, ShEventNotFound, ShNotExecutable
 # noinspection PyProtectedMember
-from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE, _SYS_PATH
+from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE
 from .shcommon import is_binary_file
 from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
 
@@ -119,7 +119,6 @@ class ShRuntime(object):
 
         # Match for commands in current dir and BIN_PATH
         # Effectively, current dir is always the first in BIN_PATH
-
         for path in ['.'] + current_state.environ_get('BIN_PATH').split(':'):
             path = os.path.expanduser(path)
             if os.path.exists(path):
@@ -146,14 +145,13 @@ class ShRuntime(object):
                         all_names.append(f.replace(' ', '\\ '))
         return all_names
 
-    def run(self, input_,
-            final_ins=None,
-            final_outs=None,
-            final_errs=None,
+    def run(self, input_=None,
+            final_ins=None, final_outs=None, final_errs=None,
             add_to_history=None,
             add_new_inp_line=None,
-            persistent=False):
+            persistent=True):
         """
+        This is the entry for running shell commands.
 
         :param input_:
         :param final_ins:
@@ -161,15 +159,18 @@ class ShRuntime(object):
         :param final_errs
         :param add_to_history:
         :param add_new_inp_line:
-        :param persistent: Whether or not the state changes to child shell should be carried over to its parent shell
+        :param persistent: Whether or not the state changes to child shell should be carried
+                           over to its parent shell. This is now True by default which means
+                           all variables are by default persistent. It is set to False by
+                           exec_sh_file so commands inside the shell script do not affect
+                           its parent shell.
         :return:
         :rtype: ShBaseThread
         """
 
-        # Ensure the linearity of the worker threads.
-        # To spawn a new worker thread, it is either
-        #   1. No previous worker thread
-        #   2. The last worker thread in stack is the current running one
+        # By default read from the terminal
+        if input_ is None:
+            input_ = self.stash.io
 
         # noinspection PyDocstring
         def fn():
@@ -201,29 +202,26 @@ class ShRuntime(object):
 
                     # Subsequent members are actual commands
                     for _ in range(n_pipe_sequences):
-                        try:
-                            pipe_sequence = expanded.next()
-                            if pipe_sequence.in_background:
-                                # For background command, separate worker is created
-                                bg_worker = self.ShThread(
-                                    self.worker_registry,  # bg worker is also registered
-                                    current_worker,
-                                    line,
-                                    target=functools.partial(self.run_pipe_sequence,
-                                                             pipe_sequence,
-                                                             final_ins=final_ins,
-                                                             final_outs=final_outs,
-                                                             final_errs=final_errs),
-                                    background=True
-                                )
-                                bg_worker.start()
-                            else:
-                                self.run_pipe_sequence(pipe_sequence,
-                                                       final_ins=final_ins,
-                                                       final_outs=final_outs,
-                                                       final_errs=final_errs)
-                        finally:
-                            pass
+                        pipe_sequence = expanded.next()
+                        if pipe_sequence.in_background:
+                            # For background command, separate worker is created
+                            bg_worker = self.ShThread(
+                                self.worker_registry,  # bg worker is also registered
+                                current_worker,
+                                line,
+                                target=functools.partial(self.run_pipe_sequence,
+                                                         pipe_sequence,
+                                                         final_ins=final_ins,
+                                                         final_outs=final_outs,
+                                                         final_errs=final_errs),
+                                background=True
+                            )
+                            bg_worker.start()
+                        else:
+                            self.run_pipe_sequence(pipe_sequence,
+                                                   final_ins=final_ins,
+                                                   final_outs=final_outs,
+                                                   final_errs=final_errs)
 
             except pp.ParseException as e:
                 if self.debug:
@@ -297,17 +295,15 @@ class ShRuntime(object):
 
         return child_thread
 
-    def run_by_user(self):
-        self.run(self.stash.io)
-
     def script_will_end(self):
         self.stash.io.write(self.get_prompt(), no_wait=True)
         # Config the mini buffer so that user commands can be processed
-        self.stash.mini_buffer.config_runtime_callback(self.run_by_user)
+        self.stash.mini_buffer.config_runtime_callback(self.run)
         # Reset any possible external tab handler setting
         self.stash.external_tab_handler = None
 
-    def run_pipe_sequence(self, pipe_sequence, final_ins=None, final_outs=None, final_errs=None):
+    def run_pipe_sequence(self, pipe_sequence,
+                          final_ins=None, final_outs=None, final_errs=None):
         if self.debug:
             self.logger.debug(str(pipe_sequence))
 
@@ -409,7 +405,8 @@ class ShRuntime(object):
                 if isinstance(ins, StringIO):  # release the string buffer
                     ins.close()
 
-    def exec_py_file(self, filename, args=None,
+    def exec_py_file(self, filename,
+                     args=None,
                      ins=None, outs=None, errs=None):
 
         _, current_state = self.get_current_worker_and_state()
@@ -472,7 +469,8 @@ class ShRuntime(object):
             sys.path = saved_sys_path
             os.environ = saved_os_environ
 
-    def exec_sh_file(self, filename, args=None,
+    def exec_sh_file(self, filename,
+                     args=None,
                      ins=None, outs=None, errs=None,
                      add_to_history=None):
 
@@ -494,7 +492,8 @@ class ShRuntime(object):
                                         final_outs=outs,
                                         final_errs=errs,
                                         add_to_history=add_to_history,
-                                        add_new_inp_line=False)
+                                        add_new_inp_line=False,
+                                        persistent=False)
                 child_worker.join()
 
             current_state.return_value = child_worker.state.return_value

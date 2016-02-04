@@ -70,9 +70,8 @@ class ShState(object):
 
     def copy(self, state):
         """
-
+        This is used to carry child shell state to its parent shell
         :param ShState state: Other state
-        :return:
         """
         self.aliases = dict(state.aliases)
         self.enclosed_cwd = os.getcwd()

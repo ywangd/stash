@@ -21,22 +21,16 @@ class RuntimeTests(unittest.TestCase):
         self.stash('clear')
         self.stash(cmd)
 
-        if cmd == 'test05.py':
-            print self.stash.main_screen.text
-            print
-            print
-            pass
-
         assert cmp_str == self.stash.main_screen.text, 'output not identical'
 
         if ensure_same_cwd:
             assert os.getcwd() == saved_cwd, 'cwd changed'
 
         for v in ensure_undefined:
-            assert v not in self.stash.runtime.state.environ.keys(), '%self.stash should be undefined' % v
+            assert v not in self.stash.runtime.state.environ.keys(), '%s should be undefined' % v
 
         for v in ensure_defined:
-            assert v in self.stash.runtime.state.environ.keys(), '%self.stash should be defined' % v
+            assert v in self.stash.runtime.state.environ.keys(), '%s should be defined' % v
 
     def test_03(self):
         cmp_str = r"""[stash]$ x y
@@ -60,7 +54,7 @@ bin
 B is{0}
 stash
 [stash]$ """.format(' ')
-        self.do_test('test05.py', cmp_str, ensure_undefined=('AA', 'B'))
+        self.do_test('test05.py', cmp_str, ensure_undefined=('B',))
 
     def test_06(self):
         cmp_str = r"""[stash]$ AA is{0}

@@ -3,7 +3,7 @@
 echo AA is $AA
 # Direct execution without sourcing should not define the variables in parent shell
 echo --- direct execution without sourcing ---
-system/tests/data/tobesourced
+tobesourced
 # AA should still be undefined
 echo AA is $AA
 alias | sort
@@ -17,4 +17,4 @@ source system/tests/data/tobesourced
 echo AA is $AA
 alias | sort
 
-#Parent main shell should not be affected at all
+# Parent main shell should not be affected at all
