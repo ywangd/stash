@@ -24,10 +24,10 @@ class ThreadsTests(unittest.TestCase):
         background thread clears properly
         """
         self.stash('test_101_1.py &')
-        time.sleep(3)
+        time.sleep(4)
         cmp_str = r"""[stash]$ [stash]$ sleeping ... 0
 sleeping ... 1
-[stash]$ """
+"""
         assert self.stash.main_screen.text == cmp_str, 'output not identical'
 
     def test_102(self):
@@ -56,8 +56,8 @@ test_102_2.py
 test_102_2.py
 test_102_2.py
 test_102_2.py
-[stash]$ [stash]$ """
-        assert self.stash.main_screen.text == cmp_str1
+[stash]$ """
+        assert self.stash.main_screen.text == cmp_str1, 'output not identical'
 
         cmp_str2 = r"""test_102_1.py
 test_102_1.py
@@ -65,7 +65,7 @@ test_102_1.py
 test_102_1.py
 test_102_1.py
 """
-        assert outs1.getvalue() == cmp_str2
+        assert outs1.getvalue() == cmp_str2, 'output not identical'
 
 
 

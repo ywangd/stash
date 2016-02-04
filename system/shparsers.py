@@ -47,18 +47,24 @@ class ShAssignment(object):
         self.identifier = identifier
         self.value = value
 
-    def __repr__(self):
+    def __repr2__(self):
         s = '%s=%s' % (self.identifier, self.value)
         return s
+
+    def __repr__(self):
+        return self.__repr2__()
 
 class ShIORedirect(object):
     def __init__(self, operator, filename):
         self.operator = operator
         self.filename = filename
 
-    def __repr__(self):
+    def __repr2__(self):
         ret = '%s %s' % (self.operator, self.filename)
         return ret
+
+    def __repr__(self):
+        return self.__repr2__()
 
 class ShSimpleCommand(object):
     def __init__(self):
@@ -67,8 +73,7 @@ class ShSimpleCommand(object):
         self.args = []
         self.io_redirect = None
 
-    def __repr__(self):
-
+    def __repr2__(self):
         s = 'assignments: %s\ncmd_word: %s\nargs: %s\nio_redirect: %s\n' % \
             (', '.join(str(asn) for asn in self.assignments),
              self.cmd_word,
@@ -76,16 +81,35 @@ class ShSimpleCommand(object):
              self.io_redirect)
         return s
 
+    def __repr__(self):
+        if len(self.assignments) > 0:
+            s = ' '.join(str(asn) for asn in self.assignments) + ' ' + self.cmd_word
+        else:
+            s = self.cmd_word
+
+        if len(self.args):
+            s += ' '.join(self.args)
+
+        if self.io_redirect:
+            s += ' ' + str(self.io_redirect)
+        return s
+
 class ShPipeSequence(object):
     def __init__(self):
         self.in_background = False
         self.lst = []
 
-    def __repr__(self):
+    def __repr2__(self):
         s = '-------- ShPipeSequence --------\n'
         s += 'in_background: %s\n' % self.in_background
         for idx, cmd in enumerate(self.lst):
             s += '------ ShSimpleCommand %d ------\n%s' % (idx, repr(cmd))
+        return s
+
+    def __repr__(self):
+        s = ' | '.join(str(cmd) for cmd in self.lst)
+        if self.in_background:
+            s += ' &'
         return s
 
 

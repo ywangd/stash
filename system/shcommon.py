@@ -38,7 +38,9 @@ if IN_PYTHONISTA:
     import _outputcapture
 
     if sys.stdin.__class__.__name__ == 'StdinCatcher':
-        _SYS_STDIN = sys.stdin
+        _SYS_STDIN = sys.__stdin__ = sys.stdin
+    elif sys.__stdin__.__class__.__name__ == 'StdinCatcher':
+        _SYS_STDIN = sys.__stdin__
     else:
         class StdinCatcher(object):
             def __init__(self):
@@ -53,7 +55,9 @@ if IN_PYTHONISTA:
         _SYS_STDIN = StdinCatcher()
 
     if sys.stdout.__class__.__name__ == 'StdoutCatcher':
-        _SYS_STDOUT = sys.stdout
+        _SYS_STDOUT = sys.__stdout__ = sys.stdout
+    elif sys.__stdout__.__class__.__name__ == 'StdoutCatcher':
+        _SYS_STDOUT = sys.__stdout__
     else:
         class StdoutCatcher(object):
             def __init__(self):
@@ -74,7 +78,9 @@ if IN_PYTHONISTA:
         _SYS_STDOUT = StdoutCatcher()
 
     if sys.stderr.__class__.__name__ == 'StderrCatcher':
-        _SYS_STDERR = sys.stderr
+        _SYS_STDERR = sys.__stderr__ = sys.stderr
+    elif sys.stderr.__class__.__name__ == 'StderrCatcher':
+        _SYS_STDERR = sys.__stderr__
     else:
         class StderrCatcher(object):
             def __init__(self):

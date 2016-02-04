@@ -3,7 +3,6 @@ import os
 import sys
 import logging
 import threading
-import functools
 from StringIO import StringIO
 
 import pyparsing as pp

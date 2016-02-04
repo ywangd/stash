@@ -1,3 +1,5 @@
+""" Summarize disk usage of the set of FILEs, recursively for directories.
+"""
 import os
 import sys
 from argparse import ArgumentParser

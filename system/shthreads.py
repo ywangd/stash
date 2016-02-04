@@ -114,10 +114,13 @@ class ShWorkerRegistry(object):
         return '\n'.join(ret)
 
     def __iter__(self):
-        return self.registry.values()
+        return self.registry.values().__iter__()
 
     def __len__(self):
         return len(self.registry)
+
+    def __contains__(self, item):
+        return item in self.registry
 
     def _get_job_id(self):
         try:
@@ -134,6 +137,9 @@ class ShWorkerRegistry(object):
 
     def remove_worker(self, worker):
         self.registry.pop(worker.job_id)
+
+    def get_worker(self, job_id):
+        return self.registry[job_id]
 
     def purge(self):
         """
@@ -180,10 +186,14 @@ class ShBaseThread(threading.Thread):
         self.child_thread = None
 
     def __repr__(self):
-        return '<[{}] {} {} {}>'.format(
-            self.job_id, self.ident,
+        if self.command.__class__.__name__ == 'ShIO':
+            command_str = ''.join(self.command._buffer)
+        else:
+            command_str = str(self.command)
+        return '[{}] {} {}'.format(
+            self.job_id,
             {self.CREATED: 'Created', self.STARTED: 'Started', self.STOPPED: 'Stopped'}[self.status()],
-            str(self.command)[:20])
+            command_str[:20] + ('...' if len(command_str) > 20 else ''))
 
     def status(self):
         """
@@ -210,7 +220,7 @@ class ShBaseThread(threading.Thread):
         Whether or not the thread is directly under the runtime, aka top level.
         A top level thread has the runtime as its parent
         """
-        return not isinstance(self.parent, ShBaseThread)
+        return not isinstance(self.parent, ShBaseThread) and not self.is_background
 
     def cleanup(self):
         """

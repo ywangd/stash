@@ -28,10 +28,12 @@ def get_lan_ip():
     try:
         from objc_util import ObjCClass
         NSHost = ObjCClass('NSHost')
+        addresses = []
         for address in NSHost.currentHost().addresses():
             address = str(address)
             if 48 <= ord(address[0]) <= 57 and address != '127.0.0.1':
-                return address
+                addresses.append(address)
+        return '   '.join(addresses)
 
     except ImportError:
         return ''

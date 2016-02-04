@@ -292,7 +292,7 @@ def main(port=8000):
     
     try:
         print 'Serving HTTP on 0.0.0.0 port %d ...' % port
-        print 'local IP address is %s' % _stash.libcore.get_lan_ip()
+        print 'local IP address is %s' % globals()['_stash'].libcore.get_lan_ip()
         server.serve_forever()
 
     except KeyboardInterrupt:

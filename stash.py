@@ -206,6 +206,9 @@ class StaSh(object):
     def cleanup(self):
         disable_io_wrapper()
 
+    def get_workers(self):
+        return [worker for worker in self.runtime.worker_registry]
+
     # noinspection PyProtectedMember
     @staticmethod
     def text_style(s, style, always=False):
