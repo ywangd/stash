@@ -28,7 +28,7 @@ simple_command   : cmd_prefix [cmd_word] [cmd_suffix]
 
 cmd_prefix       : assignment_word+
 
-cmd_suffix       : word+ [io_redirect]
+cmd_suffix       : word + [io_redirect]
                  | io_redirect
 
 io_redirect      : ('>' | '>>') filename
@@ -37,6 +37,10 @@ modifier         : '!' | '\'
 
 cmd_word         : [modifier] word
 filename         : word
+
+word             : escaped | uq_word | bq_word | dq_word | sq_word
+
+uq_word          : (WORD_CHARS)+ | '&3'
 
 """
 
@@ -165,7 +169,8 @@ class ShParser(object):
         escaped_hex = pp.Combine(
             "\\x" + pp.Word('0123456789abcdefABCDEF', exact=2)
         ).setParseAction(self.escaped_hex_action)
-        uq_word = pp.Word(_WORD_CHARS).setParseAction(self.uq_word_action)
+        # Some special uq_word is needed, e.g. &3 for file descriptor of Pythonista interactive prompt
+        uq_word = (pp.Literal('&3') | pp.Word(_WORD_CHARS)).setParseAction(self.uq_word_action)
         bq_word = pp.QuotedString('`', escChar='\\', unquoteResults=False).setParseAction(self.bq_word_action)
         dq_word = pp.QuotedString('"', escChar='\\', unquoteResults=False).setParseAction(self.dq_word_action)
         sq_word = pp.QuotedString("'", escChar='\\', unquoteResults=False).setParseAction(self.sq_word_action)

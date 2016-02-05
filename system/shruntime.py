@@ -18,7 +18,7 @@ except ImportError:
 from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
     ShFileNotFound, ShEventNotFound, ShNotExecutable
 # noinspection PyProtectedMember
-from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE
+from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE, _SYS_STDOUT, _SYS_STDERR
 from .shcommon import is_binary_file
 from .shparsers import ShPipeSequence
 from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
@@ -350,7 +350,11 @@ class ShRuntime(object):
                 mode = 'w' if simple_command.io_redirect.operator == '>' else 'a'
                 # For simplicity, stdout redirect works for stderr as well.
                 # Note this is different from a real shell.
-                errs = outs = open(simple_command.io_redirect.filename, mode)
+                if simple_command.io_redirect.filename == '&3':
+                    outs = _SYS_STDOUT
+                    errs = _SYS_STDERR
+                else:
+                    errs = outs = open(simple_command.io_redirect.filename, mode)
 
             elif idx < n_simple_commands - 1:  # before the last piped command
                 outs = StringIO()

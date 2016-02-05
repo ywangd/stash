@@ -79,4 +79,18 @@ class ExpanderTests(unittest.TestCase):
         pipe_sequence = self._get_pipe_sequence(r"ls '\033[32m'")
         assert pipe_sequence.lst[0].args[0] == '\\033[32m'
 
+    def test_redirect_file(self):
+        pipe_sequence = self._get_pipe_sequence(r'ls >> somefile')
+        cmd = pipe_sequence.lst[0]
+        assert cmd.cmd_word == 'ls'
+        assert cmd.args == []
+        assert cmd.io_redirect.operator == '>>'
+        assert cmd.io_redirect.filename == 'somefile'
 
+    def test_redirect_file_descriptor(self):
+        pipe_sequence = self._get_pipe_sequence(r'ls -1 > &3')
+        cmd = pipe_sequence.lst[0]
+        assert cmd.cmd_word == 'ls'
+        assert cmd.args[0] == '-1' and len(cmd.args) == 1
+        assert cmd.io_redirect.operator == '>'
+        assert cmd.io_redirect.filename == '&3'
