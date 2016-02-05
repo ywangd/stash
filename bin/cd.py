@@ -22,7 +22,7 @@ def main(args):
 
     try:
         if os.path.exists(ns.dir):
-            if os.path.isdir:
+            if os.path.isdir(ns.dir):
                 # chdir does not raise exception until listdir is called, so check for access here
                 if os.access(ns.dir, os.R_OK):
                     os.chdir(ns.dir)
