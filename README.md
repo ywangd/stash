@@ -11,19 +11,10 @@ The two most popular utilities are
  and **`git`** (authored by [@jsbain](https://github.com/jsbain)). 
 Remarkable contributions are also made by
 [@dgelessus](https://github.com/dgelessus),
-<<<<<<<
-[@jsbain](https://github.com/jsbain), [@pudquick](https://github.com/pudquick),
-[@oefe](https://github.com/oefe), [@cclauss](https://github.com/cclauss) and
-[@georg.viehoever] (https://github.com/GeorgViehoever) ).
-|||||||
-[@jsbain](https://github.com/jsbain), [@pudquick](https://github.com/pudquick),
-[@oefe](https://github.com/oefe) and [@cclauss](https://github.com/cclauss)).
-=======
 [@pudquick](https://github.com/pudquick),
 [@oefe](https://github.com/oefe), 
 [@cclauss](https://github.com/cclauss) and
 [@georg.viehoever] (https://github.com/GeorgViehoever). 
->>>>>>>
 
 StaSh stands for Pythoni**sta** **Sh**ell. While **Sta** may not be the best
 abbreviation for Pythonista, it forms a concise and meaningful word with the
@@ -196,63 +187,21 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   called `BIN_PATH` as `PATH` is used by the system. The default `BIN_PATH` is
   `~/Documents/bin:$STASH_ROOT/bin`.
 
-<<<<<<<
-* The executable files are either Python scripts or StaSh scripts. The type of
-  script is determined by looking at the file extensions ".py" and ".sh".
-  A file without extension is considered a  shell script.
-  * When invoking a script, you can omit the extension, StaSh will try find the file
-|||||||
-* The executable files are either Python scripts or StaSh scripts, with `.py`
-  and `.sh` extensions respectively. Note the extensions are important as StaSh
-  relies on them to tell the file type and whether the file is executable. 
-  * When
-  Invoking a script, you can omit the extension, StaSh will try find the file
-=======
 * The executable files are either Python scripts or StaSh scripts. The type of
   script is determined by looking at the file extensions ".py" and ".sh".
   A file without extension is considered as a shell script.
   * When invoking a script, you can omit the extension, StaSh will try find the file
->>>>>>>
   with one of the extensions. For an example, StaSh interprets the command
-<<<<<<<
-  `selfupdate` and find the file `selfupdate.sh` to execute.
-  * Files without extension won't show up as an auto-completion possibility.
-
-* Command can only be written in a single line. No line continuation is
-  available. However, multiple commands can be written in a single line by
-|||||||
-  `selfupdate` and find the file `selfupdate.sh` to execute.
-  * Note a file without extension is considered as a shell script. It just
-    won't show up as an auto-completion possibility.
-
-* Command can only be written in a single line. No line continuation is
-  available. However, multiple commands can be written in a single line by
-=======
   `selfupdate` and find the file `selfupdate.py` to execute.
   * Files without extension won't show up as an auto-completion possibility.
 
 * Commands can only be written in a single line. No line continuation is
   possible. However, multiple commands can be written in a single line by
->>>>>>>
   separating them with semicolons, e.g. `ls -1 > file_list; cat file_list`.
 
-<<<<<<<
-* There are many Python scripts provided along with StaSh (special thanks to
-  [@briarfox](https://github.com/briarfox),
-  [@dgelessus](https://github.com/dgelessus) and
-  [@jsbain](https://github.com/jsbain)). These scripts range from performing
-  regular shell tasks to advanced utilities like `ssh` and `git`. Note the
-|||||||
-* There are many Python scripts provided along with StaSh (special thanks to
-  [@briarfox](https://github.com/briarfox),
-  [@dgelessus](https://github.com/dgelessus) and
-  [@jsbain](https://github.com/jsbain). These scripts range from performing
-  regular shell tasks to advanced utilities like `ssh`and `git`. Note the
-=======
 * There are many Python scripts provided along with StaSh. 
   These scripts range from performing
   regular shell tasks to advanced utilities like `ssh` and `git`. Note the
->>>>>>>
   scripts are by no means complete when compared to a real Linux shell. The
   collection will be gradually expanded should the need arise. It is
   also expected and appreciated that the community would come up with more
@@ -311,13 +260,6 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `wol.py`- Wake on LAN using MAC address for launching a sleeping system
     * `xargs.py` - Command constructing and executing utility
     * `zip.py` - Zip file, also see unzip
-
-* One StaSh script, `selfupdate.sh`, is provided to download the latest zip from
-  GitHub and extract it locally to update corresponding files. 
-    * It is a script formed by a few lines of commands as an example of StaSh
-      script.
-    * It is a very simple script in that it just naively performs the download
-      and extraction without checking timestamps or versions.
 
 
 ## Acknowledgements

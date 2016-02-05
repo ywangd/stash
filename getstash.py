@@ -38,28 +38,6 @@ except:
     sys.stderr.write('Download failed! Please make sure internet connection is available.\n')
     sys.exit(1)
 
-<<<<<<<
-print 'Bootstrapping ...'
-
-# Pythonista 1.6 beta does not have dot in sys.path by default
-if '.' not in sys.path:
-    sys.path.insert(0, '.')
-
-from stash import StaSh
-stash = StaSh()
-stash('selfupdate', final_outs=sys.stdout)
-stash.load_lib()  # reload libraries
-stash('version', final_outs=sys.stdout)
-stash('echo Installation completed', final_outs=sys.stdout)
-|||||||
-print 'Bootstrapping ...'
-from stash import StaSh
-stash = StaSh()
-stash('selfupdate', final_outs=sys.stdout)
-stash.load_lib()  # reload libraries
-stash('version', final_outs=sys.stdout)
-stash('echo Installation completed', final_outs=sys.stdout)
-=======
 BASE_DIR = os.path.expanduser('~')
 TARGET_DIR = os.path.join(BASE_DIR, 'Documents/site-packages/stash')
 if not os.path.exists(TARGET_DIR):
@@ -109,4 +87,3 @@ if not _IS_UPDATE:
     print 'Installation completed.'
     print 'Please run launch_stash.py under the Home directory to start StaSh.'
 
->>>>>>>
