@@ -11,7 +11,7 @@ class ThreadsTests(unittest.TestCase):
     def setUp(self):
         self.stash = stash.StaSh()
         self.stash('cd $STASH_ROOT')
-        self.stash('BIN_PATH=$STASH_ROOT/system/tests/data:$BIN_PATH', persistent=True)
+        self.stash('BIN_PATH=$STASH_ROOT/system/tests/data:$BIN_PATH')
         self.stash('clear')
 
     def tearDown(self):

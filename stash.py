@@ -5,7 +5,7 @@ StaSh - Pythonista Shell
 https://github.com/ywangd/stash
 """
 
-__version__ = '0.6.0a1'
+__version__ = '0.6.0a2'
 
 import os
 import sys
@@ -124,10 +124,11 @@ class StaSh(object):
         # Load shared libraries
         self._load_lib()
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, input_, persistent_level=2, *args, **kwargs):
         """ This function is to be called by external script for
          executing shell commands """
-        worker = self.runtime.run(*args, **kwargs)
+        worker = self.runtime.run(
+            input_, persistent_level=persistent_level, *args, **kwargs)
         worker.join()
         return worker
 
@@ -220,8 +221,10 @@ class StaSh(object):
         :param bool always: If true, style will be applied even for pipes.
         :return:
         """
-        # No color for pipes
-        if not always and (isinstance(sys.stdout, StringIO) or isinstance(sys.stdout, file)):
+        # No color for pipes, files and Pythonista console
+        if not always and (isinstance(sys.stdout, StringIO)
+                           or isinstance(sys.stdout, file)
+                           or sys.stdout.write.im_self is _SYS_STDOUT):
             return s
 
         fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)

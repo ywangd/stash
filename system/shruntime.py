@@ -3,6 +3,7 @@ import os
 import sys
 import logging
 import threading
+import functools
 from StringIO import StringIO
 
 import pyparsing as pp
@@ -97,13 +98,17 @@ class ShRuntime(object):
         self.history_templine = ''
 
     def load_rcfile(self):
-        self.stash(_DEFAULT_RC.splitlines(), add_to_history=False, add_new_inp_line=False)
+        self.stash(_DEFAULT_RC.splitlines(),
+                   persistent_level=1,
+                   add_to_history=False, add_new_inp_line=False)
 
         # TODO: NO RC FILE loading
         if os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
             try:
                 with open(self.rcfile) as ins:
-                    self.stash(ins.readlines(), add_to_history=False, add_new_inp_line=False)
+                    self.stash(ins.readlines(),
+                               persistent_level=1,
+                               add_to_history=False, add_new_inp_line=False)
             except IOError:
                 self.stash.write_message('%s: error reading rcfile\n' % self.rcfile)
 
@@ -151,21 +156,27 @@ class ShRuntime(object):
             final_ins=None, final_outs=None, final_errs=None,
             add_to_history=None,
             add_new_inp_line=None,
-            persistent=True):
+            persistent_level=0,
+            is_background=False):
         """
         This is the entry for running shell commands.
 
-        :param input_:
+        :param input_: Default to ShIO
         :param final_ins:
         :param final_outs:
         :param final_errs
         :param add_to_history:
         :param add_new_inp_line:
-        :param persistent: Whether or not the state changes to child shell should be carried
-                           over to its parent shell. This is now True by default which means
-                           all variables are by default persistent. It is set to False by
-                           exec_sh_file so commands inside the shell script do not affect
-                           its parent shell.
+        :param persistent_level:
+                    The persistent level dictates how variables from child shell
+                    shall be carried over to the parent shell.
+                    Possible values are:
+                    0 - No persistent at all (shell script is by default in this mode)
+                    1 - Full persistent. Parent's variables will be the same as child's
+                        (User command from terminal is in this mode).
+                    2 - Semi persistent. Any more future children will have starting
+                        variables as the current child's ending variables. (__call__
+                        interface is by default in this mode).
         :return:
         :rtype: ShBaseThread
         """
@@ -219,12 +230,12 @@ class ShRuntime(object):
                                 pipe_sequence = expanded.next()
                                 if pipe_sequence.in_background:
                                     # For background command, separate worker is created
-                                    bg_worker = self.run(pipe_sequence,
-                                                         final_ins=final_ins,
-                                                         final_outs=final_outs,
-                                                         final_errs=final_errs,
-                                                         persistent=False)  # bg thread is not persistent
-                                    bg_worker.set_background()
+                                    self.run(pipe_sequence,
+                                             final_ins=final_ins,
+                                             final_outs=final_outs,
+                                             final_errs=final_errs,
+                                             persistent_level=0,
+                                             is_background=True)
                                 else:
                                     self.run_pipe_sequence(pipe_sequence,
                                                            final_ins=final_ins,
@@ -286,12 +297,10 @@ class ShRuntime(object):
                 if add_new_inp_line or (is_top and add_new_inp_line is not False):
                     self.script_will_end()
 
-                # Top level worker saves its state to runtime or if persistent is required
-                if (is_top or persistent) and not current_worker.is_background:
-                    current_worker.parent.state.copy(current_worker.state)
-                else:  # otherwise, no changes should be carried over to the parent shell
-                    if os.getcwd() != current_worker.state.enclosed_cwd:
-                        os.chdir(current_worker.state.enclosed_cwd)
+                # Saves its state to parent or if persistent is required
+                if not current_worker.is_background:
+                    current_worker.parent.state.persist_child(
+                        current_worker.state, persistent_level=persistent_level)
 
         # Get the parent thread
         parent_thread = threading.currentThread()
@@ -300,7 +309,8 @@ class ShRuntime(object):
         if not isinstance(parent_thread, ShBaseThread):
             parent_thread = self
 
-        child_thread = self.ShThread(self.worker_registry, parent_thread, input_, target=fn)
+        child_thread = self.ShThread(
+            self.worker_registry, parent_thread, input_, target=fn, is_background=is_background)
         child_thread.start()
 
         return child_thread
@@ -308,7 +318,8 @@ class ShRuntime(object):
     def script_will_end(self):
         self.stash.io.write(self.get_prompt(), no_wait=True)
         # Config the mini buffer so that user commands can be processed
-        self.stash.mini_buffer.config_runtime_callback(self.run)
+        self.stash.mini_buffer.config_runtime_callback(
+            functools.partial(self.run, persistent_level=1))
         # Reset any possible external tab handler setting
         self.stash.external_tab_handler = None
 
@@ -324,17 +335,17 @@ class ShRuntime(object):
         prev_outs = None
         for idx, simple_command in enumerate(pipe_sequence.lst):
 
-            # The enclosing_environ needs to be reset for each simple command
+            # The temporary_environ needs to be reset for each simple command
             # i.e. A=42 script1 | script2
             # The value of A should not be carried to script2
-            current_state.enclosing_environ = {}
+            current_state.temporary_environ = {}
             for assignment in simple_command.assignments:
-                current_state.enclosing_environ[assignment.identifier] = assignment.value
+                current_state.temporary_environ[assignment.identifier] = assignment.value
 
             # Only update the worker's env for pure assignments
             if simple_command.cmd_word == '' and idx == 0 and n_simple_commands == 1:
-                current_state.environ.update(current_state.enclosing_environ)
-                current_state.enclosing_environ = {}
+                current_state.environ.update(current_state.temporary_environ)
+                current_state.temporary_environ = {}
 
             if prev_outs:
                 # If previous output has gone to a file, we use a dummy empty string as ins
@@ -447,7 +458,7 @@ class ShRuntime(object):
         saved_os_environ = os.environ
         os.environ = dict(current_state.environ)
         # Honor any leading vars, e.g. A=42 echo $A
-        os.environ.update(current_state.enclosing_environ)
+        os.environ.update(current_state.temporary_environ)
 
         # This needs to be done after environ due to possible leading PYTHONPATH var
         saved_sys_path = sys.path
@@ -494,9 +505,9 @@ class ShRuntime(object):
             args = []
 
         for i, arg in enumerate([filename] + args):
-            current_state.enclosing_environ[str(i)] = arg
-        current_state.enclosing_environ['#'] = len(args)
-        current_state.enclosing_environ['@'] = '\t'.join(args)
+            current_state.temporary_environ[str(i)] = arg
+        current_state.temporary_environ['#'] = len(args)
+        current_state.temporary_environ['@'] = '\t'.join(args)
 
         # Enclosing variables will be merged to environ when creating new thread
         try:
@@ -507,7 +518,7 @@ class ShRuntime(object):
                                         final_errs=errs,
                                         add_to_history=add_to_history,
                                         add_new_inp_line=False,
-                                        persistent=False)
+                                        persistent_level=0)
                 child_worker.join()
 
             current_state.return_value = child_worker.state.return_value

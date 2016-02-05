@@ -29,7 +29,7 @@ def main(args):
     # in the sub-shell to the parent shell.
     try:
         with open(ns.file) as ins:
-            _stash(ins.readlines(), persistent=True)
+            _stash(ins.readlines(), persistent_level=1)
 
     except IOError as e:
         print '%s: %s' % (e.filename, e.strerror)

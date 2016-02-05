@@ -9,14 +9,14 @@ import weakref
 import ctypes
 from collections import OrderedDict
 
-from .shcommon import M_64
+from .shcommon import M_64, _SYS_STDOUT
 
 _STATE_STR_TEMPLATE = """enclosed_cwd: {}
 aliases: {}
 sys.stidin: {}
 sys.stdout: {}
 sys.stderr: {}
-enclosing_environ: {}
+temporary_environ: {}
 environ: {}
 """
 
@@ -42,7 +42,11 @@ class ShState(object):
         self.sys_stderr__ = self.sys_stderr = sys_stderr or sys.stderr
         self.sys_path = sys_path or sys.path[:]
 
-        self.enclosing_environ = {}
+        self.temporary_environ = {}
+
+        self.enclosing_aliases = None
+        self.enclosing_environ = None
+        self.enclosing_cwd = None
 
     def __str__(self):
         s = _STATE_STR_TEMPLATE.format(self.enclosed_cwd,
@@ -50,7 +54,7 @@ class ShState(object):
                                        self.sys_stdin,
                                        self.sys_stdout,
                                        self.sys_stderr,
-                                       self.enclosing_environ,
+                                       self.temporary_environ,
                                        self.environ)
         return s
 
@@ -68,33 +72,54 @@ class ShState(object):
     def environ_set(self, name, value):
         self.environ[name] = value
 
-    def copy(self, state):
+    def persist_child(self, child_state, persistent_level=0):
         """
         This is used to carry child shell state to its parent shell
-        :param ShState state: Other state
+        :param ShState child_state: Child state
         """
-        self.aliases = dict(state.aliases)
-        self.enclosed_cwd = os.getcwd()
-        self.environ = dict(state.environ)
-        self.sys_path = state.sys_path[:]
+        if persistent_level == 0:
+            if os.getcwd() != child_state.enclosed_cwd:
+                os.chdir(child_state.enclosed_cwd)
+        elif persistent_level == 1:
+            self.aliases = dict(child_state.aliases)
+            self.enclosed_cwd = os.getcwd()
+            self.environ = dict(child_state.environ)
+            self.sys_path = child_state.sys_path[:]
+        elif persistent_level == 2:
+            self.enclosing_aliases = child_state.aliases
+            self.enclosing_environ = child_state.environ
+            self.enclosing_cwd = os.getcwd()
 
     @staticmethod
-    def new_from_parent(state):
+    def new_from_parent(parent_state):
         """
         Create new state from parent state. Parent's enclosing environ are merged as
         part of child's environ
-        :param state:
+        :param ShState parent_state: Parent state
         :return:
         """
-        environ = dict(state.environ)
-        environ.update(state.enclosing_environ)
-        return ShState(aliases=dict(state.aliases),
+
+        if parent_state.enclosing_aliases:
+            aliases = parent_state.enclosing_aliases
+        else:
+            aliases = dict(parent_state.aliases)
+
+        if parent_state.enclosing_environ:
+            environ = parent_state.enclosing_environ
+        else:
+            environ = dict(parent_state.environ)
+            environ.update(parent_state.temporary_environ)
+
+        if parent_state.enclosing_cwd:
+            os.chdir(parent_state.enclosing_cwd)
+
+        return ShState(aliases=aliases,
                        environ=environ,
                        enclosed_cwd=os.getcwd(),
-                       sys_stdin=state.sys_stdin__,
-                       sys_stdout=state.sys_stdout__,
-                       sys_stderr=state.sys_stderr__,
-                       sys_path=state.sys_path[:])
+                       sys_stdin=parent_state.sys_stdin__,
+                       sys_stdout=parent_state.sys_stdout__,
+                       sys_stderr=parent_state.sys_stderr__,
+                       sys_path=parent_state.sys_path[:])
 
 
 class ShWorkerRegistry(object):
@@ -166,7 +191,7 @@ class ShBaseThread(threading.Thread):
     STARTED = 2
     STOPPED = 3
 
-    def __init__(self, registry, parent, command, target=None):
+    def __init__(self, registry, parent, command, target=None, is_background=False):
         super(ShBaseThread, self).__init__(group=None,
                                            target=target,
                                            name='_shthread',
@@ -184,16 +209,15 @@ class ShBaseThread(threading.Thread):
         else:
             self.command = command
 
-        self.is_background = False
-
-        assert parent.child_thread is None, 'spawning child thread from a busy parent'
-        self.parent, parent.child_thread = weakref.proxy(parent), self
+        self.parent = weakref.proxy(parent)
 
         # Set up the state based on parent's state
         self.state = ShState.new_from_parent(parent.state)
 
         self.killed = False
         self.child_thread = None
+
+        self.set_background(is_background)
 
     def __repr__(self):
         command_str = str(self.command)
@@ -244,9 +268,9 @@ class ShBaseThread(threading.Thread):
 class ShTracedThread(ShBaseThread):
     """ Killable thread implementation with trace """
 
-    def __init__(self, registry, parent, command, target=None):
+    def __init__(self, registry, parent, command, target=None, is_background=False):
         super(ShTracedThread, self).__init__(
-            registry, parent, command, target=target)
+            registry, parent, command, target=target, is_background=is_background)
 
     def start(self):
         """Start the thread."""
@@ -281,9 +305,9 @@ class ShCtypesThread(ShBaseThread):
     another thread (with ctypes).
     """
 
-    def __init__(self, registry, parent, command, target=None):
+    def __init__(self, registry, parent, command, target=None, is_background=False):
         super(ShCtypesThread, self).__init__(
-            registry, parent, command, target=target)
+            registry, parent, command, target=target, is_background=is_background)
 
     def _async_raise(self):
         tid = self.ident
