@@ -34,8 +34,8 @@ import editor #for reloading current file
 
 GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
 FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
-DULWICH_URL='https://github.com/jsbain/dulwich/archive/master.zip'
-REQUIRED_DULWICH_VERSION = (0,9,9,'jsbain_fork')
+DULWICH_URL='https://github.com/jsbain/dulwich/archive/ForStaSH_0.12.2.zip'
+REQUIRED_DULWICH_VERSION = (0,12,2)
 AUTODOWNLOAD_DEPENDENCIES = True 
 
 if AUTODOWNLOAD_DEPENDENCIES:
@@ -103,6 +103,9 @@ if AUTODOWNLOAD_DEPENDENCIES:
     try:
         gittle_path=os.path.join(libpath,'gittle')
         funky_path=os.path.join(libpath,'funky')
+        #i have no idea why this is getting cleared...
+        if libpath not in sys.path:
+           sys.path.insert(1,libpath)
         import gittle
         Gittle=gittle.Gittle
     except ImportError:
@@ -126,6 +129,7 @@ else:
     from dulwich.index import index_entry_from_stat
     from gittle import Gittle
 
+dulwich.client.get_ssh_vendor = dulwich.client.ParamikoSSHVendor
 #  end temporary
 
 
@@ -431,14 +435,14 @@ def git_commit(args):
 
 def git_clone(args):
     if len(args) > 0:
-        url = args[0]
+           url = args[0]
+           repo = Gittle.clone(args[0], args[1] if len(args)>1 else '.', bare=False)
 
-        repo = Gittle.clone(args[0], args[1] if len(args)>1 else '.', bare=False)
-
-        #Set the origin
-        config = repo.repo.get_config()
-        config.set(('remote','origin'),'url',url)
-        config.write_to_path()
+           #Set the origin
+           config = repo.repo.get_config()
+           config.set(('remote','origin'),'url',url)
+           config.write_to_path()
+          
     else:
         print command_help['clone']
 
@@ -477,8 +481,9 @@ def git_fetch(args):
         result.url=repo.remotes.get(origin)
     if not urlparse.urlparse(result.url).scheme:
         raise Exception('url must match a remote name, or must start with http:// or https://')
+    print 'Starting fetch, this could take a while'
     remote_refs=porcelain.fetch(repo.repo.path,result.url)
-
+    print 'Fetch successful.  Importing refs'
     remote_tags = gittle.utils.git.subrefs(remote_refs, 'refs/tags')
     remote_heads = gittle.utils.git.subrefs(remote_refs, 'refs/heads')
         
@@ -503,11 +508,13 @@ def git_fetch(args):
     )
     for k,v in clean_remote_tags.items():
         print 'imported {}/{} {}'.format('refs/tags',k,v) 
+    print 'Checking for deleted remote refs'
     #delete unused remote refs
     for k in gittle.utils.git.subrefs(repo.refs,heads_base):
-        if k not in gittle.utils.git.subrefs(clean_remote_heads,origin):
+        if k not in clean_remote_heads:
+            print 'Deleting {}'.format('/'.join([heads_base,k]))
             del repo.refs['/'.join([heads_base,k])]
-    
+    print 'Fetch complete'
 
 def git_push(args):
     parser = argparse.ArgumentParser(prog='git push'
@@ -543,7 +550,7 @@ def git_push(args):
                 keychain.delete_password(*service)
 
     #Attempt to retrieve user
-    if not user and SAVE_PASSWORDS:
+    if not user and SAVE_PASSWORDS and result.url.startswith('http'):
         try:
             user = dict(keychain.get_services())[keychainservice]
         except KeyError:
@@ -559,10 +566,11 @@ def git_push(args):
         if not pw:
             user, pw = console.login_alert('Enter credentials for {0}'.format(netloc), login=user)
             #pw = getpass.getpass('Enter password for {0}: '.format(user))
-
-        opener = auth_urllib2_opener(None, result.url, user, pw)
-
-        porcelain.push(repo.repo.path, result.url, branch_name, opener=opener)
+        host_with_auth='{}:{}@{}'.format(user,pw,netloc)
+        url=urlparse.urlunparse(
+            urlparse.urlparse(result.url)._replace(
+                netloc=host_with_auth))
+        porcelain.push(repo.repo.path, url, branch_name)
         keychain.set_password(keychainservice, user, pw)
 
     else:
@@ -596,7 +604,7 @@ def git_log(args):
 
     try:
         repo = _get_repo()
-        porcelain.log(repo.repo.path, max_entries=results.max_entries,format=results.format,outstream=results.output)
+        porcelain.log(repo.repo.path, max_entries=results.max_entries,outstream=results.output)
     except ValueError:
         print command_help['log']
 
@@ -660,35 +668,8 @@ def git_help(args):
     for key, value in command_help.items():
         print value
             
-#Urllib2 opener for dulwich
-def auth_urllib2_opener(config, top_level_url, username, password):
-    if config is not None:
-        proxy_server = config.get("http", "proxy")
-    else:
-        proxy_server = None
+           
 
-    # create a password manager
-        password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-
-        # Add the username and password.
-        # If we knew the realm, we could use it instead of None.
-        #top_level_url = "http://example.com/foo/"
-        password_mgr.add_password(None, top_level_url, username, password)
-
-        handler = urllib2.HTTPBasicAuthHandler(password_mgr)
-
-    handlers = [handler]
-    if proxy_server is not None:
-        handlers.append(urllib2.ProxyHandler({"http": proxy_server}))
-    opener = urllib2.build_opener(*handlers)
-    if config is not None:
-        user_agent = config.get("http", "useragent")
-    else:
-        user_agent = None
-    if user_agent is None:
-        user_agent = default_user_agent_string()
-    opener.addheaders = [('User-agent', user_agent)]
-    return opener
 
 commands = {
     'init': git_init

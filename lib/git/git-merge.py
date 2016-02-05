@@ -5,6 +5,7 @@ from dulwich import porcelain
 import stat
 from git import diff3
 from git.gitutils import _get_repo, find_revision_sha, can_ff, merge_base, count_commits_between, is_ancestor, get_remote_tracking_branch, GitError
+import argparse
 
 
 
@@ -184,7 +185,7 @@ def merge(args):
 
     if base_sha==head:
         print 'Fast forwarding {} to {}'.format(repo.active_branch,merge_head)
-        repo.refs[head]=merge_head
+        repo.refs['HEAD']=merge_head
         return 
     if base_sha == merge_head:
         print 'head is already up to date'
