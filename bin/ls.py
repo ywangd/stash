@@ -2,18 +2,10 @@
 import os
 import sys
 import time
+import tarfile
+import zipfile
+import imghdr
 from argparse import ArgumentParser
-
-
-def sizeof_fmt(num):
-    for x in ['B', 'KB', 'MB', 'GB']:
-        if num < 1024.0:
-            if (x == 'bytes'):
-                return "%s %s" % (num, x)
-            else:
-                return "%3.1f %s" % (num, x)
-        num /= 1024.0
-    return "%3.1f%s" % (num, 'TB')
 
 
 def main(args):
@@ -23,31 +15,55 @@ def main(args):
     ap.add_argument('-a', '--all', action='store_true', help='do not ignore entries starting with .')
     ap.add_argument('-l', '--long', action='store_true', help='use a long listing format')
     ap.add_argument('files', nargs='*', help='files to be listed')
-    args = ap.parse_args(args)
+    ns = ap.parse_args(args)
 
-    joiner = '\n' if args.one_line or args.long else ' '
+    _stash = globals()['_stash']
+    sizeof_fmt = _stash.libcore.sizeof_fmt
 
-    if args.all:
+    joiner = '\n' if ns.one_line or ns.long else ' '
+
+    if ns.all:
         def _filter(filename):
             return True
     else:
         def _filter(filename):
             return False if filename.startswith('.') else True
 
-    if args.long:
+    if ns.long:
         def _fmt(filename, dirname=''):
             _stat = os.stat(os.path.join(dirname, filename))
-            ret = '%s%s (%s) %s' % (filename,
-                                    '/' if os.path.isdir(os.path.join(dirname, filename)) else '',
-                                    sizeof_fmt(_stat.st_size),
-                                    time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(_stat.st_mtime)))
+
+            fullpath = os.path.join(dirname, filename)
+            if os.path.isdir(fullpath):
+                filename = _stash.text_color(filename, 'blue')
+            elif filename.endswith('.py'):
+                filename = _stash.text_color(filename, 'green')
+            elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
+                filename = _stash.text_color(filename, 'red')
+            elif imghdr.what(fullpath) is not None:
+                filename = _stash.text_color(filename, 'brown')
+
+            ret = filename + _stash.text_color(
+                ' (%s) %s' % (sizeof_fmt(_stat.st_size),
+                              time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(_stat.st_mtime))),
+                'gray')
 
             return ret
     else:
         def _fmt(filename, dirname=''):
-            return filename + ('/' if os.path.isdir(os.path.join(dirname, filename)) else '')
+            fullpath = os.path.join(dirname, filename)
+            if os.path.isdir(fullpath):
+                return _stash.text_color(filename, 'blue')
+            elif filename.endswith('.py'):
+                return _stash.text_color(filename, 'green')
+            elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
+                return _stash.text_color(filename, 'red')
+            elif imghdr.what(fullpath) is not None:
+                return _stash.text_color(filename, 'brown')
+            else:
+                return filename
 
-    if len(args.files) == 0:
+    if len(ns.files) == 0:
         out = joiner.join(_fmt(f) for f in os.listdir('.') if _filter(f))
         print out
 
@@ -55,7 +71,7 @@ def main(args):
         out_dir = []
         out_file = []
         out_miss = []
-        for f in args.files:
+        for f in ns.files:
             if not os.path.exists(f):
                 out_miss.append('ls: %s: No such file or directory' % f)
             elif os.path.isdir(f):

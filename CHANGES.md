@@ -16,7 +16,6 @@
     * `sys.path` is now correctly restored at command scripts exit.
     * Change directory no longer crashes when accessing folders inaccessible.
         
-
 ### Version 0.4.1 - 2015-03-06
 * New Features
     * StaSh now provides localized input history for running scripts.

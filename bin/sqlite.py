@@ -17,11 +17,7 @@ class SqliteCMD(cmd.Cmd):
     prompt = 'sqlite3>'
     def __init__(self, db=None):
         cmd.Cmd.__init__(self)
-        if db:
-            self.database = db
-        else:
-            self.database = ':memory:'
-        
+        self.database = db or ':memory:'
         self.separator = '|'
         self.conn = sqlite3.connect(self.database)
         self.conn.row_factory = sqlite3.Row
@@ -69,10 +65,7 @@ class SqliteCMD(cmd.Cmd):
     def do_output(self, line):
         '''.output ?file?
 Set output to a file default: stdout'''
-        if line == 'stdout':
-            self.output = sys.stdout
-        else:
-            self.output = line
+        self.output = sys.stdout if line == 'stdout' else line
 
     def do_separator(self, separator):
         """Set the separator, default: |"""
@@ -81,10 +74,7 @@ Set output to a file default: stdout'''
     def do_headers(self,state):
         '''.headers ?on|off?
 Turn headers on or off, default: on'''
-        if state == 'on':
-            self.headers = True
-        if state == 'off':
-            self.headers = False
+        self.headers = state.lower() == 'on'
 
     def do_dump(self, line):
         '''.dump ?table?
@@ -92,7 +82,7 @@ Dumps a database into a sql string
 If table is specified, dump that table.
 '''
         try:
-            if not line or line =='':
+            if not line:
                 for row in self.conn.iterdump():
                     self.display(row)
             else:
@@ -146,7 +136,7 @@ Close existing database and reopen FILENAME
         ''' .read FILENAME         
 Execute SQL in FILENAME
 '''
-        if line and line != '':
+        if line:
             if os.path.isfile(line):
                 with open(line,'r') as f:
                     self.cur.executescript(f.read())
@@ -160,7 +150,7 @@ Show the CREATE statements
 '''
         try:
             res = self.cur.execute("SELECT * FROM sqlite_master ORDER BY name;")
-            if not line or line == '':
+            if not line:
                 for row in res:
                     self.display(row['sql'])
             else:
@@ -199,9 +189,7 @@ List names of tables
 
     def format_print(self, result):
         if self.headers:
-            headers = []
-            for header in self.cur.description:
-                headers.append(header[0])
+            headers = [header[0] for header in self.cur.description]
             self.display(self.separator.join(headers))
         for field in result:
             self.display(self.separator.join(str(x) for x in field))
@@ -218,7 +206,6 @@ List names of tables
             print e
             print 'An Error occured:', e.args[0]
 
-
     def do_EOF(self, line):
         return True
 
@@ -226,7 +213,6 @@ if __name__ == '__main__':
     #sqlitedb = SqliteCMD()
     if len(sys.argv) == 2:
         SqliteCMD(sys.argv[1]).cmdloop()
-        
     elif len(sys.argv) > 2:
         SqliteCMD(sys.argv[1]).onecmd(sys.argv[2])
     else:

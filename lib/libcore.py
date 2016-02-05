@@ -1,6 +1,7 @@
 import os
 import fileinput
 
+
 def collapseuser(path):
     """Reverse of os.path.expanduser: return path relative to ~, if
     such representation is meaningful. If path is not ~ or a
@@ -21,6 +22,21 @@ def collapseuser(path):
         collapsed = path
 
     return "~" if collapsed == "." else os.path.join("~", collapsed)
+
+
+def get_lan_ip():
+    try:
+        from objc_util import ObjCClass
+        NSHost = ObjCClass('NSHost')
+        addresses = []
+        for address in NSHost.currentHost().addresses():
+            address = str(address)
+            if 48 <= ord(address[0]) <= 57 and address != '127.0.0.1':
+                addresses.append(address)
+        return '   '.join(addresses)
+
+    except ImportError:
+        return ''
 
 
 def input_stream(files=()):
@@ -46,3 +62,9 @@ def input_stream(files=()):
         fileinput.close()
 
 
+def sizeof_fmt(num):
+    for unit in ['B', 'K', 'M', 'G']:
+        if num < 1024:
+            return "%3.1f%s" % (num, unit)
+        num /= 1024.0
+    return "%3.1f%s" % (num, 'T')

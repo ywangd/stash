@@ -25,11 +25,11 @@ def main(args):
     pattern = re.compile(ns.pattern, flags=flags)
     
     if ns.invert:
-        def fn_predicate(test):
-            return not test
+        def fn_predicate(line, newline):
+            return line == newline
     else:
-        def fn_predicate(test):
-            return test
+        def fn_predicate(line, newline):
+            return line != newline
     
     # Do not try to grep directories
     files = [f for f in ns.files if not os.path.isdir(f)]
@@ -37,15 +37,16 @@ def main(args):
     fileinput.close()  # in case it is not closed
     try:
         for line in fileinput.input(files):
-            if fn_predicate(pattern.search(line)):
+            newline = re.sub(pattern, lambda m: _stash.text_color(m.group(), 'red'), line)
+            if fn_predicate(line, newline):
                 if fileinput.isstdin():
-                    fmt = '{lineno}: {line}'
+                    fmt = u'{lineno}: {line}'
                 else:
-                    fmt = '{filename}: {lineno}: {line}'
-                
+                    fmt = u'{filename}: {lineno}: {line}'
+
                 print(fmt.format(filename=fileinput.filename(),
                                  lineno=fileinput.filelineno(),
-                                 line=line.rstrip()))
+                                 line=newline.rstrip()))
     except Exception as err:
         print("grep: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
     finally:

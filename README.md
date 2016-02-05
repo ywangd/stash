@@ -5,29 +5,87 @@ its variants, [StaSh](https://github.com/ywangd/stash) is a serious attempt to
 implement a Bash-like shell for [Pythonista](http://omz-software.com/pythonista/).
 
 Since its initial release, valuable contributions and advices have been received
-constantly from the Pythonista community (especially from
-[@briarfox](https://github.com/briarfox),
+constantly from the Pythonista community. 
+The two most popular utilities are 
+**`pip`** (authored by [@briarfox](https://github.com/briarfox))
+ and **`git`** (authored by [@jsbain](https://github.com/jsbain)). 
+Remarkable contributions are also made by
 [@dgelessus](https://github.com/dgelessus),
+<<<<<<<
 [@jsbain](https://github.com/jsbain), [@pudquick](https://github.com/pudquick),
 [@oefe](https://github.com/oefe), [@cclauss](https://github.com/cclauss) and
 [@georg.viehoever] (https://github.com/GeorgViehoever) ).
+|||||||
+[@jsbain](https://github.com/jsbain), [@pudquick](https://github.com/pudquick),
+[@oefe](https://github.com/oefe) and [@cclauss](https://github.com/cclauss)).
+=======
+[@pudquick](https://github.com/pudquick),
+[@oefe](https://github.com/oefe), 
+[@cclauss](https://github.com/cclauss) and
+[@georg.viehoever] (https://github.com/GeorgViehoever). 
+>>>>>>>
 
 StaSh stands for Pythoni**sta** **Sh**ell. While **Sta** may not be the best
 abbreviation for Pythonista, it forms a concise and meaningful word with the
 following **Sh** part. So the name StaSh was chose to indicate it is a confined
 environment and great treasures may be found within.
 
+
+## Installation
+**StaSh can be easily installed via one line of python command**
+(courtesy of [@whitone](https://forum.omz-software.com/user/whitone)). 
+```Python
+import requests as r; exec r.get('http://bit.ly/get-stash').text
+```
+Simply copy the above line, paste into Pythonista interactive prompt and
+execute. It installs StaSh as a Python module under the `site-packages` 
+folder (`~/Documents/site-packages/stash`) and copies **a launching script, 
+`~/Documents/launch_stash.py`** for easy access.
+
+*If you have previous versions of StaSh installed (e.g. v0.4.x), 
+You may need to restart Pythonista BEFORE the installation.*
+
+*If you have a GitHub tool available in Pythonista, such as
+[gitview](http://omz-forums.appspot.com/pythonista/post/5810965861892096) or
+[gitrepo](http://omz-forums.appspot.com/pythonista/post/5795611756462080),
+you can choose to directly clone or download the
+[repository](https://github.com/ywangd/stash).*
+
+*StaSh requires Pythonista v2.0 as the new ObjC feature is heavily used. For
+older Pythonista 1.5 compatible version, please refer to the
+[v0.4](https://github.com/ywangd/stash/tree/v0.4) branch.*
+
+
+## Upgrade
+Once StaSh is installed, it can be easily updated by running the `selfupdate`
+command from within the shell. 
+* `selfupdate` defaults to the `master` branch. To update from a different
+  branch, e.g. `dev`, use `selfupdate dev`.
+* By default, `selfupdate` compares local and remote versions and only performs
+  update if newer version is found. You can however force the update without
+  version checking via `selfupdate -f`.
+* To check for newer version without actually install it, use `selfupdate -n`.
+* `selfupdate` manages StaSh installation folder and may delete files in the
+  process. It is therefore recommended to **not** place your own scripts under
+  `$STASH_ROOT/bin`. Instead, save your own scripts in`~/Documents/bin` or
+  customise the locations with the `BIN_PATH` environment variable. 
+* You may need to restart Pythonista after the update for changes to take full
+  effects.
+
+*selfupdate cannot be used for version 0.4.x and under. A fresh
+[installation](#installation) is needed.*
+
 ## Notable Features
-StaSh has a pile of features which are to be expected from a real shell. These
+StaSh has a pile of features that are expected from a real shell. These
 features are what really set the difference from shellista.
 
 * **Panel UI** program that is completely event driven
     * **No blocking thread**, builtin interactive prompt is accessible at all time
     * Consistent look and feel as a proper PC terminal
     * Almost all scripts can be called from within StaSh, including programs
-      using UI and **Scene** packages. You can even launch another
-      **panel** UI program and the new UI will simply replace StaSh (not really
-      a good use case but it is possible).
+      using UI and **Scene** packages.
+    * **Attributed text (color and style) support**
+    * Multiple sessions are possible by opening additional Panel tabs
     * Being a pure UI program, it is possible to launch and forget. The program
       **stays active indefinitely**. Non-UI scripts can only run for 10 minutes
       in background. But StaSh can stay up forever (till memory runs out due to
@@ -50,8 +108,8 @@ features are what really set the difference from shellista.
       `!!` and `!-1` also works.
 
 * Smart **auto-completion** just as expected
-    * One UI button, "Tab", is provided to enable command line auto-completion.
-    * It is smart to auto-completes either commands or files based on the
+    * One UI button, `Tab`, is provided to enable command line auto-completion.
+    * It is smart to complete either commands or files based on the
       **cursor** position
     * It also completes environment variables and aliases.
     * It also features a sub-command auto-completion system. For an example,
@@ -80,20 +138,26 @@ features are what really set the difference from shellista.
   builtin editor offers)
 
 * **External keyboard support**
-	* **Tab** key for auto-completion
-	* **⌘ (cmd) + up (↑) / down (↓)** for navigating through command history
+	* Tab key for auto-completion
+	* Up (↑) / Down (↓) for navigating through command history
+	* Ctrl-A and Ctrl-E to jump to the beginning and end of the input line, 
+	  respectively
+	* Ctrl-U to erase the input line
+	* Ctrl-L to clear the screen
 
-* You can **run almost any regular python scripts** from within StaSh 
+* You can **run (almost) any regular python scripts** from within StaSh
     * There is no need to customize them for the shell. If it can be executed by
       a python interpreter via `python your_script.py`, you can just call it from
       within StaSh by just typing `your_script`
     * The shell object is made available to scripts being called. This enables a
       range of complex interactions between the shell and called scripts.
+      For an example, the running script can use the shell object to execute
+      more commands, e.g. `_stash('pwd')`.
 
 * You can give it a **resource file**, similar to `.bashrc`, to customize its
   behaviour. Like the Bash resource file, aliases, environment
   variables can be set here. The default resource file is `.stashrc` under
-  StaSh installation root.
+  StaSh installation root (i.e. `~/Documents/site-packages/stash`).
     * The prompt is customizable with the `PROMPT` environment variable.
         * `\w` - current working directory with HOME folder abbreviated as `~`
         * `\W` - last path component of current working directory
@@ -102,19 +166,10 @@ features are what really set the difference from shellista.
 
 * **Easy self update** to keep update with the development by running a single
   `selfupdate` command from within the shell.
-    - The `selfupdate` script manages StaSh installation folder and may delete
-      files in the process. It is therefore recommend to **not** put your own
-      scripts under `$STASH_ROOT/bin`. Instead, save your own scripts
-      in`~/Documents/bin` or customise the locations with `BIN_PATH` environment
-      variable. 
-    - Self-update defaults to the master branch. To update from a different
-      branch, e.g. the **dev** branch, run **`SELFUPDATE_BRANCH=dev
-      selfupdate`**
-    - You may need to restart StaSh after the update.
 
 * The UI can be configured via **configuration file** to customize its font
-  size and color. The default config file is `.stash_config` under StaSh
-  installation root.
+  size and color. The default config file is `.stash_config` or `stash.cfg` 
+  under StaSh installation root.
 
 * StaSh employs Python threads to execute scripts. It maintains a stack of
   threads that forms a family of **linear** threads. This means no parallel
@@ -134,24 +189,6 @@ features are what really set the difference from shellista.
       allows subsequent calls to the same command without restarting Pythonista.
 
 
-## Installation
-StaSh can be installed easily via a single line of python commands (courtesy of
-@whitone). Simply copy and paste the following line into Pythonista interactive
-prompt and run.
-
-```Python
-import urllib2; exec urllib2.urlopen('http://bit.ly/get-stash').read()
-```
-
-The above command installs StaSh to a folder named **stash** under your
-document root, i.e. `~/Documents/stash`.
-
-(If you have a GitHub tool available in Pythonista, such as
-[gitview](http://omz-forums.appspot.com/pythonista/post/5810965861892096) or
-[gitrepo](http://omz-forums.appspot.com/pythonista/post/5795611756462080),
-you can choose to directly clone or download the
-[repository](https://github.com/ywangd/stash).)
-
 ## Usage
 The usage of StaSh is in principle similar to Bash. A few things to note are:
 
@@ -159,25 +196,65 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   called `BIN_PATH` as `PATH` is used by the system. The default `BIN_PATH` is
   `~/Documents/bin:$STASH_ROOT/bin`.
 
+<<<<<<<
 * The executable files are either Python scripts or StaSh scripts. The type of
   script is determined by looking at the file extensions ".py" and ".sh".
   A file without extension is considered a  shell script.
   * When invoking a script, you can omit the extension, StaSh will try find the file
+|||||||
+* The executable files are either Python scripts or StaSh scripts, with `.py`
+  and `.sh` extensions respectively. Note the extensions are important as StaSh
+  relies on them to tell the file type and whether the file is executable. 
+  * When
+  Invoking a script, you can omit the extension, StaSh will try find the file
+=======
+* The executable files are either Python scripts or StaSh scripts. The type of
+  script is determined by looking at the file extensions ".py" and ".sh".
+  A file without extension is considered as a shell script.
+  * When invoking a script, you can omit the extension, StaSh will try find the file
+>>>>>>>
   with one of the extensions. For an example, StaSh interprets the command
+<<<<<<<
   `selfupdate` and find the file `selfupdate.sh` to execute.
   * Files without extension won't show up as an auto-completion possibility.
 
 * Command can only be written in a single line. No line continuation is
   available. However, multiple commands can be written in a single line by
+|||||||
+  `selfupdate` and find the file `selfupdate.sh` to execute.
+  * Note a file without extension is considered as a shell script. It just
+    won't show up as an auto-completion possibility.
+
+* Command can only be written in a single line. No line continuation is
+  available. However, multiple commands can be written in a single line by
+=======
+  `selfupdate` and find the file `selfupdate.py` to execute.
+  * Files without extension won't show up as an auto-completion possibility.
+
+* Commands can only be written in a single line. No line continuation is
+  possible. However, multiple commands can be written in a single line by
+>>>>>>>
   separating them with semicolons, e.g. `ls -1 > file_list; cat file_list`.
 
+<<<<<<<
 * There are many Python scripts provided along with StaSh (special thanks to
   [@briarfox](https://github.com/briarfox),
   [@dgelessus](https://github.com/dgelessus) and
   [@jsbain](https://github.com/jsbain)). These scripts range from performing
   regular shell tasks to advanced utilities like `ssh` and `git`. Note the
+|||||||
+* There are many Python scripts provided along with StaSh (special thanks to
+  [@briarfox](https://github.com/briarfox),
+  [@dgelessus](https://github.com/dgelessus) and
+  [@jsbain](https://github.com/jsbain). These scripts range from performing
+  regular shell tasks to advanced utilities like `ssh`and `git`. Note the
+=======
+* There are many Python scripts provided along with StaSh. 
+  These scripts range from performing
+  regular shell tasks to advanced utilities like `ssh` and `git`. Note the
+>>>>>>>
   scripts are by no means complete when compared to a real Linux shell. The
-  script collection will be gradually expanded should the need arise. It is
+  collection will be gradually expanded should the need arise. It is
   also expected and appreciated that the community would come up with more
   scripts.
     * `alias.py` - Define or print aliases
@@ -212,6 +289,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `quicklook.py` - iOS quick look for files of known types
     * `rm.py` - delete (remove) file
     * `scp.py` - Copy files from/to remote servers. 
+    * `selfupdate.py` - Update StaSh from its GitHub repo
     * `sha1sum.py` - Print of check SHA1 checksums
     * `sha256sum.py` - Print of check SHA256 checksums
     * `sort.py` - Sort a list, also see unique
@@ -256,18 +334,8 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
 
 
 ## Known Issues
-* Executing a script using the "Run" button while StaSh is running leads to
-  corrupted namespaces and leaves StaSh unusable. However, running scripts from
-  "Action Menu" is OK.
-    - This is because Pythonista clears all global variables before running a
-      script. This is the default behaviour in Pythonista v1.5 and can be 
-      turned off in "Interpreter Options" in settings.
-    - In current Pythonista v1.6 beta, it is no longer possible to turn off
-      the "global clearing" feature. To allow StaSh survive through the clearing,
-      please run StaSh using the provided `launch_stash.py` script.
 * Pickled objects are not restored correctly and generate `AttributeError` as
-  if the class definition cannot be found. An example is the
-  [DropboxSync](https://gist.github.com/freekrai/4183134) script.
+  if the class definition cannot be found. 
 
 
 ## Contributing

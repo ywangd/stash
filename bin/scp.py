@@ -1,14 +1,14 @@
-'''
+"""
 Secure Copy
 Copies files from local to remote
 
 usage:
     GET
     scp [user@host:dir/file] [files/dir]
-    
+
     PUT
     scp [file/dir] [file/dir] [user@host:dir]
-'''
+"""
 
 import argparse
 # scp.py
@@ -24,10 +24,43 @@ __version__ = '0.8.0'
 
 import locale
 import os
+import sys
 import re
 from socket import timeout as SocketTimeout
+from distutils.version import StrictVersion
+
+
+def install_module_from_github(username, package_name, version):
+    """
+    Install python module from github zip files
+    """
+    cmd_string = """
+        echo Installing {1} {2} ...
+        wget https://github.com/{0}/{1}/archive/v{2}.zip -o $TMPDIR/{1}.zip
+        mkdir $TMPDIR/{1}_src
+        unzip $TMPDIR/{1}.zip -d $TMPDIR/{1}_src
+        rm -f $TMPDIR/{1}.zip
+        mv $TMPDIR/{1}_src/{1} $STASH_ROOT/lib/
+        rm -rf $TMPDIR/{1}_src
+        echo Done
+        """.format(username,
+                   package_name,
+                   version
+                   )
+    globals()['_stash'](cmd_string)
+
+
+import paramiko
+if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
+    # Install paramiko 1.16.0 to fix a bug with version < 1.15
+    install_module_from_github('paramiko', 'paramiko', '1.16.0')
+    print 'Please restart Pythonista for changes to take full effect'
+    sys.exit(0)
+
 
 DEBUG = False
+
+APP_DIR = os.environ['STASH_ROOT']
 
 # this is quote from the shlex module, added in py3.3
 _find_unsafe = re.compile(br'[^\w@%+=:,./~-]').search
@@ -466,9 +499,12 @@ class SCPException(Exception):
 def find_ssh_keys():
     #dir = os.path.expanduser('~/Documents/.ssh/')
     files = []
-    for file in os.listdir(APP_DIR+'/.ssh'):
-        if '.' not in file:
-            files.append(APP_DIR+'/.ssh/'+file)
+    try:
+        for file in os.listdir(APP_DIR+'/.ssh'):
+            if '.' not in file:
+                files.append(APP_DIR+'/.ssh/'+file)
+    except OSError:
+        pass
     return files    
     
 def parse_host(arg):
@@ -482,11 +518,11 @@ def scp_callback(filename, size, sent):
     
 
 if __name__ == '__main__':
-    from paramiko import SSHClient, AutoAddPolicy
     files = []
     
     ap = argparse.ArgumentParser()
-    ap.add_argument('files',nargs='*', help='file or module name')
+    ap.add_argument('-p', '--password', help='login password')
+    ap.add_argument('files', nargs='*', help='file or module name')
     args = ap.parse_args()
     
     #scp_mode 0 put 1 get
@@ -501,10 +537,20 @@ if __name__ == '__main__':
         else:
             files.append(file)
             
-    ssh = SSHClient()
+    ssh = paramiko.SSHClient()
     #ssh.load_system_host_keys()
-    ssh.set_missing_host_key_policy(AutoAddPolicy())
-    ssh.connect(host,username=user,key_filename=find_ssh_keys())
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    key_filename = find_ssh_keys()
+    if args.password is not None:
+        ssh.connect(host, username=user, password=args.password)
+
+    else:
+        if len(key_filename) == 0:  # no key file found
+            password = raw_input('Enter passsword:')
+            ssh.connect(host, username=user, password=password)
+        else:
+            ssh.connect(host,username=user,key_filename=key_filename)
 
     # SCPCLient takes a paramiko transport as its only argument
     scp = SCPClient(ssh.get_transport(),progress=scp_callback)
@@ -517,6 +563,8 @@ if __name__ == '__main__':
     else:
         print 'Copying to server...'
         scp.put(files, recursive=True, remote_path=host_path)
+
+    ssh.close()
 
 
 

@@ -1,6 +1,6 @@
-'''
+"""
 ssh client for stash. ssh looks for a valid key generated buy ssh-keygen in .ssh.
-You can open an intereactive shell by not passing a command. If a command is passed,
+You can open an interactive shell by not passing a command. If a command is passed,
 the single command is ran with output then ssh exits.
 
 Once a valid ssh session has been created the special command pythonista [get|put|edit] file1 [file2]
@@ -18,44 +18,53 @@ optional arguments:
   -h, --help            show this help message and exit
   --password PASSWORD   Password for rsa/dsa key or password login
   -p PORT, --port PORT  port for ssh default: 22
-'''
+"""
 import os
 import sys
 import argparse
 import threading
 import time
 import re
-import sys
+from distutils.version import StrictVersion
 
-from paramiko import SSHClient, AutoAddPolicy, SFTPClient
 
-def get_pyte():
-    import tempfile
-    commands = '''
-    echo StaSh ssh installing pyte...
-    wget https://codeload.github.com/selectel/pyte/zip/master -o ~/Documents/site-packages/pyte.zip
-    mkdir ~/Documents/site-packages/pyte_folder
-    unzip ~/Documents/site-packages/pyte.zip -d ~/Documents/site-packages/pyte_folder
-    rm -r ~/Documents/site-packages/pyte.zip
-    mv ~/Documents/site-packages/pyte_folder/pyte ~/Documents/site-packages/
-    rm -r ~/Documents/site-packages/pyte_folder
-    echo done
-    '''
-    temp = tempfile.NamedTemporaryFile()
-    try:
-        temp.write(commands)
-        temp.seek(0)
-        globals()['_stash'].runtime.exec_sh_file(temp.name)
-    finally:
-    # Automatically cleans up the file
-        temp.close()
+def install_module_from_github(username, package_name, version):
+    """
+    Install python module from github zip files
+    """
+    cmd_string = """
+        echo Installing {1} {2} ...
+        wget https://github.com/{0}/{1}/archive/v{2}.zip -o $TMPDIR/{1}.zip
+        mkdir $TMPDIR/{1}_src
+        unzip $TMPDIR/{1}.zip -d $TMPDIR/{1}_src
+        rm -f $TMPDIR/{1}.zip
+        mv $TMPDIR/{1}_src/{1} $STASH_ROOT/lib/
+        rm -rf $TMPDIR/{1}_src
+        echo Done
+        """.format(username,
+                   package_name,
+                   version
+                   )
+    globals()['_stash'](cmd_string)
+
 
 try:
     import pyte
-except:
-    print 'pyte module not found.'
-    get_pyte()
+except ImportError:
+    # Install pyte 0.4.10. Newer version requires wcwidth. While it can also be
+    # installed, it is easier to installed an older version without worrying
+    # about any external dependencies
+    install_module_from_github('selectel', 'pyte', '0.4.10')
     import pyte
+
+
+import paramiko
+if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
+    # Install paramiko 1.16.0 to fix a bug with version < 1.15
+    install_module_from_github('paramiko', 'paramiko', '1.16.0')
+    print 'Please restart Pythonista for changes to take full effect'
+    sys.exit(0)
+
 
 class StashSSH(object):
     
@@ -74,8 +83,8 @@ class StashSSH(object):
         self.stash = globals()['_stash']
         self.passwd = passwd
         self.port = port
-        self.ssh = SSHClient()
-        self.ssh.set_missing_host_key_policy(AutoAddPolicy())
+        self.ssh = paramiko.SSHClient()
+        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
             print 'Looking for SSH keys...'
             self.ssh.connect(self.host,
@@ -86,6 +95,9 @@ class StashSSH(object):
         except:
             try:
                 print 'No SSH key found. Trying password...'
+                if self.passwd is None:
+                    self.passwd = raw_input("Enter password:")
+
                 self.ssh.connect(self.host,
                                  username=self.user,
                                  password=self.passwd,
@@ -95,17 +107,14 @@ class StashSSH(object):
                 return False
         self.ssh_running = True
         return True
-        
+
     def find_ssh_keys(self):
-        files = []
-        APP_DIR = os.environ['STASH_ROOT']
-        for file in os.listdir(APP_DIR+'/.ssh'):
-            if '.' not in file:
-                files.append(APP_DIR+'/.ssh/'+file)
-        return files    
-        
+        ssh_dir = os.path.join(os.environ['STASH_ROOT'], '.ssh')
+        return [os.path.join(ssh_dir, file) for file
+            in os.listdir(ssh_dir) if '.' not in file]
+
     def parse_host(self,arg):
-        user,host = arg.split('@')
+        user, host = arg.split('@')
         #host, path = temp.split(':')
         return user, host
         
@@ -126,8 +135,8 @@ class StashSSH(object):
                 break
             count -=1
         text = '\n'.join(self.screen.display[:count]).rstrip() + ' '
-        self.stash.term.truncate(0, flush=False)
-        self.stash.term.write(text)
+        _stash.stream.feed(u'\u009bc', render_it=False)
+        _stash.stream.feed(text, no_wait=True)
 
     def single_exec(self,command):
         sin,sout,serr = self.ssh.exec_command(command)
@@ -197,11 +206,8 @@ class StashSSH(object):
         
         
     def interactive(self):
-        self.transport = self.ssh.get_transport()
-        self.chan = self.transport.open_session()
-        self.chan.get_pty()
+        self.chan = self.ssh.invoke_shell()
         self.chan.set_combine_stderr(True)
-        self.chan.exec_command('bash -s')
         t1 = threading.Thread(target=self.stdout_thread)
         t1.start()
         while True:
@@ -240,6 +246,8 @@ class StashSSH(object):
         
     def exit(self):
         self.ssh_running = False
+        self.chan.close()
+        self.ssh.close()
 
         
 if __name__=='__main__':
