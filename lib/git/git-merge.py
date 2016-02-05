@@ -5,6 +5,7 @@ from dulwich import porcelain
 import stat
 from git import diff3
 from git.gitutils import _get_repo, find_revision_sha, can_ff, merge_base, count_commits_between, is_ancestor, get_remote_tracking_branch, GitError
+import argparse
 
 
 
