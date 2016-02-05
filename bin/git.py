@@ -129,6 +129,7 @@ else:
     from dulwich.index import index_entry_from_stat
     from gittle import Gittle
 
+dulwich.client.get_ssh_vendor = dulwich.client.ParamikoSSHVendor
 #  end temporary
 
 
@@ -434,14 +435,14 @@ def git_commit(args):
 
 def git_clone(args):
     if len(args) > 0:
-        url = args[0]
+           url = args[0]
+           repo = Gittle.clone(args[0], args[1] if len(args)>1 else '.', bare=False)
 
-        repo = Gittle.clone(args[0], args[1] if len(args)>1 else '.', bare=False)
-
-        #Set the origin
-        config = repo.repo.get_config()
-        config.set(('remote','origin'),'url',url)
-        config.write_to_path()
+           #Set the origin
+           config = repo.repo.get_config()
+           config.set(('remote','origin'),'url',url)
+           config.write_to_path()
+          
     else:
         print command_help['clone']
 
@@ -549,7 +550,7 @@ def git_push(args):
                 keychain.delete_password(*service)
 
     #Attempt to retrieve user
-    if not user and SAVE_PASSWORDS:
+    if not user and SAVE_PASSWORDS and result.url.startswith('http'):
         try:
             user = dict(keychain.get_services())[keychainservice]
         except KeyError:
