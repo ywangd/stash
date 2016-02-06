@@ -5,7 +5,7 @@ StaSh - Pythonista Shell
 https://github.com/ywangd/stash
 """
 
-__version__ = '0.6.0a2'
+__version__ = '0.6.0a3'
 
 import os
 import sys
@@ -118,7 +118,8 @@ class StaSh(object):
             os.chdir(self.runtime.state.environ_get('HOME2'))
         self.runtime.load_rcfile()
         self.io.write(self.text_style('StaSh v%s\n' % self.__version__,
-                                      {'color': 'blue', 'traits': ['bold']}))
+                                      {'color': 'blue', 'traits': ['bold']},
+                                      always=True))
         self.runtime.script_will_end()  # configure the read callback
 
         # Load shared libraries

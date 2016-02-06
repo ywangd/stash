@@ -95,6 +95,8 @@ features are what really set the difference from shellista.
     * **Pipes** to chain commands, e.g. `find . -name "*.txt" | grep interesting`
     * **IO redirect** (actually just Output redirect), e.g. `ls *.py > py_files.txt`. 
       Input redirect can be achieved by using pipes.
+        - It is possible to redirect to the Pythonista builtin console, 
+          e.g. `ls > &3`
     * Bang(!) to search command history, e.g. `ls -1`, `!l`. Bang commands like
       `!!` and `!-1` also works.
 
@@ -107,6 +109,20 @@ features are what really set the difference from shellista.
       type `git sta` and press `Tab`. It will auto-completes to `git status `.
       You can easily add your own sub-commands completion via JSON files.
 
+* **Thread management allows multiple commands running in parallel**
+    * One foreground jobs and unlimited number of background jobs can run 
+      simultaneously.
+    * A foreground job can be stopped by pressing the **CC** button or **Ctrl-C*
+      on an external keyboard.
+    * A background job is issued by appending an ampersand character (**`&`**)
+      at the end of a normal command, e.g. `httpserver &`. It can be terminated
+      by the `kill` command using its job ID.
+    * A few utilities are provided for thread management. 
+        - `jobs` to list current running background jobs.
+        - `kill` to kill a running job.
+        - `fg` to push background jobs to foreground
+        - `CZ` button (Ctrl-Z) to push a foreground job to background
+    
 * **Command line history** management. Three UI buttons are provided to navigate
   through the history.
 
@@ -117,6 +133,7 @@ features are what really set the difference from shellista.
         * **CC** (Ctrl-C) - terminate the running job
         * **CD** (Ctrl-D) - end of Input
         * **CU** (Ctrl-U) - kill line
+        * **CZ** (Ctrl-Z) - Push current running foreground job to background
         * **KB** - show/hide keyboard
         * **H** - display a popup window to show command history
         * **Up** - recall the previous command in history
@@ -162,23 +179,6 @@ features are what really set the difference from shellista.
   size and color. The default config file is `.stash_config` or `stash.cfg` 
   under StaSh installation root.
 
-* StaSh employs Python threads to execute scripts. It maintains a stack of
-  threads that forms a family of **linear** threads. This means no parallel
-  **foreground** threads are allowed. You can use the **Ctrl-C (CC)** button
-  to terminate running foreground threads at (almost) any time.
-
-* Number of **background** jobs (appending commands with the `&` directive) are
-  not limited and will be executed in Pythonista main thread, i.e. the same
-  thread of the interactive prompt.
-  - Background job and StaSh foreground job can run simultaneously.
-  - Pythonista automatically queues background jobs so only one of them will
-      be executed at a given time.
-  - Background jobs can be terminated by tap the close button on the
-      interactive prompt panel. This enables a script to perform housekeeping
-      tasks after catching the `KeyboardInterrupt` exception. An example is the
-      `httpserver` command. It releases the binding port when terminated and
-      allows subsequent calls to the same command without restarting Pythonista.
-
 
 ## Usage
 The usage of StaSh is in principle similar to Bash. A few things to note are:
@@ -212,14 +212,19 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `clear.py` - Clear console
     * `cp.py` - Copy file
     * `crypt.py` - File encryption using AES in CBC mode
+    * `curl.py` - Transfer from an URL
     * `cut.py` - Cut out selection portions of each line of a file
+    * `du.py` - Summarize disk usage of the set of FILEs, recursively for directories
     * `echo.py` - Output text to console
     * `edit.py` - Open any text type files in Pythonista editor
     * `find.py` - Powerful file searching tool
+    * `fg.py` - Push a background job to foreground
     * `git.py` - Git client ported from shellista
     * `grep.py` - search contents of file(s)
     * `httpserver.py` - A simple HTTP server with upload function (ripped from
       https://gist.github.com/UniIsland/3346170)
+    * `jobs.py` - List all jobs that are currently running
+    * `kill.py` - Terminate a running job
     * `ls.py` - List files
     * `mail.py` - Send emails with optional file attachment
     * `man.py` - Show help message (docstring) of a given command

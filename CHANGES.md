@@ -1,6 +1,25 @@
 # Change Log #
 
-### Version 0.5.0 - 2016-01-11
+### Version 0.6.0 - 2016-02-08
+* New Features
+    * New thread management system enables multiple jobs running at once.
+        - One foreground jobs and unlimited number of background jobs.
+    * `sys.stdin`, `sys.stdout` and `sys.stderr` are now replaced system 
+      wide to allow IO dispatch based on running threads.
+
+* Improvements
+    * Runtime state is now managed by threads for simplicity and readability.
+    * Environment persistent level is now explicitly required by caller.
+      No more magic top level thread.
+        
+* Command Scripts
+    * New scripts
+        - `jobs.py`
+        - `kill.py`
+        - `fg.py`
+        - `curl.py`
+
+### Version 0.5.x - 2016-01-11
 * New Features
     * Attributed text (color and style) support
         - Default font size is now 14 on iPad (increased from 12)
@@ -14,8 +33,10 @@
     * Better scrolling
     
 * Command Scripts
-    * Replace `selfupdate.sh` with `selfupdate.py` to enable more sophisticated 
-      installation functions.
+    * New scripts
+        - `du.py` - Summarize disk usage recursively
+        - Replace `selfupdate.sh` with `selfupdate.py` to enable more sophisticated 
+          installation functions.
     
 
 ### Version 0.4.x
