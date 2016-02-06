@@ -112,7 +112,7 @@ features are what really set the difference from shellista.
 * **Thread management allows multiple commands running in parallel**
     * One foreground jobs and unlimited number of background jobs can run 
       simultaneously.
-    * A foreground job can be stopped by pressing the **CC** button or **Ctrl-C*
+    * A foreground job can be stopped by pressing the **CC** button or **Ctrl-C**
       on an external keyboard.
     * A background job is issued by appending an ampersand character (**`&`**)
       at the end of a normal command, e.g. `httpserver &`. It can be terminated
@@ -151,6 +151,7 @@ features are what really set the difference from shellista.
 	* Ctrl-A and Ctrl-E to jump to the beginning and end of the input line, 
 	  respectively
 	* Ctrl-U to erase the input line
+	* Ctrl-W to erase one word before cursor
 	* Ctrl-L to clear the screen
 
 * You can **run (almost) any regular python scripts** from within StaSh
