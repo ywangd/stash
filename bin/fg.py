@@ -1,5 +1,5 @@
 """
-Push a background job to foreground.
+Bring a background job to foreground.
 """
 import sys
 import argparse

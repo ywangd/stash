@@ -120,8 +120,8 @@ features are what really set the difference from shellista.
     * A few utilities are provided for thread management. 
         - `jobs` to list current running background jobs.
         - `kill` to kill a running job.
-        - `fg` to push background jobs to foreground
-        - `CZ` button (Ctrl-Z) to push a foreground job to background
+        - `fg` to bring background jobs to foreground
+        - `CZ` button (Ctrl-Z) to send a foreground job to background
     
 * **Command line history** management. Three UI buttons are provided to navigate
   through the history.
@@ -133,7 +133,7 @@ features are what really set the difference from shellista.
         * **CC** (Ctrl-C) - terminate the running job
         * **CD** (Ctrl-D) - end of Input
         * **CU** (Ctrl-U) - kill line
-        * **CZ** (Ctrl-Z) - Push current running foreground job to background
+        * **CZ** (Ctrl-Z) - Send current running foreground job to background
         * **KB** - show/hide keyboard
         * **H** - display a popup window to show command history
         * **Up** - recall the previous command in history
@@ -218,7 +218,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `echo.py` - Output text to console
     * `edit.py` - Open any text type files in Pythonista editor
     * `find.py` - Powerful file searching tool
-    * `fg.py` - Push a background job to foreground
+    * `fg.py` - Bring a background job to foreground
     * `git.py` - Git client ported from shellista
     * `grep.py` - search contents of file(s)
     * `httpserver.py` - A simple HTTP server with upload function (ripped from

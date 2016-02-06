@@ -120,10 +120,11 @@ class StaSh(object):
         self.io.write(self.text_style('StaSh v%s\n' % self.__version__,
                                       {'color': 'blue', 'traits': ['bold']},
                                       always=True))
-        self.runtime.script_will_end()  # configure the read callback
-
         # Load shared libraries
         self._load_lib()
+
+        # Show tip of the day (this calls script_will_end)
+        self('$STASH_ROOT/bin/totd.py', add_to_history=False, persistent_level=0)
 
     def __call__(self, input_, persistent_level=2, *args, **kwargs):
         """ This function is to be called by external script for
