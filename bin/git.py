@@ -302,8 +302,7 @@ def git_rm(args):
 def launch_subcmd(cmd,args):
     cmdpath=os.path.join(os.environ['STASH_ROOT'],'lib','git',cmd)
 
-    _stash.runtime.exec_py_file(cmdpath, args=args,
-                     ins=sys.stdin, outs=sys.stdout, errs=sys.stderr)
+    _stash(cmdpath + ' ' + ' '.join(args))
     
 def git_branch(args):
     launch_subcmd('git-branch.py',args)
