@@ -36,7 +36,6 @@ class ShMiniBuffer(object):
         Directly called by a TextView delegate to replace existing chars
         in given range with the given new chars.
 
-        :param shterminal.ShTerminal terminal: The terminal object
         :param (int, int) | None | str rng: the range of selected chars
         :param str replacement: new chars
         :return:
@@ -206,6 +205,7 @@ class ShMiniBuffer(object):
         """
         Convert the incoming range (by user) to values relative to the
         input buffer text. Also enforce the modifiable bound.
+
         :param (int, int) rng: range of selected text
         :return: (int, int): Adjusted range
         """

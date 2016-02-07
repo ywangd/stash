@@ -27,5 +27,6 @@
     "See a list of available commands and their short descriptions with man",
     "Press the Tab button to auto-complete command and file names",
     "Show detailed traceback when a script fails by setting py_traceback with stashconf py_traceback 1",
+    "Show a random tip with command totd",
     "Edit files with unconvential names using edit, e.g. edit .stash_config"
 ]
