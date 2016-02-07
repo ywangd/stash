@@ -14,8 +14,8 @@ import argparse
 import paramiko
 #import patchparamiko
 
-
-SSH_DIR = os.path.join(os.environ['STASH_ROOT'], '.ssh')
+SSH_DIRS = [os.path.expanduser('~/.ssh'),
+            os.path.join(os.environ['STASH_ROOT'], '.ssh')]
 
 key_mode = {'rsa': 'rsa',
             'dsa': 'dss'}
@@ -29,8 +29,9 @@ ap.add_argument('-f',dest='filename', default=False, action='store', help='Filen
 args = ap.parse_args()
 
 #Keygen for keypair
-if not os.path.isdir(SSH_DIR):
-    os.mkdir(SSH_DIR)
+for SSH_DIR in SSH_DIRS:
+    if not os.path.isdir(SSH_DIR):
+        os.mkdir(SSH_DIR)
     
 try:
     k = False
@@ -41,11 +42,12 @@ try:
         k = paramiko.DSSKey.generate(args.bits)
         filename = args.filename or 'id_dsa'
     if k:
-        #os.chdir(os.path.expanduser('~/Documents'))
-        filepath = os.join(SSH_DIR, filename)
-        k.write_private_key_file(filepath, password=args.password)
-        o = open(filepath + '.pub', "w").write('ssh-'+key_mode[args.type]+' '+k.get_base64())
-        # o.close()  # Do we want o left open for some reason or should it be closed?
+        for SSH_DIR in SSH_DIRS:
+            #os.chdir(os.path.expanduser('~/Documents'))
+            filepath = os.join(SSH_DIR, filename)
+            k.write_private_key_file(filepath, password=args.password)
+            o = open(filepath + '.pub', "w").write('ssh-'+key_mode[args.type]+' '+k.get_base64())
+            # o.close()  # Do we want o left open for some reason or should it be closed?
     else:
         print 'Keys not generated'
 except Exception, e:
