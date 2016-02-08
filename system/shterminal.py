@@ -63,7 +63,15 @@ class ShTVDelegate(object):
         # This callback was used to provide approximated support for H-Up/Dn
         # shortcuts from an external keyboard. It is no longer necessary as
         # proper external keyboard support is now possible with objc_util.
-        pass
+
+        # If cursor is in sync already, as a result of renderer call, flag it
+        # to False for future checking.
+        if self.terminal.cursor_synced:
+            self.terminal.cursor_synced = False
+        else:
+            # Sync the cursor position on terminal to main screen
+            # Mainly used for when user touches and changes the terminal cursor position.
+            self.mini_buffer.sync_cursor(self.terminal.selected_range)
 
 
 # noinspection PyAttributeOutsideInit
@@ -79,6 +87,9 @@ class ShTerminal(object):
 
         self.stash = stash
         stash.terminal = self
+
+        # whether the terminal cursor position is in sync with main screen
+        self.cursor_synced = False
 
         # Create the actual TextView by subclass SUITextView
         UIKeyCommand = ObjCClass('UIKeyCommand')
@@ -293,6 +304,7 @@ class ShTerminal(object):
     @selected_range.setter
     @on_main_thread
     def selected_range(self, rng):
+        self.cursor_synced = True
         self.tvo.setSelectedRange_((rng[0], rng[1] - rng[0]))
 
     @property

@@ -107,7 +107,7 @@ class ShSequentialScreen(object):
         self._buffer.clear()
 
         # The cursor position
-        self.cursor_x = 0
+        self.cursor_xs = self.cursor_xe = 0
 
         # This is the location where modifiable chars start. It is immediately
         # after where latest program write ends.
@@ -123,11 +123,23 @@ class ShSequentialScreen(object):
         self.nlines = 0
 
     @property
+    def cursor_x(self):
+        return self.cursor_xs, self.cursor_xe
+
+    @cursor_x.setter
+    def cursor_x(self, value):
+        self.cursor_xs = self.cursor_xe = value
+
+    @property
     def text(self):
         """
         :rtype: str
         """
         return ''.join(char.data for char in self._buffer)
+
+    @property
+    def text_length(self):
+        return len(self._buffer)
 
     @property
     def renderable_chars(self):
@@ -155,6 +167,10 @@ class ShSequentialScreen(object):
             return self.x_drawend
 
     @property
+    def modifiable_range(self):
+        return self.x_modifiable, self.text_length
+
+    @property
     def modifiable_chars(self):
         """
         :rtype: str
@@ -171,19 +187,23 @@ class ShSequentialScreen(object):
         self.replace_in_range((self.x_modifiable, len(self._buffer)), s)
 
     @contextmanager
-    def acquire_lock(self):
+    def acquire_lock(self, blocking=True):
         """
         Lock the screen for modification so that it will not be corrupted.
         """
         try:
-            ret = self.lock.acquire()
+            locked = self.lock.acquire(blocking)
             # if self.debug:
             #     self.logger.debug('Lock Acquired')
-            yield ret
+            yield locked
         finally:
-            self.lock.release()
+            if locked:
+                self.lock.release()
             # if self.debug:
             #     self.logger.debug('Lock Released')
+
+    def is_locked(self):
+        return self.lock.locked()
             
     def get_bounds(self):
         """
@@ -257,18 +277,12 @@ class ShSequentialScreen(object):
 
         # Normally the draw end is not set
         if set_drawend:
-            self.x_drawend = self.cursor_x
+            self.x_drawend = self.cursor_xs
 
         nlf = s.count('\n')
         if nlf > 0:
             self.nlines += nlf
             self._ensure_nlines_max()
-
-    def ensure_cursor_in_modifiable_range(self):
-        if self.cursor_x > len(self._buffer):
-            self.cursor_x = len(self._buffer)
-        elif self.cursor_x < self.x_modifiable:
-            self.cursor_x = self.x_modifiable
 
     def _pop_chars(self, n=1):
         """
@@ -296,7 +310,8 @@ class ShSequentialScreen(object):
 
         self.intact_left_bound += char_count
         self.intact_right_bound -= char_count
-        self.cursor_x -= char_count
+        self.cursor_xs -= char_count
+        self.cursor_xe -= char_count
         self.x_drawend -= char_count
         self.nlines -= line_count
 
@@ -469,7 +484,7 @@ class ShSequentialRenderer(object):
         with self.screen.acquire_lock():
             intact_left_bound, intact_right_bound = self.screen.get_bounds()
             screen_buffer_length = len(self.screen._buffer)
-            cursor_x = self.screen.cursor_x
+            cursor_xs, cursor_xe = self.screen.cursor_x
             renderable_chars = self.screen.renderable_chars
             self.screen.clean()
 
@@ -514,8 +529,8 @@ class ShSequentialRenderer(object):
             else:
                 tvo_texts.endEditing()  # end of batched changes
 
-            # Set the cursor position
-            self.terminal.selected_range = (cursor_x, cursor_x)
+            # Set the cursor position. This makes terminal and main screen cursors in sync
+            self.terminal.selected_range = (cursor_xs, cursor_xe)
 
             # Ensure cursor line is visible by scroll  to the end of the text
             self.terminal.scroll_to_end()
