@@ -1,4 +1,10 @@
 # coding: utf-8
+"""
+Streams are channels taking input and talking to in-memory screen.
+
+There are two streams. One for User Input on Physical terminal. The other is
+for accepting outputs from running scripts.
+"""
 import logging
 import re
 
@@ -239,6 +245,7 @@ class ShMiniBuffer(object):
         # buffer, it means more output has been put onto the main screen after
         # last update from the mini buffer. So the modifiable_chars need to be
         # reset at the new x_modifiable location.
+        # NOTE this must be called inside a main screen locking session
         if self.modifiable_chars != self.main_screen.modifiable_chars:
             if self.debug:
                 self.logger.debug('Inconsistent mini_buffer [%s] main_screen [%s]' %

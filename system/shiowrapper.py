@@ -4,12 +4,6 @@ The wrappers dispatch io requests based on current thread.
 
 If the thread is an instance of ShBaseThread, the io should be dispatched to ShIO.
 Otherwise, it should be dispatched to regular sys io.
-
-These classes are necessary because print seems to remember the real sys module
-and its io properties, e.g. stdout. Even when a mock sys is provided with
-shimportproxy, print always ignore the io properties of the mock sys object and
-uses settings from the real object. Maybe it is because print is a C builtin
-function and somehow manage the import differently?
 """
 import sys
 import threading

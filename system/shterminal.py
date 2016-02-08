@@ -1,4 +1,7 @@
 # coding: utf-8
+"""
+Physical terminal is what an user sees.
+"""
 import ast
 import logging
 

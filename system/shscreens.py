@@ -1,4 +1,7 @@
 # coding: utf-8
+"""
+In-memory screen related code.
+"""
 import logging
 from time import time
 
