@@ -194,7 +194,7 @@ class ShMiniBuffer(object):
 
     def set_cursor(self, offset, whence=0):
         """
-        Set cursor in the modifiable range.
+        Set cursor within the modifiable range.
         :param offset:
         :param whence:
         """
@@ -208,8 +208,8 @@ class ShMiniBuffer(object):
                 new_cursor_x = self.main_screen.cursor_xs + offset
             elif whence == 2:  # from the end
                 new_cursor_x = modifiable_xe + offset
-            else:
-                new_cursor_x = modifiable_xs + offset  # default from start
+            else:  # default from start
+                new_cursor_x = modifiable_xs + offset
 
             if new_cursor_x < modifiable_xs:
                 new_cursor_x = modifiable_xs
@@ -230,8 +230,9 @@ class ShMiniBuffer(object):
         with self.main_screen.acquire_lock(blocking=False) as locked:
             if locked:
                 self.main_screen.cursor_xs, self.main_screen.cursor_xe = selected_range
-            # If lock cannot be required, it means other threads are updating it
-            # So there is no need to sync the cursor.
+            # If lock cannot be required, it means other threads are updating the screen.
+            # So there is no need to sync the cursor (as it will be changed by other
+            # threads anyway).
 
     def delete_word(self, rng):
         if rng[0] != rng[1]:  # do nothing if there is any selection

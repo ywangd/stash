@@ -307,8 +307,17 @@ class ShTerminal(object):
     @selected_range.setter
     @on_main_thread
     def selected_range(self, rng):
-        self.cursor_synced = True
-        self.tvo.setSelectedRange_((rng[0], rng[1] - rng[0]))
+        """
+        Set the cursor selection range. Note it checks the current range first and
+        only change it if the new range is different. This is to avoid setting
+        unwanted cursor_synced flag. Without the check, the cursor is repositioned
+        with the same range, this turn on the cursor_synced flag BUT will NOT trigger
+        the did_change_selection event (which is paired to cancel the cursor_synced
+        flag).
+        """
+        if self.selected_range != rng:
+            self.cursor_synced = True
+            self.tvo.setSelectedRange_((rng[0], rng[1] - rng[0]))
 
     @property
     def autocapitalization_type(self):
