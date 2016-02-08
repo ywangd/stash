@@ -37,6 +37,31 @@ class ShMiniBuffer(object):
 
         self._pattern_word_split = re.compile('[^\W]+\W*')
 
+    @property
+    def x_modifiable(self):
+        """
+        The index where chars start to be modifiable. Modifiable chars are
+        those input text that can still be edited by users. Any characters
+        before a linebreak is not modifiable.
+        :rtype: int
+        """
+        idx = self.chars.rfind('\n')
+        return idx + 1 if idx != -1 else 0
+
+    @property
+    def modifiable_chars(self):
+        """
+        :rtype: str: modifiable characters
+        """
+        return self.chars[self.x_modifiable:]
+
+    @modifiable_chars.setter
+    def modifiable_chars(self, value):
+        """
+        :param str value: New value for the modifiable chars
+        """
+        self.chars = self.chars[: self.x_modifiable] + value
+
     def feed(self, rng, replacement):
         """
         Directly called by a TextView delegate to replace existing chars
@@ -177,18 +202,36 @@ class ShMiniBuffer(object):
         with self.main_screen.acquire_lock():
             self._ensure_main_screen_consistency()
 
-            modifiable_length = len(self.modifiable_chars)
+            modifiable_xs, modifiable_xe = self.main_screen.modifiable_range
 
             if whence == 1:  # current position
-                self.main_screen.cursor_x += offset
+                new_cursor_x = self.main_screen.cursor_xs + offset
             elif whence == 2:  # from the end
-                self.main_screen.cursor_x = self.main_screen.x_modifiable + modifiable_length + offset
+                new_cursor_x = modifiable_xe + offset
             else:
-                self.main_screen.cursor_x = self.main_screen.x_modifiable + offset  # default from start
+                new_cursor_x = modifiable_xs + offset  # default from start
 
-            self.main_screen.ensure_cursor_in_modifiable_range()
+            if new_cursor_x < modifiable_xs:
+                new_cursor_x = modifiable_xs
+            elif new_cursor_x > modifiable_xe:
+                new_cursor_x = modifiable_xe
+
+            # Ensure the cursor position is within the modifiable range
+            self.main_screen.cursor_x = new_cursor_x
 
         self.stash.renderer.render(no_wait=True)
+
+    def sync_cursor(self, selected_range):
+        """
+        Enforce the main screen cursor position to be the same as what it
+        is shown on the terminal (TextView). This is mainly used for when
+        user touch and change the cursor position/selection.
+        """
+        with self.main_screen.acquire_lock(blocking=False) as locked:
+            if locked:
+                self.main_screen.cursor_xs, self.main_screen.cursor_xe = selected_range
+            # If lock cannot be required, it means other threads are updating it
+            # So there is no need to sync the cursor.
 
     def delete_word(self, rng):
         if rng[0] != rng[1]:  # do nothing if there is any selection
@@ -254,31 +297,6 @@ class ShMiniBuffer(object):
 
     def config_runtime_callback(self, callback):
         self.runtime_callback = callback
-
-    @property
-    def x_modifiable(self):
-        """
-        The index where chars start to be modifiable. Modifiable chars are
-        those input text that can still be edited by users. Any characters
-        before a linebreak is not modifiable.
-        :rtype: int
-        """
-        idx = self.chars.rfind('\n')
-        return idx + 1 if idx != -1 else 0
-
-    @property
-    def modifiable_chars(self):
-        """
-        :rtype: str: modifiable characters
-        """
-        return self.chars[self.x_modifiable:]
-
-    @modifiable_chars.setter
-    def modifiable_chars(self, value):
-        """
-        :param str value: New value for the modifiable chars
-        """
-        self.chars = self.chars[: self.x_modifiable] + value
 
 
 class ShStream(object):
