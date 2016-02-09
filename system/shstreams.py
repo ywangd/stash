@@ -185,7 +185,7 @@ class ShMiniBuffer(object):
             idx_lf = max(self.chars.rfind('\n'), self.chars.rfind('\0'))
             if idx_lf != -1:
                 self.stash.io.push(self.chars[:idx_lf + 1])
-                self.chars = self.chars[idx_lf + 1:]
+                self.chars = self.chars[idx_lf + 1:]  # keep size of chars under control
                 if self.runtime_callback is not None:
                     # When a script is running, all input are considered directed
                     # to the running script.
@@ -378,6 +378,7 @@ class ShStream(object):
         :param list args: arguments to pass to event handlers.
         """
 
+        # noinspection PyCallingNonCallable
         self.dispatch_handler[event](*args)
 
         if kwargs.get("reset", True):

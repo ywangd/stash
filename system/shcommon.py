@@ -223,7 +223,7 @@ class Control(object):
     #: *Delete*: Is ignored.
     DEL = u"\u007f"
 
-    #: *Control sequence introducer*: An equavalent for ``ESC [``.
+    #: *Control sequence introducer*: An equivalent for ``ESC [``.
     CSI = u"\u009b"
 
 

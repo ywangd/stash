@@ -127,10 +127,19 @@ class ShSequentialScreen(object):
 
     @property
     def cursor_x(self):
+        """
+        Note this method returns both bounds of cursor as a tuple.
+        :rtype: (int, int)
+        """
         return self.cursor_xs, self.cursor_xe
 
     @cursor_x.setter
     def cursor_x(self, value):
+        """
+        This method sets both bounds of the cursor to the same value.
+        :param int value: New value for both bounds of the cursor
+        :return:
+        """
         self.cursor_xs = self.cursor_xe = value
 
     @property
@@ -142,13 +151,17 @@ class ShSequentialScreen(object):
 
     @property
     def text_length(self):
+        """
+        :rtype: int
+        """
         return len(self._buffer)
 
     @property
     def renderable_chars(self):
         """
-        Note this return a list of ShChar not string.
-        Trailing characters that need to be re-rendered.
+        Trailing characters that need to be re-rendered (this is not the same
+        as modifiable chars).
+        Note this return a list of ShChar not a String.
         :rtype: [ShChar]
         """
         _, rbound = self.get_bounds()
@@ -157,8 +170,8 @@ class ShSequentialScreen(object):
     @property
     def x_modifiable(self):
         """
-        The location where characters can be modified by users. The value
-        is relative to beginning of the screen buffer.
+        The location where characters start to be modifiable by users. The value
+        is relative to the beginning of screen buffer.
         :rtype: int
         """
         # The position is either the x_drawend or last LF location plus one,
@@ -171,45 +184,46 @@ class ShSequentialScreen(object):
 
     @property
     def modifiable_range(self):
+        """
+        The range of modifiable characters. Values are relative to the
+        beginning of screen buffer.
+        :rtype: (int, int)
+        """
         return self.x_modifiable, self.text_length
 
     @property
     def modifiable_chars(self):
         """
+        A string represents the characters that are in the modifiable range.
         :rtype: str
         """
-        return ''.join(self._buffer[idx].data
-                       for idx in range(self.x_modifiable, len(self._buffer)))
+        return ''.join(self._buffer[idx].data for idx in range(*self.modifiable_range))
 
     @modifiable_chars.setter
     def modifiable_chars(self, s):
         """
-        Set the modifiable_chars to the given string.
+        Set the modifiable_chars to the given string using default Char properties.
+        This method is only called by UI delegate side, i.e. NOT running scripts.
         :param str s: A new value for modifiable_chars.
         """
-        self.replace_in_range((self.x_modifiable, len(self._buffer)), s)
+        self.replace_in_range(self.modifiable_range, s)
 
     @contextmanager
     def acquire_lock(self, blocking=True):
         """
         Lock the screen for modification so that it will not be corrupted.
+        :param blocking: By default the method blocks until a lock is acquired.
         """
         try:
             locked = self.lock.acquire(blocking)
-            # if self.debug:
-            #     self.logger.debug('Lock Acquired')
             yield locked
         finally:
-            if locked:
+            if self.lock.locked():
                 self.lock.release()
-            # if self.debug:
-            #     self.logger.debug('Lock Released')
 
-    def is_locked(self):
-        return self.lock.locked()
-            
     def get_bounds(self):
         """
+        Get the left and right intact bounds of the screen buffer.
         The bounds could become negative if entire screen is flushed out before
         any rendering. In this case, the bounds need to be adjusted accordingly.
         :rtype (int, int):
@@ -220,7 +234,7 @@ class ShSequentialScreen(object):
 
     def clean(self):
         """
-        Mark everything is rendered.
+        Mark everything as rendered.
         """
         self.intact_left_bound = 0
         self.intact_right_bound = len(self._buffer)
@@ -283,7 +297,7 @@ class ShSequentialScreen(object):
             self.x_drawend = self.cursor_xs
 
         nlf = s.count('\n')
-        if nlf > 0:
+        if nlf > 0:  # ensure max number of lines is kept
             self.nlines += nlf
             self._ensure_nlines_max()
 
@@ -352,8 +366,9 @@ class ShSequentialRenderer(object):
     A specific renderer for `ShSequentialScreen`. It does its job by
     building texts from the in-memory screen and insert them to the
     UI terminal.
+
     :param ShSequentialScreen screen: In memory screen
-    :param system.shterminal.ShTerminal terminal: The real UI terminal
+    :param ShTerminal terminal: The real UI terminal
     """
     FG_COLORS = {
         'black': BlackColor,
@@ -486,7 +501,7 @@ class ShSequentialRenderer(object):
         # Lock screen to get atomic information
         with self.screen.acquire_lock():
             intact_left_bound, intact_right_bound = self.screen.get_bounds()
-            screen_buffer_length = len(self.screen._buffer)
+            screen_buffer_length = self.screen.text_length
             cursor_xs, cursor_xe = self.screen.cursor_x
             renderable_chars = self.screen.renderable_chars
             self.screen.clean()
