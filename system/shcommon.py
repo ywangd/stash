@@ -125,6 +125,12 @@ def is_binary_file(filename, nbytes=1024):
             return False
 
 
+def sh_delay(func, nseconds):
+    t = threading.Timer(nseconds, func)
+    t.start()
+    return t
+
+
 def sh_background(name=None):
     def wrap(func):
         @functools.wraps(func)

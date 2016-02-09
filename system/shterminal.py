@@ -56,7 +56,7 @@ class ShTVDelegate(object):
                 # If the trailing string is shorter than the modifiable chars,
                 # this means there are valid deletion for the modifiable chars
                 # and we should keep it.
-                if len(s) < len(self.mini_buffer.modifiable_chars):
+                if len(s) < len(self.mini_buffer.modifiable_string):
                     self.mini_buffer.feed(None, s)
                     self.mini_buffer.set_cursor(0, whence=0)
                 else:  # nothing should be deleted

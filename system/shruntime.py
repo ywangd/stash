@@ -600,7 +600,7 @@ class ShRuntime(object):
     def history_up(self):
         # Save the unfinished line user is typing before showing entries from history
         if self.idx_to_history == -1:
-            self.history_templine = self.stash.mini_buffer.modifiable_chars.rstrip()
+            self.history_templine = self.stash.mini_buffer.modifiable_string.rstrip()
 
         self.idx_to_history += 1
         if self.idx_to_history >= len(self.history):
@@ -639,7 +639,7 @@ class ShRuntime(object):
         if sender.selected_row >= 0:
             # Save the unfinished line user is typing before showing entries from history
             if self.idx_to_history == -1:
-                self.history_templine = self.stash.mini_buffer.modifiable_chars.rstrip()
+                self.history_templine = self.stash.mini_buffer.modifiable_string.rstrip()
             self.stash.mini_buffer.feed(None, sender.items[sender.selected_row])
             self.idx_to_history = sender.selected_row
 

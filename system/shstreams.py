@@ -49,14 +49,14 @@ class ShMiniBuffer(object):
         return idx + 1 if idx != -1 else 0
 
     @property
-    def modifiable_chars(self):
+    def modifiable_string(self):
         """
         :rtype: str: modifiable characters
         """
         return self.chars[self.x_modifiable:]
 
-    @modifiable_chars.setter
-    def modifiable_chars(self, value):
+    @modifiable_string.setter
+    def modifiable_string(self, value):
         """
         :param str value: New value for the modifiable chars
         """
@@ -111,8 +111,8 @@ class ShMiniBuffer(object):
 
                     if completed != incomplete:
                         with self.main_screen.acquire_lock():
-                            self.modifiable_chars = completed + self.chars[rng_adjusted[0]:]
-                            self.main_screen.modifiable_chars = self.modifiable_chars
+                            self.modifiable_string = completed + self.chars[rng_adjusted[0]:]
+                            self.main_screen.modifiable_string = self.modifiable_string
                             self.main_screen.cursor_x = self.main_screen.x_modifiable + len(completed)
 
                     elif len(possibilities) > 0:  # TODO: handle max possibilities checking
@@ -122,12 +122,12 @@ class ShMiniBuffer(object):
                             render_it=False  # do not render to avoid dead lock on UI thread
                         )
                         with self.main_screen.acquire_lock():
-                            self.main_screen.modifiable_chars = self.modifiable_chars
+                            self.main_screen.modifiable_string = self.modifiable_string
                             self.main_screen.cursor_x = self.main_screen.x_modifiable + len(incomplete)
 
                     else:  # no completion can be achieved
                         with self.main_screen.acquire_lock():
-                            self.main_screen.modifiable_chars = self.modifiable_chars
+                            self.main_screen.modifiable_string = self.modifiable_string
                             self.main_screen.cursor_x = self.main_screen.x_modifiable + len(incomplete)
 
                 except Exception as e:  # TODO: better error handling
@@ -135,7 +135,7 @@ class ShMiniBuffer(object):
                         u'\nauto-completion error: %s\n%s' % (repr(e), self.stash.runtime.get_prompt()),
                         render_it=False)
                     with self.main_screen.acquire_lock():
-                        self.main_screen.modifiable_chars = self.modifiable_chars
+                        self.main_screen.modifiable_string = self.modifiable_string
                         self.main_screen.cursor_x = self.main_screen.x_modifiable + len(incomplete)
 
                 self.stash.renderer.render(no_wait=True)
@@ -238,15 +238,15 @@ class ShMiniBuffer(object):
         if rng[0] != rng[1]:  # do nothing if there is any selection
             return
 
-        modifiable_chars = self.modifiable_chars  # nothing to be deleted
-        if len(self.modifiable_chars) == 0:
+        modifiable_string = self.modifiable_string  # nothing to be deleted
+        if len(self.modifiable_string) == 0:
             return
 
         rng_adjusted = self._adjust_range(rng)
-        deletable_chars = modifiable_chars[: rng_adjusted[0]]
+        deletable_chars = modifiable_string[: rng_adjusted[0]]
         left_chars = ''.join(self._pattern_word_split.findall(deletable_chars)[:-1])
-        self.modifiable_chars = left_chars + modifiable_chars[rng_adjusted[0]:]
-        self.main_screen.modifiable_chars = self.modifiable_chars
+        self.modifiable_string = left_chars + modifiable_string[rng_adjusted[0]:]
+        self.main_screen.modifiable_string = self.modifiable_string
         self.set_cursor(len(left_chars))
 
         self.stash.renderer.render(no_wait=True)
@@ -267,8 +267,8 @@ class ShMiniBuffer(object):
         # this means additional output has been put on the terminal
         # after the event. In this case, simply set the range at the end of
         # the existing input buffer.
-        modifiable_chars = self.modifiable_chars
-        if modifiable_chars != '' and tv_text[-len(modifiable_chars):] != modifiable_chars:
+        modifiable_string = self.modifiable_string
+        if modifiable_string != '' and tv_text[-len(modifiable_string):] != modifiable_string:
             xs_adjusted = xe_adjusted = length
 
         else:
@@ -287,14 +287,14 @@ class ShMiniBuffer(object):
     def _ensure_main_screen_consistency(self):
         # If the main screen's modifiable character is different from the input
         # buffer, it means more output has been put onto the main screen after
-        # last update from the mini buffer. So the modifiable_chars need to be
+        # last update from the mini buffer. So the modifiable_string need to be
         # reset at the new x_modifiable location.
         # NOTE this must be called inside a main screen locking session
-        if self.modifiable_chars != self.main_screen.modifiable_chars:
+        if self.modifiable_string != self.main_screen.modifiable_string:
             if self.debug:
                 self.logger.debug('Inconsistent mini_buffer [%s] main_screen [%s]' %
-                                  (self.modifiable_chars, self.main_screen.modifiable_chars))
-            self.main_screen.modifiable_chars = self.modifiable_chars
+                                  (self.modifiable_string, self.main_screen.modifiable_string))
+            self.main_screen.modifiable_string = self.modifiable_string
 
     def config_runtime_callback(self, callback):
         self.runtime_callback = callback

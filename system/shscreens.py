@@ -15,7 +15,7 @@ except ImportError:
     from dummyobjc_util import *
 
 from .shcommon import IN_PYTHONISTA, ON_IOS_8
-from .shcommon import Graphics as graphics, Control as ctrl, Escape as esc
+from .shcommon import sh_delay, Graphics as graphics
 
 NSMutableAttributedString = ObjCClass('NSMutableAttributedString')
 UIFont = ObjCClass('UIFont')
@@ -165,7 +165,7 @@ class ShSequentialScreen(object):
         :rtype: [ShChar]
         """
         _, rbound = self.get_bounds()
-        return [self._buffer[x] for x in range(rbound, len(self._buffer))]
+        return [self._buffer[x] for x in xrange(rbound, len(self._buffer))]
 
     @property
     def x_modifiable(self):
@@ -176,7 +176,7 @@ class ShSequentialScreen(object):
         """
         # The position is either the x_drawend or last LF location plus one,
         # whichever is larger.
-        for idx in reversed(range(self.x_drawend, len(self._buffer))):
+        for idx in xrange(self.text_length - 1, self.x_drawend - 1, -1):
             if self._buffer[idx].data == '\n':
                 return idx + 1
         else:
@@ -192,19 +192,19 @@ class ShSequentialScreen(object):
         return self.x_modifiable, self.text_length
 
     @property
-    def modifiable_chars(self):
+    def modifiable_string(self):
         """
         A string represents the characters that are in the modifiable range.
         :rtype: str
         """
-        return ''.join(self._buffer[idx].data for idx in range(*self.modifiable_range))
+        return ''.join(self._buffer[idx].data for idx in xrange(*self.modifiable_range))
 
-    @modifiable_chars.setter
-    def modifiable_chars(self, s):
+    @modifiable_string.setter
+    def modifiable_string(self, s):
         """
-        Set the modifiable_chars to the given string using default Char properties.
+        Set the modifiable_string to the given string using default Char properties.
         This method is only called by UI delegate side, i.e. NOT running scripts.
-        :param str s: A new value for modifiable_chars.
+        :param str s: A new value for modifiable_string.
         """
         self.replace_in_range(self.modifiable_range, s)
 
@@ -307,7 +307,7 @@ class ShSequentialScreen(object):
         :param n:
         :return:
         """
-        for _ in range(n):
+        for _ in xrange(n):
             self._buffer.pop()
             if len(self._buffer) < self.intact_right_bound:
                 self.intact_right_bound = len(self._buffer)
@@ -317,9 +317,9 @@ class ShSequentialScreen(object):
         Keep number of lines under control
         """
         char_count = line_count = 0
-        for _ in range(self.nlines_max, self.nlines):
+        for _ in xrange(self.nlines_max, self.nlines):
             # Remove the top line
-            for idx in range(len(self._buffer)):
+            for idx in xrange(self.text_length):
                 char_count += 1
                 if self._buffer.popleft().data == '\n':
                     line_count += 1
@@ -331,6 +331,16 @@ class ShSequentialScreen(object):
         self.cursor_xe -= char_count
         self.x_drawend -= char_count
         self.nlines -= line_count
+
+    def _find_nth_lf_from_end(self, n=1):
+        for idx in xrange(self.text_length - 1, -1, -1):
+            if self._buffer[idx].data == '\n':
+                n -= 1
+                if n == 0:
+                    return idx
+
+    def carriage_return(self):
+        self.cursor_x = self._find_nth_lf_from_end() + 1
 
     # noinspection PyProtectedMember
     def select_graphic_rendition(self, *attrs):
@@ -352,12 +362,6 @@ class ShSequentialScreen(object):
                 replace = DEFAULT_CHAR._asdict()
 
         self.attrs = self.attrs._replace(**replace)
-
-
-def sh_delay(func, nseconds):
-    t = threading.Timer(nseconds, func)
-    t.start()
-    return t
 
 
 class ShSequentialRenderer(object):
@@ -550,7 +554,7 @@ class ShSequentialRenderer(object):
             # Set the cursor position. This makes terminal and main screen cursors in sync
             self.terminal.selected_range = (cursor_xs, cursor_xe)
 
-            # Ensure cursor line is visible by scroll  to the end of the text
+            # Ensure cursor line is visible by scroll to the end of the text
             self.terminal.scroll_to_end()
 
         else:  # For debugging on PC
