@@ -6,12 +6,16 @@ import os
 import sys
 
 module_names = (
-    'system.shutil',
+    'stash',
+    'system.shcommon',
     'system.shstreams',
     'system.shscreens',
     'system.shterminal',
     'system.shui',
     'system.shio',
+    'system.shiowrapper',
+    'system.shparsers',
+    'system.shruntime',
     'system.shthreads',
 )
 
@@ -23,22 +27,15 @@ if os.path.isfile(os.path.join(_LAUNCH_DIR, 'stash.py')) \
         and os.path.isdir(os.path.join(_LAUNCH_DIR, 'system')):
 
     if 'stash' in sys.modules:
-        stash = sys.modules['stash']
-        reload(stash)
         for name in module_names:
-            if name in sys.modules:
-                reload(sys.modules[name])
+            sys.modules.pop(name)
     import stash
 
 else:
     if 'stash.stash' in sys.modules:
-        stash = sys.modules['stash.stash']
-        reload(stash)
         for name in module_names:
-            if name in sys.modules:
-                reload(sys.modules['stash.' + name])
-    else:
-        from stash import stash
+            sys.modules.pop('stash.' + name)
+    from stash import stash
 
 # noinspection PyProtectedMember
 debug = (
