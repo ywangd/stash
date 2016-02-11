@@ -308,10 +308,18 @@ class ShStream(object):
     and dispatches events based on what it sees.
     """
 
+    #: Control sequences, which don't require any arguments
+    basic = {
+        ctrl.BS: 'backspace',
+        ctrl.CR: 'carriage_return',
+    }
+
     #: CSI escape sequences -- ``CSI P1;P2;...;Pn <fn>``.
     csi = {
-        esc.RIS: "reset",
-        esc.SGR: "select_graphic_rendition",
+        esc.RIS: 'reset',
+        esc.DCH: 'delete_characters',
+        esc.EL: 'erase_in_line',
+        esc.SGR: 'select_graphic_rendition',
     }
 
     STATE_STREAM = 0
@@ -327,14 +335,9 @@ class ShStream(object):
         self.debug = debug
         self.logger = logging.getLogger('StaSh.Stream')
 
-        self.dispatch_handler = {
-            'draw': self.main_screen.draw,
-            'reset': self.main_screen.reset,
-            'select_graphic_rendition': self.main_screen.select_graphic_rendition,
-        }
-
         self.reset()
 
+    # noinspection PyAttributeOutsideInit
     def reset(self):
         """Reset state to ``"stream"`` and empty parameter attributes."""
         self.state = self.STATE_STREAM
@@ -379,24 +382,33 @@ class ShStream(object):
         """
 
         # noinspection PyCallingNonCallable
-        self.dispatch_handler[event](*args)
+        try:
+            handler = getattr(self.main_screen, event)
+            handler(*args)
+        except AttributeError:
+            pass
 
-        if kwargs.get("reset", True):
+        if kwargs.get('reset', True):
             self.reset()
 
     def _stream(self, char):
         """Processes a character when in the default ``"stream"`` state."""
-        if char not in (ctrl.NUL, ctrl.DEL, ctrl.ESC, ctrl.CSI):
-            self.dispatch("draw", char, reset=False)
+        if char in self.basic:
+            self.dispatch(self.basic[char])
+
+        elif char not in (ctrl.NUL, ctrl.DEL, ctrl.ESC, ctrl.CSI):
+            self.dispatch('draw', char, reset=False)
+
         elif char == ctrl.ESC:
             self.state = self.STATE_ESCAPE
+
         elif char == ctrl.CSI:
             self.state = self.STATE_ARGUMENTS
 
     def _escape(self, char):
         """Handles characters seen when in an escape sequence.
         """
-        if char == "[":
+        if char == '[':
             self.state = self.STATE_ARGUMENTS
         else:  # TODO: all other escapes are ignored
             self.dispatch('draw', char)
@@ -413,7 +425,7 @@ class ShStream(object):
             self.current += char
         else:
             self.params.append(min(int(self.current or 0), 9999))
-            if char == ";":  # multiple parameters
-                self.current = ""
+            if char == ';':  # multiple parameters
+                self.current = ''
             else:
                 self.dispatch(self.csi[char], *self.params)

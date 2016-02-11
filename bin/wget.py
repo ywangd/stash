@@ -49,7 +49,8 @@ def main(args):
                     status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
                 else:
                     status = "%10d" % file_size_dl
-                print status
+                print '\r' + status,
+            print
 
     except:
         print 'invalid url: %s' % url

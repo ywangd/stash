@@ -58,7 +58,7 @@ class ShRuntime(object):
                          STASH_ROOT=_STASH_ROOT,
                          BIN_PATH=os.path.join(_STASH_ROOT, 'bin'),
                          # Must have a placeholder because it is needed before _DEFAULT_RC is loaded
-                         PROMPT='[\W]$ ',  # referenced stream feed
+                         PROMPT='[\W]$ ',
                          PYTHONISTA_ROOT=os.path.dirname(sys.executable)),
             sys_stdin=self.stash.io,
             sys_stdout=self.stash.io,

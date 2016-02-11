@@ -6,6 +6,7 @@ import logging
 from time import time
 
 import threading
+import itertools
 from collections import deque, namedtuple
 from contextlib import contextmanager
 
@@ -14,7 +15,8 @@ try:
 except ImportError:
     from dummyobjc_util import *
 
-from .shcommon import IN_PYTHONISTA, ON_IOS_8
+from .shcommon import IN_PYTHONISTA, ON_IOS_8, _SYS_STDOUT
+# noinspection PyPep8Naming
 from .shcommon import sh_delay, Graphics as graphics
 
 NSMutableAttributedString = ObjCClass('NSMutableAttributedString')
@@ -75,6 +77,10 @@ class ShChar(_Char):
 
 
 DEFAULT_CHAR = ShChar(data=' ', fg='default', bg='default')
+DEFAULT_LINE = itertools.repeat(DEFAULT_CHAR)
+
+def take(n, iterable):
+    return list(itertools.islice(iterable, n))
 
 # noinspection PyAttributeOutsideInit
 class ShSequentialScreen(object):
@@ -106,16 +112,19 @@ class ShSequentialScreen(object):
         *args is needed because dispatch from stream always call handlers
         with at least one parameter (even it is a dummy 0).
         """
-        # empty the buffer
+        # Empty the buffer
         self._buffer.clear()
 
         # The cursor position
         self.cursor_xs = self.cursor_xe = 0
 
         # This is the location where modifiable chars start. It is immediately
-        # after where latest program write ends.
+        # after where latest program write ends. This property is used to calculate
+        # modifiable range and is really only useful for User side actions.
         self.x_drawend = 0
-        # The left and right bounds of rendered chars
+
+        # The left and right bounds are helpers to renderer for performance.
+        # Only texts outside of the bounds get rebuilt and re-rendered.
         # All chars before this location must be removed from terminal text.
         # Note this value is relative to start of Terminal text.
         self.intact_left_bound = 0
@@ -147,7 +156,7 @@ class ShSequentialScreen(object):
         """
         :rtype: str
         """
-        return ''.join(char.data for char in self._buffer)
+        return ''.join(c.data for c in self._buffer)
 
     @property
     def text_length(self):
@@ -214,12 +223,26 @@ class ShSequentialScreen(object):
         Lock the screen for modification so that it will not be corrupted.
         :param blocking: By default the method blocks until a lock is acquired.
         """
+        locked = self.lock.acquire(blocking)
         try:
-            locked = self.lock.acquire(blocking)
             yield locked
         finally:
-            if self.lock.locked():
+            if locked:
                 self.lock.release()
+
+    @contextmanager
+    def buffer_rotate(self, n):
+        """
+        This method is used for when operations like replacing, insertion, deletion
+        are needed in the middle of the character buffer.
+        :param n:
+        :return:
+        """
+        self._buffer.rotate(n)
+        try:
+            yield
+        finally:
+            self._buffer.rotate(-n)
 
     def get_bounds(self):
         """
@@ -238,23 +261,6 @@ class ShSequentialScreen(object):
         """
         self.intact_left_bound = 0
         self.intact_right_bound = len(self._buffer)
-
-    # noinspection PyProtectedMember
-    def draw(self, c):
-        """
-        Add given char to the right end of the buffer and update the last draw
-        location. This method should ONLY be called by ShStream.
-        :param str c: A new character to draw
-        """
-        if len(self._buffer) < self.intact_right_bound:
-            self.intact_right_bound = len(self._buffer)
-
-        self._buffer.append(self.attrs._replace(data=c))
-        self.cursor_x = self.x_drawend = len(self._buffer)
-
-        if c == '\n':
-            self.nlines += 1
-            self._ensure_nlines_max()
 
     # noinspection PyProtectedMember
     def replace_in_range(self, rng, s, relative_to_x_modifiable=False, set_drawend=False):
@@ -279,8 +285,8 @@ class ShSequentialScreen(object):
             self.intact_right_bound = rng[0]
 
         rotate_n = max(len(self._buffer) - rng[1], 0)
+        self._buffer.rotate(rotate_n)  # rotate buffer first so deletion is possible
         try:
-            self._buffer.rotate(rotate_n)  # rotate buffer first so deletion is possible
             if rng[0] != rng[1]:  # delete chars if necessary
                 self._pop_chars(rng[1] - rng[0])
             # The newly inserted chars are always of default properties
@@ -309,8 +315,8 @@ class ShSequentialScreen(object):
         """
         for _ in xrange(n):
             self._buffer.pop()
-            if len(self._buffer) < self.intact_right_bound:
-                self.intact_right_bound = len(self._buffer)
+        if self.text_length < self.intact_right_bound:
+            self.intact_right_bound = self.text_length
 
     def _ensure_nlines_max(self):
         """
@@ -325,22 +331,163 @@ class ShSequentialScreen(object):
                     line_count += 1
                     break
 
-        self.intact_left_bound += char_count
-        self.intact_right_bound -= char_count
-        self.cursor_xs -= char_count
-        self.cursor_xe -= char_count
-        self.x_drawend -= char_count
-        self.nlines -= line_count
+        if char_count > 0:
+            self.intact_left_bound += char_count
+            self.intact_right_bound -= char_count
+            self.cursor_xs -= char_count
+            self.cursor_xe -= char_count
+            self.x_drawend -= char_count
 
-    def _find_nth_lf_from_end(self, n=1):
-        for idx in xrange(self.text_length - 1, -1, -1):
-            if self._buffer[idx].data == '\n':
-                n -= 1
-                if n == 0:
-                    return idx
+        if line_count > 0:
+            self.nlines -= line_count
+
+    def _rfind_nth_nl(self, from_x=None, n=1, default=None):
+        if from_x is None:
+            from_x = self.cursor_xs
+        for idx in xrange(from_x, -1, -1):
+            try:  # try for when from_x is equal to buffer length (i.e. at the end of the buffer)
+                if self._buffer[idx].data == '\n':
+                    n -= 1
+                    if n == 0:
+                        return idx
+            except IndexError:
+                pass
+        else:
+            return default
+                
+    def _find_nth_nl(self, from_x=None, n=1, default=None):
+        if from_x is None:
+            from_x = self.cursor_xs
+        for idx in xrange(from_x, self.text_length):
+            try:
+                if self._buffer[idx].data == '\n':
+                    n -= 1
+                    if n == 0:
+                        return idx
+            except IndexError:
+                pass
+        else:
+            return default
+
+    # noinspection PyProtectedMember
+    def draw(self, c):
+        """
+        Add given char to the right end of the buffer and update the last draw
+        location. This method should ONLY be called by ShStream.
+        :param str c: A new character to draw
+        """
+
+        if self.cursor_xs == self.text_length:  # cursor is at the end
+            if self.text_length < self.intact_right_bound:
+                self.intact_right_bound = self.text_length
+            self._buffer.append(self.attrs._replace(data=c))
+            self.cursor_x = self.x_drawend = self.text_length
+
+        else:  # cursor is in the middle
+            # First rotate the text is that to the right of cursor
+            with self.buffer_rotate(self.text_length - self.cursor_xs - 1):
+                # Remove the character at the cursor and append new character
+                # This is effectively character REPLACING operation
+                c_poped = self._buffer.pop()
+                self._buffer.append(self.attrs._replace(data=c))
+                # The replacing must be within a single line, so the newline
+                # character cannot be replaced and instead a new char is inserted
+                # right before the newline.
+                # Also when the new character is a newline, it is effectively an
+                # insertion NOT replacement (i.e. it pushes everything following
+                # it to the next line).
+                if c == '\n' or c_poped.data == '\n':
+                    self._buffer.append(c_poped)
+                # Update the cursor and drawing end
+                self.cursor_x = self.x_drawend = self.cursor_xs + 1
+                # Update the intact right bound
+                if self.x_drawend < self.intact_right_bound:
+                    self.intact_right_bound = self.x_drawend
+
+        # Count the number of lines
+        if c == '\n':
+            self.nlines += 1
+            self._ensure_nlines_max()
+
+    def backspace(self):
+        """
+        Move cursor back one character. Do not cross lines.
+        """
+        # _SYS_STDOUT.write('backspace\n')
+        cursor_xs = self.cursor_xs - 1
+        try:
+            if self._buffer[cursor_xs] != '\n':
+                self.cursor_x = cursor_xs
+        except IndexError:
+            self.cursor_x = 0
 
     def carriage_return(self):
-        self.cursor_x = self._find_nth_lf_from_end() + 1
+        """
+        Process \r to move cursor to the beginning of the current line.
+        """
+        # _SYS_STDOUT.write('carriage_return\n')
+        self.cursor_x = self._rfind_nth_nl(default=-1) + 1
+
+    def delete_characters(self, count=0):
+        """
+        Delete n characters from cursor including cursor within the current line.
+        :param count: If count is 0, delete till the next newline.
+        """
+        # _SYS_STDOUT.write('delete_characters\n')
+        if self.cursor_xs == self.text_length or self._buffer[self.cursor_xs] == '\n':
+            return
+        if count == 0:  # delete till the next newline
+            count = self.text_length
+        with self.buffer_rotate(-self.cursor_xs):
+            for _ in xrange(min(count, self.text_length - self.cursor_xs)):
+                c = self._buffer.popleft()
+                if c.data == '\n':  # do not delete newline
+                    self._buffer.appendleft(c)
+                    break
+            self.x_drawend = self.cursor_xs
+            if self.x_drawend < self.intact_right_bound:
+                self.intact_right_bound = self.x_drawend
+
+    def erase_in_line(self, mode=0):
+        """
+        Erase a line with different mode. Note the newline character is NOT deleted.
+        :param mode:
+        :return:
+        """
+        # _SYS_STDOUT.write('erase_in_line\n')
+        # Calculate the range for erase
+        if mode == 0:  # erase from cursor to end of line, including cursor
+            rng = [self.cursor_xs, self._find_nth_nl(default=self.text_length)]
+            try:  # do not include the newline character
+                if self._buffer[rng[0]] == '\n':
+                    rng[0] += 1
+            except IndexError:
+                pass
+
+        elif mode == 1:  # erase form beginning of line to cursor, including cursor
+            rng = [self._rfind_nth_nl(default=-1) + 1, min(self.cursor_xs + 1, self.text_length)]
+            try:
+                if self._buffer[rng[1] - 1] == '\n':
+                    rng[1] -= 1
+            except IndexError:
+                pass
+
+        else:  # mode == 2:  # erase the complete line
+            rng = [self._rfind_nth_nl(default=-1) + 1, self._find_nth_nl(default=self.text_length)]
+
+        # fast fail when there is nothing to erase
+        if rng[0] >= rng[1]:
+            return
+
+        # Erase characters in the range
+        with self.buffer_rotate(self.text_length - rng[1]):
+            for _ in xrange(*rng):
+                self._buffer.pop()
+            self._buffer.extend(take(rng[1] - rng[0], DEFAULT_LINE))
+            self.x_drawend = rng[0]
+            # update the intact right bound
+            if self.x_drawend < self.intact_right_bound:
+                self.intact_right_bound = self.x_drawend
 
     # noinspection PyProtectedMember
     def select_graphic_rendition(self, *attrs):

@@ -272,7 +272,6 @@ class Escape(object):
     #: selection. If none were saved, move cursor to home position.
     DECRC = u"8"
 
-
     # "Percent" escape sequences.
     # ---------------------------
 
@@ -285,14 +284,12 @@ class Escape(object):
     #: *Select UTF-8 (obsolete)*.
     UTF8_OBSOLETE = u"8"
 
-
     # "Sharp" escape sequences.
     # -------------------------
 
     #: *Alignment display*: Fill screen with uppercase E's for testing
     #: screen focus and alignment.
     DECALN = u"8"
-
 
     # ECMA-48 CSI sequences.
     # ---------------------

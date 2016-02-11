@@ -538,13 +538,14 @@ class ShExpander(object):
         return fields
 
     def expand_escaped(self, tok):
-        # TODO: more escape characters, e.g. ESC
         if self.debug:
             self.logger.debug(tok)
 
         c = tok[1]
         if c == 't':
             return u'\t', u'\t'
+        if c == 'b':
+            return u'\b', u'\b'
         elif c == 'r':
             return u'\r', u'\r'
         elif c == 'n':
