@@ -191,7 +191,7 @@ class ShTerminal(object):
         self.logger = logging.getLogger('StaSh.Terminal')
 
         self._delegate_view = ui.TextView()
-        self._delegate_view.delegate = stash.user_action_proxy
+        self._delegate_view.delegate = stash.user_action_proxy.tv_delegate
         self.tv_delegate = ShTVDelegate(stash, self, stash.mini_buffer, stash.main_screen)
 
         self.tvo = _ShTerminal.alloc().initWithFrame_(((0, 0), (width, height))).autorelease()

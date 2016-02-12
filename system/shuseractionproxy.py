@@ -18,6 +18,26 @@ class ShUserActionProxy(object):
         self.stash = stash
         self.reset()
 
+        class _TVDelegate(object):
+            # TextView delegate methods
+            def textview_did_begin_editing(self, sender):
+                self.tv_responder.textview_did_begin_editing(sender)
+
+            def textview_did_end_editing(self, sender):
+                self.tv_responder.textview_did_end_editing(sender)
+
+            def textview_should_change(self, sender, rng, replacement):
+                return self.tv_responder.textview_should_change(sender, rng, replacement)
+
+            def textview_did_change(self, sender):
+                self.tv_responder.textview_did_change(sender)
+
+            def textview_did_change_selection(self, sender):
+                self.tv_responder.textview_did_change_selection(sender)
+
+        self.tv_delegate = _TVDelegate()
+
+
     @property
     def vk_responder(self):
         return self._vk_responder or self.stash.ui
@@ -61,28 +81,12 @@ class ShUserActionProxy(object):
     def vk_tapped(self, sender):
         self.vk_responder.vk_tapped(sender)
 
-    # TextView delegate methods
-    def textview_did_begin_editing(self, sender):
-        self.tv_responder.textview_did_begin_editing(sender)
-
-    def textview_did_end_editing(self, sender):
-        self.tv_responder.textview_did_end_editing(sender)
-
-    def textview_should_change(self, sender, rng, replacement):
-        return self.tv_responder.textview_should_change(sender, rng, replacement)
-
-    def textview_did_change(self, sender):
-        self.tv_responder.textview_did_change(sender)
-
-    def textview_did_change_selection(self, sender):
-        self.tv_responder.textview_did_change_selection(sender)
-
     # Virtual key row swipe gesture
     def scrollview_did_scroll(self, sender):
         if self._sv_responder:
             self._sv_responder.scrollview_did_scroll(sender)
         else:
-            sender.scrollview_did_scroll(sender)
+            sender.superview.scrollview_did_scroll(sender)
 
     # Keyboard shortcuts
     def kc_pressed(self, _self, _cmd):
