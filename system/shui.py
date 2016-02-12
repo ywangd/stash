@@ -84,7 +84,7 @@ class ShUI(ui.View):
 
         # TODO: The accessory keys can be moved to a separate class
         self.vks = ShVk(stash, name='vks', flex='WT')
-        self.vks.delegate = self.stash.user_action_proxy
+        self.vks.sv.delegate = self.stash.user_action_proxy
         self.txts.add_subview(self.vks)
         self.vks.background_color = 0.7
 
@@ -102,7 +102,7 @@ class ShUI(ui.View):
         self.k_tab.size_to_fit()
 
         self.k_grp_0 = ShVk(stash, name='k_grp_0', flex='WT')  # vk group 0
-        self.k_grp_0.delegate = self.stash.user_action_proxy
+        self.k_grp_0.sv.delegate = self.stash.user_action_proxy
         self.vks.add_subview(self.k_grp_0)
         self.k_grp_0.background_color = 0.7
         self.k_grp_0.x = self.k_tab.width + k_hspacing
@@ -219,7 +219,7 @@ class ShUI(ui.View):
         self.k_swap.x = self.vks.width - self.k_swap.width
 
         self.k_grp_1 = ShVk(stash, name='k_grp_1', flex='WT')  # vk group 1
-        self.k_grp_1.delegate = self.stash.user_action_proxy
+        self.k_grp_1.sv.delegate = self.stash.user_action_proxy
         self.vks.add_subview(self.k_grp_1)
         self.k_grp_1.background_color = 0.7
         self.k_grp_1.x = self.k_tab.width + k_hspacing
