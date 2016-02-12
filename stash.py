@@ -5,7 +5,7 @@ StaSh - Pythonista Shell
 https://github.com/ywangd/stash
 """
 
-__version__ = '0.6.1a4'
+__version__ = '0.6.1a5'
 
 import os
 import sys

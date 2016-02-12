@@ -34,9 +34,27 @@ class ShUserActionProxy(object):
     def tv_responder(self, value):
         self._tv_responder = value
 
+    @property
+    def sv_responder(self):
+        return self._sv_responder
+
+    @sv_responder.setter
+    def sv_responder(self, value):
+        self._sv_responder = value
+
+    @property
+    def kc_responder(self):
+        return self._kc_responder or self.stash.terminal
+
+    @kc_responder.setter
+    def kc_responder(self, value):
+        self._kc_responder = value
+
     def reset(self):
         self._vk_responder = None
         self._tv_responder = None
+        self._sv_responder = None
+        self._kc_responder = None  # for keyCommands
 
     # --------------------- Proxy -----------------------------------------
     # Buttons
@@ -61,9 +79,12 @@ class ShUserActionProxy(object):
 
     # Virtual key row swipe gesture
     def scrollview_did_scroll(self, sender):
-        pass
+        if self._sv_responder:
+            self._sv_responder.scrollview_did_scroll(sender)
+        else:
+            sender.scrollview_did_scroll(sender)
 
     # Keyboard shortcuts
-    def keyCommands(self, modifier, key):
-        pass
+    def kc_pressed(self, _self, _cmd):
+        self.kc_responder.kc_handlers[(_cmd.input, _cmd.modifierFlags)](_self, _cmd)
 

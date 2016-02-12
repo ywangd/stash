@@ -12,6 +12,7 @@ except ImportError:
     import dummyui as ui
     from .dummyobjc_util import *
 
+from .shcommon import CTRL_KEY_FLAG
 
 # ObjC related stuff
 UIFont = ObjCClass('UIFont')
@@ -97,27 +98,27 @@ class ShTerminal(object):
         # Create the actual TextView by subclass SUITextView
         UIKeyCommand = ObjCClass('UIKeyCommand')
 
+        kc_proxy = self.stash.user_action_proxy.kc_pressed
+
         def keyCommands(_self, _cmd):
-            ctrl_key_flag = (1 << 18)  # Control key
-            cmd_key_flag = (1 << 20)  # Command key
             key_commands = [
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('C', ctrl_key_flag, 'controlCAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('D', ctrl_key_flag, 'controlDAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('P', ctrl_key_flag, 'controlPAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('N', ctrl_key_flag, 'controlNAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('U', ctrl_key_flag, 'controlUAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('A', ctrl_key_flag, 'controlAAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('E', ctrl_key_flag, 'controlEAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W', ctrl_key_flag, 'controlWAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('L', ctrl_key_flag, 'controlLAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('Z', ctrl_key_flag, 'controlZAction'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('C', CTRL_KEY_FLAG, 'kc_proxy'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('D', CTRL_KEY_FLAG, 'kc_proxy'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('P', CTRL_KEY_FLAG, 'kc_proxy'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('N', CTRL_KEY_FLAG, 'kc_proxy'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('U', CTRL_KEY_FLAG, 'kc_proxy'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('A', CTRL_KEY_FLAG, 'kc_proxy'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('E', CTRL_KEY_FLAG, 'kc_proxy'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W', CTRL_KEY_FLAG, 'kc_proxy'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('L', CTRL_KEY_FLAG, 'kc_proxy'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('Z', CTRL_KEY_FLAG, 'kc_proxy'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputUpArrow',
                                                                        0,
-                                                                       'arrowUpAction'),
+                                                                       'kc_proxy'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputDownArrow',
                                                                        0,
-                                                                       'arrowDownAction'),
-            ]
+                                                                       'kc_proxy'),
+                ]
             commands = ns(key_commands)
             return commands.ptr
 
@@ -165,14 +166,23 @@ class ShTerminal(object):
             ui = stash.ui
             ui.vk_tapped(ui.k_hdn)
 
+        self.kc_handlers = {
+            ('C', CTRL_KEY_FLAG): controlCAction,
+            ('D', CTRL_KEY_FLAG): controlDAction,
+            ('P', CTRL_KEY_FLAG): controlPAction,
+            ('N', CTRL_KEY_FLAG): controlNAction,
+            ('U', CTRL_KEY_FLAG): controlUAction,
+            ('A', CTRL_KEY_FLAG): controlAAction,
+            ('E', CTRL_KEY_FLAG): controlEAction,
+            ('W', CTRL_KEY_FLAG): controlWAction,
+            ('L', CTRL_KEY_FLAG): controlLAction,
+            ('Z', CTRL_KEY_FLAG): controlZAction,
+            ('UIKeyInputUpArrow', 0): arrowUpAction,
+            ('UIKeyInputDownArrow', 0): arrowDownAction,
+        }
+
         _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView'),
-                                        [keyCommands,
-                                         controlCAction, controlDAction,
-                                         controlPAction, controlNAction,
-                                         controlUAction, controlAAction, controlEAction,
-                                         controlWAction, controlLAction,
-                                         controlZAction,
-                                         arrowUpAction, arrowDownAction])
+                                        [keyCommands, kc_proxy])
 
         self.is_editing = False
 
