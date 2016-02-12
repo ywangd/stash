@@ -1,9 +1,9 @@
 # coding: utf-8
 """
-
+Centralize handlers for various user actions.
 """
 
-
+# noinspection PyAttributeOutsideInit,PyDocstring
 class ShUserActionProxy(object):
     """
     The purpose of this object is to be a centralized place to respond
@@ -16,38 +16,47 @@ class ShUserActionProxy(object):
 
     def __init__(self, stash):
         self.stash = stash
+        self.reset()
 
+    @property
+    def vk_responder(self):
+        return self._vk_responder or self.stash.ui
+
+    @vk_responder.setter
+    def vk_responder(self, value):
+        self._vk_responder = value
+
+    @property
+    def tv_responder(self):
+        return self._tv_responder or self.stash.terminal.tv_delegate
+
+    @tv_responder.setter
+    def tv_responder(self, value):
+        self._tv_responder = value
+
+    def reset(self):
+        self._vk_responder = None
+        self._tv_responder = None
+
+    # Buttons
     def vk_tapped(self, sender):
-        """
-        Handle button press
-        :param vk:
-        :return:
-        """
-        pass
-
-    def history_popover_tapped(self, sender):
-        """
-        Handle tapping on history popover list
-        :param sender:
-        :return:
-        """
-        pass
+        self.vk_responder.vk_tapped(sender)
 
     # TextView delegate methods
     def textview_did_begin_editing(self, sender):
-        pass
+        self.stash.terminal.tv_delegate.textview_did_begin_editing(sender)
 
     def textview_did_end_editing(self, sender):
-        pass
+        self.stash.terminal.tv_delegate.textview_did_end_editing(sender)
 
     def textview_should_change(self, sender):
-        pass
+        self.stash.terminal.tv_delegate.textview_should_change(sender)
 
     def textview_did_change(self, sender):
-        pass
+        self.stash.terminal.tv_delegate.textview_did_change(sender)
 
     def textview_did_change_selection(self, sender):
-        pass
+        self.stash.terminal.tv_delegate.textview_did_change_selection(sender)
 
     # Virtual key row swipe gesture
     def scrollview_did_scroll(self, sender):
