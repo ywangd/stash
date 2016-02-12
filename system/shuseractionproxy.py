@@ -38,25 +38,26 @@ class ShUserActionProxy(object):
         self._vk_responder = None
         self._tv_responder = None
 
+    # --------------------- Proxy -----------------------------------------
     # Buttons
     def vk_tapped(self, sender):
         self.vk_responder.vk_tapped(sender)
 
     # TextView delegate methods
     def textview_did_begin_editing(self, sender):
-        self.stash.terminal.tv_delegate.textview_did_begin_editing(sender)
+        self.tv_responder.textview_did_begin_editing(sender)
 
     def textview_did_end_editing(self, sender):
-        self.stash.terminal.tv_delegate.textview_did_end_editing(sender)
+        self.tv_responder.textview_did_end_editing(sender)
 
-    def textview_should_change(self, sender):
-        self.stash.terminal.tv_delegate.textview_should_change(sender)
+    def textview_should_change(self, sender, rng, replacement):
+        return self.tv_responder.textview_should_change(sender, rng, replacement)
 
     def textview_did_change(self, sender):
-        self.stash.terminal.tv_delegate.textview_did_change(sender)
+        self.tv_responder.textview_did_change(sender)
 
     def textview_did_change_selection(self, sender):
-        self.stash.terminal.tv_delegate.textview_did_change_selection(sender)
+        self.tv_responder.textview_did_change_selection(sender)
 
     # Virtual key row swipe gesture
     def scrollview_did_scroll(self, sender):
