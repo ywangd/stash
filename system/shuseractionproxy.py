@@ -2,6 +2,17 @@
 """
 Centralize handlers for various user actions.
 """
+class ShNullResponder(object):
+
+    def handle(self, *args, **kwargs):
+        pass
+
+    def __getattribute__(self, item):
+        return object.__getattribute__(self, 'handle')
+
+    def __getitem__(self, item):
+        return object.__getattribute__(self, 'handle')
+
 
 # noinspection PyAttributeOutsideInit,PyDocstring
 class ShUserActionProxy(object):
@@ -16,28 +27,45 @@ class ShUserActionProxy(object):
 
     def __init__(self, stash):
         self.stash = stash
+        self.null_responder = ShNullResponder()
         self.reset()
 
+        # TextView delegate
         class _TVDelegate(object):
-            # TextView delegate methods
-            def textview_did_begin_editing(self, sender):
+            @staticmethod
+            def textview_did_begin_editing(sender):
                 self.tv_responder.textview_did_begin_editing(sender)
 
-            def textview_did_end_editing(self, sender):
+            @staticmethod
+            def textview_did_end_editing(sender):
                 self.tv_responder.textview_did_end_editing(sender)
 
-            def textview_should_change(self, sender, rng, replacement):
+            @staticmethod
+            def textview_should_change(sender, rng, replacement):
                 return self.tv_responder.textview_should_change(sender, rng, replacement)
 
-            def textview_did_change(self, sender):
+            @staticmethod
+            def textview_did_change(sender):
                 self.tv_responder.textview_did_change(sender)
 
-            def textview_did_change_selection(self, sender):
+            @staticmethod
+            def textview_did_change_selection(sender):
                 self.tv_responder.textview_did_change_selection(sender)
 
+        # Virtual key row swipe gesture
+        class _SVDelegate(object):
+            @staticmethod
+            def scrollview_did_scroll(sender):
+                if self.sv_responder:
+                    self.sv_responder.scrollview_did_scroll(sender)
+                else:
+                    sender.superview.scrollview_did_scroll(sender)
+
         self.tv_delegate = _TVDelegate()
+        self.sv_delegate = _SVDelegate()
 
-
+    # The properties are used for late binding as the various components
+    # may not be ready when this class is initialized
     @property
     def vk_responder(self):
         return self._vk_responder or self.stash.ui
@@ -48,23 +76,15 @@ class ShUserActionProxy(object):
 
     @property
     def tv_responder(self):
-        return self._tv_responder or self.stash.terminal.tv_delegate
+        return self._vk_responder or self.stash.terminal.tv_delegate
 
     @tv_responder.setter
     def tv_responder(self, value):
         self._tv_responder = value
 
     @property
-    def sv_responder(self):
-        return self._sv_responder
-
-    @sv_responder.setter
-    def sv_responder(self, value):
-        self._sv_responder = value
-
-    @property
     def kc_responder(self):
-        return self._kc_responder or self.stash.terminal
+        return self._kc_responder or self.stash.terminal.kc_handlers
 
     @kc_responder.setter
     def kc_responder(self, value):
@@ -73,22 +93,15 @@ class ShUserActionProxy(object):
     def reset(self):
         self._vk_responder = None
         self._tv_responder = None
-        self._sv_responder = None
+        self.sv_responder = None
         self._kc_responder = None  # for keyCommands
 
-    # --------------------- Proxy -----------------------------------------
+    # --------------------- Proxy ---------------------
     # Buttons
     def vk_tapped(self, sender):
         self.vk_responder.vk_tapped(sender)
 
-    # Virtual key row swipe gesture
-    def scrollview_did_scroll(self, sender):
-        if self._sv_responder:
-            self._sv_responder.scrollview_did_scroll(sender)
-        else:
-            sender.superview.scrollview_did_scroll(sender)
-
     # Keyboard shortcuts
-    def kc_pressed(self, _self, _cmd):
-        self.kc_responder.kc_handlers[(_cmd.input, _cmd.modifierFlags)](_self, _cmd)
+    def kc_pressed(self, key, modifierFlags):
+        self.kc_responder[(key, modifierFlags)]()
 

@@ -413,7 +413,6 @@ class ShSequentialScreen(object):
         """
         Move cursor back one character. Do not cross lines.
         """
-        # _SYS_STDOUT.write('backspace\n')
         cursor_xs = self.cursor_xs - 1
         try:
             if self._buffer[cursor_xs] != '\n':
@@ -425,7 +424,6 @@ class ShSequentialScreen(object):
         """
         Process \r to move cursor to the beginning of the current line.
         """
-        # _SYS_STDOUT.write('carriage_return\n')
         self.cursor_x = self._rfind_nth_nl(default=-1) + 1
 
     def delete_characters(self, count=0):
@@ -433,7 +431,6 @@ class ShSequentialScreen(object):
         Delete n characters from cursor including cursor within the current line.
         :param count: If count is 0, delete till the next newline.
         """
-        # _SYS_STDOUT.write('delete_characters\n')
         if self.cursor_xs == self.text_length or self._buffer[self.cursor_xs] == '\n':
             return
         if count == 0:  # delete till the next newline
@@ -454,7 +451,6 @@ class ShSequentialScreen(object):
         :param mode:
         :return:
         """
-        # _SYS_STDOUT.write('erase_in_line\n')
         # Calculate the range for erase
         if mode == 0:  # erase from cursor to end of line, including cursor
             rng = [self.cursor_xs, self._find_nth_nl(default=self.text_length)]
