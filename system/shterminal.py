@@ -98,24 +98,28 @@ class ShTerminal(object):
         # Create the actual TextView by subclass SUITextView
         UIKeyCommand = ObjCClass('UIKeyCommand')
 
+        def kcDispatcher_(_self, _cmd, _sender):
+            key_cmd = ObjCInstance(_sender)
+            stash.user_action_proxy.kc_pressed(str(key_cmd.input()), key_cmd.modifierFlags())
+
         def keyCommands(_self, _cmd):
             key_commands = [
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('C', CTRL_KEY_FLAG, 'controlCActionWrapper'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('D', CTRL_KEY_FLAG, 'controlDActionWrapper'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('P', CTRL_KEY_FLAG, 'controlPActionWrapper'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('N', CTRL_KEY_FLAG, 'controlNActionWrapper'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('U', CTRL_KEY_FLAG, 'controlUActionWrapper'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('A', CTRL_KEY_FLAG, 'controlAActionWrapper'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('E', CTRL_KEY_FLAG, 'controlEActionWrapper'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W', CTRL_KEY_FLAG, 'controlWActionWrapper'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('L', CTRL_KEY_FLAG, 'controlLActionWrapper'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('Z', CTRL_KEY_FLAG, 'controlZActionWrapper'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('C', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('D', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('P', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('N', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('U', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('A', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('E', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('L', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('Z', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputUpArrow',
                                                                        0,
-                                                                       'arrowUpActionWrapper'),
+                                                                       'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputDownArrow',
                                                                        0,
-                                                                       'arrowDownActionWrapper'),
+                                                                       'kcDispatcher:'),
             ]
             commands = ns(key_commands)
             return commands.ptr
@@ -124,80 +128,44 @@ class ShTerminal(object):
             ui = stash.ui
             stash.ui.vk_tapped(ui.k_CC)
 
-        def controlCActionWrapper(_self, _cmd):
-            stash.user_action_proxy.kc_pressed('C', CTRL_KEY_FLAG)
-
         def controlDAction():
             ui = stash.ui
             ui.vk_tapped(ui.k_CD)
-
-        def controlDActionWrapper(_self, _cmd):
-            stash.user_action_proxy.kc_pressed('D', CTRL_KEY_FLAG)
 
         def controlPAction():
             ui = stash.ui
             ui.vk_tapped(ui.k_hup)
 
-        def controlPActionWrapper(_self, _cmd):
-            stash.user_action_proxy.kc_pressed('P', CTRL_KEY_FLAG)
-
         def controlNAction():
             ui = stash.ui
             ui.vk_tapped(ui.k_hdn)
-
-        def controlNActionWrapper(_self, _cmd):
-            stash.user_action_proxy.kc_pressed('N', CTRL_KEY_FLAG)
 
         def controlUAction():
             ui = stash.ui
             ui.vk_tapped(ui.k_CU)
 
-        def controlUActionWrapper(_self, _cmd):
-            stash.user_action_proxy.kc_pressed('U', CTRL_KEY_FLAG)
-
         def controlAAction():  # Move cursor to beginning of the input
             stash.mini_buffer.set_cursor(0)
-
-        def controlAActionWrapper(_self, _cmd):
-            stash.user_action_proxy.kc_pressed('A', CTRL_KEY_FLAG)
 
         def controlEAction():  # Move cursor to end of the input
             stash.mini_buffer.set_cursor(0, whence=2)
 
-        def controlEActionWrapper(_self, _cmd):
-            stash.user_action_proxy.kc_pressed('E', CTRL_KEY_FLAG)
-
         def controlWAction():  # delete one word backwards
             stash.mini_buffer.delete_word(self.selected_range)
-
-        def controlWActionWrapper(_self, _cmd):
-            stash.user_action_proxy.kc_pressed('W', CTRL_KEY_FLAG)
 
         def controlLAction():  # delete one word backwards
             stash.stream.feed(u'\u009bc%s' % stash.runtime.get_prompt(), no_wait=True)
 
-        def controlLActionWrapper(_self, _cmd):
-            stash.user_action_proxy.kc_pressed('L', CTRL_KEY_FLAG)
-
         def controlZAction():
             stash.runtime.push_to_background()
-
-        def controlZActionWrapper(_self, _cmd):
-            stash.user_action_proxy.kc_pressed('Z', CTRL_KEY_FLAG)
 
         def arrowUpAction():
             ui = stash.ui
             ui.vk_tapped(ui.k_hup)
 
-        def arrowUpActionWrapper(_self, _cmd):
-            stash.user_action_proxy.kc_pressed('UIKeyInputUpArrow', 0)
-
         def arrowDownAction():
             ui = stash.ui
             ui.vk_tapped(ui.k_hdn)
-
-        def arrowDownActionWrapper(_self, _cmd):
-            stash.user_action_proxy.kc_pressed('UIKeyInputDownArrow', 0)
 
         self.kc_handlers = {
             ('C', CTRL_KEY_FLAG): controlCAction,
@@ -215,13 +183,7 @@ class ShTerminal(object):
         }
 
         _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView'),
-                                        [keyCommands,
-                                         controlCActionWrapper, controlDActionWrapper,
-                                         controlPActionWrapper, controlNActionWrapper,
-                                         controlUActionWrapper, controlAActionWrapper,
-                                         controlEActionWrapper, controlWActionWrapper,
-                                         controlLActionWrapper, controlZActionWrapper,
-                                         arrowUpActionWrapper, arrowDownActionWrapper])
+                                        [keyCommands, kcDispatcher_])
 
         self.is_editing = False
 
@@ -493,6 +455,12 @@ class ShTerminal(object):
     @on_main_thread
     def end_editing(self):
         self.tvo.resignFirstResponder()
+
+    # noinspection PyCallingNonCallable
+    def kc_pressed(self, key, modifierFlags):
+        handler = self.kc_handlers.get((key, modifierFlags), None)
+        if handler:
+            handler()
 
 
 class StubTerminal(ObjCClass):

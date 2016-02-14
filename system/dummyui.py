@@ -25,6 +25,7 @@ class View(object):
         self.content_offset = (0, 0)
         self.superview = None
         self.subviews = []
+        self.delegate = None
 
     def add_subview(self, v):
         self.subviews.append(v)

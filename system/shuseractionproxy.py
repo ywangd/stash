@@ -2,6 +2,8 @@
 """
 Centralize handlers for various user actions.
 """
+from contextlib import contextmanager
+
 class ShNullResponder(object):
 
     def handle(self, *args, **kwargs):
@@ -13,6 +15,8 @@ class ShNullResponder(object):
     def __getitem__(self, item):
         return object.__getattribute__(self, 'handle')
 
+
+NULL_RESPONDER = ShNullResponder()
 
 # noinspection PyAttributeOutsideInit,PyDocstring
 class ShUserActionProxy(object):
@@ -27,7 +31,6 @@ class ShUserActionProxy(object):
 
     def __init__(self, stash):
         self.stash = stash
-        self.null_responder = ShNullResponder()
         self.reset()
 
         # TextView delegate
@@ -84,11 +87,21 @@ class ShUserActionProxy(object):
 
     @property
     def kc_responder(self):
-        return self._kc_responder or self.stash.terminal.kc_handlers
+        return self._kc_responder or self.stash.terminal.kc_pressed
 
     @kc_responder.setter
     def kc_responder(self, value):
         self._kc_responder = value
+
+    @contextmanager
+    def config(self, vk_responder=False, tv_responder=False, sv_responder=False, kc_responder=False):
+        try:
+            self._vk_responder = NULL_RESPONDER if vk_responder is False else vk_responder
+            self._tv_responder = NULL_RESPONDER if tv_responder is False else tv_responder
+            self.sv_responder = NULL_RESPONDER if sv_responder is False else sv_responder
+            self.kc_responder = NULL_RESPONDER if kc_responder is False else kc_responder
+        finally:
+            self.reset()
 
     def reset(self):
         self._vk_responder = None
@@ -103,5 +116,5 @@ class ShUserActionProxy(object):
 
     # Keyboard shortcuts
     def kc_pressed(self, key, modifierFlags):
-        self.kc_responder[(key, modifierFlags)]()
+        self.kc_responder(key, modifierFlags)
 
