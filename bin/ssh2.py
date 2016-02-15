@@ -127,6 +127,9 @@ class StashSSH(object):
         print '\nconnection closed\n'
 
 
+CTRL_KEY_FLAG = (1 << 18)
+
+
 class SshTextViewDelegate(object):
     def __init__(self, ssh):
         self.ssh = ssh
@@ -140,13 +143,7 @@ class SshTextViewDelegate(object):
     def textview_should_change(self, tv, rng, replacement):
         if replacement == '':  # delete
             replacement = '\x08'
-        while True:
-            if self.ssh.chan.eof_received:
-                break
-            if self.ssh.chan.send_ready():
-                # _SYS_STDOUT.write('%s, [%s]' % (rng, replacement))
-                self.ssh.chan.send(replacement)
-                break
+        self.send(replacement)
         return False  # always false
 
     def textview_did_change(self, tv):
@@ -154,6 +151,22 @@ class SshTextViewDelegate(object):
 
     def textview_did_change_selection(self, tv):
         pass
+
+    def kc_pressed(self, key, modifierFlags):
+        if modifierFlags == CTRL_KEY_FLAG:
+            if key == 'C':
+                self.send('\x03')
+            elif key == 'D':
+                self.send('\x04')
+
+    def send(self, s):
+        while True:
+            if self.ssh.chan.eof_received:
+                break
+            if self.ssh.chan.send_ready():
+                # _SYS_STDOUT.write('%s, [%s]' % (rng, replacement))
+                self.ssh.chan.send(s)
+                break
 
 
 if __name__ == '__main__':
@@ -175,7 +188,8 @@ if __name__ == '__main__':
             ssh.single_exec(args.command)
         else:
             _stash.stream.feed(u'\u009bc', render_it=False)
-            with _stash.user_action_proxy.config(tv_responder=tv_delegate):
+            with _stash.user_action_proxy.config(tv_responder=tv_delegate,
+                                                 kc_responder=tv_delegate.kc_pressed):
                 ssh.interactive()
     else:
         print 'Connection Failed'
