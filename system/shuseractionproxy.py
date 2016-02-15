@@ -100,6 +100,7 @@ class ShUserActionProxy(object):
             self._tv_responder = NULL_RESPONDER if tv_responder is False else tv_responder
             self.sv_responder = NULL_RESPONDER if sv_responder is False else sv_responder
             self.kc_responder = NULL_RESPONDER if kc_responder is False else kc_responder
+            yield
         finally:
             self.reset()
 
