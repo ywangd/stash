@@ -36,7 +36,7 @@ def install_module_from_github(username, package_name, version):
     """
     cmd_string = """
         echo Installing {1} {2} ...
-        wget https://github.com/{0}/{1}/archive/v{2}.zip -o $TMPDIR/{1}.zip
+        wget https://github.com/{0}/{1}/archive/{2}.zip -o $TMPDIR/{1}.zip
         mkdir $TMPDIR/{1}_src
         unzip $TMPDIR/{1}.zip -d $TMPDIR/{1}_src
         rm -f $TMPDIR/{1}.zip
@@ -53,7 +53,7 @@ def install_module_from_github(username, package_name, version):
 import paramiko
 if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
-    install_module_from_github('paramiko', 'paramiko', '1.16.0')
+    install_module_from_github('paramiko', 'paramiko', 'v1.16.0')
     print 'Please restart Pythonista for changes to take full effect'
     sys.exit(0)
 
