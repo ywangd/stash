@@ -8,6 +8,8 @@ import argparse
 import threading
 from distutils.version import StrictVersion
 
+_SYS_STDOUT = sys.__stdout__
+
 try:
     import ui
 except ImportError:
@@ -71,6 +73,7 @@ class StashSSH(object):
             except:
                 print '*Auth Error*'
                 return False
+        print 'Connected'
         self.ssh_running = True
         return True
 
@@ -82,62 +85,24 @@ class StashSSH(object):
     def stdout_thread(self):
         while self.ssh_running:
             if self.chan.recv_ready():
-                rcv = self.chan.recv(1024)
+                rcv = self.chan.recv(4096)
+
                 # noinspection PyTypeChecker
                 self.stream.feed(u'%s' % rcv)
-            if self.screen.dirty:
-                self.screen.dirty.clear()
-                self.update_screen()
 
-    def update_screen(self):
-        pyte_screen = self.screen
-        stash_screen = _stash.main_screen
+                if self.screen.dirty:
+                    self.update_screen()
+                    self.screen.dirty.clear()
 
-        stash_screen.intact_left_bound = 0
-
-        nlines, ncolumns = pyte_screen.lines, pyte_screen.columns
-
-        count = 0
-        for item in reversed(self.screen.display):
-            if str(item) != ' ' * ncolumns:
-                break
-            count += 1
-
-        nchars_pyte_screen = (nlines - count) * (ncolumns + 1)
-        nchars_stash_screen = _stash.main_screen.text_length
-
-        try:
-            min_dirty_line_idx = min(self.screen.dirty)
-        except ValueError:
-            min_dirty_line_idx = 0
-        idx_char_dirty = (ncolumns + 1) * min_dirty_line_idx
-
-        if idx_char_dirty > nchars_stash_screen - 1:
-            stash_screen.intact_right_bound = nchars_stash_screen
-        else:
-            stash_screen.intact_right_bound = stash_screen.text_length
-            for idx in range(idx_char_dirty, nchars_pyte_screen):
-                idx_line, idx_column = idx / (ncolumns + 1), idx % (ncolumns + 1)
-                if idx_column != ncolumns \
-                    and not _stash.renderer._same_style(stash_screen._buffer[idx],
-                            pyte_screen.buffer[idx_line][idx_column]):
-                    stash_screen.intact_right_bound = idx
+                if self.chan.eof_received:
+                    # _SYS_STDOUT.write('breaking\n')
+                    self.ssh_running = False
                     break
 
-        for _ in xrange(stash_screen.intact_right_bound, stash_screen.text_length):
-            stash_screen._buffer.pop()
+    def update_screen(self):
+        _stash.main_screen.load_pyte_screen(self.screen)
 
-        for idx in xrange(stash_screen.intact_right_bound, nchars_pyte_screen):
-            idx_line, idx_column = idx / (ncolumns + 1), idx % (ncolumns + 1)
-            if idx_column != ncolumns:
-                c = pyte_screen.buffer[idx_line][idx_column]
-                stash_screen._buffer.append(c._replace(data=c.data))
-            else:
-                stash_screen._buffer.append(pyte.screens.Char('\n'))
-
-        stash_screen.cursor_x = pyte_screen.cursor.x + pyte_screen.cursor.y * (ncolumns + 1)
-
-        stash_screen.renderer.render(no_wait=True)
+        _stash.renderer.render(no_wait=True)
 
     def single_exec(self, command):
         sin, sout, serr = self.ssh.exec_command(command)
@@ -152,19 +117,17 @@ class StashSSH(object):
         self.chan.set_combine_stderr(True)
         t1 = threading.Thread(target=self.stdout_thread)
         t1.start()
-        while True:
-            if self.chan.send_ready():
-                pass
-        else:
-            self.exit()
+        t1.join()
+        self.exit()
 
     def exit(self):
         self.ssh_running = False
         self.chan.close()
         self.ssh.close()
+        print '\nconnection closed\n'
 
 
-class TextViewDelegate(object):
+class SshTextViewDelegate(object):
     def __init__(self, ssh):
         self.ssh = ssh
 
@@ -175,7 +138,15 @@ class TextViewDelegate(object):
         _stash.terminal.is_editing = False
 
     def textview_should_change(self, tv, rng, replacement):
-        self.ssh.chan.send(replacement)
+        if replacement == '':  # delete
+            replacement = '\x08'
+        while True:
+            if self.ssh.chan.eof_received:
+                break
+            if self.ssh.chan.send_ready():
+                # _SYS_STDOUT.write('%s, [%s]' % (rng, replacement))
+                self.ssh.chan.send(replacement)
+                break
         return False  # always false
 
     def textview_did_change(self, tv):
@@ -197,7 +168,7 @@ if __name__ == '__main__':
     args = ap.parse_args()
 
     ssh = StashSSH()
-    tv_delegate = TextViewDelegate(ssh)
+    tv_delegate = SshTextViewDelegate(ssh)
 
     if ssh.connect(host=args.host, passwd=args.password, port=args.port):
         if args.command:

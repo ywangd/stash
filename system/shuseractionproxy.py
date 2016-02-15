@@ -4,9 +4,14 @@ Centralize handlers for various user actions.
 """
 from contextlib import contextmanager
 
+from .shcommon import _SYS_STDOUT
+
 class ShNullResponder(object):
 
     def handle(self, *args, **kwargs):
+        pass
+
+    def __call__(self, *args, **kwargs):
         pass
 
     def __getattribute__(self, item):
@@ -79,7 +84,7 @@ class ShUserActionProxy(object):
 
     @property
     def tv_responder(self):
-        return self._vk_responder or self.stash.terminal.tv_delegate
+        return self._tv_responder or self.stash.terminal.tv_delegate
 
     @tv_responder.setter
     def tv_responder(self, value):
@@ -94,7 +99,12 @@ class ShUserActionProxy(object):
         self._kc_responder = value
 
     @contextmanager
-    def config(self, vk_responder=False, tv_responder=False, sv_responder=False, kc_responder=False):
+    def config(self,
+               vk_responder=False,
+               tv_responder=False,
+               sv_responder=False,
+               kc_responder=False):
+
         try:
             self._vk_responder = NULL_RESPONDER if vk_responder is False else vk_responder
             self._tv_responder = NULL_RESPONDER if tv_responder is False else tv_responder
