@@ -24,6 +24,8 @@ ON_IPAD = platform_string.find('iPad') >= 0
 ON_IOS_8 = platform_string.split('-')[1].startswith('14')
 M_64 = platform_string.find('64bit') != -1
 
+CTRL_KEY_FLAG = (1 << 18)  # Control key for keyCommands
+CMD_KEY_FLAG = (1 << 20)  # Command key
 
 _STASH_ROOT = os.path.realpath(os.path.abspath(
     os.path.dirname(os.path.dirname(__file__))))

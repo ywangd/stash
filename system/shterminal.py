@@ -12,6 +12,7 @@ except ImportError:
     import dummyui as ui
     from .dummyobjc_util import *
 
+from .shcommon import CTRL_KEY_FLAG
 
 # ObjC related stuff
 UIFont = ObjCClass('UIFont')
@@ -77,7 +78,7 @@ class ShTVDelegate(object):
             self.mini_buffer.sync_cursor(self.terminal.selected_range)
 
 
-# noinspection PyAttributeOutsideInit
+# noinspection PyAttributeOutsideInit,PyUnusedLocal,PyPep8Naming
 class ShTerminal(object):
 
     """
@@ -97,82 +98,92 @@ class ShTerminal(object):
         # Create the actual TextView by subclass SUITextView
         UIKeyCommand = ObjCClass('UIKeyCommand')
 
+        def kcDispatcher_(_self, _cmd, _sender):
+            key_cmd = ObjCInstance(_sender)
+            stash.user_action_proxy.kc_pressed(str(key_cmd.input()), key_cmd.modifierFlags())
+
         def keyCommands(_self, _cmd):
-            ctrl_key_flag = (1 << 18)  # Control key
-            cmd_key_flag = (1 << 20)  # Command key
             key_commands = [
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('C', ctrl_key_flag, 'controlCAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('D', ctrl_key_flag, 'controlDAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('P', ctrl_key_flag, 'controlPAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('N', ctrl_key_flag, 'controlNAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('U', ctrl_key_flag, 'controlUAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('A', ctrl_key_flag, 'controlAAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('E', ctrl_key_flag, 'controlEAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W', ctrl_key_flag, 'controlWAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('L', ctrl_key_flag, 'controlLAction'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('Z', ctrl_key_flag, 'controlZAction'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('C', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('D', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('P', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('N', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('U', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('A', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('E', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('L', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('Z', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputUpArrow',
                                                                        0,
-                                                                       'arrowUpAction'),
+                                                                       'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputDownArrow',
                                                                        0,
-                                                                       'arrowDownAction'),
+                                                                       'kcDispatcher:'),
             ]
             commands = ns(key_commands)
             return commands.ptr
 
-        def controlCAction(_self, _cmd):
-            # selfo = ObjCInstance(_self)
+        def controlCAction():
             ui = stash.ui
-            ui.vk_tapped(ui.k_CC)
+            stash.ui.vk_tapped(ui.k_CC)
 
-        def controlDAction(_self, _cmd):
+        def controlDAction():
             ui = stash.ui
             ui.vk_tapped(ui.k_CD)
 
-        def controlPAction(_self, _cmd):
+        def controlPAction():
             ui = stash.ui
             ui.vk_tapped(ui.k_hup)
 
-        def controlNAction(_self, _cmd):
+        def controlNAction():
             ui = stash.ui
             ui.vk_tapped(ui.k_hdn)
 
-        def controlUAction(_self, _cmd):
+        def controlUAction():
             ui = stash.ui
             ui.vk_tapped(ui.k_CU)
 
-        def controlAAction(_self, _cmd):  # Move cursor to beginning of the input
+        def controlAAction():  # Move cursor to beginning of the input
             stash.mini_buffer.set_cursor(0)
 
-        def controlEAction(_self, _cmd):  # Move cursor to end of the input
+        def controlEAction():  # Move cursor to end of the input
             stash.mini_buffer.set_cursor(0, whence=2)
 
-        def controlWAction(_self, _cmd):  # delete one word backwards
+        def controlWAction():  # delete one word backwards
             stash.mini_buffer.delete_word(self.selected_range)
 
-        def controlLAction(_self, _cmd):  # delete one word backwards
+        def controlLAction():  # delete one word backwards
             stash.stream.feed(u'\u009bc%s' % stash.runtime.get_prompt(), no_wait=True)
 
-        def controlZAction(_self, _cmd):
+        def controlZAction():
             stash.runtime.push_to_background()
 
-        def arrowUpAction(_self, _cmd):
+        def arrowUpAction():
             ui = stash.ui
             ui.vk_tapped(ui.k_hup)
 
-        def arrowDownAction(_self, _cmd):
+        def arrowDownAction():
             ui = stash.ui
             ui.vk_tapped(ui.k_hdn)
 
+        self.kc_handlers = {
+            ('C', CTRL_KEY_FLAG): controlCAction,
+            ('D', CTRL_KEY_FLAG): controlDAction,
+            ('P', CTRL_KEY_FLAG): controlPAction,
+            ('N', CTRL_KEY_FLAG): controlNAction,
+            ('U', CTRL_KEY_FLAG): controlUAction,
+            ('A', CTRL_KEY_FLAG): controlAAction,
+            ('E', CTRL_KEY_FLAG): controlEAction,
+            ('W', CTRL_KEY_FLAG): controlWAction,
+            ('L', CTRL_KEY_FLAG): controlLAction,
+            ('Z', CTRL_KEY_FLAG): controlZAction,
+            ('UIKeyInputUpArrow', 0): arrowUpAction,
+            ('UIKeyInputDownArrow', 0): arrowDownAction,
+        }
+
         _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView'),
-                                        [keyCommands,
-                                         controlCAction, controlDAction,
-                                         controlPAction, controlNAction,
-                                         controlUAction, controlAAction, controlEAction,
-                                         controlWAction, controlLAction,
-                                         controlZAction,
-                                         arrowUpAction, arrowDownAction])
+                                        [keyCommands, kcDispatcher_])
 
         self.is_editing = False
 
@@ -181,7 +192,8 @@ class ShTerminal(object):
         self.logger = logging.getLogger('StaSh.Terminal')
 
         self._delegate_view = ui.TextView()
-        self._delegate_view.delegate = ShTVDelegate(stash, self, stash.mini_buffer, stash.main_screen)
+        self._delegate_view.delegate = stash.user_action_proxy.tv_delegate
+        self.tv_delegate = ShTVDelegate(stash, self, stash.mini_buffer, stash.main_screen)
 
         self.tvo = _ShTerminal.alloc().initWithFrame_(((0, 0), (width, height))).autorelease()
         self.tvo.setAutoresizingMask_(1 << 1 | 1 << 4)  # flex Width and Height
@@ -443,6 +455,12 @@ class ShTerminal(object):
     @on_main_thread
     def end_editing(self):
         self.tvo.resignFirstResponder()
+
+    # noinspection PyCallingNonCallable
+    def kc_pressed(self, key, modifierFlags):
+        handler = self.kc_handlers.get((key, modifierFlags), None)
+        if handler:
+            handler()
 
 
 class StubTerminal(ObjCClass):
