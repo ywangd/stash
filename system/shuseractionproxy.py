@@ -76,7 +76,7 @@ class ShUserActionProxy(object):
     # may not be ready when this class is initialized
     @property
     def vk_responder(self):
-        return self._vk_responder or self.stash.ui
+        return self._vk_responder or self.stash.ui.vk_tapped
 
     @vk_responder.setter
     def vk_responder(self, value):
@@ -123,7 +123,7 @@ class ShUserActionProxy(object):
     # --------------------- Proxy ---------------------
     # Buttons
     def vk_tapped(self, sender):
-        self.vk_responder.vk_tapped(sender)
+        self.vk_responder(sender)
 
     # Keyboard shortcuts
     def kc_pressed(self, key, modifierFlags):

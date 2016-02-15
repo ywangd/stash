@@ -130,7 +130,7 @@ class StashSSH(object):
 CTRL_KEY_FLAG = (1 << 18)
 
 
-class SshTextViewDelegate(object):
+class SshUserActionDelegate(object):
     def __init__(self, ssh):
         self.ssh = ssh
 
@@ -158,6 +158,29 @@ class SshTextViewDelegate(object):
                 self.send('\x03')
             elif key == 'D':
                 self.send('\x04')
+        elif modifierFlags == 0:
+            if key == 'UIKeyInputUpArrow':
+                self.send('\x10')
+            elif key == 'UIKeyInputDownArrow':
+                self.send('\x0E')
+
+    def vk_tapped(self, vk):
+        if vk.name == 'k_tab':
+            self.send('\t')
+        elif vk.name == 'k_CC':
+            self.kc_pressed('C', CTRL_KEY_FLAG)
+        elif vk.name == 'k_CD':
+            self.kc_pressed('D', CTRL_KEY_FLAG)
+        elif vk.name == 'k_hup':
+            self.kc_pressed('UIKeyInputUpArrow', 0)
+        elif vk.name == 'k_hdn':
+            self.kc_pressed('UIKeyInputDownArrow', 0)
+
+        elif vk.name == 'k_KB':
+            if _stash.terminal.is_editing:
+                _stash.terminal.end_editing()
+            else:
+                _stash.terminal.begin_editing()
 
     def send(self, s):
         while True:
@@ -181,7 +204,7 @@ if __name__ == '__main__':
     args = ap.parse_args()
 
     ssh = StashSSH()
-    tv_delegate = SshTextViewDelegate(ssh)
+    tv_delegate = SshUserActionDelegate(ssh)
 
     if ssh.connect(host=args.host, passwd=args.password, port=args.port):
         if args.command:
@@ -189,7 +212,8 @@ if __name__ == '__main__':
         else:
             _stash.stream.feed(u'\u009bc', render_it=False)
             with _stash.user_action_proxy.config(tv_responder=tv_delegate,
-                                                 kc_responder=tv_delegate.kc_pressed):
+                                                 kc_responder=tv_delegate.kc_pressed,
+                                                 vk_responder=tv_delegate.vk_tapped):
                 ssh.interactive()
     else:
         print 'Connection Failed'

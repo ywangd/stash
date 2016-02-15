@@ -525,7 +525,7 @@ class ShSequentialScreen(object):
         idx_cursor_pyte_screen = pyte_screen.cursor.x + pyte_screen.cursor.y * (ncolumns + 1)
 
         if nchars_pyte_screen < idx_cursor_pyte_screen:
-            nchars_pyte_screen = idx_cursor_pyte_screen + 1
+            nchars_pyte_screen = idx_cursor_pyte_screen
 
         try:
             min_idx_dirty_line = min(pyte_screen.dirty)
