@@ -1,9 +1,6 @@
 # coding: utf-8
 import sys
 import os
-import re
-import time
-import math
 import argparse
 import threading
 from distutils.version import StrictVersion
@@ -33,11 +30,16 @@ if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
 
 
 class StashSSH(object):
+    """
+    Wrapper class for paramiko client and pyte screen
+    """
+
     def __init__(self):
-        self.ssh_running = False
+        # Initialize the pyte screen based on the current screen size
         font_width, font_height = ui.measure_string(
             'a',
             font=('Menlo-Regular', _stash.config.getint('display', 'TEXT_FONT_SIZE')))
+        # noinspection PyUnresolvedReferences
         self.screen = pyte.screens.DiffScreen(
             int(_stash.ui.width / font_width),
             int(_stash.ui.height / font_height)
@@ -46,44 +48,59 @@ class StashSSH(object):
         self.stream = pyte.Stream()
         self.stream.attach(self.screen)
 
+        self.client = paramiko.SSHClient()
+
     def connect(self, host='', passwd=None, port=22):
         print 'Connecting...'
-        self.user, self.host = host.split('@')
-        self.passwd = passwd
-        self.port = port
-        self.ssh = paramiko.SSHClient()
-        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        try:
-            print 'Looking for SSH keys...'
-            self.ssh.connect(self.host,
-                             username=self.user,
-                             password=self.passwd,
-                             port=self.port,
-                             key_filename=self.find_ssh_keys())
-        except:
-            try:
-                print 'No SSH key found. Trying password...'
-                if self.passwd is None:
-                    self.passwd = raw_input("Enter password:")
+        username, host = host.split('@')
+        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-                self.ssh.connect(self.host,
-                                 username=self.user,
-                                 password=self.passwd,
-                                 port=self.port)
-            except:
-                print '*Auth Error*'
-                return False
-        print 'Connected'
-        self.ssh_running = True
-        return True
+        if passwd is not None:
+            return self._connect_with_passwd(host, username, passwd, port)
+
+        else:
+            print 'Looking for SSH keys...'
+            key_filename = self.find_ssh_keys()
+            if len(key_filename) > 0:
+                try:
+                    self.client.connect(host,
+                                        username=username,
+                                        password=passwd,
+                                        port=port,
+                                        key_filename=key_filename)
+                    return True
+                except paramiko.SSHException as e:
+                    print 'Failed to login with SSH Keys: {}'.format(repr(e))
+                    print 'Trying password ...'
+                    passwd = raw_input('Enter password:')
+                    return self._connect_with_passwd(host, username, passwd, port)
+
+                except Exception as e:
+                    print 'Error: {}'.format(e)
+                    return False
+            else:
+                print 'No SSH key found. Trying password ...'
+                passwd = raw_input('Enter password:')
+                return self._connect_with_passwd(host, username, passwd, port)
+
+    def _connect_with_passwd(self, host, username, passwd, port):
+        try:
+            self.client.connect(host,
+                                username=username,
+                                password=passwd,
+                                port=port)
+            return True
+        except Exception as e:
+            print 'Error: {}'.format(e)
+            return False
 
     def find_ssh_keys(self):
         ssh_dir = os.path.join(os.environ['STASH_ROOT'], '.ssh')
-        return [os.path.join(ssh_dir, file) for file
-                in os.listdir(ssh_dir) if '.' not in file]
+        return [os.path.join(ssh_dir, filename) for filename
+                in os.listdir(ssh_dir) if '.' not in filename]
 
     def stdout_thread(self):
-        while self.ssh_running:
+        while True:
             if self.chan.recv_ready():
                 rcv = self.chan.recv(4096)
 
@@ -96,7 +113,6 @@ class StashSSH(object):
 
                 if self.chan.eof_received:
                     # _SYS_STDOUT.write('breaking\n')
-                    self.ssh_running = False
                     break
 
     def update_screen(self):
@@ -105,7 +121,7 @@ class StashSSH(object):
         _stash.renderer.render(no_wait=True)
 
     def single_exec(self, command):
-        sin, sout, serr = self.ssh.exec_command(command)
+        sin, sout, serr = self.client.exec_command(command)
         for line in sout.readlines():
             line = line.replace('\n', '')
         for line in serr.readlines():
@@ -113,7 +129,7 @@ class StashSSH(object):
         self.exit()
 
     def interactive(self):
-        self.chan = self.ssh.invoke_shell()
+        self.chan = self.client.invoke_shell()
         self.chan.set_combine_stderr(True)
         t1 = threading.Thread(target=self.stdout_thread)
         t1.start()
@@ -121,9 +137,8 @@ class StashSSH(object):
         self.exit()
 
     def exit(self):
-        self.ssh_running = False
         self.chan.close()
-        self.ssh.close()
+        self.client.close()
         print '\nconnection closed\n'
 
 
@@ -131,6 +146,9 @@ CTRL_KEY_FLAG = (1 << 18)
 
 
 class SshUserActionDelegate(object):
+    """
+    Substitute the default user actions delegates
+    """
     def __init__(self, ssh):
         self.ssh = ssh
 
@@ -207,6 +225,7 @@ if __name__ == '__main__':
     tv_delegate = SshUserActionDelegate(ssh)
 
     if ssh.connect(host=args.host, passwd=args.password, port=args.port):
+        print 'Connected'
         if args.command:
             ssh.single_exec(args.command)
         else:
