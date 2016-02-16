@@ -49,11 +49,11 @@ class StashSSH(object):
         self.stream.attach(self.screen)
 
         self.client = paramiko.SSHClient()
+        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     def connect(self, host='', passwd=None, port=22):
         print 'Connecting...'
         username, host = host.split('@')
-        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         if passwd is not None:
             return self._connect_with_passwd(host, username, passwd, port)
@@ -129,7 +129,9 @@ class StashSSH(object):
         self.exit()
 
     def interactive(self):
-        self.chan = self.client.invoke_shell()
+        self.chan = self.client.get_transport().open_session()
+        self.chan.get_pty('linux', width=self.screen.columns, height=self.screen.lines)
+        self.chan.invoke_shell()
         self.chan.set_combine_stderr(True)
         t1 = threading.Thread(target=self.stdout_thread)
         t1.start()
