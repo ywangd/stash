@@ -21,6 +21,7 @@ class ShMiniBuffer(object):
 
     RANGE_BUFFER_END = 'RANGE_BUFFER_END'
     RANGE_MODIFIABLE_CHARS = 'RANGE_MODIFIABLE_CHARS'
+    RANGE_CURSOR_TO_END = 'RANGE_CURSOR_TO_END'
 
     def __init__(self, stash, main_screen, debug=False):
         self.stash = stash
@@ -76,6 +77,8 @@ class ShMiniBuffer(object):
             rng_adjusted = (self.x_modifiable, len(self.chars))
         elif rng == self.RANGE_BUFFER_END:
             rng_adjusted = (len(self.chars), len(self.chars))
+        elif rng == self.RANGE_CURSOR_TO_END:
+            rng_adjusted = self._adjust_range((self.main_screen.cursor_xs, self.main_screen.text_length))
         else:
             # Convert and adjust the range relative to the input buffer
             rng_adjusted = self._adjust_range(rng)
