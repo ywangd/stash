@@ -120,6 +120,12 @@ class ShTerminal(object):
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputDownArrow',
                                                                        0,
                                                                        'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputLeftArrow',
+                                                                       0,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputRightArrow',
+                                                                       0,
+                                                                       'kcDispatcher:'),
             ]
             commands = ns(key_commands)
             return commands.ptr
@@ -167,6 +173,12 @@ class ShTerminal(object):
             ui = stash.ui
             ui.vk_tapped(ui.k_hdn)
 
+        def arrowLeftAction():
+            stash.mini_buffer.set_cursor(-1, whence=1)
+
+        def arrowRightAction():
+            stash.mini_buffer.set_cursor(1, whence=1)
+
         self.kc_handlers = {
             ('C', CTRL_KEY_FLAG): controlCAction,
             ('D', CTRL_KEY_FLAG): controlDAction,
@@ -180,6 +192,8 @@ class ShTerminal(object):
             ('Z', CTRL_KEY_FLAG): controlZAction,
             ('UIKeyInputUpArrow', 0): arrowUpAction,
             ('UIKeyInputDownArrow', 0): arrowDownAction,
+            ('UIKeyInputLeftArrow', 0): arrowLeftAction,
+            ('UIKeyInputRightArrow', 0): arrowRightAction,
         }
 
         _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView'),

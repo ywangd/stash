@@ -105,9 +105,10 @@ class StashSSH(object):
                 rcv = self.chan.recv(4096)
 
                 # noinspection PyTypeChecker
+                x, y = self.screen.cursor.x, self.screen.cursor.y
                 self.stream.feed(u'%s' % rcv)
 
-                if self.screen.dirty:
+                if self.screen.dirty or x != self.screen.cursor.x or y != self.screen.cursor.y:
                     self.update_screen()
                     self.screen.dirty.clear()
 
@@ -154,6 +155,20 @@ class SshUserActionDelegate(object):
     def __init__(self, ssh):
         self.ssh = ssh
 
+    def send(self, s):
+        while True:
+            if self.ssh.chan.eof_received:
+                break
+            if self.ssh.chan.send_ready():
+                # _SYS_STDOUT.write('%s, [%s]' % (rng, replacement))
+                self.ssh.chan.send(s)
+                break
+
+
+class SshTvVkKcDelegate(SshUserActionDelegate):
+    """
+    Delegate for TextView, Virtual keys and Key command
+    """
     def textview_did_begin_editing(self, tv):
         _stash.terminal.is_editing = True
 
@@ -183,6 +198,10 @@ class SshUserActionDelegate(object):
                 self.send('\x10')
             elif key == 'UIKeyInputDownArrow':
                 self.send('\x0E')
+            elif key == 'UIKeyInputLeftArrow':
+                self.send('\033[D')
+            elif key == 'UIKeyInputRightArrow':
+                self.send('\033[C')
 
     def vk_tapped(self, vk):
         if vk.name == 'k_tab':
@@ -202,14 +221,26 @@ class SshUserActionDelegate(object):
             else:
                 _stash.terminal.begin_editing()
 
-    def send(self, s):
-        while True:
-            if self.ssh.chan.eof_received:
-                break
-            if self.ssh.chan.send_ready():
-                # _SYS_STDOUT.write('%s, [%s]' % (rng, replacement))
-                self.ssh.chan.send(s)
-                break
+
+class SshSVDelegate(SshUserActionDelegate):
+    """
+    Delegate for scroll view
+    """
+    SCROLL_PER_CHAR = 20.0  # Number of pixels to scroll to move 1 character
+
+    def scrollview_did_scroll(self, scrollview):
+        # integrate small scroll motions, but keep scrollview from actually moving
+        if not scrollview.decelerating:
+            scrollview.superview.dx -= scrollview.content_offset[0] / SshSVDelegate.SCROLL_PER_CHAR
+        scrollview.content_offset = (0.0, 0.0)
+
+        offset = int(scrollview.superview.dx)
+        if offset:
+            scrollview.superview.dx -= offset
+            if offset > 0:
+                self.send('\033[C')
+            else:
+                self.send('\033[D')
 
 
 if __name__ == '__main__':
@@ -224,7 +255,8 @@ if __name__ == '__main__':
     args = ap.parse_args()
 
     ssh = StashSSH()
-    tv_delegate = SshUserActionDelegate(ssh)
+    tv_vk_kc_delegate = SshTvVkKcDelegate(ssh)
+    sv_delegate = SshSVDelegate(ssh)
 
     if ssh.connect(host=args.host, passwd=args.password, port=args.port):
         print 'Connected'
@@ -232,9 +264,10 @@ if __name__ == '__main__':
             ssh.single_exec(args.command)
         else:
             _stash.stream.feed(u'\u009bc', render_it=False)
-            with _stash.user_action_proxy.config(tv_responder=tv_delegate,
-                                                 kc_responder=tv_delegate.kc_pressed,
-                                                 vk_responder=tv_delegate.vk_tapped):
+            with _stash.user_action_proxy.config(tv_responder=tv_vk_kc_delegate,
+                                                 kc_responder=tv_vk_kc_delegate.kc_pressed,
+                                                 vk_responder=tv_vk_kc_delegate.vk_tapped,
+                                                 sv_responder=sv_delegate):
                 ssh.interactive()
     else:
         print 'Connection Failed'
