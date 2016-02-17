@@ -103,22 +103,20 @@ class StashSSH(object):
         while True:
             if self.chan.recv_ready():
                 rcv = self.chan.recv(4096)
-
-                # noinspection PyTypeChecker
+                # _SYS_STDOUT.write('RRR {%s}\n' % repr(rcv))
                 x, y = self.screen.cursor.x, self.screen.cursor.y
-                self.stream.feed(u'%s' % rcv)
+                # noinspection PyTypeChecker
+                self.stream.feed(rcv.decode('utf-8'))
 
                 if self.screen.dirty or x != self.screen.cursor.x or y != self.screen.cursor.y:
                     self.update_screen()
                     self.screen.dirty.clear()
 
                 if self.chan.eof_received:
-                    # _SYS_STDOUT.write('breaking\n')
                     break
 
     def update_screen(self):
         _stash.main_screen.load_pyte_screen(self.screen)
-
         _stash.renderer.render(no_wait=True)
 
     def single_exec(self, command):
@@ -193,6 +191,18 @@ class SshTvVkKcDelegate(SshUserActionDelegate):
                 self.send('\x03')
             elif key == 'D':
                 self.send('\x04')
+            elif key == 'A':
+                self.send('\x01')
+            elif key == 'E':
+                self.send('\x05')
+            elif key == 'K':
+                self.send('\x0B')
+            elif key == 'L':
+                self.send('\x0C')
+            elif key == 'U':
+                self.send('\x15')
+            elif key == 'Z':
+                self.send('\x1A')
         elif modifierFlags == 0:
             if key == 'UIKeyInputUpArrow':
                 self.send('\x10')
@@ -210,6 +220,10 @@ class SshTvVkKcDelegate(SshUserActionDelegate):
             self.kc_pressed('C', CTRL_KEY_FLAG)
         elif vk.name == 'k_CD':
             self.kc_pressed('D', CTRL_KEY_FLAG)
+        elif vk.name == 'k_CU':
+            self.kc_pressed('U', CTRL_KEY_FLAG)
+        elif vk.name == 'k_CZ':
+            self.kc_pressed('Z', CTRL_KEY_FLAG)
         elif vk.name == 'k_hup':
             self.kc_pressed('UIKeyInputUpArrow', 0)
         elif vk.name == 'k_hdn':
