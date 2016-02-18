@@ -17,6 +17,7 @@ module_names = (
     'system.shparsers',
     'system.shruntime',
     'system.shthreads',
+    'system.shuseractionproxy',
 )
 
 # Find out where the launch script is located and import differently

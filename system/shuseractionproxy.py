@@ -1,12 +1,17 @@
 # coding: utf-8
 """
-Centralize handlers for various user actions.
+The proxy is to centralize handler dispatching for user actions
+such as type, touch, swipe, key press.
 """
 from contextlib import contextmanager
+
 
 class ShNullResponder(object):
 
     def handle(self, *args, **kwargs):
+        pass
+
+    def __call__(self, *args, **kwargs):
         pass
 
     def __getattribute__(self, item):
@@ -21,10 +26,10 @@ NULL_RESPONDER = ShNullResponder()
 # noinspection PyAttributeOutsideInit,PyDocstring
 class ShUserActionProxy(object):
     """
-    The purpose of this object is to be a centralized place to respond
-    to any user actions trigger from the UI including typing, touching,
-    tap, etc. A centralized object makes it easier to be substituted by
-    other user-defined object for command script, e.g. ssh.
+    This proxy object provides a central place to register handlers for
+    any user actions trigger from the UI including typing, touching,
+    tap, etc. A centralized object makes it easier to substitute default
+    handlers by user-defined functions in command script, e.g. ssh.
 
     :param StaSh stash:
     """
@@ -71,7 +76,7 @@ class ShUserActionProxy(object):
     # may not be ready when this class is initialized
     @property
     def vk_responder(self):
-        return self._vk_responder or self.stash.ui
+        return self._vk_responder or self.stash.ui.vk_tapped
 
     @vk_responder.setter
     def vk_responder(self, value):
@@ -79,7 +84,7 @@ class ShUserActionProxy(object):
 
     @property
     def tv_responder(self):
-        return self._vk_responder or self.stash.terminal.tv_delegate
+        return self._tv_responder or self.stash.terminal.tv_delegate
 
     @tv_responder.setter
     def tv_responder(self, value):
@@ -94,12 +99,18 @@ class ShUserActionProxy(object):
         self._kc_responder = value
 
     @contextmanager
-    def config(self, vk_responder=False, tv_responder=False, sv_responder=False, kc_responder=False):
+    def config(self,
+               vk_responder=False,
+               tv_responder=False,
+               sv_responder=False,
+               kc_responder=False):
+
         try:
             self._vk_responder = NULL_RESPONDER if vk_responder is False else vk_responder
             self._tv_responder = NULL_RESPONDER if tv_responder is False else tv_responder
             self.sv_responder = NULL_RESPONDER if sv_responder is False else sv_responder
             self.kc_responder = NULL_RESPONDER if kc_responder is False else kc_responder
+            yield
         finally:
             self.reset()
 
@@ -112,7 +123,7 @@ class ShUserActionProxy(object):
     # --------------------- Proxy ---------------------
     # Buttons
     def vk_tapped(self, sender):
-        self.vk_responder.vk_tapped(sender)
+        self.vk_responder(sender)
 
     # Keyboard shortcuts
     def kc_pressed(self, key, modifierFlags):

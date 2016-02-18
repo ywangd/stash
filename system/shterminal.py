@@ -89,6 +89,9 @@ class ShTerminal(object):
 
     def __init__(self, stash, superview, width, height, debug=False):
 
+        self.debug = debug
+        self.logger = logging.getLogger('StaSh.Terminal')
+
         self.stash = stash
         stash.terminal = self
 
@@ -108,21 +111,33 @@ class ShTerminal(object):
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('D', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('P', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('N', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('K', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('U', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('A', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('E', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('L', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('Z', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('[', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(']', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputUpArrow',
                                                                        0,
                                                                        'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputDownArrow',
                                                                        0,
                                                                        'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputLeftArrow',
+                                                                       0,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputRightArrow',
+                                                                       0,
+                                                                       'kcDispatcher:'),
             ]
             commands = ns(key_commands)
             return commands.ptr
+
+        def dummyAction():
+            pass
 
         def controlCAction():
             ui = stash.ui
@@ -139,6 +154,9 @@ class ShTerminal(object):
         def controlNAction():
             ui = stash.ui
             ui.vk_tapped(ui.k_hdn)
+
+        def controlKAction():
+            stash.mini_buffer.feed(stash.mini_buffer.RANGE_CURSOR_TO_END, '')
 
         def controlUAction():
             ui = stash.ui
@@ -167,19 +185,30 @@ class ShTerminal(object):
             ui = stash.ui
             ui.vk_tapped(ui.k_hdn)
 
+        def arrowLeftAction():
+            stash.mini_buffer.set_cursor(-1, whence=1)
+
+        def arrowRightAction():
+            stash.mini_buffer.set_cursor(1, whence=1)
+
         self.kc_handlers = {
             ('C', CTRL_KEY_FLAG): controlCAction,
             ('D', CTRL_KEY_FLAG): controlDAction,
             ('P', CTRL_KEY_FLAG): controlPAction,
             ('N', CTRL_KEY_FLAG): controlNAction,
+            ('K', CTRL_KEY_FLAG): controlKAction,
             ('U', CTRL_KEY_FLAG): controlUAction,
             ('A', CTRL_KEY_FLAG): controlAAction,
             ('E', CTRL_KEY_FLAG): controlEAction,
             ('W', CTRL_KEY_FLAG): controlWAction,
             ('L', CTRL_KEY_FLAG): controlLAction,
             ('Z', CTRL_KEY_FLAG): controlZAction,
+            ('[', CTRL_KEY_FLAG): dummyAction,
+            (']', CTRL_KEY_FLAG): dummyAction,
             ('UIKeyInputUpArrow', 0): arrowUpAction,
             ('UIKeyInputDownArrow', 0): arrowDownAction,
+            ('UIKeyInputLeftArrow', 0): arrowLeftAction,
+            ('UIKeyInputRightArrow', 0): arrowRightAction,
         }
 
         _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView'),
@@ -188,8 +217,6 @@ class ShTerminal(object):
         self.is_editing = False
 
         self.superview = superview
-        self.debug = debug
-        self.logger = logging.getLogger('StaSh.Terminal')
 
         self._delegate_view = ui.TextView()
         self._delegate_view.delegate = stash.user_action_proxy.tv_delegate

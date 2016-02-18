@@ -15,7 +15,7 @@ try:
 except ImportError:
     from dummyobjc_util import *
 
-from .shcommon import IN_PYTHONISTA, ON_IOS_8, _SYS_STDOUT
+from .shcommon import IN_PYTHONISTA, ON_IOS_8
 # noinspection PyPep8Naming
 from .shcommon import sh_delay, Graphics as graphics
 
@@ -505,6 +505,82 @@ class ShSequentialScreen(object):
                 replace = DEFAULT_CHAR._asdict()
 
         self.attrs = self.attrs._replace(**replace)
+        
+    def load_pyte_screen(self, pyte_screen):
+        """
+        This method is for command script only, e.g. ssh.
+        """
+
+        with self.acquire_lock():
+
+            self.intact_left_bound = 0
+            nlines, ncolumns = pyte_screen.lines, pyte_screen.columns
+
+            line_count = 0
+            column_count = 0
+            for line in reversed(pyte_screen.display):
+                line = line.rstrip()
+                if line != '':
+                    column_count = len(line)
+                    break
+                line_count += 1
+
+            nchars_pyte_screen = (nlines - line_count - 1) * (ncolumns + 1) + column_count
+
+            idx_cursor_pyte_screen = pyte_screen.cursor.x + pyte_screen.cursor.y * (ncolumns + 1)
+
+            if nchars_pyte_screen < idx_cursor_pyte_screen:
+                nchars_pyte_screen = idx_cursor_pyte_screen
+
+            try:
+                min_idx_dirty_line = min(pyte_screen.dirty)
+            except ValueError:
+                min_idx_dirty_line = 0
+
+            idx_dirty_char = (ncolumns + 1) * min_idx_dirty_line
+
+            # self.logger.info(
+            #     'min_idx_dirty_line={}, idx_dirty_char={}, nchars_pyte_screen={}, self.text_length={}'.format(
+            #         min_idx_dirty_line, idx_dirty_char, nchars_pyte_screen, self.text_length
+            #     )
+            # )
+
+            if idx_dirty_char > self.text_length - 1:
+                self.intact_right_bound = self.text_length
+            else:
+                self.intact_right_bound = min(self.text_length, nchars_pyte_screen)
+                for idx in xrange(idx_dirty_char, nchars_pyte_screen):
+                    # self.logger.info('idx = %s' % idx)
+                    if idx >= self.text_length:
+                        break
+                    idx_line, idx_column = idx / (ncolumns + 1), idx % (ncolumns + 1)
+                    if idx_column == ncolumns:
+                        continue
+                    pyte_char = pyte_screen.buffer[idx_line][idx_column]
+                    # self.logger.info('HERE = %s' % idx)
+                    if self._buffer[idx].data != pyte_char.data \
+                            or not ShSequentialRenderer._same_style(self._buffer[idx], pyte_char):
+                        # self.logger.info('breaking %s' % idx)
+                        self.intact_right_bound = idx
+                        break
+
+            for _ in xrange(self.intact_right_bound, self.text_length):
+                self._buffer.pop()
+
+            for idx in xrange(self.intact_right_bound, nchars_pyte_screen):
+                idx_line, idx_column = idx / (ncolumns + 1), idx % (ncolumns + 1)
+                if idx_column != ncolumns:
+                    c = pyte_screen.buffer[idx_line][idx_column]
+                    self._buffer.append(ShChar(**c._asdict()))
+                else:
+                    self._buffer.append(ShChar('\n'))
+
+            self.cursor_x = idx_cursor_pyte_screen
+
+        # self.logger.info('intact_right_bound={}, cursor={}'.format(self.intact_right_bound, self.cursor_xs))
+        # self.logger.info('|%s|' % pyte_screen.display)
+        # self.logger.info('text=|%s|' % self.text)
+        # self.logger.info('text_length=%s' % self.text_length)
 
 
 class ShSequentialRenderer(object):
