@@ -1,4 +1,24 @@
 # coding: utf-8
+"""
+OpenSSH client for stash.
+
+ssh attempts to login with user provided password or looks for a valid key generated
+buy ssh-keygen in ~/.ssh/
+You can open an interactive shell by not passing a command. If a command is passed,
+the single command is ran with output then ssh exits.
+
+usage: ssh [-h] [--password PASSWORD] [-p PORT] host [command]
+
+positional arguments:
+  host                  host ex. user@host.com
+  command               Optional command to send
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --password PASSWORD   Password for rsa/dsa key or password login
+  -p PORT, --port PORT  port for ssh default: 22
+"""
+
 import sys
 import os
 import argparse
@@ -105,8 +125,8 @@ class StashSSH(object):
                 rcv = self.chan.recv(4096)
                 # _SYS_STDOUT.write('RRR {%s}\n' % repr(rcv))
                 x, y = self.screen.cursor.x, self.screen.cursor.y
-                # noinspection PyTypeChecker
-                self.stream.feed(rcv.decode('utf-8'))
+                rcv = rcv.decode('utf-8', errors='ignore')
+                self.stream.feed(rcv)
 
                 if self.screen.dirty or x != self.screen.cursor.x or y != self.screen.cursor.y:
                     self.update_screen()
@@ -203,6 +223,8 @@ class SshTvVkKcDelegate(SshUserActionDelegate):
                 self.send('\x15')
             elif key == 'Z':
                 self.send('\x1A')
+            elif key == '[':
+                self.send('\x1B')  # ESC
         elif modifierFlags == 0:
             if key == 'UIKeyInputUpArrow':
                 self.send('\x10')

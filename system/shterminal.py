@@ -118,6 +118,8 @@ class ShTerminal(object):
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('L', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('Z', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('[', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(']', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputUpArrow',
                                                                        0,
                                                                        'kcDispatcher:'),
@@ -133,6 +135,9 @@ class ShTerminal(object):
             ]
             commands = ns(key_commands)
             return commands.ptr
+
+        def dummyAction():
+            pass
 
         def controlCAction():
             ui = stash.ui
@@ -198,6 +203,8 @@ class ShTerminal(object):
             ('W', CTRL_KEY_FLAG): controlWAction,
             ('L', CTRL_KEY_FLAG): controlLAction,
             ('Z', CTRL_KEY_FLAG): controlZAction,
+            ('[', CTRL_KEY_FLAG): dummyAction,
+            (']', CTRL_KEY_FLAG): dummyAction,
             ('UIKeyInputUpArrow', 0): arrowUpAction,
             ('UIKeyInputDownArrow', 0): arrowDownAction,
             ('UIKeyInputLeftArrow', 0): arrowLeftAction,
