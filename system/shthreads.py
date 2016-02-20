@@ -89,6 +89,8 @@ class ShState(object):
             self.enclosing_aliases = child_state.aliases
             self.enclosing_environ = child_state.environ
             self.enclosing_cwd = os.getcwd()
+            if self.enclosed_cwd is not None:
+                os.chdir(self.enclosed_cwd)
 
     @staticmethod
     def new_from_parent(parent_state):

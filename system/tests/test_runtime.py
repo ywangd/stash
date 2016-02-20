@@ -10,6 +10,7 @@ class RuntimeTests(unittest.TestCase):
         self.stash = stash.StaSh()
         self.stash('cd $STASH_ROOT')
         self.stash('BIN_PATH=$STASH_ROOT/system/tests/data:$BIN_PATH')
+        self.stash('clear')
 
     def tearDown(self):
         assert self.stash.runtime.child_thread is None, 'child thread is not cleared'
@@ -19,8 +20,7 @@ class RuntimeTests(unittest.TestCase):
     def do_test(self, cmd, cmp_str, ensure_same_cwd=True, ensure_undefined=(), ensure_defined=()):
 
         saved_cwd = os.getcwd()
-        self.stash('clear')
-        self.stash(cmd)
+        self.stash(cmd, persistent_level=1)  # 1 for mimicking running from console
 
         assert cmp_str == self.stash.main_screen.text, 'output not identical'
 
@@ -117,7 +117,7 @@ A is{0}
 
     def test_09(self):
         cmp_str = r"""[stash]$ A is{0}
-[stash]$ """.format(" ")
+[stash]$ """.format(' ')
         self.do_test('test09.sh', cmp_str, ensure_undefined=('A',))
 
     def test_10(self):
@@ -129,4 +129,17 @@ A is{0}
         cmp_str = r"""[stash]$ A is 42
 [stash]$ """
         self.do_test('test11.sh', cmp_str, ensure_undefined=('A',))
+
+    def test_12(self):
+        """
+        Directory changes in script via callable interface should not
+        affect parent shell but is persistent for any following calls
+        from the same parent shell.
+        """
+        cmp_str = r"""[stash]$ parent script stash
+parent script stash
+from child script 2 bin
+parent script stash
+[stash]$ """
+        self.do_test('test_12.py', cmp_str)
 
