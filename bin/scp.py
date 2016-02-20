@@ -1,6 +1,5 @@
 """
-Secure Copy
-Copies files from local to remote
+Secure Copy - Copy files between local and remote
 
 usage:
     GET

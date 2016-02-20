@@ -1,5 +1,5 @@
-'''Display the docstring for a command in /bin, or list all commands if no name is given.
-'''
+"""Display the docstring for a command in $STASH_ROOT/bin/, or list all commands if no name is given.
+"""
 
 from __future__ import print_function
 
@@ -8,26 +8,22 @@ import ast
 import os
 import sys
 
-def bin_paths():
-    return os.environ["BIN_PATH"].split(os.pathsep)
 
 def all_commands():
-    cmds = []
-    for path in bin_paths():
-        if os.path.exists(path):
-            cmds += [
-                fn[:-3] for fn in os.listdir(path)
-                if fn.endswith(".py")
-                and not fn.startswith(".")
-                and os.path.isfile(os.path.join(path, fn))
-            ]
+    path = os.path.join(os.environ['STASH_ROOT'], 'bin')
+    cmds = [
+        fn[:-3] for fn in os.listdir(path)
+        if fn.endswith(".py")
+        and not fn.startswith(".")
+        and os.path.isfile(os.path.join(path, fn))
+    ]
     cmds.sort()
     return cmds
 
 def find_command(cmd):
-    for path in bin_paths():
-        if os.path.exists(path) and cmd + ".py" in os.listdir(path):
-            return os.path.join(path, cmd + ".py")
+    path = os.path.join(os.environ['STASH_ROOT'], 'bin')
+    if os.path.exists(path) and cmd + ".py" in os.listdir(path):
+        return os.path.join(path, cmd + ".py")
     return None
 
 def get_docstring(filename):
