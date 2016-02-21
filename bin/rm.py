@@ -14,11 +14,16 @@ optional arguments:
                      permission or file existence (override -i)
   -v, --verbose      explain what is being done
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import os
 import sys
 import shutil
 from argparse import ArgumentParser
+from six.moves import input
 
 def main(args):
     ap = ArgumentParser()
@@ -45,14 +50,14 @@ def main(args):
     #setup print function
     if ns.verbose:
         def printp(text):
-            print text
+            print(text)
     else:
         def printp(text):
             pass
 
     if ns.interactive and not ns.force:
         def prompt(file):
-            result = raw_input('Delete %s? [Y,n]: ' % file)
+            result = input('Delete %s? [Y,n]: ' % file)
             if result == 'Y' or result == 'y':
                 return True
             else:
@@ -69,7 +74,7 @@ def main(args):
                     printp('%s has been deleted' % path)
                 except:
                     if not ns.force:
-                        print '%s: unable to remove' % path
+                        print('%s: unable to remove' % path)
 
         elif os.path.isdir(path) and ns.recursive:
             if prompt(path):
@@ -78,13 +83,13 @@ def main(args):
                     printp('%s has been deleted' % path)
                 except:
                     if not ns.force:
-                        print '%s: unable to remove' % path
+                        print('%s: unable to remove' % path)
 
         elif os.path.isdir(path):
-            print '%s: is a directory' % path
+            print('%s: is a directory' % path)
         else:
             if not ns.force:
-                print '%s: does not exist' % path
+                print('%s: does not exist' % path)
 
 
 if __name__ == '__main__':

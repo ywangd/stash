@@ -2,12 +2,17 @@
 """
 The Control, Escape and Graphics are taken from pyte (https://github.com/selectel/pyte)
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import os
 import sys
 import platform
 import functools
 import threading
 from itertools import chain
+import six
 
 
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
@@ -71,7 +76,7 @@ if IN_PYTHONISTA:
             def write(self, s):
                 if isinstance(s, str):
                     _outputcapture.CaptureStdout(s)
-                elif isinstance(s, unicode):
+                elif isinstance(s, six.text_type):
                     _outputcapture.CaptureStdout(s.encode('utf8'))
 
             def writelines(self, lines):
@@ -94,7 +99,7 @@ if IN_PYTHONISTA:
             def write(self, s):
                 if isinstance(s, str):
                     _outputcapture.CaptureStderr(s)
-                elif isinstance(s, unicode):
+                elif isinstance(s, six.text_type):
                     _outputcapture.CaptureStderr(s.encode('utf8'))
 
             def writelines(self, lines):
@@ -471,6 +476,6 @@ class Graphics(object):
     }
 
     # Reverse mapping of all available attributes -- keep this private!
-    _SGR = {v: k for k, v in chain(FG.items(),
-                                   TEXT.items())}
+    _SGR = {v: k for k, v in chain(list(FG.items()),
+                                   list(TEXT.items()))}
     _SGR.update({'bg-' + v: k for k, v in BG.items()})

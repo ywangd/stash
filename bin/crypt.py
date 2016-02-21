@@ -13,12 +13,16 @@ optional arguments:
   -k KEY, --key KEY  Encrypt/Decrypt Key.
   -d, --decrypt      Flag to decrypt.
 '''
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import sys
 import os
 try:
     from simplecrypto.key import AesKey
 except:
-    print 'Installing Required packages.'
+    print('Installing Required packages.')
     _stash('pip install simplecrypto')
     sys.exit(0)
 

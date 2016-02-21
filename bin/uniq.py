@@ -1,4 +1,8 @@
 """Print standard input or files, omitting repeated lines"""
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import os
 import sys
@@ -12,7 +16,7 @@ def main(args):
 
     def _print(lines):
         if lines is not None:
-            print ''.join(lines)
+            print(''.join(lines))
 
     fileinput.close()  # in case it is not closed
     try:

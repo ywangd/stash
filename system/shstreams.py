@@ -5,11 +5,16 @@ Streams are channels taking input and talking to in-memory screen.
 There are two streams. One for User Input on Physical terminal. The other is
 for accepting outputs from running scripts.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import logging
 import re
 
 # noinspection PyPep8Naming
 from .shcommon import Control as ctrl, Escape as esc
+import six
 
 
 class ShMiniBuffer(object):
@@ -364,7 +369,7 @@ class ShStream(object):
         :param str chars: a string to feed from.
         """
         # To avoid the \xc2 deadlock from bytes string
-        if not isinstance(chars, unicode):
+        if not isinstance(chars, six.text_type):
             chars = chars.decode('utf-8', errors='ignore')
 
         with self.main_screen.acquire_lock():

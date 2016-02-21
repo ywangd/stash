@@ -2,11 +2,15 @@
 """
 
 from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import argparse
 import ast
 import os
 import sys
+from six.moves import input
 
 
 def all_commands():
@@ -43,7 +47,7 @@ def main(args):
     if not ns.cmd:
         cmds = all_commands()
         if len(cmds) > 100:
-            if raw_input("List all {} commands?".format(len(cmds))).strip().lower() not in ("y", "yes"):
+            if input("List all {} commands?".format(len(cmds))).strip().lower() not in ("y", "yes"):
                 sys.exit(0)
         for cmd in cmds:
             print(_stash.text_bold('{:>10}: '.format(cmd)) + get_summary(find_command(cmd)))

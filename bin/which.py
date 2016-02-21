@@ -1,5 +1,9 @@
 """ Locate a command script in BIN_PATH. No output if command is not found.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import argparse
 
@@ -10,7 +14,7 @@ def main(command, fullname=False):
         filename = rt.find_script_file(command)
         if not fullname:
             filename = _stash.libcore.collapseuser(filename)
-        print filename
+        print(filename)
     except Exception:
         pass
 

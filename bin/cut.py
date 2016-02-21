@@ -1,5 +1,9 @@
 """ Print selected parts of lines from each FILE to standard output.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import os
 import sys
 import argparse
@@ -41,15 +45,15 @@ def main(args):
     for infields in _stash.libcore.input_stream(ns.files):
         if infields[0] is None:
             _, filename, e = infields
-            print '%s: %s' % (filename, repr(e))
+            print('%s: %s' % (filename, repr(e)))
         else:
             line, filename, lineno = infields
             fields = line.split(ns.delimiter)
             if len(fields) == 1:
-                print fields[0]
+                print(fields[0])
             else:
                 out = ' '.join((' '.join(fields[sidx:eidx]) for sidx, eidx in indices))
-                print out
+                print(out)
 
 if __name__ == '__main__':
     main(sys.argv[1:])

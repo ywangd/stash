@@ -2,6 +2,10 @@
 """
 Launch StaSh in a more flexible and reliable way.
 """
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
 import os
 import sys
 
@@ -30,13 +34,13 @@ if os.path.isfile(os.path.join(_LAUNCH_DIR, 'stash.py')) \
     if 'stash' in sys.modules:
         for name in module_names:
             sys.modules.pop(name)
-    import stash
+    from . import stash
 
 else:
     if 'stash.stash' in sys.modules:
         for name in module_names:
             sys.modules.pop('stash.' + name)
-    from stash import stash
+    from .stash import stash
 
 # noinspection PyProtectedMember
 debug = (

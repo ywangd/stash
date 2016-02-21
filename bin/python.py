@@ -9,6 +9,10 @@ usage:
     python -m module_name [args]
     python python_file.py [args]
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import runpy
 import sys
@@ -26,14 +30,14 @@ sys.argv = [sys.argv[0]] + args.args_to_pass
 if args.module:
     try:
         runpy.run_module(str(args.name), run_name='__main__')
-    except ImportError, e:
-        print 'ImportError: ' + str(e)
+    except ImportError as e:
+        print('ImportError: ' + str(e))
 
 elif args.cmd:
-    exec args.name
+    exec(args.name)
 
 else:
     try:
         runpy.run_path(str(args.name), run_name='__main__')
-    except Exception, e:
-        print 'Error: ' + str(e)
+    except Exception as e:
+        print('Error: ' + str(e))

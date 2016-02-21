@@ -9,6 +9,9 @@ and HEAD requests in a fairly straightforward manner.
 """
 
 from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
 
 __version__ = "0.1"
 __all__ = ["SimpleHTTPRequestHandler"]
@@ -17,7 +20,7 @@ __home_page__ = "http://li2z.cn/"
 
 import os
 import posixpath
-import BaseHTTPServer
+import six.moves.BaseHTTPServer
 import urllib
 import cgi
 import shutil
@@ -29,7 +32,7 @@ except ImportError:
     from StringIO import StringIO
     
 
-class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class SimpleHTTPRequestHandler(six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
 
     """Simple HTTP request handler with GET/HEAD/POST commands.
 
@@ -61,7 +64,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(self):
         """Serve a POST request."""
         r, info = self.deal_post_data()
-        print r, info, "by: ", self.client_address
+        print(r, info, "by: ", self.client_address)
         f = StringIO()
         f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
         f.write("<html>\n<title>Upload Result Page</title>\n")
@@ -228,7 +231,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         path = path.split('#',1)[0]
         path = posixpath.normpath(urllib.unquote(path))
         words = path.split('/')
-        words = filter(None, words)
+        words = [_f for _f in words if _f]
         path = os.getcwd()
         for word in words:
             drive, word = os.path.splitdrive(word)
@@ -288,15 +291,15 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         })
 
 def main(port=8000):
-    server = BaseHTTPServer.HTTPServer(('0.0.0.0', port), SimpleHTTPRequestHandler)
+    server = six.moves.BaseHTTPServer.HTTPServer(('0.0.0.0', port), SimpleHTTPRequestHandler)
     
     try:
-        print 'Serving HTTP on 0.0.0.0 port %d ...' % port
-        print 'local IP address is %s' % globals()['_stash'].libcore.get_lan_ip()
+        print('Serving HTTP on 0.0.0.0 port %d ...' % port)
+        print('local IP address is %s' % globals()['_stash'].libcore.get_lan_ip())
         server.serve_forever()
 
     except KeyboardInterrupt:
-        print 'Server shutting down ...'
+        print('Server shutting down ...')
         server.server_close()
 
 if __name__ == '__main__':

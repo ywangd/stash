@@ -1,5 +1,9 @@
 """ Tip of the day
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import os
 import sys
 import json
@@ -24,11 +28,11 @@ def main(args):
         tips = json.load(ins)
 
         if ns.count:
-            print 'Total available tips: %s' % len(tips)
+            print('Total available tips: %s' % len(tips))
         else:
             idx = random.randint(0, len(tips) - 1)
-            print '%s: %s' % (_stash.text_bold('Tip'),
-                              _stash.text_italic(tips[idx]))
+            print('%s: %s' % (_stash.text_bold('Tip'),
+                              _stash.text_italic(tips[idx])))
 
 
 if __name__ == '__main__':

@@ -2,6 +2,10 @@
 """
 Killable threads
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import os
 import sys
 import threading
@@ -141,7 +145,7 @@ class ShWorkerRegistry(object):
         return '\n'.join(ret)
 
     def __iter__(self):
-        return self.registry.values().__iter__()
+        return list(self.registry.values()).__iter__()
 
     def __len__(self):
         return len(self.registry)

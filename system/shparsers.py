@@ -1,5 +1,9 @@
 # coding: utf-8
 
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import os
 import string
 import glob
@@ -10,6 +14,8 @@ from StringIO import StringIO
 import pyparsing as pp
 
 from .shcommon import ShSingleExpansionRequired, ShBadSubstitution, ShInternalError
+from six.moves import range
+from six.moves import zip
 
 
 _GRAMMAR = r"""
@@ -374,7 +380,7 @@ class ShExpander(object):
         # alias substitute
         tokens, parsed = self.alias_subs(tokens, parsed)
 
-        pseq_indices = range(0, len(parsed), 2)
+        pseq_indices = list(range(0, len(parsed), 2))
         n_pipe_sequences = len(pseq_indices)
 
         # First yield here to report a summary about incoming commands
@@ -468,7 +474,7 @@ class ShExpander(object):
 
         alias_found = False
         for t in tokens:
-            if t.ttype == ShToken._CMD and t.tok in current_state.aliases.keys() and t.tok != exclude:
+            if t.ttype == ShToken._CMD and t.tok in list(current_state.aliases.keys()) and t.tok != exclude:
                 t.tok = current_state.aliases[t.tok][1]
                 alias_found = True
         if alias_found:
@@ -771,7 +777,7 @@ class ShCompleter(object):
                 path_names = [p for p in path_names
                               if p.endswith('/') or p.endswith('.py') or p.endswith('.sh')]
                 script_names = self.stash.runtime.get_all_script_names()
-                script_names.extend(current_state.aliases.keys())
+                script_names.extend(list(current_state.aliases.keys()))
                 if word_to_complete != '':
                     script_names = [name for name in script_names if name.startswith(word_to_complete)]
             else:

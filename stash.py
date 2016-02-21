@@ -4,12 +4,16 @@ StaSh - Pythonista Shell
 
 https://github.com/ywangd/stash
 """
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
 
 __version__ = '0.6.2a2'
 
 import os
 import sys
-from ConfigParser import ConfigParser
+from six.moves.configparser import ConfigParser
 from StringIO import StringIO
 import imp as pyimp  # rename to avoid name conflict with objc_util
 import logging
@@ -17,17 +21,17 @@ import logging.handlers
 
 
 # noinspection PyPep8Naming
-from system.shcommon import IN_PYTHONISTA, ON_IPAD
-from system.shcommon import _STASH_ROOT, _STASH_CONFIG_FILES, _SYS_STDOUT
-from system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
-from system.shuseractionproxy import ShUserActionProxy
-from system.shiowrapper import enable as enable_io_wrapper, disable as disable_io_wrapper
-from system.shparsers import ShParser, ShExpander, ShCompleter
-from system.shruntime import ShRuntime
-from system.shstreams import ShMiniBuffer, ShStream
-from system.shscreens import ShSequentialScreen, ShSequentialRenderer
-from system.shui import ShUI
-from system.shio import ShIO
+from .system.shcommon import IN_PYTHONISTA, ON_IPAD
+from .system.shcommon import _STASH_ROOT, _STASH_CONFIG_FILES, _SYS_STDOUT
+from .system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
+from .system.shuseractionproxy import ShUserActionProxy
+from .system.shiowrapper import enable as enable_io_wrapper, disable as disable_io_wrapper
+from .system.shparsers import ShParser, ShExpander, ShCompleter
+from .system.shruntime import ShRuntime
+from .system.shstreams import ShMiniBuffer, ShStream
+from .system.shscreens import ShSequentialScreen, ShSequentialRenderer
+from .system.shui import ShUI
+from .system.shio import ShIO
 
 
 # Setup logging
@@ -229,7 +233,7 @@ class StaSh(object):
         # No color for pipes, files and Pythonista console
         if not always and (isinstance(sys.stdout, StringIO)
                            or isinstance(sys.stdout, file)
-                           or sys.stdout.write.im_self is _SYS_STDOUT):
+                           or sys.stdout.write.__self__ is _SYS_STDOUT):
             return s
 
         fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)

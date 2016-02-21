@@ -1,5 +1,9 @@
 """ Summarize disk usage of the set of FILEs, recursively for directories.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import os
 import sys
 from argparse import ArgumentParser
@@ -71,9 +75,9 @@ def main(args):
                 if ns.summarize and root != path:
                     continue
 
-                print '%-8s %s' % (sizeof_fmt(my_size), root)
+                print('%-8s %s' % (sizeof_fmt(my_size), root))
         else:
-            print '%-8s %s' % (sizeof_fmt(os.path.getsize(path)), path)
+            print('%-8s %s' % (sizeof_fmt(os.path.getsize(path)), path))
 
 
 if __name__ == '__main__':

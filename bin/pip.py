@@ -20,8 +20,12 @@ optional arguments:
   -h, --help            show this help message and exit
   -n RESULT_COUNT
 '''
-import xmlrpclib
-from ConfigParser import SafeConfigParser
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
+import six.moves.xmlrpc_client
+from six.moves.configparser import SafeConfigParser
 import requests
 import argparse
 import tempfile
@@ -54,18 +58,18 @@ def make_module(new_module, doc="", scope=locals()):
         parent_module_name = '.'.join(module_name)
 
         if parent_module_name:
-            if parent_module_name not in sys.modules.keys():  # do not overwrite existing modules
-                print 'creating parent', parent_module_name
+            if parent_module_name not in list(sys.modules.keys()):  # do not overwrite existing modules
+                print('creating parent', parent_module_name)
                 setattr(sys.modules[parent_module_name], name, m)
         else:
-            if m not in scope.keys():  # do not overwrite existing modules
+            if m not in list(scope.keys()):  # do not overwrite existing modules
                 scope[name] = m
 
         module_name.append(name)
 
         name_path = '.'.join(module_name)
-        if name_path not in sys.modules.keys():  # do not overwrite existing modules
-            print 'Added %s' % name_path
+        if name_path not in list(sys.modules.keys()):  # do not overwrite existing modules
+            print('Added %s' % name_path)
             sys.modules[name_path] = m
 
     return sys.modules['.'.join(module_name)]
@@ -100,7 +104,7 @@ class PackageConfigHandler(object):
     def __init__(self):
         self.package_cfg = os.path.expanduser('~/Documents/site-packages/.pypi_packages')
         if not os.path.isfile(self.package_cfg):
-            print 'Creating package file'
+            print('Creating package file')
             f = open(self.package_cfg, 'w')
             f.close()
         self.parser = SafeConfigParser()
@@ -148,7 +152,7 @@ class PackageConfigHandler(object):
 
 class Pypi(object):
     def __init__(self, pkg_name='', url=False, pkg_version='', limit=10):
-        self.pypi = xmlrpclib.ServerProxy('http://pypi.python.org/pypi')
+        self.pypi = six.moves.xmlrpc_client.ServerProxy('http://pypi.python.org/pypi')
         self.config = PackageConfigHandler()
         self.url = url
         self.config.pypi_package = False if self.url else True
@@ -168,7 +172,7 @@ class Pypi(object):
         if len(hits) > self.limit:
             hits = hits[:self.limit]
         for hit in hits:
-            print '%s v%s - %s' % (hit['name'], hit['version'], hit['summary'])
+            print('%s v%s - %s' % (hit['name'], hit['version'], hit['summary']))
 
     def versions(self, show_hidden=True):
         hits = self.pypi.package_releases(self.pkg_name, show_hidden)
@@ -178,12 +182,12 @@ class Pypi(object):
         if len(hits) > self.limit:
             hits = hits[:self.limit]
         for hit in hits:
-            print '%s - %s' % (self.pkg_name, hit)
+            print('%s - %s' % (self.pkg_name, hit))
 
     def download(self):
         if self.url:
-            print 'External package'
-            print 'Not yet implemented.'
+            print('External package')
+            print('Not yet implemented.')
         else:
             self.pypi_download()
 
@@ -231,10 +235,10 @@ class Pypi(object):
         modules = self.config.list_modules()
         for module in modules:
             info = self.config.get_info(module)
-            print '%s (%s) - %s' % (module, info['version'], info['summary'])
+            print('%s (%s) - %s' % (module, info['version'], info['summary']))
 
     def _install(self):
-        print 'installing module'
+        print('installing module')
         if '.zip' in self.filename:
             tmp_folder = self.filename[:-4]
             archive_type = 'zip'
@@ -307,10 +311,10 @@ class Pypi(object):
 
                     # make_module('distutils.core').__dict__['setup'] = setup
                     __file__ = SITE_PACKAGES + '/%s/setup.py' % dir_name
-                    execfile('setup.py')
+                    exec(compile(open('setup.py').read(), 'setup.py', 'exec'))
 
             except:
-                print '*Unable to locate package. Please try manual install.*'
+                print('*Unable to locate package. Please try manual install.*')
             finally:
                 sys.modules = saved_modules
                 __file__ = backup_file
@@ -325,7 +329,7 @@ class Pypi(object):
             except:
                 _stash('echo Failed import test. Check for dependencies')
 
-        except Exception, e:
+        except Exception as e:
             PyPiError('Unable to install package.')
 
     def remove_module(self, name):
@@ -337,7 +341,7 @@ class Pypi(object):
             else:
                 raise PyPiError('Could not find package.')
             self.config.remove_module(name)
-            print 'Package removed.'
+            print('Package removed.')
         else:
             raise PyPiError('No module by that name. Use pip list for list of installed modules.')
 
@@ -346,11 +350,11 @@ class Pypi(object):
             current = self.config.get_info(name)
             hit = self.pypi.package_releases(name)[0]
             if not current['version'] == hit:
-                print 'Updating %s' % name
+                print('Updating %s' % name)
                 self.remove_module(name)
                 self.download()
             else:
-                print 'Package upto date.'
+                print('Package upto date.')
 
         else:
             raise PyPiError('Package not installed. Try pip install [package]')

@@ -1,5 +1,10 @@
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import os
 import fileinput
+import six
 
 
 def collapseuser(path):
@@ -7,7 +12,7 @@ def collapseuser(path):
     such representation is meaningful. If path is not ~ or a
     subdirectory, the absolute path will be returned.
     """
-    path = os.path.abspath(unicode(path))
+    path = os.path.abspath(six.text_type(path))
     home = os.path.expanduser("~")
     if os.path.exists(os.path.expanduser("~/Pythonista.app")):
         althome = os.path.dirname(os.path.realpath(os.path.expanduser("~/Pythonista.app")))

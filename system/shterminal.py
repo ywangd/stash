@@ -2,14 +2,19 @@
 """
 Physical terminal is what an user sees.
 """
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
 import ast
 import logging
+import six
 
 try:
     import ui
     from objc_util import *
 except ImportError:
-    import dummyui as ui
+    from . import dummyui as ui
     from .dummyobjc_util import *
 
 from .shcommon import CTRL_KEY_FLAG
@@ -318,7 +323,7 @@ class ShTerminal(object):
 
     @property
     def text(self):
-        return unicode(self.tvo.text())
+        return six.text_type(self.tvo.text())
 
     @text.setter
     @on_main_thread

@@ -1,4 +1,8 @@
 # coding: utf-8
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
 import os
 import sys
 import logging
@@ -7,6 +11,7 @@ import functools
 from StringIO import StringIO
 
 import pyparsing as pp
+from six.moves import range
 
 # Detecting environments
 try:
@@ -14,7 +19,7 @@ try:
     from objc_util import on_main_thread
 except ImportError:
     import system.dummyui as ui
-    from dummyobjc_util import on_main_thread
+    from .dummyobjc_util import on_main_thread
 
 from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
     ShFileNotFound, ShEventNotFound, ShNotExecutable
@@ -213,7 +218,7 @@ class ShRuntime(object):
                         # Parse and expand the line (note this function returns a generator object)
                         expanded = self.expander.expand(line)
                         # The first member is the history expanded form and number of pipe_sequence
-                        newline, n_pipe_sequences = expanded.next()
+                        newline, n_pipe_sequences = next(expanded)
                         # Only add history entry if:
                         #   1. It is explicitly required
                         #   2. It is the first layer thread directly spawned by the main thread
@@ -227,7 +232,7 @@ class ShRuntime(object):
                         try:
                             # Subsequent members are actual commands
                             for _ in range(n_pipe_sequences):
-                                pipe_sequence = expanded.next()
+                                pipe_sequence = next(expanded)
                                 if pipe_sequence.in_background:
                                     # For background command, separate worker is created
                                     self.run(pipe_sequence,
@@ -466,7 +471,7 @@ class ShRuntime(object):
         self.handle_PYTHONPATH()  # Make sure PYTHONPATH is honored
 
         try:
-            execfile(file_path, namespace, namespace)
+            exec(compile(open(file_path).read(), file_path, 'exec'), namespace, namespace)
             current_state.return_value = 0
 
         except SystemExit as e:

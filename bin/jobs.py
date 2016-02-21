@@ -1,6 +1,10 @@
 """
 List all jobs that are currently running.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import sys
 import argparse
 import threading
@@ -16,7 +20,7 @@ def main(args):
 
     for worker in _stash.get_workers():
         if worker.job_id != current_worker.job_id:
-            print worker
+            print(worker)
 
 
 if __name__ == '__main__':

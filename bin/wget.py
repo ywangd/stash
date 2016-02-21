@@ -1,5 +1,9 @@
 """ Download a file from a url.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import sys
 import urllib2
@@ -24,7 +28,7 @@ def main(args):
     try:
         console.show_activity()
 
-        print 'Opening: %s' % url
+        print('Opening: %s' % url)
         u = urllib2.urlopen(url)
 
         meta = u.info()
@@ -33,8 +37,8 @@ def main(args):
         except IndexError:
             file_size = 0
 
-        print "Save as: %s " % output_file,
-        print "(%s bytes)" % file_size if file_size else ""
+        print("Save as: %s " % output_file, end=' ')
+        print("(%s bytes)" % file_size if file_size else "")
 
         with open(output_file, 'wb') as f:
             file_size_dl = 0
@@ -49,11 +53,11 @@ def main(args):
                     status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
                 else:
                     status = "%10d" % file_size_dl
-                print '\r' + status,
-            print
+                print('\r' + status, end=' ')
+            print()
 
     except:
-        print 'invalid url: %s' % url
+        print('invalid url: %s' % url)
 
     finally:
         console.hide_activity()

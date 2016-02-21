@@ -5,6 +5,10 @@ The wrappers dispatch io requests based on current thread.
 If the thread is an instance of ShBaseThread, the io should be dispatched to ShIO.
 Otherwise, it should be dispatched to regular sys io.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import sys
 import threading
 

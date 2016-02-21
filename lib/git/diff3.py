@@ -25,8 +25,13 @@
 
     jsb: added newlines for conflict markers
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 from operator import xor
+from six.moves import range
 
 
 # ----------------------------------------------------------------------------

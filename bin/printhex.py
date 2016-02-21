@@ -5,11 +5,15 @@
 """
 
 from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import argparse
 import sys
+from six.moves import range
 
-INVISIBLE = range(0x20) + [0x81, 0x8d, 0x8f, 0x90, 0x9d]
+INVISIBLE = list(range(0x20)) + [0x81, 0x8d, 0x8f, 0x90, 0x9d]
 
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)

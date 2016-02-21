@@ -9,6 +9,10 @@ Usage: selfupdate.py [-n] [-f] [branch]
        -n, --check    check for update only
        -f, --force    update without checking for new version
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import os
 import sys
 import requests
@@ -62,46 +66,46 @@ def main(args):
     else:
         SELFUPDATE_BRANCH = os.environ.get('SELFUPDATE_BRANCH', 'master')
 
-    print _stash.text_style('Running selfupdate ...',
-                            {'color': 'yellow', 'traits': ['bold']})
-    print u'%s: %s' % (_stash.text_bold('Branch'), SELFUPDATE_BRANCH)
+    print(_stash.text_style('Running selfupdate ...',
+                            {'color': 'yellow', 'traits': ['bold']}))
+    print(u'%s: %s' % (_stash.text_bold('Branch'), SELFUPDATE_BRANCH))
 
     has_update = True
     # Check for update if it is not forced updating
     if not ns.force:
         local_version = globals()['_stash'].__version__
         try:
-            print 'Checking for new version ...'
+            print('Checking for new version ...')
             remote_version = get_remote_version(SELFUPDATE_BRANCH)
 
             if StrictVersion(remote_version) > StrictVersion(local_version):
-                print 'New version available: %s' % remote_version
+                print('New version available: %s' % remote_version)
             else:
                 has_update = False
-                print 'Already at latest version'
+                print('Already at latest version')
 
         except UpdateError as e:
             has_update = False  # do not update in case of errors
-            print _stash.text_color('Error: %s' % e.message, 'red')
+            print(_stash.text_color('Error: %s' % e.message, 'red'))
 
     # Perform update if new version is available and not just checking only
     if not ns.check and has_update:
 
         url = '%s/%s/getstash.py' % (URL_BASE, SELFUPDATE_BRANCH)
-        print u'%s: %s' % (_stash.text_bold('Url'),
-                           _stash.text_style(url, {'color': 'blue', 'traits': ['underline']}))
+        print(u'%s: %s' % (_stash.text_bold('Url'),
+                           _stash.text_style(url, {'color': 'blue', 'traits': ['underline']})))
 
         try:
-            exec requests.get(
+            exec(requests.get(
                 '%s/%s/getstash.py?q=%s' % (URL_BASE,
                                             SELFUPDATE_BRANCH,
                                             randint(1, 999999))
-            ).text in {'_IS_UPDATE': True, '_br': SELFUPDATE_BRANCH}
-            print _stash.text_color('Update completed.', 'green')
-            print _stash.text_color('Please restart Pythonista to ensure changes becoming effective.', 'green')
+            ).text, {'_IS_UPDATE': True, '_br': SELFUPDATE_BRANCH})
+            print(_stash.text_color('Update completed.', 'green'))
+            print(_stash.text_color('Please restart Pythonista to ensure changes becoming effective.', 'green'))
 
         except SystemExit:
-            print _stash.text_color('Failed to update. Please try again.', 'red')
+            print(_stash.text_color('Failed to update. Please try again.', 'red'))
 
 
 if __name__ == '__main__':

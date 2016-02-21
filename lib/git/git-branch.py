@@ -4,6 +4,10 @@
     git branch (-m | -M) [<oldbranch>] <newbranch>
     git branch (-d | -D) [-r] <branchname>…
     git branch --edit-description [<branchname>]"""
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import sys,os
 import dulwich
@@ -13,6 +17,8 @@ from gittle import Gittle
 import argparse
 
 from git.gitutils import _get_repo, find_revision_sha, is_ancestor, merge_base, can_ff, any_one, count_commits_between, get_remote_tracking_branch, GitError
+import six
+from six.moves import input
 
 
 def branch(args):
@@ -89,7 +95,7 @@ def branch(args):
         edit_branch_description(edit_description)
     elif set_upstream:
         add_tracking(set_upstream[0], *( ['origin']+set_upstream[1].split('/'))[-2:])
-        print set_upstream[0], format_tracking_branch_desc(repo,set_upstream[0])
+        print(set_upstream[0], format_tracking_branch_desc(repo,set_upstream[0]))
     elif no_track:
         if len(no_track)==1:
             remove_tracking(no_track[0])
@@ -107,7 +113,7 @@ def format_tracking_branch_desc(repo,branchname):
     except KeyError:
         return ''
 def edit_branch_description(branchname, description=None):
-    description = description or raw_input('enter description:')
+    description = description or input('enter description:')
     config = _get_repo().repo.get_config()
     if not branchname in _get_repo().branches:
         GitError('{} is not an existing branch'.format(branchname))
@@ -119,7 +125,7 @@ def branch_list(result):
         N=result.abbrev
         repo = _get_repo()
         if not result.remotes:
-            for key,value in repo.branches.iteritems():
+            for key,value in six.iteritems(repo.branches):
                 dispval=value[0:N]  #todo, --abbrev=n
                 commitmsg=(repo[value].message if result.verbose else '').strip()
                 tracking=get_remote_tracking_branch(repo,key)
@@ -130,19 +136,19 @@ def branch_list(result):
                     ahead,behind= count_commits_between(repo,value,trackingsha)
                     diffmsg='+{}/-{} compare to'.format(ahead,behind) if result.verbose else ''
                     trackmsg='[{} {} {}]'.format(diffmsg,tracking,trackingsha[0:N])
-                print ('* ' if repo.active_branch == key else '') + key, dispval, trackmsg, commitmsg
+                print(('* ' if repo.active_branch == key else '') + key, dispval, trackmsg, commitmsg)
         if result.remotes or result.all:
-            for key, value in repo.remote_branches.iteritems():
+            for key, value in six.iteritems(repo.remote_branches):
                 dispval=value[0:N]  #todo, --abbrev=n
                 commitmsg=(repo[value].message if result.verbose else '').strip()
-                print ('* ' if repo.active_branch == key else '') + key,  dispval, commitmsg
+                print(('* ' if repo.active_branch == key else '') + key,  dispval, commitmsg)
 
 def delete_branch(delete_branchname,force=False,remote=None, verbose=0):
     '''delete a branch.  
     if remote=True, then look in refs/remotes, otherwise check refs/heads
     for local, check if it has a remote tracking branch, and only allow delete if upstream has merged
     '''
-    print 'delete',delete_branchname,force,remote
+    print('delete',delete_branchname,force,remote)
     repo=_get_repo()
     if remote:
         qualified_branch=repo._format_ref_remote(delete_branchname)
@@ -164,7 +170,7 @@ def delete_branch(delete_branchname,force=False,remote=None, verbose=0):
             raise GitError('{0} is ahead of {1} by {2} commits.\nuse git branch -D\n'.format(delete_branchname,
                                     remote_tracking_branch,
                                     commits_ahead))
-    print 'removing {} (was {})\n'.format(delete_branchname,repo.refs[qualified_branch])
+    print('removing {} (was {})\n'.format(delete_branchname,repo.refs[qualified_branch]))
     del repo.repo.refs[qualified_branch]
 
     if not remote:
@@ -181,7 +187,7 @@ def move_branch(movebranch,force,verbose):
     if newbranch in repo.branches and not force:
         raise GitError('{} already exists.  use -M to force overwriting'.format(newbranch))
     if newbranch != oldbranch:
-        print 'Renaming {} ({}) to {}\n'.format(oldbranch,repo.branches[oldbranch],newbranch)
+        print('Renaming {} ({}) to {}\n'.format(oldbranch,repo.branches[oldbranch],newbranch))
         repo.add_ref(repo._format_ref_branch(newbranch),repo._format_ref_branch(oldbranch))
         del repo.repo.refs[repo._format_ref_branch(oldbranch)]
         #todo: reflog
@@ -249,17 +255,17 @@ def test():
     import os
     os.chdir('../..')
     def run(cmd):
-        print 'branch ', cmd
+        print('branch ', cmd)
         branch(cmd.split())
-        print ''
+        print('')
     #run('-d test')
     run('')
     run('-f test origin/master')
     run('')
-    print 'delete test: should delete'
+    print('delete test: should delete')
     run('-d test')
 
-    print 'set to remote'
+    print('set to remote')
     run('test origin/master')
     run('-v')
     try:
@@ -267,7 +273,7 @@ def test():
     except GitError:
         pass
     else:
-        print 'did not error!'
+        print('did not error!')
 
     run('-f test dev')
     run('-v')

@@ -3,6 +3,10 @@
 The proxy is to centralize handler dispatching for user actions
 such as type, touch, swipe, key press.
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 from contextlib import contextmanager
 
 
