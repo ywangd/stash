@@ -15,6 +15,7 @@ from itertools import chain
 import six
 from io import open
 
+IN_PY2 = sys.version_info[0] == 2
 
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 

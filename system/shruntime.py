@@ -8,7 +8,7 @@ import sys
 import logging
 import threading
 import functools
-from io import StringIO
+from io import StringIO, TextIOWrapper
 
 import pyparsing as pp
 from six.moves import range
@@ -25,7 +25,7 @@ except ImportError:
 from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
     ShFileNotFound, ShEventNotFound, ShNotExecutable
 # noinspection PyProtectedMember
-from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE, _SYS_STDOUT, _SYS_STDERR
+from .shcommon import IN_PY2, _STASH_ROOT, _STASH_HISTORY_FILE, _SYS_STDOUT, _SYS_STDERR
 from .shcommon import is_binary_file
 from .shparsers import ShPipeSequence
 from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
@@ -396,7 +396,8 @@ class ShRuntime(object):
                         # Python 2 is not fully unicode compatible. Some modules (e.g. runpy)
                         # insist for ASCII arguments. The encoding here helps eliminates possible
                         # errors caused by unicode arguments.
-                        simple_command_args = [arg.encode('utf-8') for arg in simple_command.args]
+                        simple_command_args = [arg.encode('utf-8') if IN_PY2 else arg
+                                               for arg in simple_command.args]
                     else:
                         simple_command_args = simple_command.args
 
@@ -431,7 +432,7 @@ class ShRuntime(object):
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
             finally:
-                if type(outs) is file:
+                if isinstance(outs, TextIOWrapper):
                     outs.close()
                 if isinstance(ins, StringIO):  # release the string buffer
                     ins.close()
