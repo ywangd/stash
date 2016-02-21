@@ -9,6 +9,7 @@ import sys
 import json
 import random
 import argparse
+from io import open
 
 
 def main(args):

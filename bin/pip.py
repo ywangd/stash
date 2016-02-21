@@ -34,6 +34,7 @@ import os
 import sys
 import shutil
 from types import ModuleType
+from io import open
 
 saved_modules = sys.modules
 saved_cwd = os.getcwd()

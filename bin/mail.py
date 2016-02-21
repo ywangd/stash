@@ -35,6 +35,7 @@ from email.MIMEMultipart import MIMEMultipart
 from email.Utils import formatdate
 from email.MIMEText import MIMEText
 from six.moves import input
+from io import open
 
 APP_DIR = os.environ['STASH_ROOT']
  

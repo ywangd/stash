@@ -14,7 +14,7 @@ __version__ = '0.6.2a2'
 import os
 import sys
 from six.moves.configparser import ConfigParser
-from io import StringIO
+from io import StringIO, TextIOWrapper
 import imp as pyimp  # rename to avoid name conflict with objc_util
 import logging
 import logging.handlers
@@ -232,7 +232,7 @@ class StaSh(object):
         """
         # No color for pipes, files and Pythonista console
         if not always and (isinstance(sys.stdout, StringIO)
-                           or isinstance(sys.stdout, file)
+                           or isinstance(sys.stdout, TextIOWrapper)
                            or sys.stdout.write.__self__ is _SYS_STDOUT):
             return s
 

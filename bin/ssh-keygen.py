@@ -17,6 +17,7 @@ import os
 import sys
 import argparse
 import paramiko
+from io import open
 
 SSH_DIRS = [os.path.expanduser('~/.ssh'),
             os.path.join(os.environ['STASH_ROOT'], '.ssh')]

@@ -13,6 +13,7 @@ import functools
 import threading
 from itertools import chain
 import six
+from io import open
 
 
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0

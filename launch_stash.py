@@ -40,7 +40,7 @@ else:
     if 'stash.stash' in sys.modules:
         for name in module_names:
             sys.modules.pop('stash.' + name)
-    from .stash import stash
+    from stash import stash
 
 # noinspection PyProtectedMember
 debug = (

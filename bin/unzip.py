@@ -7,6 +7,7 @@ import os
 import sys
 import zipfile
 import argparse
+from io import open
 
 def main(args):
     ap = argparse.ArgumentParser()

@@ -9,6 +9,7 @@ import os
 import sys
 
 import clipboard
+from io import open
 
 def main(args):
     ap = argparse.ArgumentParser()

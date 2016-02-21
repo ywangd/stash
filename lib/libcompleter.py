@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 import os
 import json
+from io import open
 
 
 _subcmd_cfgfile = os.path.join(os.environ['STASH_ROOT'], '.completer_subcmd.json')

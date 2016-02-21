@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import sys
 import urllib2
 import argparse
+from io import open
 
 try:
     import clipboard

@@ -17,6 +17,7 @@ from __future__ import unicode_literals
 
 import sys
 from argparse import ArgumentParser
+from io import open
 
 def main(args):
     ap = ArgumentParser(description="Read and execute commands from a shell script in the current environment")

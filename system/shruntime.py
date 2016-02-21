@@ -12,6 +12,7 @@ from io import StringIO
 
 import pyparsing as pp
 from six.moves import range
+from io import open
 
 # Detecting environments
 try:
