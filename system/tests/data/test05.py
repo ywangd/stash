@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 s = globals()['_stash']
 
 # following statements should be correlated
@@ -11,7 +15,7 @@ s('cd bin')
 s('pwd -b')
 s('cd ..')
 
-print
+print()
 # following two scripts should not interfere each other
 s('test05_1.sh')
 

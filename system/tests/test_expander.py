@@ -1,4 +1,8 @@
 # coding=utf-8
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import os
 import unittest
 
@@ -16,8 +20,8 @@ class ExpanderTests(unittest.TestCase):
 
     def _get_pipe_sequence(self, line):
         expanded = self.expand(line)
-        expanded.next()
-        return expanded.next()
+        next(expanded)
+        return next(expanded)
 
     def test_envars(self):
         pipe_sequence = self._get_pipe_sequence(r'ls $SELFUPDATE_BRANCH')

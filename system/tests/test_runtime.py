@@ -1,4 +1,8 @@
 # coding=utf-8
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import unicode_literals
 import os
 import unittest
 
@@ -28,10 +32,10 @@ class RuntimeTests(unittest.TestCase):
             assert os.getcwd() == saved_cwd, 'cwd changed'
 
         for v in ensure_undefined:
-            assert v not in self.stash.runtime.state.environ.keys(), '%s should be undefined' % v
+            assert v not in list(self.stash.runtime.state.environ.keys()), '%s should be undefined' % v
 
         for v in ensure_defined:
-            assert v in self.stash.runtime.state.environ.keys(), '%s should be defined' % v
+            assert v in list(self.stash.runtime.state.environ.keys()), '%s should be defined' % v
 
     def test_03(self):
         cmp_str = r"""[stash]$ x y
