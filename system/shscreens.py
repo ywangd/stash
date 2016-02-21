@@ -13,6 +13,7 @@ import threading
 import itertools
 from collections import deque, namedtuple
 from contextlib import contextmanager
+# noinspection PyUnresolvedReferences
 from six.moves import range
 
 try:

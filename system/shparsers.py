@@ -12,10 +12,12 @@ import threading
 from io import StringIO
 
 import pyparsing as pp
+# noinspection PyUnresolvedReferences
+from six.moves import range
+# noinspection PyUnresolvedReferences
+from six.moves import zip
 
 from .shcommon import ShSingleExpansionRequired, ShBadSubstitution, ShInternalError
-from six.moves import range
-from six.moves import zip
 
 
 _GRAMMAR = r"""

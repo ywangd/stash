@@ -11,10 +11,10 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 import logging
 import re
+import six
 
 # noinspection PyPep8Naming
 from .shcommon import Control as ctrl, Escape as esc
-import six
 
 
 class ShMiniBuffer(object):
