@@ -14,7 +14,7 @@ __version__ = '0.6.2a2'
 import os
 import sys
 from six.moves.configparser import ConfigParser
-from StringIO import StringIO
+from io import StringIO
 import imp as pyimp  # rename to avoid name conflict with objc_util
 import logging
 import logging.handlers

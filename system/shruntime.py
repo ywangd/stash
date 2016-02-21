@@ -8,7 +8,7 @@ import sys
 import logging
 import threading
 import functools
-from StringIO import StringIO
+from io import StringIO
 
 import pyparsing as pp
 from six.moves import range

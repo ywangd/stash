@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import os
 import time
 import unittest
-from StringIO import StringIO
+from io import StringIO
 
 import stash
 
