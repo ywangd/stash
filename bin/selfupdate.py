@@ -86,7 +86,7 @@ def main(args):
 
         except UpdateError as e:
             has_update = False  # do not update in case of errors
-            print(_stash.text_color('Error: %s' % e.message, 'red'))
+            print(_stash.text_color('Error: {}'.format(e), 'red'))
 
     # Perform update if new version is available and not just checking only
     if not ns.check and has_update:

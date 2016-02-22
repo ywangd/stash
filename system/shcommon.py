@@ -151,29 +151,32 @@ def sh_background(name=None):
     return wrap
 
 
-class ShFileNotFound(Exception):
+class ShError(Exception):
+    """StaSh Base Error"""
+
+class ShFileNotFound(ShError):
     pass
 
-class ShIsDirectory(Exception):
+class ShIsDirectory(ShError):
     pass
 
-class ShNotExecutable(Exception):
+class ShNotExecutable(ShError):
     def __init__(self, filename):
-        super(Exception, self).__init__('{}: not executable\n'.format(filename))
+        super(ShError, self).__init__('{}: not executable\n'.format(filename))
 
-class ShSingleExpansionRequired(Exception):
+class ShSingleExpansionRequired(ShError):
     pass
 
-class ShEventNotFound(Exception):
+class ShEventNotFound(ShError):
     pass
 
-class ShBadSubstitution(Exception):
+class ShBadSubstitution(ShError):
     pass
 
-class ShSyntaxError(Exception):
+class ShSyntaxError(ShError):
     pass
 
-class ShInternalError(Exception):
+class ShInternalError(ShError):
     pass
 
 

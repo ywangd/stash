@@ -259,25 +259,25 @@ class ShRuntime(object):
             except ShEventNotFound as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('%s: event not found\n' % e.message)
+                self.stash.write_message('{}: event not found\n'.format(e))
 
             except ShBadSubstitution as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('%s\n' % e.message)
+                self.stash.write_message('{}\n'.format(e))
 
             except ShInternalError as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('%s\n' % e.message)
+                self.stash.write_message('{}\n'.format(e))
 
             except IOError as e:
                 if self.debug:
                     self.logger.debug('IOError: %s\n' % repr(e))
-                self.stash.write_message('%s: %s\n' % (e.filename, e.strerror))
+                self.stash.write_message('{}: {}\n'.format(e.filename, e.strerror))
 
             except KeyboardInterrupt as e:
-                self.stash.write_message('^C\nKeyboardInterrupt: %s\n' % e.message)
+                self.stash.write_message('^C\nKeyboardInterrupt: {}\n'.format(e))
 
             # This catch all exception handler is to handle errors outside of
             # run_pipe_sequence. The traceback print is mainly for debugging
@@ -287,7 +287,7 @@ class ShRuntime(object):
                 etype, evalue, tb = sys.exc_info()
                 if self.debug:
                     self.logger.debug('Exception: %s\n' % repr(e))
-                self.stash.write_message('%s\n' % repr(e))
+                self.stash.write_message('{}\n'.format(e))
                 if self.py_traceback or self.py_pdb:
                     import traceback
                     traceback.print_exception(etype, evalue, tb)
@@ -425,7 +425,7 @@ class ShRuntime(object):
             # outside of the actual command execution, i.e. exec_py_file
             # exec_sh_file, e.g. command not found, not executable etc.
             except Exception as e:
-                err_msg = '%s\n' % e.message
+                err_msg = '{}\n'.format(e)
                 if self.debug:
                     self.logger.debug(err_msg)
                 self.stash.write_message(err_msg)
@@ -483,7 +483,7 @@ class ShRuntime(object):
             current_state.return_value = 1
 
             etype, evalue, tb = sys.exc_info()
-            err_msg = '%s: %s\n' % (repr(etype), evalue)
+            err_msg = '{}: {}\n'.format(repr(etype), evalue)
             if self.debug:
                 self.logger.debug(err_msg)
             self.stash.write_message(err_msg)
@@ -531,7 +531,7 @@ class ShRuntime(object):
             current_state.return_value = child_worker.state.return_value
 
         except IOError as e:
-            self.stash.write_message('%s: %s\n' % (e.filename, e.strerror))
+            self.stash.write_message('{}: {}\n'.format(e.filename, e.strerror))
             current_state.return_value = 1
 
         except:
