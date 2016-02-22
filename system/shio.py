@@ -6,6 +6,8 @@ from __future__ import unicode_literals
 import logging
 import time
 from collections import deque
+import io
+import six
 
 
 class ShIO(object):
@@ -172,3 +174,28 @@ class ShIO(object):
 
     def flush(self):
         pass
+
+
+class ShPipeIO(object):
+
+    def __init__(self):
+        self._sio = io.BytesIO()
+
+    def write(self, x):
+        if isinstance(x, six.text_type):
+            x = x.encode('utf-8', errors='ignore')
+        self._sio.write(x)
+
+    def writelines(self, lines):
+        if isinstance(lines, six.text_type):
+            self._sio.write(lines.encode('utf-8', errors='ignore'))
+        else:
+            try:
+                lines = [(x.encode('utf-8', errors='ignore') if isinstance(x, six.text_type) else x)
+                         for x in lines]
+                self._sio.writelines(lines)
+            except TypeError:  # not iterable
+                self._sio.writelines(lines)
+
+    def __getattr__(self, item):
+        return getattr(self._sio, item)

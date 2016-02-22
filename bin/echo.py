@@ -15,7 +15,7 @@ def main(args):
     # Not using argparse here, because echo should echo anything that is not a
     # valid and usable flag.
     end = "\n"
-    escapes = False # NYI
+    escapes = False  # NYI
     remove = []
     for i, arg in enumerate(args):
         if arg.startswith("-"):

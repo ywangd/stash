@@ -8,9 +8,10 @@ import sys
 import logging
 import threading
 import functools
-from io import StringIO, TextIOWrapper
+from io import TextIOWrapper
 
 import pyparsing as pp
+# noinspection PyUnresolvedReferences
 from six.moves import range
 from io import open
 
@@ -29,6 +30,7 @@ from .shcommon import IN_PY2, _STASH_ROOT, _STASH_HISTORY_FILE, _SYS_STDOUT, _SY
 from .shcommon import is_binary_file
 from .shparsers import ShPipeSequence
 from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
+from .shio import ShPipeIO
 
 
 # Default .stashrc file
@@ -355,7 +357,7 @@ class ShRuntime(object):
 
             if prev_outs:
                 # If previous output has gone to a file, we use a dummy empty string as ins
-                ins = StringIO() if isinstance(prev_outs, TextIOWrapper) else prev_outs
+                ins = ShPipeIO() if isinstance(prev_outs, TextIOWrapper) else prev_outs
             else:
                 ins = final_ins or current_state.sys_stdin__
 
@@ -374,7 +376,7 @@ class ShRuntime(object):
                     errs = outs = open(simple_command.io_redirect.filename, mode)
 
             elif idx < n_simple_commands - 1:  # before the last piped command
-                outs = StringIO()
+                outs = ShPipeIO()
 
             else:
                 if final_outs:
@@ -416,7 +418,7 @@ class ShRuntime(object):
                 if current_state.return_value != 0:
                     break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
-                if isinstance(outs, StringIO):
+                if isinstance(outs, ShPipeIO):
                     outs.seek(0)  # rewind for next command in the pipe sequence
 
                 prev_outs = outs
@@ -434,7 +436,7 @@ class ShRuntime(object):
             finally:
                 if isinstance(outs, TextIOWrapper):
                     outs.close()
-                if isinstance(ins, StringIO):  # release the string buffer
+                if isinstance(ins, ShPipeIO):  # release the string buffer
                     ins.close()
 
     def exec_py_file(self, filename,
