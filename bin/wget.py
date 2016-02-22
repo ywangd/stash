@@ -6,13 +6,9 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import sys
-import six
 
-if six.PY2:
-    import urllib2
-else:
-    import urllib3
-    urllib3.disable_warnings()
+import requests
+
 import argparse
 from io import open
 
@@ -37,29 +33,21 @@ def main(args):
 
         print('Opening: %s' % url)
 
-        if six.PY2:
-            r = urllib2.urlopen(url)
-            file_size = r.headers.getheader('Content-Length')
-        else:
-            http = urllib3.PoolManager()
-            r = http.request('GET', url)
-            file_size = r.getheader('Content-Length')
-
+        r = requests.get(url, stream=True)
+        file_size = r.headers.get('Content-Length')
         if file_size is not None:
             file_size = int(file_size)
 
         print("Save as: %s " % output_file, end=' ')
         print("(%s bytes)" % file_size if file_size else "")
 
-        with open(output_file, 'wb') as f:
+        with open(output_file, 'wb') as outs:
             file_size_dl = 0
             block_sz = 8192
-            while True:
-                buf = r.read(block_sz)
-                if not buf:
-                    break
-                file_size_dl += len(buf)
-                f.write(buf)
+
+            for chunk in r.iter_content(block_sz):
+                file_size_dl += len(chunk)
+                outs.write(chunk)
                 if file_size:
                     status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
                 else:
