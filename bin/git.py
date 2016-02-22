@@ -34,7 +34,8 @@ SAVE_PASSWORDS = True
 
 import argparse
 import getpass
-import urlparse,urllib2,keychain
+from six.moves.urllib.parse import urlparse
+import keychain
 import sys,os,posix
 import editor #for reloading current file
 # temporary -- install required modules
