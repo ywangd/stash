@@ -127,7 +127,7 @@ def is_binary_file(filename, nbytes=1024):
     """
     with open(filename, 'rb') as ins:
         for c in ins.read(nbytes):
-            oc = ord(c)
+            oc = ord(c) if six.PY2 else c
             if 127 < oc < 256 or (oc < 32 and oc not in (9, 10, 13)):
                 return True
         else:
