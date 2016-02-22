@@ -15,11 +15,13 @@ except KeyError:
 
 _IS_UPDATE = '_IS_UPDATE' in locals()
 
-URL_ZIPFILE = 'https://github.com/ywangd/stash/archive/%s.zip' % branch
-TEMP_ZIPFILE = os.path.join(os.environ.get('TMPDIR', os.environ.get('TMP')),
-                            '%s.zip' % branch)
+TMPDIR = os.environ.get('TMPDIR', os.environ.get('TMP'))
+URL_ZIPFILE = 'https://github.com/ywangd/stash/archive/{}.zip'.format(branch)
+TEMP_ZIPFILE = os.path.join(TMPDIR, '{}.zip'.format(branch))
+TEMP_PTI = os.path.join(TMPDIR, 'ptinstaller.py')
+URL_PTI = 'https://raw.githubusercontent.com/ywangd/pythonista-tools-installer/master/ptinstaller.py'
 
-print('Downloading %s ...' % URL_ZIPFILE)
+print('Downloading {} ...'.format(URL_ZIPFILE))
 
 try:
     r = requests.get(URL_ZIPFILE, stream=True)
@@ -32,8 +34,13 @@ try:
         for chunk in r.iter_content(block_sz):
             outs.write(chunk)
 
+    # Get Pythonista Tools Installer
+    r = requests.get(URL_PTI)
+    with open(TEMP_PTI, 'w') as outs:
+        outs.write(r.text)
+
 except Exception as e:
-    sys.stderr.write('{}\n'.format(str(e)))
+    sys.stderr.write('{}\n'.format(e))
     sys.stderr.write('Download failed! Please make sure internet connection is available.\n')
     sys.exit(1)
 
@@ -66,7 +73,12 @@ with open(TEMP_ZIPFILE, 'rb') as ins:
         sys.stderr.write('The zip file is corrupted. Pleases re-run the script.\n')
         sys.exit(1)
 
+
 print('Preparing the folder structure ...')
+# Move ptinstaller.py to bin
+shutil.move(TEMP_PTI, os.path.join(TARGET_DIR, 'bin'))
+
+# Move launch script to Documents for easy access
 shutil.move(os.path.join(TARGET_DIR, 'launch_stash.py'),
             os.path.join(BASE_DIR, 'Documents/launch_stash.py'))
 

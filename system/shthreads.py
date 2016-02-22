@@ -13,7 +13,7 @@ import weakref
 import ctypes
 from collections import OrderedDict
 
-from .shcommon import M_64, _SYS_STDOUT
+from .shcommon import M_64, getcwd, _SYS_STDOUT
 
 _STATE_STR_TEMPLATE = """enclosed_cwd: {}
 aliases: {}
@@ -121,7 +121,7 @@ class ShState(object):
 
         return ShState(aliases=aliases,
                        environ=environ,
-                       enclosed_cwd=os.getcwd(),
+                       enclosed_cwd=getcwd(),
                        sys_stdin=parent_state.sys_stdin__,
                        sys_stdout=parent_state.sys_stdout__,
                        sys_stderr=parent_state.sys_stderr__,

@@ -133,6 +133,15 @@ def is_binary_file(filename, nbytes=1024):
         else:
             return False
 
+def getcwd():
+    """os.getcwd fails when the current directory is removed.
+    This function has the fallback to use home directory without failing.
+    """
+    try:
+        cwd = os.getcwd()
+    except:
+        cwd = os.path.expanduser('~/Documents')
+    return cwd
 
 def sh_delay(func, nseconds):
     t = threading.Timer(nseconds, func)
