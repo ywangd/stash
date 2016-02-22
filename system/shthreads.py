@@ -232,13 +232,14 @@ class ShBaseThread(threading.Thread):
             {self.CREATED: 'Created', self.STARTED: 'Started', self.STOPPED: 'Stopped'}[self.status()],
             command_str[:20] + ('...' if len(command_str) > 20 else ''))
 
+    # noinspection PyUnresolvedReferences
     def status(self):
         """
         Status of the thread. Created, Started or Stopped.
         """
         if self.isAlive():
             return self.STARTED
-        elif self._Thread__stopped:
+        elif (hasattr(self, '_Thread__stopped') and self._Thread__stopped) or self._is_stopped:
             return self.STOPPED
         else:
             return self.CREATED
