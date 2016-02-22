@@ -76,7 +76,7 @@ with open(TEMP_ZIPFILE, 'rb') as ins:
 
 print('Preparing the folder structure ...')
 # Move ptinstaller.py to bin
-shutil.move(TEMP_PTI, os.path.join(TARGET_DIR, 'bin'))
+shutil.move(TEMP_PTI, os.path.join(TARGET_DIR, 'bin/ptinstaller.py'))
 
 # Move launch script to Documents for easy access
 shutil.move(os.path.join(TARGET_DIR, 'launch_stash.py'),

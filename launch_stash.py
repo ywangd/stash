@@ -6,7 +6,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 from __future__ import unicode_literals
-import os
 import sys
 
 module_names = (
@@ -24,9 +23,7 @@ module_names = (
     'system.shuseractionproxy',
 )
 
-# Find out where the launch script is located and import differently
-_LAUNCH_DIR = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
-
+# Attempt to reload modules when startup, does not seem to work
 if 'stash.stash' in sys.modules:
     for name in module_names:
         sys.modules.pop('stash.' + name)
