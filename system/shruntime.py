@@ -355,7 +355,7 @@ class ShRuntime(object):
 
             if prev_outs:
                 # If previous output has gone to a file, we use a dummy empty string as ins
-                ins = StringIO() if type(prev_outs) == file else prev_outs
+                ins = StringIO() if isinstance(prev_outs, TextIOWrapper) else prev_outs
             else:
                 ins = final_ins or current_state.sys_stdin__
 
@@ -473,7 +473,21 @@ class ShRuntime(object):
         self.handle_PYTHONPATH()  # Make sure PYTHONPATH is honored
 
         try:
-            exec(compile(open(file_path).read(), file_path, 'exec'), namespace, namespace)
+            with open(file_path) as fins:
+                lines = fins.readlines()
+            # Get rid of possible encoding declaration as exec() does not like it
+            for idxline, line in enumerate(lines):  # looking for 1st non-empty line
+                line = line.strip()
+                if line != '':  # if non-empty line is found
+                    if line.startswith('#'):  # if this is a comment line, mark it for removal
+                        idxline += 1
+                    break  # breaking out as non-empty line is found
+            else:
+                idxline = 0
+
+            code = ''.join(lines[idxline:])
+
+            exec(compile(code, file_path, 'exec'), namespace, namespace)
             current_state.return_value = 0
 
         except SystemExit as e:
