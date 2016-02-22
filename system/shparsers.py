@@ -6,6 +6,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 import os
 import string
+import codecs
 import glob
 import logging
 import threading
@@ -567,7 +568,7 @@ class ShExpander(object):
         if self.debug:
             self.logger.debug(tok)
 
-        ret = tok.decode('unicode_escape')
+        ret = codecs.decode(tok, 'unicode_escape', 'ignore')
         return ret, ret
 
     def expand_uq_word(self, tok):
