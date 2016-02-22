@@ -11,7 +11,7 @@ import zipfile
 try:
     branch = locals()['_br']
 except KeyError:
-    branch = 'master'
+    branch = 'py3'  # 'master'
 
 _IS_UPDATE = '_IS_UPDATE' in locals()
 
