@@ -478,16 +478,15 @@ class ShRuntime(object):
             with open(file_path) as fins:
                 lines = fins.readlines()
             # Get rid of possible encoding declaration as exec() does not like it
-            for idxline, line in enumerate(lines):  # looking for 1st non-empty line
-                line = line.strip()
-                if line != '':  # if non-empty line is found
-                    if line.startswith('#'):  # if this is a comment line, mark it for removal
-                        idxline += 1
-                    break  # breaking out as non-empty line is found
-            else:
-                idxline = 0
-
-            code = ''.join(lines[idxline:])
+            # The encoding instruction seems to be recognized only when its in the
+            # first two lines. So if first two lines are comments, simply replace
+            # them with an empty comments line.
+            # The replacement has the advantage to keep the line number of the
+            # file to be executed for possible easy debugging.
+            for idxline in (0, 1):
+                if lines[idxline].lstrip().startswith('#'):
+                    lines[idxline] = '#\n'
+            code = ''.join(lines)
 
             exec(compile(code, file_path, 'exec'), namespace, namespace)
             current_state.return_value = 0
