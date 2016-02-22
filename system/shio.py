@@ -176,7 +176,7 @@ class ShIO(object):
         pass
 
 
-class ShPipeIO(object):
+class ShPipeBytesIO(object):
 
     def __init__(self):
         self._sio = io.BytesIO()
@@ -199,3 +199,32 @@ class ShPipeIO(object):
 
     def __getattr__(self, item):
         return getattr(self._sio, item)
+
+
+class ShPipeStringIO(object):
+
+    def __init__(self):
+        self._sio = io.StringIO()
+
+    def write(self, x):
+        if not isinstance(x, six.text_type):
+            x = x.decode('utf-8', errors='ignore')
+        self._sio.write(x)
+
+    def writelines(self, lines):
+        if not isinstance(lines, six.text_type):
+            self._sio.write(lines.decode('utf-8', errors='ignore'))
+        else:
+            try:
+                lines = [(x.decode('utf-8', errors='ignore') if not isinstance(x, six.text_type) else x)
+                         for x in lines]
+                self._sio.writelines(lines)
+            except TypeError:  # not iterable
+                self._sio.writelines(lines)
+
+    def __getattr__(self, item):
+        return getattr(self._sio, item)
+
+
+# PipeIO uses either Bytes or Unicode/String depending on Python version
+ShPipeIO = ShPipeBytesIO if six.PY2 else ShPipeStringIO
