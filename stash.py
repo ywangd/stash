@@ -9,10 +9,11 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import unicode_literals
 
-__version__ = '0.7.0a1'
+__version__ = '0.7.0a2'
 
 import os
 import sys
+# noinspection PyUnresolvedReferences
 from six.moves.configparser import ConfigParser
 from io import StringIO, TextIOWrapper
 import imp as pyimp  # rename to avoid name conflict with objc_util
@@ -236,7 +237,7 @@ class StaSh(object):
                            or sys.stdout.write.__self__ is _SYS_STDOUT):
             return s
 
-        fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)
+        fmt_string = '%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)
         for style_name, style_value in style.items():
             if style_name == 'color':
                 color_id = graphics._SGR.get(style_value.lower())
