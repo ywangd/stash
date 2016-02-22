@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import os
 import unittest
 
-import stash
+from stash import stash
 
 class RuntimeTests(unittest.TestCase):
 
@@ -147,3 +147,5 @@ parent script stash
 [stash]$ """
         self.do_test('test_12.py', cmp_str)
 
+if __name__ == '__main__':
+    unittest.main()

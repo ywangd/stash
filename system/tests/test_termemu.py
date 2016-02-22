@@ -5,7 +5,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 import unittest
 
-import stash
+from stash import stash
 
 class TermemuTests(unittest.TestCase):
 
@@ -43,3 +43,6 @@ class TermemuTests(unittest.TestCase):
         cmp_str = """[stash]$ The first line
 A quick brown fox jumps over the lazy do[stash]$ """
         assert self.stash.main_screen.text == cmp_str
+
+if __name__ == '__main__':
+    unittest.main()

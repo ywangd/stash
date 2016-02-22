@@ -5,7 +5,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 import unittest
 
-import stash
+from stash import stash
 
 class CompleterTests(unittest.TestCase):
 
@@ -71,3 +71,6 @@ class CompleterTests(unittest.TestCase):
     def test_completion_12(self):
         newline, possibilities = self.complete('ls $STASH_ROOT/bin/ls.')
         assert newline.replace('\\', '/') == 'ls $STASH_ROOT/bin/ls.py '
+
+if __name__ == '__main__':
+    unittest.main()

@@ -8,7 +8,7 @@ import time
 import unittest
 from io import StringIO
 
-import stash
+from stash import stash
 
 class ThreadsTests(unittest.TestCase):
 
@@ -71,5 +71,5 @@ test_102_1.py
 """
         assert outs1.getvalue() == cmp_str2, 'output not identical'
 
-
-
+if __name__ == '__main__':
+    unittest.main()

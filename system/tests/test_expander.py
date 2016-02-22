@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import os
 import unittest
 
-import stash
+from stash import stash
 
 class ExpanderTests(unittest.TestCase):
 
@@ -98,3 +98,6 @@ class ExpanderTests(unittest.TestCase):
         assert cmd.args[0] == '-1' and len(cmd.args) == 1
         assert cmd.io_redirect.operator == '>'
         assert cmd.io_redirect.filename == '&3'
+
+if __name__ == '__main__':
+    unittest.main()
