@@ -1,4 +1,4 @@
-'''
+"""
 Install and manage python packages
 
 search - Searches for packages
@@ -19,23 +19,21 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -n RESULT_COUNT
-'''
+"""
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from __future__ import unicode_literals
 import six.moves.xmlrpc_client
 from six.moves.configparser import SafeConfigParser
-import requests
 import argparse
-import tempfile
-import re
 import os
 import sys
 import shutil
 from types import ModuleType
 from io import open
 
+_stash = globals()['_stash']
 saved_modules = sys.modules
 saved_cwd = os.getcwd()
 SITE_PACKAGES = os.path.expanduser('~/Documents/site-packages')

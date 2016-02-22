@@ -6,7 +6,13 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import sys
-import urllib2
+import six
+
+if six.PY2:
+    import urllib2
+else:
+    import urllib3
+    urllib3.disable_warnings()
 import argparse
 from io import open
 
@@ -26,17 +32,21 @@ def main(args):
     url = ns.url or clipboard.get()
     output_file = ns.output_file or url.split('/')[-1]
 
+    console.show_activity()
     try:
-        console.show_activity()
 
         print('Opening: %s' % url)
-        u = urllib2.urlopen(url)
 
-        meta = u.info()
-        try:
-            file_size = int(meta.getheaders("Content-Length")[0])
-        except IndexError:
-            file_size = 0
+        if six.PY2:
+            r = urllib2.urlopen(url)
+            file_size = r.headers.getheader('Content-Length')
+        else:
+            http = urllib3.PoolManager()
+            r = http.request('GET', url)
+            file_size = r.getheader('Content-Length')
+
+        if file_size is not None:
+            file_size = int(file_size)
 
         print("Save as: %s " % output_file, end=' ')
         print("(%s bytes)" % file_size if file_size else "")
@@ -45,7 +55,7 @@ def main(args):
             file_size_dl = 0
             block_sz = 8192
             while True:
-                buf = u.read(block_sz)
+                buf = r.read(block_sz)
                 if not buf:
                     break
                 file_size_dl += len(buf)

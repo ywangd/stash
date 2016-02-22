@@ -9,7 +9,7 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import unicode_literals
 
-__version__ = '0.6.2a2'
+__version__ = '0.7.0a1'
 
 import os
 import sys
