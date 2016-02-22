@@ -27,20 +27,10 @@ module_names = (
 # Find out where the launch script is located and import differently
 _LAUNCH_DIR = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
 
-if os.path.isfile(os.path.join(_LAUNCH_DIR, 'stash.py')) \
-        and os.path.isfile(os.path.join(_LAUNCH_DIR, '__init__.py')) \
-        and os.path.isdir(os.path.join(_LAUNCH_DIR, 'system')):
-
-    if 'stash' in sys.modules:
-        for name in module_names:
-            sys.modules.pop(name)
-    from . import stash
-
-else:
-    if 'stash.stash' in sys.modules:
-        for name in module_names:
-            sys.modules.pop('stash.' + name)
-    from stash import stash
+if 'stash.stash' in sys.modules:
+    for name in module_names:
+        sys.modules.pop('stash.' + name)
+from stash import stash
 
 # noinspection PyProtectedMember
 debug = (
