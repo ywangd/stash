@@ -28,13 +28,13 @@ def main(args):
 
     else:
         # PK magic marker check
-        with open(ns.zipfile) as f:
+        with open(ns.zipfile, 'rb') as f:
             try:
                 pk_check = f.read(2)
             except:
-                pk_check = ''
+                pk_check = None
 
-        if pk_check != 'PK':
+        if pk_check != b'PK':
             print("%s: does not appear to be a zip file" % ns.zipfile)
             sys.exit(1)
 
