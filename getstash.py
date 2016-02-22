@@ -5,14 +5,7 @@ from __future__ import unicode_literals
 import os
 import shutil
 import sys
-
-IN_PY2 = sys.version_info[0] == 2
-
-if IN_PY2:
-    import urllib2
-else:
-    import urllib3
-    urllib3.disable_warnings()
+import requests
 import zipfile
 
 try:
@@ -29,26 +22,15 @@ TEMP_ZIPFILE = os.path.join(os.environ.get('TMPDIR', os.environ.get('TMP')),
 print('Downloading %s ...' % URL_ZIPFILE)
 
 try:
-    if IN_PY2:
-        r = urllib2.urlopen(URL_ZIPFILE)
-        file_size = r.headers.getheader('Content-Length')
-    else:
-        http = urllib3.PoolManager()
-        r = http.request('GET', URL_ZIPFILE)
-        file_size = r.getheader('Content-Length')
-
+    r = requests.get(URL_ZIPFILE, stream=True)
+    file_size = r.headers.get('Content-Length')
     if file_size is not None:
         file_size = int(file_size)
 
     with open(TEMP_ZIPFILE, 'wb') as outs:
-        file_size_dl = 0
         block_sz = 8192
-        while True:
-            buf = r.read(block_sz)
-            if not buf:
-                break
-            file_size_dl += len(buf)
-            outs.write(buf)
+        for chunk in r.iter_content(block_sz):
+            outs.write(chunk)
 
 except Exception as e:
     sys.stderr.write('{}\n'.format(str(e)))
