@@ -16,7 +16,7 @@ from __future__ import unicode_literals
 import argparse
 from six.moves import range
 from six.moves import input
-from io import open
+# from io import open
 # scp.py
 # Copyright (C) 2008 James Bardin <j.bardin@gmail.com>
 

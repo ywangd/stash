@@ -12,7 +12,7 @@ from __future__ import unicode_literals
 import argparse
 import sys
 from six.moves import range
-from io import open
+# from io import open
 
 INVISIBLE = list(range(0x20)) + [0x81, 0x8d, 0x8f, 0x90, 0x9d]
 

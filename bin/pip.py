@@ -31,7 +31,7 @@ import os
 import sys
 import shutil
 from types import ModuleType
-from io import open
+# from io import open
 
 _stash = globals()['_stash']
 saved_modules = sys.modules

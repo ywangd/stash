@@ -10,7 +10,7 @@ import sys
 import requests
 
 import argparse
-from io import open
+# from io import open
 
 try:
     import clipboard

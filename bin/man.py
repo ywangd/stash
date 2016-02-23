@@ -11,7 +11,7 @@ import ast
 import os
 import sys
 from six.moves import input
-from io import open
+# from io import open
 
 
 def all_commands():

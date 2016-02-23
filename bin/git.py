@@ -28,7 +28,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 import six
 from six.moves import input
-from io import open
+# from io import open
 
 SAVE_PASSWORDS = True
 

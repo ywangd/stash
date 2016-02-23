@@ -24,7 +24,7 @@ import re
 import sys
 import os
 import cStringIO
-from io import open
+# from io import open
 
 def get_hash(fileobj):
     h = SHA256.new()

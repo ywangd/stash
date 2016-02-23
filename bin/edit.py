@@ -18,7 +18,7 @@ import editor
 import time
 import argparse
 from six.moves import input
-from io import open
+# from io import open
 
 
 def open_temp(file='', new_tab=True):

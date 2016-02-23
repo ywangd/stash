@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 import sys
 import argparse
 import requests
-from io import open
+# from io import open
 
 try:
     import clipboard

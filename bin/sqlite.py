@@ -13,7 +13,7 @@ import sqlite3
 import os
 import cmd
 import sys
-from io import open
+# from io import open
 
 class SqliteCMD(cmd.Cmd):
     '''
