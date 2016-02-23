@@ -469,16 +469,7 @@ class ShTerminal(object):
 
     @on_main_thread
     def scroll_to_end(self):
-        content_height = self.content_size[1]
-        # rect_height is the visible rect's height
-        # rect_y is the y location where the visible rect locates in the
-        # coordinate of content_size
-        _, rect_height, _, rect_y = self.visible_rect
-        # If the space below rect_y is more than the visible rect's height,
-        # or if the visible rect is over-scrolled, scroll to the last line.
-        if content_height - rect_y > rect_height or \
-                (content_height > rect_height > content_height - rect_y):  # over-scroll
-            self.tvo.scrollRangeToVisible_((len(self.text), 0))
+        self.tvo.scrollRangeToVisible_((self.text_length, 0))
 
     @on_main_thread
     def begin_editing(self):
