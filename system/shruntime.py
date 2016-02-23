@@ -13,7 +13,7 @@ from io import TextIOWrapper
 import pyparsing as pp
 # noinspection PyUnresolvedReferences
 from six.moves import range
-from io import open
+from io import open as io_open
 
 # Detecting environments
 try:
@@ -93,7 +93,7 @@ class ShRuntime(object):
         # load history from last session
         # NOTE the first entry in history is the latest one
         try:
-            with open(self.historyfile) as ins:
+            with io_open(self.historyfile) as ins:
                 # History from old to new, history at 0 is the oldest
                 self.history = [line.strip() for line in ins.readlines()]
         except IOError:
@@ -113,7 +113,7 @@ class ShRuntime(object):
         # TODO: NO RC FILE loading
         if os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
             try:
-                with open(self.rcfile) as ins:
+                with io_open(self.rcfile) as ins:
                     self.stash(ins.readlines(),
                                persistent_level=1,
                                add_to_history=False, add_new_inp_line=False)
@@ -373,7 +373,7 @@ class ShRuntime(object):
                     outs = _SYS_STDOUT
                     errs = _SYS_STDERR
                 else:
-                    errs = outs = open(simple_command.io_redirect.filename, mode)
+                    errs = outs = io_open(simple_command.io_redirect.filename, mode)
 
             elif idx < n_simple_commands - 1:  # before the last piped command
                 outs = ShPipeIO()
@@ -475,7 +475,7 @@ class ShRuntime(object):
         self.handle_PYTHONPATH()  # Make sure PYTHONPATH is honored
 
         try:
-            with open(file_path) as fins:
+            with io_open(file_path) as fins:
                 lines = fins.readlines()
             # Get rid of possible encoding declaration as exec() does not like it
             # The encoding instruction seems to be recognized only when its in the
@@ -533,7 +533,7 @@ class ShRuntime(object):
 
         # Enclosing variables will be merged to environ when creating new thread
         try:
-            with open(filename) as fins:
+            with io_open(filename) as fins:
                 child_worker = self.run(fins.readlines(),
                                         final_ins=ins,
                                         final_outs=outs,
@@ -596,7 +596,7 @@ class ShRuntime(object):
 
     def save_history(self):
         try:
-            with open(self.historyfile, 'w') as outs:
+            with io_open(self.historyfile, 'w') as outs:
                 outs.write('\n'.join(self.history))
         except IOError:
             pass

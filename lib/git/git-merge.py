@@ -11,7 +11,7 @@ from git import diff3
 from git.gitutils import _get_repo, find_revision_sha, can_ff, merge_base, count_commits_between, is_ancestor, get_remote_tracking_branch, GitError
 import argparse
 from six.moves import zip
-from io import open
+from io import open as io_open
 
 
 
@@ -121,7 +121,7 @@ def merge_trees(store, base, mine, theirs):
         elif not b.path and t.path and not m.path: # add theirs to mine
             # add theirs
             print('  +',t.path, ': adding to head')
-            with open(t.path,'w') as f:
+            with io_open(t.path,'w') as f:
                 f.write(store[t.sha].data)
             added.append(t.path)
         elif not m == t: # conflict
@@ -131,7 +131,7 @@ def merge_trees(store, base, mine, theirs):
                         ,store[t.sha].data.splitlines(True))
             mergedfile=result['body']
             had_conflict=result['conflict']
-            with open(m.path,'w') as f:
+            with io_open(m.path,'w') as f:
                 for line in mergedfile:
                     f.write(line)
             if had_conflict:

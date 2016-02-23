@@ -17,9 +17,50 @@ collapseuser = _stash.libcore.collapseuser
 # Following functions for getting Pythonista and iOS version information are adapted from
 # https://github.com/cclauss/Ten-lines-or-less/blob/master/pythonista_version.py
 def pythonista_version():  # 2.0.1 (201000)
-    plist = plistlib.readPlist(os.path.abspath(os.path.join(sys.executable, '..', 'Info.plist')))
-    return '{CFBundleShortVersionString} ({CFBundleVersion})'.format(**plist)
-
+    try:
+        plist = plistlib.readPlist(os.path.abspath(os.path.join(sys.executable, '..', 'Info.plist')))
+        return '{CFBundleShortVersionString} ({CFBundleVersion})'.format(**plist)
+    except:
+        try:
+            # Use objc_util to access Info.plist via native APIs; will fail
+            # for versions < 2.0 (objc_util/ctypes weren't available)
+            from objc_util import NSBundle
+            return str(NSBundle.mainBundle().infoDictionary()['CFBundleShortVersionString'])
+        except ImportError:
+            # For older versions (1.x), determine the version by checking for capabilities (modules that were added)
+            version = None
+            try:
+                import ui
+                version = '1.5'
+            except ImportError:
+                pass
+            if not version:
+                try:
+                    import contacts
+                    version = '1.4'
+                except ImportError:
+                    pass
+            if not version:
+                try:
+                    import photos
+                    version = '1.3'
+                except ImportError:
+                    pass
+            if not version:
+                try:
+                    import PIL
+                    version = '1.2'
+                except ImportError:
+                    pass
+            if not version:
+                try:
+                    import editor
+                    version = '1.1'
+                except ImportError:
+                    pass
+            if not version:
+                version = '1.0'
+            return version
 
 def ios_version():  # 9.2 (64-bit iPad5,4)
     ios_ver, _, machine_model = platform.mac_ver()

@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 import os
 import json
-from io import open
+from io import open as io_open
 
 
 _subcmd_cfgfile = os.path.join(os.environ['STASH_ROOT'], '.completer_subcmd.json')
@@ -60,7 +60,7 @@ _subcmd_cfg = {
 
 if os.path.exists(_subcmd_cfgfile) and os.path.isfile(_subcmd_cfgfile):
     try:
-        with open(_subcmd_cfgfile) as ins:
+        with io_open(_subcmd_cfgfile) as ins:
             _subcmd_cfg.update(json.loads(ins.read()))
     except IOError:
         pass

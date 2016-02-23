@@ -13,17 +13,20 @@ import functools
 import threading
 from itertools import chain
 import six
-from io import open
+from io import open as io_open
 
 IN_PY2 = sys.version_info[0] == 2
 
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 
-PYTHONISTA_VERSION = '0.0'
+PYTHONISTA_VERSION = 'N/A'
 if IN_PYTHONISTA:
     import plistlib
-    PYTHONISTA_VERSION = plistlib.readPlist(
-        os.path.join(os.path.dirname(sys.executable), 'Info.plist'))['CFBundleShortVersionString']
+    try:  # in case plist read fails (e.g. compressed plist file)
+        PYTHONISTA_VERSION = plistlib.readPlist(
+            os.path.join(os.path.dirname(sys.executable), 'Info.plist'))['CFBundleShortVersionString']
+    except:
+        pass
 
 platform_string = platform.platform()
 
@@ -125,7 +128,7 @@ def is_binary_file(filename, nbytes=1024):
     :param int nbytes: number of bytes to read for test
     :return:
     """
-    with open(filename, 'rb') as ins:
+    with io_open(filename, 'rb') as ins:
         for c in ins.read(nbytes):
             oc = ord(c) if six.PY2 else c
             if 127 < oc < 256 or (oc < 32 and oc not in (9, 10, 13)):
