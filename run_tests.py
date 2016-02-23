@@ -20,4 +20,6 @@ testsuite = unittest.defaultTestLoader.discover('system',
                                                 pattern=ns.pattern)
 runner = unittest.TextTestRunner(verbosity=2 if ns.verbose else 1)
 
-runner.run(testsuite)
+result = runner.run(testsuite)
+
+sys.exit(0 if result.wasSuccessful() else 1)
