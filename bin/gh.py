@@ -1,10 +1,10 @@
 # coding: utf-8
 '''
 Usage: gh <command> [<args>...]
-
+       gh <command> (-h|--help)
 supported commands are:
 	gh fork <repo>		forks user/repo
-	gh create <repo>	 [<args>...]		creates a nee repo
+	gh create <repo>		creates a new repo
 	gh pull <base> <head>	pull request into base (user/repo:branch) from head(user:branch)
 '''
 def install_module_from_github(username, package_name, folder, version):
@@ -46,20 +46,20 @@ class GitHubRepoNotFoundError(Exception):
 
 
 def gh_fork( argv):
-	'''Usage: gh fork REPO
+	'''Usage: gh fork <repo>
 
 			Fork a repo to your own github account.
-			REPO	-  repo name of form user/repo
+			<repo>	-  repo name of form user/repo
 			
 	'''
 	args=docopt(gh_fork.__doc__, argv=argv)
 	console.show_activity()
 	g,user = setup_gh()
 	try:
-		other_repo = g.get_repo(args['REPO'])
+		other_repo = g.get_repo(args['<repo>'])
 		if other_repo:
 			mine=user.create_fork(other_repo)
-			print 'fork created:', mine.url
+			print('fork created:', mine.http_url)
 		else:
 			pass
 	finally:
@@ -69,35 +69,62 @@ def gh_create(argv):
 	'''Usage: gh create [options] NAME 
 
 	Options:
+	-h, --help             This message
 	-s <desc>, --description <desc>		Repo description
 	-h <url>, --homepage <url>				Homepage url
-	-p, --private		private
-	-i, --has_issues		has issues
-	-w, --has_wiki			has wiki
-	-d, --has_downloads		has downloads
-	-a, --auto_init		create readme and first commit
+	-p, --private          private
+	-i, --has_issues       has issues
+	-w, --has_wiki  			 has wiki
+	-d, --has_downloads    has downloads
+	-a, --auto_init     		create readme and first commit
 	-g <ign>, --gitignore_template <ign>  create gitignore using string
 	
 	
 	'''
 
 	args=docopt(gh_create.__doc__, argv=argv)
-	print args
-	kwargs= {key[2:]:value for key,value in args.items() if key.startswith('--') and key != '--private' and value}
-	print kwargs
+	kwargs= {key[2:]:value for key,value in args.items() if key.startswith('--') and value}
 	console.show_activity()
 	try:
 		g,user = setup_gh()
-		r=user.create_repo(args['NAME'],**kwargs)
-		print 'Created %s'%r.c
+		r=user.create_repo(args['<name>'],**kwargs)
+		print ('Created %s'%r.html_url)
 	finally:
 		console.hide_activity()
+		
+def gh_pull(argv):
+	'''Usage:  gh pull <baserepo>:<basebranch> [<headowner>:]<headbranch> [-t <title>] [-b <body>] [-t <issue>]
+
+		Create a pull request against repo BASEREPO:BASEBRANCH, from headrepo:headbranch.  
+
+		Options:
+			-t <title>, --title <title>  Title of pull request
+			-b <body>, --body <body>  Body of pull request.
+			-i <issue>, --issue <issue> Issue number
+
+        '''
+	args=docopt(gh_pull,argv==argv)
+	kwargs= {key[2:]:value for key,value in args.items() if key.startswith('--') and value}
+	console.show_activity()
+	try:
+		g,user = setup_gh()
+		baserepo=g.get_repo(args['<baserepo>'])
+		headowner=args['<headowner>'] or user.name
+		pullreq=baserepo.create_pull(args['<basebranch>'], ':'.join(headowner,args['<headbranch>']),**kwargs)
+		print u
+		print ('Created pull %s'%r.html_url)
+		print ('Changed files:')
+		print(pullreq.get_files)
+	finally:
+		console.hide_activity()
+		
 def setup_gh():
 	keychainservice='stash.git.github.com'
 	user = dict(keychain.get_services())[keychainservice]
 	pw = keychain.get_password(keychainservice, user)
 	g=Github(user,pw)
 	u=g.get_user()
+	
 	return g, u
 
 if __name__=='__main__':
