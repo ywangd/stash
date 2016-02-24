@@ -73,7 +73,6 @@ with open(TEMP_ZIPFILE, 'rb') as ins:
         sys.stderr.write('The zip file is corrupted. Pleases re-run the script.\n')
         sys.exit(1)
 
-
 print('Preparing the folder structure ...')
 # Move ptinstaller.py to bin
 shutil.move(TEMP_PTI, os.path.join(TARGET_DIR, 'bin/ptinstaller.py'))
@@ -82,7 +81,10 @@ shutil.move(TEMP_PTI, os.path.join(TARGET_DIR, 'bin/ptinstaller.py'))
 shutil.move(os.path.join(TARGET_DIR, 'launch_stash.py'),
             os.path.join(BASE_DIR, 'Documents/launch_stash.py'))
 
+# Remove setup files and possible legacy files
 try:
+    os.remove(TEMP_ZIPFILE)
+
     shutil.rmtree(os.path.join(TARGET_DIR, 'tests'))
 
     unwanted_files = ['getstash.py', 'run_tests.py', 'testing.py', 
