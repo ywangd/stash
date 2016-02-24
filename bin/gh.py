@@ -5,7 +5,7 @@ Usage: gh <command> [<args>...]
 supported commands are:
 	gh fork <repo>		forks user/repo
 	gh create <repo>		creates a new repo
-	gh pull <base> <head>	pull request into base (user/repo:branch) from head(user:branch)
+	gh pull <repo> <base> <head>	  pull request into base (user/repo:branch) from head(user:branch)
 '''
 def install_module_from_github(username, package_name, folder, version):
     """
@@ -39,34 +39,53 @@ except  ImportError:
 	install_module_from_github('docopt','docopt','docopt.py','master')
 from docopt import docopt
 from github import Github
-import keychain,console
+import keychain,console,inspect
 
 class GitHubRepoNotFoundError(Exception):
 	pass
 
 
-def gh_fork( argv):
+from functools import wraps
+
+def command(func):
+    @wraps(func)
+    def tmp(argv):
+       if len(argv)==1:
+         argv.append('--help')
+       try:
+       	 args=docopt(func.__doc__,argv=argv)
+       	 return func(args)
+       except SystemExit as e:
+       	print e
+
+    return tmp
+
+
+
+
+@command
+def gh_fork( args):
 	'''Usage: gh fork <repo>
 
 			Fork a repo to your own github account.
 			<repo>	-  repo name of form user/repo
 			
 	'''
-	args=docopt(gh_fork.__doc__, argv=argv)
 	console.show_activity()
 	g,user = setup_gh()
 	try:
 		other_repo = g.get_repo(args['<repo>'])
 		if other_repo:
 			mine=user.create_fork(other_repo)
-			print('fork created:', mine.http_url)
+			print('fork created: {}/{}'.format(mine.owner.login,mine.name))
 		else:
 			pass
 	finally:
 		console.hide_activity()
 		
-def gh_create(argv):
-	'''Usage: gh create [options] NAME 
+@command
+def gh_create(args):
+	'''Usage: gh create [options] <name> 
 
 	Options:
 	-h, --help             This message
@@ -81,8 +100,6 @@ def gh_create(argv):
 	
 	
 	'''
-
-	args=docopt(gh_create.__doc__, argv=argv)
 	kwargs= {key[2:]:value for key,value in args.items() if key.startswith('--') and value}
 	console.show_activity()
 	try:
@@ -92,32 +109,80 @@ def gh_create(argv):
 	finally:
 		console.hide_activity()
 		
-def gh_pull(argv):
-	'''Usage:  gh pull <baserepo>:<basebranch> [<headowner>:]<headbranch> [-t <title>] [-b <body>] [-t <issue>]
+def parse_branch(userinput):
+	if ':' in userinput:
+		owner,branch=userinput.split(':')
+	else:
+		owner=userinput
+		branch='master'
+	return owner,branch
+	
+def parent_owner(user,reponame):
+	return user.get_repo(reponame).parent.owner.login
 
-		Create a pull request against repo BASEREPO:BASEBRANCH, from headrepo:headbranch.  
+@command
+def gh_pull(args):
+	'''Usage: gh pull <reponame> <base> <head> [options]
+	
 
-		Options:
-			-t <title>, --title <title>  Title of pull request
-			-b <body>, --body <body>  Body of pull request.
-			-i <issue>, --issue <issue> Issue number
+Options:
+	-h, --help   							This message
+	-t <title>, --title <title>  	Title of pull request
+	-b <body>, --body <body>  		Body of pull request.
+	-i <issue>, --issue <issue>  	Issue number
+Examples:
+	gh pull stash ywangd jsbain 
+	gh pull stash ywangd:dev jsbain:dev
+	gh pull stash :dev :master
+			
+	base and head should be in the format owner:branch.
+	if base owner is omitted, owner of parent repo is used.
+	if head owner is omitted, user is used
+'''
 
-        '''
-	args=docopt(gh_pull,argv==argv)
-	kwargs= {key[2:]:value for key,value in args.items() if key.startswith('--') and value}
+
+
 	console.show_activity()
 	try:
 		g,user = setup_gh()
-		baserepo=g.get_repo(args['<baserepo>'])
-		headowner=args['<headowner>'] or user.name
-		pullreq=baserepo.create_pull(args['<basebranch>'], ':'.join(headowner,args['<headbranch>']),**kwargs)
-		print u
-		print ('Created pull %s'%r.html_url)
-		print ('Changed files:')
-		print(pullreq.get_files)
+		reponame=args['<reponame>']
+		baseowner,basebranch=parse_branch(args['<base>'])
+		if not baseowner:
+			baseowner=parent_owner(reponame)
+		
+		headowner,headbranch=parse_branch(args['<head>'])
+		if not headowner:
+			headowner=user.login
+		
+		baserepo = g.get_user(baseowner).get_repo(reponame)
+
+		if not args['--title']:
+			title=raw_input('Enter pull title:')
+		else:
+			title=args['--title']
+			
+
+		kwargs={}
+		kwargs['title']=title
+		if args['--body']:
+			kwargs['body']=args['--body']
+		kwargs['base']=basebranch
+		kwargs['head']=':'.join([headowner,headbranch])
+		if args['--issue']:
+			kwargs['issue']=baserepo.get_issue(args['--issue'])
+		pullreq=baserepo.create_pull(**kwargs)
+
+		
+		print ('Created pull %s'%pullreq.html_url)
+		print ('Commits:')
+		print([x.sha, x.commit.messagefor x in pullreq.get_commits()])
+		print([x.name x in pullreq.get_files()])
+	except:
+		print 'raise'
+		raise 
 	finally:
 		console.hide_activity()
-		
+	print('success')
 def setup_gh():
 	keychainservice='stash.git.github.com'
 	user = dict(keychain.get_services())[keychainservice]
@@ -128,11 +193,17 @@ def setup_gh():
 	return g, u
 
 if __name__=='__main__':
+	import sys
+	if len(sys.argv)==1:
+		sys.argv.append('--help')
+		
 	args=docopt(__doc__, version='0.1', options_first=True)
 	cmd=args['<command>']
 	argv=[cmd]+args['<args>']
 	try:
-		globals()['gh_%s'%cmd](argv)
+		func=locals()['gh_%s'%cmd]
 	except KeyError:
-		print 'no such cmd'
+		print 'No such cmd'
+		print __doc__
 		raise
+	func(argv)
