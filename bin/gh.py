@@ -177,9 +177,6 @@ Examples:
 		print ('Commits:')
 		print([x.sha, x.commit.messagefor x in pullreq.get_commits()])
 		print([x.name x in pullreq.get_files()])
-	except:
-		print 'raise'
-		raise 
 	finally:
 		console.hide_activity()
 	print('success')
@@ -203,7 +200,7 @@ if __name__=='__main__':
 	try:
 		func=locals()['gh_%s'%cmd]
 	except KeyError:
-		print 'No such cmd'
-		print __doc__
+		print ('No such cmd')
+		print (__doc__)
 		raise
 	func(argv)
