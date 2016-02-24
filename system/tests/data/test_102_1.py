@@ -7,7 +7,6 @@ import os
 import time
 from six.moves import range
 
-
-for i in range(5):
+for i in range(10):
     print('{}'.format(os.path.basename(__file__)))
     time.sleep(1)

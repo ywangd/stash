@@ -41,9 +41,9 @@ sleeping ... 1
         outs = StringIO()
         self.stash('test_102_1.py &', final_outs=outs)
         self.stash('test_102_2.py &', final_outs=outs)
-        time.sleep(7)
+        time.sleep(12)
         s = outs.getvalue()
-        assert 0 < s.find('test_102_2.py') < len(s)/2, 'Output do not interleave'
+        assert 0 < s.find('test_102_2.py') < len(s) / 2, 'Output do not interleave'
 
     def test_103(self):
         """
@@ -60,10 +60,21 @@ test_102_2.py
 test_102_2.py
 test_102_2.py
 test_102_2.py
+test_102_2.py
+test_102_2.py
+test_102_2.py
+test_102_2.py
+test_102_2.py
 [stash]$ """
+        
         assert self.stash.main_screen.text == cmp_str1, 'output not identical'
 
         cmp_str2 = r"""test_102_1.py
+test_102_1.py
+test_102_1.py
+test_102_1.py
+test_102_1.py
+test_102_1.py
 test_102_1.py
 test_102_1.py
 test_102_1.py
