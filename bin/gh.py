@@ -5,7 +5,11 @@ Usage: gh <command> [<args>...]
 supported commands are:
 	gh fork <repo>		forks user/repo
 	gh create <repo>		creates a new repo
-	gh pull <repo> <base> <head>	  pull request into base (user/repo:branch) from head(user:branch)
+	gh pull <repo> <base> <head>	  create a pull request
+For all commands, use gh <command> --help for more detailed help
+
+NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.com', which is also the default from the git module.  
+
 '''
 def install_module_from_github(username, package_name, folder, version):
     """
