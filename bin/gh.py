@@ -179,8 +179,8 @@ Examples:
 		
 		print ('Created pull %s'%pullreq.html_url)
 		print ('Commits:')
-		print([x.sha, x.commit.messagefor x in pullreq.get_commits()])
-		print([x.name x in pullreq.get_files()])
+		print([(x.sha, x.commit.message) for x in pullreq.get_commits()])
+		print([x.name for x in pullreq.get_files()])
 	finally:
 		console.hide_activity()
 	print('success')
