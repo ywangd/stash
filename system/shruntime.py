@@ -1,8 +1,8 @@
 # coding: utf-8
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
-from __future__ import unicode_literals
+# from __future__ import absolute_import
+# from __future__ import print_function
+# from __future__ import division
+# from __future__ import unicode_literals
 import os
 import sys
 import logging
@@ -118,7 +118,7 @@ class ShRuntime(object):
                                persistent_level=1,
                                add_to_history=False, add_new_inp_line=False)
             except IOError:
-                self.stash.write_message('%s: error reading rcfile\n' % self.rcfile)
+                self.stash.write_message(u'%s: error reading rcfile\n' % self.rcfile)
 
     def find_script_file(self, filename):
         _, current_state = self.get_current_worker_and_state()
@@ -256,30 +256,30 @@ class ShRuntime(object):
             except pp.ParseException as e:
                 if self.debug:
                     self.logger.debug('ParseException: %s\n' % repr(e))
-                self.stash.write_message('syntax error: at char %d: %s\n' % (e.loc, e.pstr))
+                self.stash.write_message(u'syntax error: at char %d: %s\n' % (e.loc, e.pstr))
 
             except ShEventNotFound as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('{}: event not found\n'.format(e))
+                self.stash.write_message(u'{}: event not found\n'.format(e))
 
             except ShBadSubstitution as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('{}\n'.format(e))
+                self.stash.write_message(u'{}\n'.format(e))
 
             except ShInternalError as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('{}\n'.format(e))
+                self.stash.write_message(u'{}\n'.format(e))
 
             except IOError as e:
                 if self.debug:
                     self.logger.debug('IOError: %s\n' % repr(e))
-                self.stash.write_message('{}: {}\n'.format(e.filename, e.strerror))
+                self.stash.write_message(u'{}: {}\n'.format(e.filename, e.strerror))
 
             except KeyboardInterrupt as e:
-                self.stash.write_message('^C\nKeyboardInterrupt: {}\n'.format(e))
+                self.stash.write_message(u'^C\nKeyboardInterrupt: {}\n'.format(e))
 
             # This catch all exception handler is to handle errors outside of
             # run_pipe_sequence. The traceback print is mainly for debugging
@@ -289,7 +289,7 @@ class ShRuntime(object):
                 etype, evalue, tb = sys.exc_info()
                 if self.debug:
                     self.logger.debug('Exception: %s\n' % repr(e))
-                self.stash.write_message('{}\n'.format(e))
+                self.stash.write_message(u'{}\n'.format(e))
                 if self.py_traceback or self.py_pdb:
                     import traceback
                     traceback.print_exception(etype, evalue, tb)
@@ -501,7 +501,7 @@ class ShRuntime(object):
             err_msg = '{}: {}\n'.format(repr(etype), evalue)
             if self.debug:
                 self.logger.debug(err_msg)
-            self.stash.write_message(err_msg)
+            self.stash.write_message(err_msg.decode('utf-8'))
             if self.py_traceback or self.py_pdb:
                 import traceback
                 traceback.print_exception(etype, evalue, tb)
@@ -546,11 +546,11 @@ class ShRuntime(object):
             current_state.return_value = child_worker.state.return_value
 
         except IOError as e:
-            self.stash.write_message('{}: {}\n'.format(e.filename, e.strerror))
+            self.stash.write_message(u'{}: {}\n'.format(e.filename, e.strerror))
             current_state.return_value = 1
 
         except:
-            self.stash.write_message('%s: error while executing shell script\n' % filename)
+            self.stash.write_message(u'%s: error while executing shell script\n' % filename)
             current_state.return_value = 2
 
     def get_prompt(self):
@@ -571,11 +571,11 @@ class ShRuntime(object):
 
     def push_to_background(self):
         if self.child_thread:
-            self.stash.write_message('pushing current job to background ...\n')
+            self.stash.write_message(u'pushing current job to background ...\n')
             self.child_thread.set_background()
             self.script_will_end()
         else:
-            self.stash.write_message('no running foreground job\n')
+            self.stash.write_message(u'no running foreground job\n')
             self.stash.io.write(self.stash.runtime.get_prompt())
 
     @on_main_thread
@@ -583,7 +583,7 @@ class ShRuntime(object):
         worker.set_background(False)
         self.stash.mini_buffer.config_runtime_callback(None)
         self.stash.write_message(
-            'job {} is now running in foreground ...'.format(worker.job_id))
+            u'job {} is now running in foreground ...'.format(worker.job_id))
 
     # TODO: The history stuff should be handled by a separate class
     def add_history(self, s):
