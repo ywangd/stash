@@ -44,6 +44,7 @@ try:
     import pyte
 except ImportError:
     _stash('pip install pyte 0.4.10')
+    import pyte
 
 import paramiko
 
@@ -52,6 +53,9 @@ if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
     _stash('pip install paramiko 1.16.0')
     print('Please restart Pythonista for changes to take full effect')
     sys.exit(0)
+
+# Redirect and throttle paramiko's logging messages
+paramiko.util.log_to_file(os.path.join(os.environ['TMPDIR'], 'ssh.log'), level=30)
 
 
 class StashSSH(object):
