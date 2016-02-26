@@ -46,6 +46,10 @@ alias copy='pbcopy'
 alias paste='pbpaste'
 """
 
+if not IN_PY2:  # alias 2to3 tool in py3
+    _DEFAULT_RC += """alias 2to3='python -m lib2to3'
+"""
+
 
 class ShRuntime(object):
 
@@ -498,10 +502,10 @@ class ShRuntime(object):
             current_state.return_value = 1
 
             etype, evalue, tb = sys.exc_info()
-            err_msg = '{}: {}\n'.format(repr(etype), evalue)
+            err_msg = u'{}: {}\n'.format(repr(etype), evalue)
             if self.debug:
                 self.logger.debug(err_msg)
-            self.stash.write_message(err_msg.decode('utf-8'))
+            self.stash.write_message(err_msg)
             if self.py_traceback or self.py_pdb:
                 import traceback
                 traceback.print_exception(etype, evalue, tb)

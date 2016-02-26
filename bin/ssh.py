@@ -128,7 +128,8 @@ class StashSSH(object):
             if self.chan.recv_ready():
                 rcv = self.chan.recv(4096)
                 # _SYS_STDOUT.write('RRR {%s}\n' % repr(rcv))
-                rcv = rcv.decode('utf-8', errors='ignore')
+                if isinstance(rcv, bytes):
+                    rcv = rcv.decode('utf-8', errors='ignore')
                 x, y = self.screen.cursor.x, self.screen.cursor.y
                 self.stream.feed(rcv)
 

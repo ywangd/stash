@@ -71,7 +71,8 @@ class StashTelnet(object):
                 if sock == self.client:
                     rcv = sock.read_very_eager()
                     if rcv:
-                        rcv = rcv.decode('utf-8', errors='ignore')
+                        if isinstance(rcv, bytes):
+                            rcv = rcv.decode('utf-8', errors='ignore')
                         x, y = self.screen.cursor.x, self.screen.cursor.y
                         self.stream.feed(rcv)
                     if self.screen.dirty or x != self.screen.cursor.x or y != self.screen.cursor.y:
@@ -103,7 +104,7 @@ class SshUserActionDelegate(object):
 
     def send(self, s):
         self.telnet.stream.feed(s if isinstance(s, six.text_type) else s.decode('utf-8'))
-        self.telnet.client.write(s.encode('utf-8'))
+        self.telnet.client.write(s.encode('utf-8') if isinstance(s, six.text_type) else s)
 
 
 class SshTvVkKcDelegate(SshUserActionDelegate):

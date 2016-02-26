@@ -403,8 +403,9 @@ class SCPClient(object):
                 path = self._recv_dir
                 self._rename = False
             elif os.name == 'nt':
-                path = os.path.join(asunicode_win(self._recv_dir),
-                                    parts[2].decode('utf-8'))
+                path = os.path.join(
+                    asunicode_win(self._recv_dir),
+                    parts[2].decode('utf-8') if isinstance(parts[2], 'bytes') else parts[2])
             else:
                 path = os.path.join(asbytes(self._recv_dir),
                                     parts[2])
@@ -464,8 +465,9 @@ class SCPClient(object):
                 path = self._recv_dir
                 self._rename = False
             elif os.name == 'nt':
-                path = os.path.join(asunicode_win(self._recv_dir),
-                                    parts[2].decode('utf-8'))
+                path = os.path.join(
+                    asunicode_win(self._recv_dir),
+                    parts[2].decode('utf-8') if isinstance(parts[2], 'bytes') else parts[2])
             else:
                 path = os.path.join(asbytes(self._recv_dir),
                                     parts[2])
