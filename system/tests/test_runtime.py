@@ -14,6 +14,11 @@ class RuntimeTests(unittest.TestCase):
         self.stash = stash.StaSh()
         self.stash('cd $STASH_ROOT')
         self.stash('BIN_PATH=$STASH_ROOT/system/tests/data:$BIN_PATH')
+        try:
+            self.stash.runtime.state.aliases.pop('2to3')  # only in Python 3
+            self.stash.runtime.state.enclosing_aliases.pop('2to3')
+        except KeyError:
+            pass
         self.stash('clear')
 
     def tearDown(self):
