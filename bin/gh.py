@@ -1,41 +1,46 @@
 # coding: utf-8
-'''
+"""
 Usage: gh <command> [<args>...]
-       gh <command> (-h|--help)
+	   gh <command> (-h|--help)
 supported commands are:
 	gh fork <repo>		forks user/repo
 	gh create <repo>		creates a new repo
 	gh pull <repo> <base> <head>	  create a pull request
 For all commands, use gh <command> --help for more detailed help
 
-NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.com', which is also the default from the git module.  
+NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.com', which is also the default from the git module.
 
-'''
+"""
+import sys
+
 def install_module_from_github(username, package_name, folder, version):
-    """
-    Install python module from github zip files
-    """
-    cmd_string = """
-        echo Installing {1} {3} ...
-        wget https://github.com/{0}/{1}/archive/{3}.zip -o $TMPDIR/{1}.zip
-        mkdir $TMPDIR/{1}_src
-        unzip $TMPDIR/{1}.zip -d $TMPDIR/{1}_src
-        rm -f $TMPDIR/{1}.zip
-        mv $TMPDIR/{1}_src/{2} $STASH_ROOT/lib/
-        rm -rf $TMPDIR/{1}_src
-        echo Done
-        """.format(username,
-                   package_name,folder,
-                   version
-                   )
-    globals()['_stash'](cmd_string)
+	"""
+	Install python module from github zip files
+	"""
+	cmd_string = """
+		echo Installing {1} {3} ...
+		wget https://github.com/{0}/{1}/archive/{3}.zip -o $TMPDIR/{1}.zip
+		mkdir $TMPDIR/{1}_src
+		unzip $TMPDIR/{1}.zip -d $TMPDIR/{1}_src
+		rm -f $TMPDIR/{1}.zip
+		mv $TMPDIR/{1}_src/{2} $STASH_ROOT/lib/
+		rm -rf $TMPDIR/{1}_src
+		echo Done
+		""".format(username,
+				   package_name,folder,
+				   version
+				   )
+	globals()['_stash'](cmd_string)
 
 
 try:
-    import github
+	import github
 except ImportError:
-    install_module_from_github('pygithub', 'pygithub', 'github','master')
-    import github
+	install_module_from_github('pygithub', 'pygithub', 'github','master')
+	if sys.version_info.major > 2:
+		print('Runing 2to3 on pygithub ...')
+		_stash('2to3 -w $STASH_ROOT/lib/github/*.py > /dev/null')
+	import github
 
 try: 
 	import docopt
@@ -52,17 +57,17 @@ class GitHubRepoNotFoundError(Exception):
 from functools import wraps
 
 def command(func):
-    @wraps(func)
-    def tmp(argv):
-       if len(argv)==1:
-         argv.append('--help')
-       try:
-       	 args=docopt(func.__doc__,argv=argv)
-       	 return func(args)
-       except SystemExit as e:
-       	print e
+	@wraps(func)
+	def tmp(argv):
+		if len(argv)==1:
+			argv.append('--help')
+		try:
+			args=docopt(func.__doc__,argv=argv)
+			return func(args)
+		except SystemExit as e:
+			print(e)
 
-    return tmp
+	return tmp
 
 
 
@@ -109,7 +114,7 @@ def gh_create(args):
 	try:
 		g,user = setup_gh()
 		r=user.create_repo(args['<name>'],**kwargs)
-		print ('Created %s'%r.html_url)
+		print('Created %s'%r.html_url)
 	finally:
 		console.hide_activity()
 		
@@ -177,8 +182,8 @@ Examples:
 		pullreq=baserepo.create_pull(**kwargs)
 
 		
-		print ('Created pull %s'%pullreq.html_url)
-		print ('Commits:')
+		print('Created pull %s'%pullreq.html_url)
+		print('Commits:')
 		print([(x.sha, x.commit.message) for x in pullreq.get_commits()])
 		print([x.name for x in pullreq.get_files()])
 	finally:
@@ -204,7 +209,7 @@ if __name__=='__main__':
 	try:
 		func=locals()['gh_%s'%cmd]
 	except KeyError:
-		print ('No such cmd')
-		print (__doc__)
+		print('No such cmd')
+		print(__doc__)
 		raise
 	func(argv)
