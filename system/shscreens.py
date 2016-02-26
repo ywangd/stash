@@ -559,7 +559,7 @@ class ShSequentialScreen(object):
                     # self.logger.info('idx = %s' % idx)
                     if idx >= self.text_length:
                         break
-                    idx_line, idx_column = idx / (ncolumns + 1), idx % (ncolumns + 1)
+                    idx_line, idx_column = idx // (ncolumns + 1), idx % (ncolumns + 1)
                     if idx_column == ncolumns:
                         continue
                     pyte_char = pyte_screen.buffer[idx_line][idx_column]
@@ -574,7 +574,7 @@ class ShSequentialScreen(object):
                 self._buffer.pop()
 
             for idx in range(self.intact_right_bound, nchars_pyte_screen):
-                idx_line, idx_column = idx / (ncolumns + 1), idx % (ncolumns + 1)
+                idx_line, idx_column = idx // (ncolumns + 1), idx % (ncolumns + 1)
                 if idx_column != ncolumns:
                     c = pyte_screen.buffer[idx_line][idx_column]
                     self._buffer.append(ShChar(**c._asdict()))
