@@ -21,16 +21,20 @@ __home_page__ = "http://li2z.cn/"
 
 import os
 import posixpath
+import six
 import six.moves.BaseHTTPServer
-import urllib
 import cgi
 import shutil
 import mimetypes
 import re
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from io import StringIO
+if six.PY2:
+    try:
+        from cStringIO import StringIO
+    except ImportError:
+        from io import StringIO
+else:
+    from io import BytesIO as StringIO
+from six.moves.urllib.parse import quote, unquote
     
 
 class SimpleHTTPRequestHandler(six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
@@ -67,43 +71,49 @@ class SimpleHTTPRequestHandler(six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
         r, info = self.deal_post_data()
         print(r, info, "by: ", self.client_address)
         f = StringIO()
-        f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
-        f.write("<html>\n<title>Upload Result Page</title>\n")
-        f.write("<body>\n<h2>Upload Result Page</h2>\n")
-        f.write("<hr>\n")
+        f.write(b'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
+        f.write(b"<html>\n<title>Upload Result Page</title>\n")
+        f.write(b"<body>\n<h2>Upload Result Page</h2>\n")
+        f.write(b"<hr>\n")
         if r:
-            f.write("<strong>Success:</strong>")
+            f.write(b"<strong>Success:</strong>")
         else:
-            f.write("<strong>Failed:</strong>")
+            f.write(b"<strong>Failed:</strong>")
         f.write(info)
-        f.write("<br><a href=\"%s\">back</a>" % self.headers['referer'])
-        f.write("<hr><small>Powerd By: bones7456, check new version at ")
-        f.write("<a href=\"http://li2z.cn/?s=SimpleHTTPServerWithUpload\">")
-        f.write("here</a>.</small></body>\n</html>\n")
+        f.write(("<br><a href=\"%s\">back</a>" % self.headers['referer']).encode('utf-8', 'ignore'))
+        f.write(b"<hr><small>Powerd By: bones7456, check new version at ")
+        f.write(b"<a href=\"http://li2z.cn/?s=SimpleHTTPServerWithUpload\">")
+        f.write(b"here</a>.</small></body>\n</html>\n")
         length = f.tell()
         f.seek(0)
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.send_header("Content-Length", str(length))
+        self.send_header(b"Content-type", b"text/html")
+        self.send_header(b"Content-Length", str(length).encode('utf-8'))
         self.end_headers()
         if f:
             self.copyfile(f, self.wfile)
             f.close()
         
     def deal_post_data(self):
-        boundary = self.headers.plisttext.split("=")[1]
+        if six.PY2:
+            boundary = self.headers.plisttext.split("=")[1]
+        else:
+            boundary = self.headers.get_boundary().encode('utf-8')
         remainbytes = int(self.headers['content-length'])
         line = self.rfile.readline()
         remainbytes -= len(line)
         if not boundary in line:
-            return (False, "Content NOT begin with boundary")
+            return (False, b"Content NOT begin with boundary")
         line = self.rfile.readline()
         remainbytes -= len(line)
-        fn = re.findall(r'Content-Disposition.*name="file"; filename="(.*)"', line)
+        if six.PY2:
+            fn = re.findall(r'Content-Disposition.*name="file"; filename="(.*)"', line)
+        else:
+            fn = re.findall(b'Content-Disposition.*name="file"; filename="(.*)"', line)
         if not fn:
-            return (False, "Can't find out file name...")
+            return (False, b"Can't find out file name...")
         path = self.translate_path(self.path)
-        fn = os.path.join(path, fn[0])
+        fn = os.path.join(path, fn[0].decode('utf-8', 'ignore'))
         line = self.rfile.readline()
         remainbytes -= len(line)
         line = self.rfile.readline()
@@ -111,7 +121,7 @@ class SimpleHTTPRequestHandler(six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             out = open(fn, 'wb')
         except IOError:
-            return (False, "Can't create file to write, do you have permission to write?")
+            return (False, b"Can't create file to write, do you have permission to write?")
                 
         preline = self.rfile.readline()
         remainbytes -= len(preline)
@@ -120,15 +130,15 @@ class SimpleHTTPRequestHandler(six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
             remainbytes -= len(line)
             if boundary in line:
                 preline = preline[0:-1]
-                if preline.endswith('\r'):
+                if preline.endswith(b'\r'):
                     preline = preline[0:-1]
                 out.write(preline)
                 out.close()
-                return (True, "File '%s' upload success!" % fn)
+                return (True, ("File '%s' upload success!" % fn).encode('utf-8', 'ignore'))
             else:
                 out.write(preline)
                 preline = line
-        return (False, "Unexpect Ends of data.")
+        return (False, b"Unexpect Ends of data.")
 
     def send_head(self):
         """Common code for GET and HEAD commands.
@@ -147,7 +157,7 @@ class SimpleHTTPRequestHandler(six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
             if not self.path.endswith('/'):
                 # redirect browser - doing basically what apache does
                 self.send_response(301)
-                self.send_header("Location", self.path + "/")
+                self.send_header(b"Location", (self.path + "/").encode('utf-8', 'ignore'))
                 self.end_headers()
                 return None
             for index in "index.html", "index.htm":
@@ -164,13 +174,13 @@ class SimpleHTTPRequestHandler(six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
             # transmitted *less* than the content-length!
             f = open(path, 'rb')
         except IOError:
-            self.send_error(404, "File not found")
+            self.send_error(404, b"File not found")
             return None
         self.send_response(200)
-        self.send_header("Content-type", ctype)
+        self.send_header(b"Content-type", ctype.encode('utf-8', 'ignore'))
         fs = os.fstat(f.fileno())
-        self.send_header("Content-Length", str(fs[6]))
-        self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+        self.send_header(b"Content-Length", str(fs[6]).encode('utf-8', 'ignore'))
+        self.send_header(b"Last-Modified", self.date_time_string(fs.st_mtime).encode('utf-8', 'ignore'))
         self.end_headers()
         return f
 
@@ -185,19 +195,19 @@ class SimpleHTTPRequestHandler(six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             list = os.listdir(path)
         except os.error:
-            self.send_error(404, "No permission to list directory")
+            self.send_error(404, b"No permission to list directory")
             return None
         list.sort(key=lambda a: a.lower())
         f = StringIO()
-        displaypath = cgi.escape(urllib.unquote(self.path))
-        f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
-        f.write("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
-        f.write("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
-        f.write("<hr>\n")
-        f.write("<form ENCTYPE=\"multipart/form-data\" method=\"post\">")
-        f.write("<input name=\"file\" type=\"file\"/>")
-        f.write("<input type=\"submit\" value=\"upload\"/></form>\n")
-        f.write("<hr>\n<ul>\n")
+        displaypath = cgi.escape(unquote(self.path))
+        f.write(b'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
+        f.write(("<html>\n<title>Directory listing for %s</title>\n" % displaypath).encode('utf-8'))
+        f.write(("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath).encode('utf-8'))
+        f.write(b"<hr>\n")
+        f.write(b"<form ENCTYPE=\"multipart/form-data\" method=\"post\">")
+        f.write(b"<input name=\"file\" type=\"file\"/>")
+        f.write(b"<input type=\"submit\" value=\"upload\"/></form>\n")
+        f.write(b"<hr>\n<ul>\n")
         for name in list:
             fullname = os.path.join(path, name)
             displayname = linkname = name
@@ -208,14 +218,14 @@ class SimpleHTTPRequestHandler(six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
             if os.path.islink(fullname):
                 displayname = name + "@"
                 # Note: a link to a directory displays with @ and links with /
-            f.write('<li><a href="%s">%s</a>\n'
-                    % (urllib.quote(linkname), cgi.escape(displayname)))
-        f.write("</ul>\n<hr>\n</body>\n</html>\n")
+            f.write(('<li><a href="%s">%s</a>\n'
+                    % (quote(linkname), cgi.escape(displayname))).encode('utf-8'))
+        f.write(b"</ul>\n<hr>\n</body>\n</html>\n")
         length = f.tell()
         f.seek(0)
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.send_header("Content-Length", str(length))
+        self.send_header(b"Content-type", b"text/html")
+        self.send_header(b"Content-Length", str(length).encode('utf-8'))
         self.end_headers()
         return f
 
@@ -230,7 +240,7 @@ class SimpleHTTPRequestHandler(six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
         # abandon query parameters
         path = path.split('?',1)[0]
         path = path.split('#',1)[0]
-        path = posixpath.normpath(urllib.unquote(path))
+        path = posixpath.normpath(unquote(path))
         words = path.split('/')
         words = [_f for _f in words if _f]
         path = os.getcwd()
