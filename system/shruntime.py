@@ -464,6 +464,7 @@ class ShRuntime(object):
         namespace['__file__'] = os.path.abspath(file_path)
         namespace['_stash'] = self.stash
 
+        saved_sys_argv = sys.argv[:]
         # First argument is the script name
         sys.argv = [os.path.basename(filename)] + (args or [])
 
@@ -517,6 +518,7 @@ class ShRuntime(object):
             # Thread specific vars are not modified, e.g. current_state.environ is unchanged.
             # This means the vars cannot be changed inside a python script. It can only be
             # done through shell command, e.g. NEW_VAR=42
+            sys.argv = saved_sys_argv
             sys.path = saved_sys_path
             os.environ = saved_os_environ
 

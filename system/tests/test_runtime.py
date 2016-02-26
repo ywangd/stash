@@ -152,5 +152,14 @@ parent script stash
 [stash]$ """
         self.do_test('test_12.py', cmp_str)
 
+    def test_13(self):
+        """
+        Preserve original argv after executing another command.
+        """
+        cmp_str = r"""[stash]$ from 13_1: test_13_1.py sub cmd args
+from 13: test_13.py original some random args
+[stash]$ """
+        self.do_test('test_13.py original some random args', cmp_str)
+
 if __name__ == '__main__':
     unittest.main()
