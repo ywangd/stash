@@ -182,7 +182,7 @@ Examples:
 		print ('Commits:')
 		print([(x.sha, x.commit.message) for x in pullreq.get_commits()])
 		print ('Changed Files:')
-		print([x.name for x in pullreq.get_files()])
+		print([x.filename for x in pullreq.get_files()])
 	finally:
 		console.hide_activity()
 	print('success')
