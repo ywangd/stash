@@ -57,9 +57,12 @@ def main(args):
 
     except:
         print('invalid url: %s' % url)
+        sys.exit(1)
 
     finally:
         console.hide_activity()
+
+    sys.exit(0)
 
 
 if __name__ == '__main__':

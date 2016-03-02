@@ -84,15 +84,19 @@ class ShState(object):
         if persistent_level == 0:
             if os.getcwd() != child_state.enclosed_cwd:
                 os.chdir(child_state.enclosed_cwd)
+            # TODO: return status?
+
         elif persistent_level == 1:
             self.aliases = dict(child_state.aliases)
             self.enclosed_cwd = os.getcwd()
             self.environ = dict(child_state.environ)
             self.sys_path = child_state.sys_path[:]
+
         elif persistent_level == 2:
             self.enclosing_aliases = child_state.aliases
             self.enclosing_environ = child_state.environ
             self.enclosing_cwd = os.getcwd()
+            # TODO: return status?
             if self.enclosed_cwd is not None:
                 os.chdir(self.enclosed_cwd)
 

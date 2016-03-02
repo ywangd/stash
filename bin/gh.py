@@ -131,13 +131,15 @@ def parent_owner(user,reponame):
 
 @command
 def gh_pull(args):
-	'''Usage: gh pull <reponame> <base> <head> [options]
-	
+	'''Usage: 
+	gh pull <reponame> <base> [<head>]
+	gh pull <reponame> <base> [<head>] --title <title> [--body <body>]
+	gh pull <reponame> <base> [<head>] -i <issue>
 
 Options:
 	-h, --help   							This message
 	-t <title>, --title <title>  	Title of pull request
-	-b <body>, --body <body>  		Body of pull request.
+	-b <body>, --body <body>  		Body of pull request [default: ]
 	-i <issue>, --issue <issue>  	Issue number
 Examples:
 	gh pull stash ywangd jsbain 
@@ -147,7 +149,7 @@ Examples:
 	base and head should be in the format owner:branch.
 	if base owner is omitted, owner of parent repo is used.
 	if head owner is omitted, user is used
-'''
+	'''
 
 
 
@@ -158,34 +160,34 @@ Examples:
 		baseowner,basebranch=parse_branch(args['<base>'])
 		if not baseowner:
 			baseowner=parent_owner(reponame)
-		
+		if not args['<head>']:
+			args['<head>']=':'
 		headowner,headbranch=parse_branch(args['<head>'])
 		if not headowner:
 			headowner=user.login
 		
 		baserepo = g.get_user(baseowner).get_repo(reponame)
-
-		if not args['--title']:
-			title=raw_input('Enter pull title:')
-		else:
-			title=args['--title']
-			
-
+		
 		kwargs={}
-		kwargs['title']=title
-		if args['--body']:
-			kwargs['body']=args['--body']
-		kwargs['base']=basebranch
-		kwargs['head']=':'.join([headowner,headbranch])
 		if args['--issue']:
 			kwargs['issue']=baserepo.get_issue(args['--issue'])
+		elif not args['--title']:
+			kwargs['title']=raw_input('Enter pull title:')
+			kwargs['body']=raw_input('Enter pull body:')
+		else:
+			kwargs['title']=args['--title']
+			kwargs['body']=args['--body'] or ''
+
+		kwargs['base']=basebranch
+		kwargs['head']=':'.join([headowner,headbranch])
 		pullreq=baserepo.create_pull(**kwargs)
 
-		
 		print('Created pull %s'%pullreq.html_url)
 		print('Commits:')
 		print([(x.sha, x.commit.message) for x in pullreq.get_commits()])
-		print([x.name for x in pullreq.get_files()])
+		print('Changed Files:')
+		print([x.filename for x in pullreq.get_files()])
+
 	finally:
 		console.hide_activity()
 	print('success')

@@ -57,7 +57,7 @@ def extract_members(members,extract):
                 yield tarinfo
 
         
-def extract_all(filename,members=None):
+def extract_all(filename,members=None, directory=''):
     if args.gzip:
         output_print('Reading gzip file.')
         tar = tarfile.open(filename, "r:gz")
@@ -70,9 +70,9 @@ def extract_all(filename,members=None):
     output_print('Extracting files.')
     #check for specific file extraction
     if members:
-        tar.extractall(path='',members=extract_members(tar,members))
+        tar.extractall(path=directory,members=extract_members(tar,members))
     else:
-        tar.extractall(path='')
+        tar.extractall(path=directory)
     tar.close()
     print('Archive extracted.')
     
@@ -114,14 +114,20 @@ def list_tar(filename):
 
 if __name__=='__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('-c','--create',action='store_true', default=False,help='Creates a new archive')
+    ap.add_argument('-c', '--create',action='store_true', default=False,help='Creates a new archive')
     ap.add_argument('-v', '--verbose',action='store_true', default=False,help='Verbose output print.')
-    ap.add_argument('-t', '--list',action='store_true', default=False,help='List Contents')
+    ap.add_argument('-t',  '--list',action='store_true', default=False,help='List Contents')
     ap.add_argument('-j','--bz2',action='store_true', default=False,help='Compress as bz2 format')
-    ap.add_argument('-z','--gzip',action='store_true', default=False,help='Compress as gzip format')
-    ap.add_argument('-x','--extract',action='store_true', default=False,help='Extract an archive.')
-    ap.add_argument('-f','--file',action='store',help='Archive filename.')
-    ap.add_argument('files',action='store',default=[],help='Create: Files/Dirs to add to archive.\nExtract: Specific Files/Dirs to extract, default: all',nargs='*')
+    ap.add_argument('-z', '--gzip',action='store_true', default=False,help='Compress as gzip format')
+    ap.add_argument('-x', '--extract',action='store_true', default=False,help='Extract an archive.')
+    ap.add_argument('-f', '--file',action='store',help='Archive filename.')
+    ap.add_argument('-C', '--directory', action='store', default='',
+                    help='Change to directory before processing remaining files')
+    ap.add_argument(
+        'files', action='store', default=[],
+        nargs='*',
+        help='Create: Files/Dirs to add to archive.\nExtract: Specific Files/Dirs to extract, default: all',
+    )
     args = ap.parse_args()
     tarfile.TarFile.fileobject = MyFileObject
     if args.list:
@@ -129,4 +135,5 @@ if __name__=='__main__':
     elif args.create:
         create_tar(os.path.expanduser(args.file),args.files)
     elif args.extract:
-        extract_all(os.path.expanduser(args.file),args.files)
+        extract_all(os.path.expanduser(args.file),args.files, directory=args.directory)
+
