@@ -21,8 +21,8 @@ def main(args):
     url = ns.url or clipboard.get()
     output_file = ns.output_file or url.split('/')[-1]
 
+    console.show_activity()
     try:
-        console.show_activity()
 
         print 'Opening: %s' % url
         u = urllib2.urlopen(url)
@@ -54,9 +54,12 @@ def main(args):
 
     except:
         print 'invalid url: %s' % url
+        sys.exit(1)
 
     finally:
         console.hide_activity()
+
+    sys.exit(0)
 
 
 if __name__ == '__main__':
