@@ -167,13 +167,12 @@ Examples:
 		if args['--issue']:
 			kwargs['issue']=baserepo.get_issue(args['--issue'])
 		elif not args['--title']:
-			title=raw_input('Enter pull title:')
-			body=raw_input('Enter pull body:')
+			kwargs['title']=raw_input('Enter pull title:')
+			kwargs['body']=raw_input('Enter pull body:')
 		else:
-			title=args['--title']
-			body=args['--body'] or ''
+			kwargs['title']=args['--title']
+			kwargs['body']=args['--body'] or ''
 
-		kwargs={}
 		kwargs['base']=basebranch
 		kwargs['head']=':'.join([headowner,headbranch])
 		pullreq=baserepo.create_pull(**kwargs)
