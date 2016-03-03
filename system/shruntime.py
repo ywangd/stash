@@ -603,7 +603,7 @@ class ShRuntime(object):
     def save_history(self):
         try:
             with io_open(self.historyfile, 'w') as outs:
-                outs.write('\n'.join(self.history))
+                outs.write(u'\n'.join(self.history))
         except IOError:
             pass
 
