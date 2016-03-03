@@ -39,7 +39,7 @@ def main(args):
     
     fileinput.close()  # in case it is not closed
     try:
-        for line in fileinput.input(files):
+        for line in fileinput.input(files, openhook=fileinput.hook_encoded('utf-8')):
             newline = re.sub(pattern, lambda m: _stash.text_color(m.group(), 'red'), line)
             if fn_predicate(line, newline):
                 if fileinput.isstdin():
