@@ -109,13 +109,12 @@ class ShRuntime(object):
         self.idx_to_history = -1
         self.history_templine = ''
 
-    def load_rcfile(self):
+    def load_rcfile(self, no_rcfile=False):
         self.stash(_DEFAULT_RC.splitlines(),
                    persistent_level=1,
                    add_to_history=False, add_new_inp_line=False)
 
-        # TODO: NO RC FILE loading
-        if os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
+        if not no_rcfile and os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
             try:
                 with io_open(self.rcfile) as ins:
                     self.stash(ins.readlines(),

@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import unicode_literals
 import sys
+import argparse
 
 module_names = (
     'stash',
@@ -29,27 +30,51 @@ if 'stash.stash' in sys.modules:
         sys.modules.pop('stash.' + name)
 from stash import stash
 
-# noinspection PyProtectedMember
-debug = (
-    # stash._DEBUG_STREAM,
-    # stash._DEBUG_RENDERER,
-    # stash._DEBUG_MAIN_SCREEN,
-    # stash._DEBUG_MINI_BUFFER,
-    # stash._DEBUG_IO,
-    # stash._DEBUG_UI,
-    # stash._DEBUG_TERMINAL,
-    # stash._DEBUG_TV_DELEGATE,
-    # stash._DEBUG_RUNTIME,
-    # stash._DEBUG_PARSER,
-    # stash._DEBUG_EXPANDER,
-    # stash._DEBUG_COMPLETER,
-)
+ap = argparse.ArgumentParser()
+ap.add_argument('--no-cfgfile', action='store_true',
+                help='do not load external config files')
+ap.add_argument('--no-rcfile', action='store_true',
+                help='do not load external resource file')
+ap.add_argument('--log-level',
+                choices=['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'],
+                default='INFO',
+                help='the logging level')
+ap.add_argument('--log-file',
+                help='the file to send logging messages')
+ap.add_argument('--debug-switch',
+                default='',
+                help='a comma separate list to turn on debug switch for components')
+ns = ap.parse_args()
 
 log_setting = {
-    'level': 'INFO',
-    'stdout': True,
+    'level': ns.log_level,
+    'file': ns.log_file,
 }
 
-_stash = stash.StaSh(debug=debug, log_setting=log_setting)
+if ns.debug_switch == '':
+    debug = (
+        # stash._DEBUG_STREAM,
+        # stash._DEBUG_RENDERER,
+        # stash._DEBUG_MAIN_SCREEN,
+        # stash._DEBUG_MINI_BUFFER,
+        # stash._DEBUG_IO,
+        # stash._DEBUG_UI,
+        # stash._DEBUG_TERMINAL,
+        # stash._DEBUG_TV_DELEGATE,
+        # stash._DEBUG_RUNTIME,
+        # stash._DEBUG_PARSER,
+        # stash._DEBUG_EXPANDER,
+        # stash._DEBUG_COMPLETER,
+    )
+else:
+    debug = []
+    for ds in ns.debug_switch.split(','):
+        ds = getattr(stash, '_DEBUG_{}'.format(ds.upper()), None)
+        if ds is not None:
+            debug.append(ds)
+
+
+_stash = stash.StaSh(debug=debug, log_setting=log_setting,
+                     no_cfgfile=ns.no_cfgfile, no_rcfile=ns.no_rcfile)
 
 _stash.launch()

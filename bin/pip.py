@@ -548,7 +548,7 @@ class ArchiveFileInstaller(object):
                     )
                     files_installed.append(target_file)
                     if use_2to3:
-                        _stash('2to3 -w {} > /dev/null'.format(target_file))
+                        _stash('2to3 -n -w {} > /dev/null'.format(target_file))
 
             else:  # packages
                 target_dir = os.path.join(SITE_PACKAGES_FOLDER, p)
@@ -571,7 +571,7 @@ class ArchiveFileInstaller(object):
                     )
                 files_installed.append(target_dir)
                 if use_2to3:
-                    _stash("""find {} --name '.py' | xargs -n 1 -I %% 2to3 -w %% > /dev/null""".format(target_dir))
+                    _stash('2to3 -n -w {} > /dev/null'.format(target_dir))
 
         py_modules = ArchiveFileInstaller._consolidated_packages(py_modules)
         for p in sorted(py_modules):  # files or folders where the file resides, e.g. ['file', 'folder.file']
@@ -587,7 +587,7 @@ class ArchiveFileInstaller(object):
                 )
                 files_installed.append(target_dir)
                 if use_2to3:
-                    _stash("""find {} --name '.py' | xargs -n 1 -I %% 2to3 -w %% > /dev/null""".format(target_dir))
+                    _stash('2to3 -n -w {} > /dev/null'.format(target_dir))
 
             else:  # file
                 target_file = os.path.join(SITE_PACKAGES_FOLDER, p + '.py')
@@ -597,7 +597,7 @@ class ArchiveFileInstaller(object):
                 )
                 files_installed.append(target_file)
                 if use_2to3:
-                    _stash('2to3 -w {} > /dev/null'.format(target_file))
+                    _stash('2to3 -n -w {} > /dev/null'.format(target_file))
 
         # TODO: SCRIPTS?
 

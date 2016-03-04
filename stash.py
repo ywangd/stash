@@ -9,7 +9,7 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import unicode_literals
 
-__version__ = '0.7.0a7'
+__version__ = '0.7.0a8'
 
 import os
 import sys
@@ -82,13 +82,13 @@ class StaSh(object):
     utility interfaces to running scripts.
     """
 
-    def __init__(self, debug=(), log_setting=None):
+    def __init__(self, debug=(), log_setting=None, no_cfgfile=False, no_rcfile=False):
         self.__version__ = __version__
 
         # Intercept IO
         enable_io_wrapper()
 
-        self.config = self._load_config()
+        self.config = self._load_config(no_cfgfile=no_cfgfile)
         self.logger = self._config_logging(log_setting)
 
         self.user_action_proxy = ShUserActionProxy(self)
@@ -124,7 +124,7 @@ class StaSh(object):
         # Navigate to the startup folder
         if IN_PYTHONISTA:
             os.chdir(self.runtime.state.environ_get('HOME2'))
-        self.runtime.load_rcfile()
+        self.runtime.load_rcfile(no_rcfile=no_rcfile)
         self.io.write(self.text_style('StaSh v%s\n' % self.__version__,
                                       {'color': 'blue', 'traits': ['bold']},
                                       always=True))
@@ -143,13 +143,15 @@ class StaSh(object):
         return worker
 
     @staticmethod
-    def _load_config():
+    def _load_config(no_cfgfile=False):
         config = ConfigParser()
         config.optionxform = str  # make it preserve case
         # defaults
         config.readfp(StringIO(_DEFAULT_CONFIG))
+
         # update from config file
-        config.read(os.path.join(_STASH_ROOT, f) for f in _STASH_CONFIG_FILES)
+        if not no_cfgfile:
+            config.read(os.path.join(_STASH_ROOT, f) for f in _STASH_CONFIG_FILES)
 
         return config
 
@@ -160,7 +162,7 @@ class StaSh(object):
 
         _log_setting = {
             'level': 'DEBUG',
-            'stdout': True,
+            'file': None,  # None means stdout
         }
 
         _log_setting.update(log_setting or {})
@@ -177,10 +179,13 @@ class StaSh(object):
         logger.setLevel(level)
 
         if not logger.handlers:
-            if _log_setting['stdout']:
+            if _log_setting['file'] is None:
                 _log_handler = logging.StreamHandler(_SYS_STDOUT)
             else:
-                _log_handler = logging.handlers.RotatingFileHandler('stash.log', mode='w')
+                _log_handler = logging.handlers.RotatingFileHandler(
+                    os.path.join(os.getcwd(), _log_setting['file']),
+                    mode='w'
+                )
             _log_handler.setLevel(level)
             _log_handler.setFormatter(logging.Formatter(
                 '[%(asctime)s] [%(levelname)s] [%(threadName)s] [%(name)s] [%(funcName)s] [%(lineno)d] - %(message)s'
