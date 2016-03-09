@@ -26,7 +26,7 @@ environment and great treasures may be found within.
 **StaSh can be easily installed via one line of python command**
 (courtesy of [@whitone](https://forum.omz-software.com/user/whitone)). 
 ```Python
-import requests as r; exec r.get('http://bit.ly/get-stash').text
+import requests as r; exec(r.get('http://bit.ly/get-stash').text)
 ```
 Simply copy the above line, paste into Pythonista interactive prompt and
 execute. It installs StaSh as a Python module under the `site-packages` 

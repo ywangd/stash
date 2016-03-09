@@ -97,7 +97,7 @@ class ShRuntime(object):
         # load history from last session
         # NOTE the first entry in history is the latest one
         try:
-            with io_open(self.historyfile) as ins:
+            with io_open(self.historyfile, encoding='utf-8') as ins:
                 # History from old to new, history at 0 is the oldest
                 self.history = [line.strip() for line in ins.readlines()]
         except IOError:
@@ -116,7 +116,7 @@ class ShRuntime(object):
 
         if not no_rcfile and os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
             try:
-                with io_open(self.rcfile) as ins:
+                with io_open(self.rcfile, encoding='utf-8') as ins:
                     self.stash(ins.readlines(),
                                persistent_level=1,
                                add_to_history=False, add_new_inp_line=False)
@@ -376,7 +376,7 @@ class ShRuntime(object):
                     outs = _SYS_STDOUT
                     errs = _SYS_STDERR
                 else:
-                    errs = outs = io_open(simple_command.io_redirect.filename, mode)
+                    errs = outs = io_open(simple_command.io_redirect.filename, mode, encoding='utf-8')
 
             elif idx < n_simple_commands - 1:  # before the last piped command
                 outs = ShPipeIO()
@@ -479,7 +479,7 @@ class ShRuntime(object):
         self.handle_PYTHONPATH()  # Make sure PYTHONPATH is honored
 
         try:
-            with io_open(file_path) as fins:
+            with io_open(file_path, encoding='utf-8') as fins:
                 lines = fins.readlines()
             # Get rid of possible encoding declaration as exec() does not like it
             # The encoding instruction seems to be recognized only when its in the
@@ -538,7 +538,7 @@ class ShRuntime(object):
 
         # Enclosing variables will be merged to environ when creating new thread
         try:
-            with io_open(filename) as fins:
+            with io_open(filename, encoding='utf-8') as fins:
                 child_worker = self.run(fins.readlines(),
                                         final_ins=ins,
                                         final_outs=outs,
@@ -601,7 +601,7 @@ class ShRuntime(object):
 
     def save_history(self):
         try:
-            with io_open(self.historyfile, 'w') as outs:
+            with io_open(self.historyfile, 'w', encoding='utf-8') as outs:
                 outs.write(u'\n'.join(self.history))
         except IOError:
             pass

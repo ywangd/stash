@@ -34,7 +34,7 @@ SAVE_PASSWORDS = True
 
 import argparse
 import getpass
-from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import urlparse, urlunparse
 import keychain
 import sys,os,posix
 import editor #for reloading current file
@@ -486,7 +486,7 @@ def git_fetch(args):
     if result.url in repo.remotes:
         origin=result.url
         result.url=repo.remotes.get(origin)
-    if not urlparse.urlparse(result.url).scheme:
+    if not urlparse(result.url).scheme:
         raise Exception('url must match a remote name, or must start with http:// or https://')
     print('Starting fetch, this could take a while')
     remote_refs=porcelain.fetch(repo.repo.path,result.url)
@@ -546,7 +546,7 @@ def git_push(args):
 
     print("Attempting to push to: {0}, branch: {1}".format(result.url, branch_name))
 
-    netloc = urlparse.urlparse(result.url).netloc
+    netloc = urlparse(result.url).netloc
 
     keychainservice = 'stash.git.{0}'.format(netloc)
 
@@ -574,8 +574,8 @@ def git_push(args):
             user, pw = console.login_alert('Enter credentials for {0}'.format(netloc), login=user)
             #pw = getpass.getpass('Enter password for {0}: '.format(user))
         host_with_auth='{}:{}@{}'.format(user,pw,netloc)
-        url=urlparse.urlunparse(
-            urlparse.urlparse(result.url)._replace(
+        url=urlunparse(
+            urlparse(result.url)._replace(
                 netloc=host_with_auth))
         porcelain.push(repo.repo.path, url, branch_name)
         keychain.set_password(keychainservice, user, pw)
