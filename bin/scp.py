@@ -520,7 +520,9 @@ if __name__ == '__main__':
     files = []
     
     ap = argparse.ArgumentParser()
-    ap.add_argument('-p', '--password', help='login password')
+    ap.add_argument('--password', help='login password')
+    ap.add_argument('-p', '--port', action='store', default=22, type=int,
+                    help='port for ssh default: 22')
     ap.add_argument('files', nargs='*', help='file or module name')
     args = ap.parse_args()
     
@@ -542,14 +544,14 @@ if __name__ == '__main__':
 
     key_filename = find_ssh_keys()
     if args.password is not None:
-        ssh.connect(host, username=user, password=args.password)
+        ssh.connect(host, username=user, password=args.password, port=args.port)
 
     else:
         if len(key_filename) == 0:  # no key file found
             password = raw_input('Enter passsword:')
-            ssh.connect(host, username=user, password=password)
+            ssh.connect(host, username=user, password=password, port=args.port)
         else:
-            ssh.connect(host,username=user,key_filename=key_filename)
+            ssh.connect(host, username=user, key_filename=key_filename, port=args.port)
 
     # SCPCLient takes a paramiko transport as its only argument
     scp = SCPClient(ssh.get_transport(),progress=scp_callback)
