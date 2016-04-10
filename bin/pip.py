@@ -24,6 +24,8 @@ import shutil
 import types
 import contextlib
 import requests
+import re
+import operator
 
 import six
 from distutils.util import convert_path
@@ -849,59 +851,11 @@ class PyPIRepository(PackageRepository):
         hits = self.versions(pkg_name)
         if ver_spec is None:  # latest version
             return hits[0]
-
-        elif ver_spec.vmin == ver_spec.vmax:  # exact match
-            if ver_spec.vmin in hits:
-                return ver_spec.vmin
-            else:
-                raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec))
-
         else:
-            hits = hits[::-1]
-            inclusions = list(ver_spec.inclusions)
-            if ver_spec.vmin is VersionSpecifier.UNBOUNDED:
-                idx_min = 0
+            for hit in hits:
+                if all([op(hit,ver) for op,ver in ver_spec.specs]):
+                    return hit
             else:
-                try:
-                    idx_min = hits.index(ver_spec.vmin)
-                except ValueError:  # find the formal release by dropping all suffix
-                    vmin = ''
-                    for c in ver_spec.vmin:
-                        if c not in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '.'):
-                            break
-                        vmin += c
-                    try:
-                        idx_min = hits.index(vmin)
-                        inclusions[0] = True
-                    except ValueError:
-                        idx_min = 0
-                        inclusions[0] = False
-
-            if ver_spec.vmax is VersionSpecifier.UNBOUNDED:
-                idx_max = len(hits) - 1
-            else:
-                try:
-                    idx_max = hits.index(ver_spec.vmax)
-                except ValueError:  # find the formal release by dropping all suffix
-                    vmax = ''
-                    for c in ver_spec.vmax:
-                        if c not in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '.'):
-                            break
-                        vmax += c
-                    try:
-                        idx_max = hits.index(vmax)
-                        inclusions[1] = False
-                    except ValueError:
-                        idx_max = len(hits) - 1
-                        inclusions[1] = True
-
-            if inclusions[0] is False:
-                idx_min += 1
-
-            if inclusions[1] is False:
-                idx_max -= 1
-
-            if idx_min < 0 or idx_min >= len(hits) or idx_max < 0 or idx_max >= len(hits) or idx_min > idx_max:
                 raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec))
 
             return hits[idx_max]
@@ -913,10 +867,10 @@ class GitHubRepository(PackageRepository):
     """
     def _get_release_from_version_specifier(self, ver_spec):
         if isinstance(ver_spec, VersionSpecifier):
-            if ver_spec.vmin != ver_spec.vmax:
+            try:
+                return version_specifiers[zip(*version_specifiers)[0].index('==')][1]
+            except ValueError: 
                 raise PipError('GitHub repository requires exact version match')
-            else:
-                return ver_spec.vmin
         else:
             return ver_spec if ver_spec is not None else 'master'
 
@@ -1034,33 +988,22 @@ def get_repository(pkg_name):
 
 class VersionSpecifier(object):
     """
-    This class is to represent the versions of a requirement, e.g. pyte==0.4.10
+    This class is to represent the versions of a requirement, e.g. pyte==0.4.10.
     """
-    UNBOUNDED = object()
+    OPS={'<=':operator.le,
+        '<':operator.lt,
+        '!=':operator.ne,
+        '>=':operator.ge,
+        '>':operator.gt,
+        '==':operator.eq,
+        '~=':operator.ge}
 
-    def __init__(self, vmin, vmax=None, inclusions=(True, True)):
-        self.vmin = vmin
-        self.vmax = vmax if vmax else vmin
-        self.inclusions = inclusions
-
+    def __init__(self, version_specs):
+        self.specs=[(VersionSpecifier.OPS[op],version) for (op,version) in version_specs ]
+        self.str=str(version_specs)
     def __str__(self):
-        if self.vmin == self.vmax:
-            return '=={}'.format(self.vmin)
 
-        ret = ''
-        if self.vmin is not VersionSpecifier.UNBOUNDED:
-            ret += '{}{}'.format(
-                '>=' if self.inclusions[0] else '>',
-                self.vmin
-            )
-        if self.vmax is not VersionSpecifier.UNBOUNDED:
-            if ret != '':
-                ret += ','
-            ret += '{}{}'.format(
-                '<=' if self.inclusions[1] else '<',
-                self.vmax
-            )
-        return ret
+        return self.str
 
     @staticmethod
     def parse_requirement(requirement):
@@ -1068,50 +1011,23 @@ class VersionSpecifier(object):
         Factory method to create a VersionSpecifier object from a requirement
         """
         requirement = requirement.replace(' ', '')   # remove all whitespaces
+        import re,operator
+        letterOrDigit = r'\w'
+        PAREN=lambda x:'('+x+')'
 
-        if '==' in requirement:  # exact
-            name, version = requirement.split('==')
-            version = VersionSpecifier(version)
 
-        elif ',' in requirement:  # range
-            idx1 = requirement.index('>')
-            idx2 = requirement.index(',')
-            idx3 = requirement.index('<')
-            name = requirement[:idx1]
-            if requirement[idx1 + 1] == '=':
-                vmin = requirement[idx1 + 2: idx2]
-                inclusion_min = True
-            else:
-                vmin = requirement[idx1 + 1: idx2]
-                inclusion_min = False
-            if requirement[idx3 + 1] == '=':
-                vmax = requirement[idx3 + 2:]
-                inclusion_max = True
-            else:
-                vmax = requirement[idx3 + 1:]
-                inclusion_max = False
+        version_cmp   = PAREN('?:'+'|'.join(('<=' , '<' , '!='  , '>=' , '>' , '~=' , '==')))
+        version_re    = PAREN('?:'+'|'.join( (letterOrDigit , '-' , '_' , '\.' ,'\*' , '\+' , '\!') ))+'+'
+        version_one   = PAREN(version_cmp) + PAREN(version_re)
+        parsed=re.findall('(\w*)'+version_one,requirement)
 
-            version = VersionSpecifier(vmin, vmax, (inclusion_min, inclusion_max))
-
-        elif '>=' in requirement:  # minimum
-            name, vmin = requirement.split('>=')
-            version = VersionSpecifier(vmin, VersionSpecifier.UNBOUNDED, inclusions=(True, None))
-
-        elif '<=' in requirement:  # maximum
-            name, vmax = requirement.split('<=')
-            version = VersionSpecifier(VersionSpecifier.UNBOUNDED, vmax, inclusions=(None, True))
-
-        elif '>' in requirement:
-            name, vmin = requirement.split('>')
-            version = VersionSpecifier(vmin, VersionSpecifier.UNBOUNDED, inclusions=(False, None))
-
-        elif '<' in requirement:
-            name, vmax = requirement.split('<')
-            version = VersionSpecifier(VersionSpecifier.UNBOUNDED, vmax, inclusions=(None, False))
-
-        else:
-            name, version = requirement, None
-
+        if not parsed:
+            return requirement, None
+        name=parsed[0][0]
+        reqt=zip(*parsed)
+        version_specifiers=zip(*reqt[1:]) #((op,version),(op,version))
+        version=VersionSpecifier(version_specifiers)
+    
         return name, version
 
 
