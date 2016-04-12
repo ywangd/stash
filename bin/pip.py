@@ -1019,7 +1019,8 @@ class VersionSpecifier(object):
         version_cmp   = PAREN('?:'+'|'.join(('<=' , '<' , '!='  , '>=' , '>' , '~=' , '==')))
         version_re    = PAREN('?:'+'|'.join( (letterOrDigit , '-' , '_' , '\.' ,'\*' , '\+' , '\!') ))+'+'
         version_one   = PAREN(version_cmp) + PAREN(version_re)
-        parsed=re.findall('(\w*)'+version_one,requirement)
+        package_name   = '^([a-z0-9]|[a-z0-9][a-z0-9._-]*[a-z0-9])'
+        parsed = re.findall(package_name+version_one,requirement)
 
         if not parsed:
             return requirement, None
