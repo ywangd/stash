@@ -376,7 +376,7 @@ class ShTerminal(object):
     @on_main_thread
     def autocorrection_type(self, value):
         self._autocorrection_type = value
-        self.tvo.performSelector_withObject_('setAutocorrectionType:', value)
+        ObjCInstanceMethod(self.tvo, 'setAutocorrectionType:')(value)
 
     @property
     def spellchecking_type(self):
