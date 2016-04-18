@@ -13,8 +13,10 @@ Remarkable contributions are also made by
 [@dgelessus](https://github.com/dgelessus),
 [@pudquick](https://github.com/pudquick),
 [@oefe](https://github.com/oefe), 
-[@cclauss](https://github.com/cclauss) and
-[@georg.viehoever] (https://github.com/GeorgViehoever). 
+[@cclauss](https://github.com/cclauss),
+[@georg.viehoever](https://github.com/GeorgViehoever),
+[@BBOOXX](https://github.com/BBOOXX) and
+[@bennr01](https://github.com/stars/bennr01). 
 
 StaSh stands for Pythoni**sta** **Sh**ell. While **Sta** may not be the best
 abbreviation for Pythonista, it forms a concise and meaningful word with the
