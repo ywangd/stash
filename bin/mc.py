@@ -1,5 +1,5 @@
 # coding: utf-8
-"""easily work on two filesystems (e.g. local and FTP)"""
+"""easily work with multiple filesystems (e.g. local and FTP) synchronously"""
 #the name refers to midnight-commander, but this will probald never be a true counterpart
 import os,shutil,cmd,sys,ftplib,tempfile
 
@@ -71,6 +71,13 @@ This should return a list of strings.
 	def close(self):
 		"""this should close the interface. There is a chance that this may not be called."""
 		pass
+	def isdir(self,name):
+		"""this should return True if name is an existing directory and False if not."""
+		raise OperationFailure("NotImplemented")
+	def isfile(self,name):
+		"""this should return wether name is an existing file."""
+		#default: not isdir(). problem: no exist check
+		return not self.isdir(name)
 
 class LocalFSI(BaseFSI):
 	"""A FSI for the local filesystem."""
@@ -90,7 +97,8 @@ class LocalFSI(BaseFSI):
 		if name=="..":
 			self.path=os.path.dirname(self.path)
 			return
-		ap=os.path.join(self.path,name)
+		if os.path.isabs(name): ap=name
+		else: ap=os.path.join(self.path,name)
 		if not os.path.exists(ap):
 			raise OperationFailure("Not found")
 		elif not os.path.isdir(ap):
@@ -100,7 +108,8 @@ class LocalFSI(BaseFSI):
 	def get_path(self):
 		return self.path
 	def remove(self,name):
-		ap=os.path.join(self.path,name)
+		if os.path.isabs(name): ap=name
+		else: ap=os.path.join(self.path,name)
 		if not os.path.exists(ap):
 			raise OperationFailure("Not found")
 		elif os.path.isdir(ap):
@@ -116,7 +125,8 @@ class LocalFSI(BaseFSI):
 		else:
 			raise OperationFailure("Unknown type")
 	def open(self,name,mode):
-		ap=os.path.join(self.path,name)
+		if os.path.isabs(name): ap=name
+		else: ap=os.path.join(self.path,name)
 		#if not (os.path.exists(ap)):
 		#	raise OperationFailure("Not found")
 		if os.path.isdir(ap):
@@ -127,7 +137,8 @@ class LocalFSI(BaseFSI):
 			except Exception as e:
 				raise OperationFailure(str(e))
 	def mkdir(self,name):
-		ap=os.path.join(self.path,name)
+		if os.path.isabs(name): ap=name
+		else: ap=os.path.join(self.path,name)
 		if os.path.exists(ap):
 			raise OperationFailure("Already exists")
 		else:
@@ -137,6 +148,14 @@ class LocalFSI(BaseFSI):
 				raise OperationFailure(str(e))
 	def close(self):
 		pass
+	def isdir(self,name):
+		if os.path.isabs(name): ap=name
+		else: ap=os.path.join(self.path,name)
+		return os.path.isdir(ap)
+	def isfile(self,name):
+		if os.path.isabs(name): ap=name
+		else: ap=os.path.join(self.path,name)
+		return os.path.isfile(ap)
 
 class FTPFSI(BaseFSI):
 	"""a FSI for FTP-server.
@@ -249,7 +268,9 @@ This means, that this FSI lad not work on all FTP-servers."""
 			raise OperationFailure(str(e))
 	def listdir(self):
 		try:
-			return self.ftp.nlst(self.path)
+			content=self.ftp.nlst(self.path)
+			ret=[e.split("/")[-1] for e in content]
+			return ret
 		except Exception as e:
 			raise OperationFailure(str(e))
 	def remove(self,name):
@@ -278,6 +299,16 @@ This means, that this FSI lad not work on all FTP-servers."""
 			return FTP_Upload(self.ftp,ap,mode)
 	def get_path(self):
 		return self.ftp.pwd()
+	def isdir(self,name):
+		ap=os.path.join(self.path,name)
+		op=self.get_path()
+		try:
+			self.ftp.cwd(ap)
+			return True
+		except:
+			return False
+		finally:
+			self.ftp.cwd(op)
 
 #=============================
 #utility classes and functions
@@ -301,6 +332,7 @@ this class creates a tempfile, which is uploded onto the server when closed."""
 		finally:
 			self.tf.close()
 
+
 #=============================
 #Register FSIs here
 
@@ -314,7 +346,7 @@ INTERFACES={
 
 class McCmd(cmd.Cmd):
 	prompt="(mc)"
-	intro="Entering mc's command-loop.\nType 'help' for help and 'exit' to exit"
+	intro="Entering mc's command-loop.\nType 'help' for help and 'exit' to exit."
 	use_rawinput=True
 	def __init__(self):
 		cmd.Cmd.__init__(self)
@@ -323,7 +355,7 @@ class McCmd(cmd.Cmd):
 		"""prints a list of connected interfaces and their id."""
 		if len(self.FSIs.keys())==0:
 			self.stdout.write("No Interfaces connected.\n")
-		for k in self.FSIs.keys():
+		for k in sorted(self.FSIs.keys()):
 			i=self.FSIs[k]
 			name=i.repr()
 			self.stdout.write("{k}: {n}\n".format(k=k,n=name))
@@ -408,6 +440,13 @@ class McCmd(cmd.Cmd):
 		if (fsi is None) or (name is None):
 			return
 		try:
+			isdir=fsi.isdir(name)
+		except:
+			isdir=True#lets just try. It worked before isdir() was added so it should still work
+		if not isdir:
+			self.stdout.write("Error: dirname does not refer to a dir!\n")
+			return
+		try:
 			fsi.cd(name)
 		except IsFile:
 			self.stdout.write("Error: dirname does not refer to a dir!\n")
@@ -477,37 +516,63 @@ class McCmd(cmd.Cmd):
 			return
 		rfsi=self.FSIs[rfi]
 		wfsi=self.FSIs[wfi]
-		try:
-			self.stdout.write("Opening infile... ")
-			rf=rfsi.open(rfp,"rb")
-			self.stdout.write("Done.\nOpening outfile... ")
-			wf=wfsi.open(wfp,"wb")
-			self.stdout.write("Done.\nCopying... ")
-			while True:
-				data=rf.read(4096)
-				if len(data)==0:
-					break
-				wf.write(data)
-			self.stdout.write("Done.\n")
-		except IsDir:
-			self.stdout.write("Error: expected a filepath!\n")
-			return
-		except OperationFailure as e:
-			self.stdout.write("Error: {m}!\n".format(m=e.message))
-			return
-		finally:
-			self.stdout.write("Closing infile... ")
+		isfile=rfsi.isfile(rfp)
+		isdir=rfsi.isdir(rfp)
+		if isfile:
 			try:
-				rf.close()
+				self.stdout.write("Opening infile... ")
+				rf=rfsi.open(rfp,"rb")
+				self.stdout.write("Done.\nOpening outfile... ")
+				wf=wfsi.open(wfp,"wb")
+				self.stdout.write("Done.\nCopying... ")
+				while True:
+					data=rf.read(4096)
+					if len(data)==0:
+						break
+					wf.write(data)
 				self.stdout.write("Done.\n")
-			except Exception as e:
+			except IsDir:
+				self.stdout.write("Error: expected a filepath!\n")
+				return
+			except OperationFailure as e:
 				self.stdout.write("Error: {m}!\n".format(m=e.message))
-			self.stdout.write("Closing outfile... ")
+				return
+			finally:
+				self.stdout.write("Closing infile... ")
+				try:
+					rf.close()
+					self.stdout.write("Done.\n")
+				except Exception as e:
+					self.stdout.write("Error: {m}!\n".format(m=e.message))
+				self.stdout.write("Closing outfile... ")
+				try:
+					wf.close()
+					self.stdout.write("Done.\n")
+				except Exception as e:
+					self.stdout.write("Error: {m}!\n".format(m=e.message))
+		elif isdir:
+			crp=rfsi.get_path()
+			cwp=wfsi.get_path()
+			rfsi.cd(rfp)
+			if not wfp in wfsi.listdir():
+				self.stdout.write("Creating dir '{n}'... ".format(n=wfp))
+				wfsi.mkdir(wfp)
+				self.stdout.write("Done.\n")
+			wfsi.cd(wfp)
 			try:
-				wf.close()
-				self.stdout.write("Done.\n")
-			except Exception as e:
-				self.stdout.write("Error: {m}!\n".format(m=e.message))
+				content=rfsi.listdir()
+				for fn in content:
+					subcommand="cp {rfi} {name} {wfi} {name}".format(rfi=rfi,name=fn,wfi=wfi)
+					self.onecmd(subcommand)
+			except OperationFailure as e:
+				self.stdout.write("Error: {e}!\n".format(e=e.message))
+				return
+			finally:
+				rfsi.cd(crp)
+				wfsi.cd(cwp)
+		else:
+			self.stdout.write("Error: Not found!\n")
+			return
 	do_copy=do_cp
 	def do_mv(self,command):
 		"""mv <ri> <rf> <wi> <wn>: move file 'rf' from 'ri' to file 'wf' on 'wi'."""
@@ -526,44 +591,72 @@ class McCmd(cmd.Cmd):
 			return
 		rfsi=self.FSIs[rfi]
 		wfsi=self.FSIs[wfi]
-		try:
-			self.stdout.write("Opening file to read... ")
-			rf=rfsi.open(rfp,"rb")
-			self.stdout.write("Done.\nOpening file to write... ")
-			wf=wfsi.open(wfp,"wb")
-			self.stdout.write("Done.\nCopying... ")
-			while True:
-				data=rf.read(4096)
-				if len(data)==0:
-					break
-				wf.write(data)
-			self.stdout.write("Done.\n")
-		except IsDir:
-			self.stdout.write("Error: expected a filepath!\n")
-			return
-		except OperationFailure as e:
-			self.stdout.write("Error: {m}!\n".format(m=e.message))
-			return
-		finally:
-			self.stdout.write("Closing infile... ")
+		isdir=rfsi.isdir(rfp)
+		isfile=rfsi.isfile(rfp)
+		if isfile:
 			try:
-				rf.close()
+				self.stdout.write("Opening file to read... ")
+				rf=rfsi.open(rfp,"rb")
+				self.stdout.write("Done.\nOpening file to write... ")
+				wf=wfsi.open(wfp,"wb")
+				self.stdout.write("Done.\nCopying... ")
+				while True:
+					data=rf.read(4096)
+					if len(data)==0:
+						break
+					wf.write(data)
 				self.stdout.write("Done.\n")
-			except Exception as e:
-				self.stdout.write("Error: {m}!\n".format(m=e.message))
-			self.stdout.write("Closing outfile... ")
-			try:
-				wf.close()
-				self.stdout.write("Done.\n")
-			except Exception as e:
-				self.stdout.write("Error: {m}!\n".format(m=e.message))
+			except IsDir:
+				self.stdout.write("Error: expected a filepath!\n")
 				return
-			self.stdout.write("Deleting Original... ")
-			try: rfsi.remove(rfp)
 			except OperationFailure as e:
 				self.stdout.write("Error: {m}!\n".format(m=e.message))
-			else:
+				return
+			finally:
+				self.stdout.write("Closing infile... ")
+				try:
+					rf.close()
+					self.stdout.write("Done.\n")
+				except Exception as e:
+					self.stdout.write("Error: {m}!\n".format(m=e.message))
+				self.stdout.write("Closing outfile... ")
+				try:
+					wf.close()
+					self.stdout.write("Done.\n")
+				except Exception as e:
+					self.stdout.write("Error: {m}!\n".format(m=e.message))
+					return
+				self.stdout.write("Deleting Original... ")
+				try: rfsi.remove(rfp)
+				except OperationFailure as e:
+					self.stdout.write("Error: {m}!\n".format(m=e.message))
+				else:
+					self.stdout.write("Done.\n")
+		elif isdir:
+			crp=rfsi.get_path()
+			cwp=wfsi.get_path()
+			rfsi.cd(rfp)
+			if not wfp in wfsi.listdir():
+				self.stdout.write("Creating dir '{n}'... ".format(n=wfp))
+				wfsi.mkdir(wfp)
 				self.stdout.write("Done.\n")
+			wfsi.cd(wfp)
+			try:
+				content=rfsi.listdir()
+				for fn in content:
+					subcommand="mv {rfi} {name} {wfi} {name}".format(rfi=rfi,name=fn,wfi=wfi)
+					self.onecmd(subcommand)
+				rfsi.cd(crp)
+				rfsi.remove(rfp)
+			except OperationFailure as e:
+				self.stdout.write("Error: {e}!\n".format(e=e.message))
+				return
+			finally:
+				rfsi.cd(crp)
+				wfsi.cd(cwp)
+		else:
+			self.stdout.write("Error: Not found!\n")
+			return
 	do_move=do_mv
 	def do_cat(self,command):
 		"""cat <interface> <file> [--binary]: shows the content of target file on 'interface'.
@@ -691,6 +784,12 @@ ftp: a FTP-client
 		FTP is designed as a human-readable protocol.
 		Different servers may use different commands and different responses.
 		This means that the 'ftp'-FSI may not work with all FTP-servers.
+	NOTE:
+		The FTP-FSI doesnt work on the server-files.
+		Instead, it uses a workaround:
+			When reading a FTP-file, the file is instead downloaded into a tempfile and this is read after the download.
+			When writing to a FTP-server, instead a tempfile is created and uploaded when it is closed.
+			This leads to some 'weird' operation times.
 	USAGE:
 		connect <ID> ftp <host> [port] [mode or user] [pswd] [mode]
 		
