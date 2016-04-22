@@ -6,7 +6,7 @@ import gc,argparse,sys
 
 def main():
 	parser=argparse.ArgumentParser(description="access to pythons built-in garbage collector")
-	parser.add_argument("command",help="what to do",choices=["enable","disable","status","collect","threshold","debug"],action="store")
+	parser.add_argument("command",help="what to do",choices=["enable","disable","status","collect","threshold","debug","break"],action="store")
 	parser.add_argument("args",help="argument for command",action="store",nargs="*")
 	ns=parser.parse_args()
 	if ns.command=="enable":
@@ -53,7 +53,15 @@ def main():
 		else:
 			print "Error: expected exactly one argument for threshold!"
 			sys.exit(1)
-			
+	elif ns.command=="break":
+		if len(gc.garbage)==0:
+			print "Error: No Garbage found!"
+			sys.exit(1)
+		else:
+			for k in dir(garbage[0]):
+				try: delattr(garbage,k)
+				except: pass
+			del gc.garbage[:]
 
 if __name__=="__main__":
 	main()
