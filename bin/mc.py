@@ -10,10 +10,21 @@ try:
 except:
 	_stash=None
 
-if _stash is not None:
-	HOME=os.path.expanduser("~/Documents")
-else:
-	HOME=os.path.expanduser("~")
+#TODO:
+#		-fix commands only accept filenames without " " (mid prio)
+#		-fix mv command still deletes source directoy when a file-mv failed (mid prio)
+#		-fix spelling mistakes in help (low prio)
+#		-improve documentation (low prio)
+#		-make code PEP-compiliant (thats a large amount of work, i dont think i have the time to do this) (very low prio)
+#		-add ability to logout in dropbox (?)
+#		-add multiuser functionality to dropbox (?)
+#		-fix infinite loop when copying a directory into itself
+#			=> I initialy solved this by  doing a walk before a copy, but this was removed as it lead to ugly code
+#			=>low prio as this script is designed for use with different fs; this bug only occurs when using the same fs.
+#		-make run command transferring file deletions in "w"-mode (low prio)
+#		-make run command more efficient (only cp file changes) (low prio)
+#		-cleanup code (low prio)
+#		-fix bug when running a remote command in a subdir which is not the current dir (e.g. tests/test.py) (low prio)
 
 #======================
 #Errors
@@ -24,6 +35,9 @@ class IsDir(OperationFailure):
 	"""raise this if a command only works on a file but a dirname is passed."""
 class IsFile(OperationFailure):
 	"""raise this if a command only works on a dir but a filename is passed."""
+class AlreadyExists(OperationFailure):
+	"""raise this if sometjibg already exists."""
+	pass
 
 #===================
 #FSIs
@@ -147,7 +161,7 @@ class LocalFSI(BaseFSI):
 		if os.path.isabs(name): ap=name
 		else: ap=os.path.join(self.path,name)
 		if os.path.exists(ap):
-			raise OperationFailure("Already exists")
+			raise AlreadyExists("Already exists")
 		else:
 			try:
 				os.mkdir(ap)
@@ -163,6 +177,11 @@ class LocalFSI(BaseFSI):
 		if os.path.isabs(name): ap=name
 		else: ap=os.path.join(self.path,name)
 		return os.path.isfile(ap)
+
+class InternalFSI(LocalFSI):
+	"""a LocalFSI used by some commands. It only differs in repr."""
+	def repr(self):
+		return "<Internal FSI>"
 
 class FTPFSI(BaseFSI):
 	"""a FSI for FTP-server.
@@ -272,6 +291,14 @@ This means, that this FSI lad not work on all FTP-servers."""
 		try:
 			self.ftp.mkd(ap)
 		except Exception as e:
+			#test wether the dir exists
+			cwd=self.get_path()
+			try:
+				self.cd(ap)
+			except Exception as e2:
+				raise e
+			else:
+				raise AlreadyExists("Already exists!")
 			raise OperationFailure(str(e))
 	def listdir(self):
 		try:
@@ -365,6 +392,8 @@ class DropboxFSI(BaseFSI):
 		else: path=os.path.join(self.path,name)
 		try: self.client.file_create_folder(path)
 		except rest.ErrorResponse as e:
+			if e.status==403:
+				raise AlreadyExists("Already exists!")
 			raise OperationFailure("Can not create dir!")
 	def remove(self,name):
 		if name.startswith("/"): path=name
@@ -559,6 +588,27 @@ def menu(header,choices,stdin=None,stdout=None):
 		except (KeyError,ValueError,IndexError) as e:
 			stdout.write("\n"*20)
 
+def modified(path,prev=None):
+	"""if prev is None, calculates a state to be later passed to modified().
+if prev is such a state, modified() will return wether the path has been modified or not."""
+	dirs=[]
+	files=[]
+	for n in os.listdir(path):
+		ap=os.path.join(path,n)
+		if os.path.isfile(ap):
+			stat=os.stat(ap)
+			size=stat.st_size
+			mod=stat.st_mtime
+			files.append((ap,size,mod))
+		else:
+			res=modified(ap,prev=None)
+			dirs+=res[0]
+			files+=res[1]
+	if prev is None:
+		return (dirs,files)
+	else:
+		return prev!=(dirs,files)
+
 
 #=============================
 #Register FSIs here
@@ -578,12 +628,15 @@ class McCmd(cmd.Cmd):
 	use_rawinput=True
 	def __init__(self):
 		cmd.Cmd.__init__(self)
-		self.FSIs={}
+		internal_fsi=InternalFSI(self)
+		self.FSIs={0:internal_fsi}
 	def do_connected(self,cmd):
 		"""prints a list of connected interfaces and their id."""
-		if len(self.FSIs.keys())==0:
+		if len(self.FSIs.keys())<=1:
 			self.stdout.write("No Interfaces connected.\n")
 		for k in sorted(self.FSIs.keys()):
+			if k==0:
+				continue
 			i=self.FSIs[k]
 			name=i.repr()
 			self.stdout.write("{k}: {n}\n".format(k=k,n=name))
@@ -645,6 +698,9 @@ class McCmd(cmd.Cmd):
 			return
 		if ID not in self.FSIs:
 			self.stdout.write("Error: ID does not refer to any Interface!\n")
+			return
+		if ID==0:
+			self.stdout.write("Error: cannot close internal FSI!\n")
 			return
 		try:
 			self.FSIs[ID].close()
@@ -786,9 +842,11 @@ class McCmd(cmd.Cmd):
 			crp=rfsi.get_path()
 			cwp=wfsi.get_path()
 			rfsi.cd(rfp)
-			if not wfp in wfsi.listdir():
+			if not (wfp in wfsi.listdir() or wfp=="/"):
 				self.stdout.write("Creating dir '{n}'... ".format(n=wfp))
-				wfsi.mkdir(wfp)
+				try: wfsi.mkdir(wfp)
+				except AlreadyExists as e:
+					pass
 				self.stdout.write("Done.\n")
 			wfsi.cd(wfp)
 			try:
@@ -869,7 +927,7 @@ class McCmd(cmd.Cmd):
 			crp=rfsi.get_path()
 			cwp=wfsi.get_path()
 			rfsi.cd(rfp)
-			if not wfp in wfsi.listdir():
+			if not (wfp in wfsi.listdir() or wfp=="/"):
 				self.stdout.write("Creating dir '{n}'... ".format(n=wfp))
 				wfsi.mkdir(wfp)
 				self.stdout.write("Done.\n")
@@ -927,6 +985,96 @@ otherwise, print repr(content)[1:-1]
 		finally:
 			try: f.close()
 			except: pass
+	def do_run(self,command):
+		"""run <ID> <FILE> <MODE> <COMMAND> [ARGS [ARGS...]]: download FILE and executed COMMAND on it.
+run understands the '*' filename.
+MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally uploads the files if they have been modified."""
+		rfsi,args=self.parse_fs_command(command,nargs=-1,ret=tuple)
+		if (rfsi is None) or (args is None):
+			return
+		rid=int(command.split()[0])
+		if len(args)<3:
+			self.stdout.write("Error: invalid argument count!\n")
+			return
+		mode=args[1]
+		remotepath=args[0]
+		orgpath=remotepath
+		if not (rfsi.isfile(remotepath) or remotepath=="*"):
+			self.stdout.write("Error: to download a whole directory use '*'.\n")
+			return
+		if mode not in ("r","R","w","W"):
+			self.stdout.write("Error: Unknown mode!\n")
+			return
+		lfsi=self.FSIs[0]
+		shellcommand=" ".join(args[2:])
+		self.stdout.write("Creating tempdir... ")
+		localpath=os.path.join(tempfile.gettempdir(),"stash_mc_run")
+		if os.path.exists(localpath):
+			shutil.rmtree(localpath)
+		os.mkdir(localpath)
+		self.stdout.write("Done.\n")
+		op=os.getcwd()
+		if remotepath=="*":
+			remotepath=rfsi.get_path()
+			cd_path=None
+		else:
+			cd_path=localpath
+		try:
+			lfsi.cd(localpath)
+			lfp=remotepath
+			while lfp.startswith("/"):
+				lfp=lfp[1:]
+			if lfp=="":
+				lfp="exec"
+			self.do_cp("{ri} {rp} 0 {lfp}".format(ri=rid,rp=remotepath,lfp=lfp))
+			if mode in ("w","W"):
+				self.stdout.write("Scanning content... ")
+				oldstate=modified(localpath,prev=None)
+				self.stdout.write("Done.\n")
+			if cd_path is None:
+				cd_path=os.path.join(localpath,os.listdir(localpath)[0])
+			self.do_shell("cd {p}".format(p=cd_path))
+			self.do_shell(shellcommand)
+		except Exception as e:
+			self.stdout.write("Error: {e}!\n".format(e=e.message))
+			return
+		else:
+			try:
+				if mode in ("w","W"):
+					self.stdout.write("Checking for content modification... ")
+					moded=modified(localpath,prev=oldstate)
+					self.stdout.write("Done.\nContent modified: {m}\n".format(m=moded))
+					if moded:
+						self.stdout.write("Copying modifified content... \n")
+						if lfp=="exec":
+							tp="/"
+						else:
+							tp=remotepath
+						if os.path.isfile(lfp):
+							if tp!="/":
+								if tp.endswith("/"): tp=tp[:-1]
+								tp="/".join(tp.split("/")[:-1])
+							lfp=lfsi.get_path()
+							if lfp.endswith("/"):
+								lfp=lfp[1:]
+							lfsi.cd(lfp)
+							lfp=lfp.split("/")[-1]
+						cpcmd="0 {lfp} {ri} {tp}".format(lfp=lfp,ri=rid,tp=tp)
+						self.do_cp(cpcmd)
+						self.stdout.write("Copying finished.\n")
+				else:
+					pass
+			except Exception as e:
+				self.stdout.write("Error: {m}!\n".format(m=e.message))
+		finally:
+			self.stdout.write("Cleaning up... ")
+			self.do_shell("cd {p}".format(p=op))
+			try:
+				shutil.rmtree(localpath)
+			except:
+				pass
+			self.stdout.write("Done.\n")
+		
 	def parse_fs_command(self,command,nargs=0,ret=str):
 		"""parses a filesystem command. returns the interface and the actual command.
 nargs specifies the number of arguments, -1 means any number."""
@@ -965,6 +1113,7 @@ This guide describes how to use mc.
 		connect <id> <fsi-name> [args [args ...]]
 		
 		'id' is a number used to identify the connection in commands.
+			The ID 0 should not be used, as it is used internally.
 		'fsi-name' is the name of the FSI you want to use (e.g. 'local').
 		'args' is passed to the FSI and may contain server, username...
 	Example:
@@ -1001,7 +1150,7 @@ dropbox: a Dropbox-client (slow!)
 """
 		self.stdout.write(av+"\n")
 	def help_fsi_local(self,*args):
-		"""shows help on the local-FSI"""
+		"""shows help on the local FSI"""
 		av="""Help on FSI local:
 	The local filesystem.
 	USAGE:
@@ -1046,7 +1195,7 @@ dropbox: a Dropbox-client (slow!)
 """
 		self.stdout.write(av+"\n")
 	def help_fsi_dropbox(self,*args):
-		"""shows help on the Dropbox-FSI"""
+		"""shows help on the dropbox-FSI"""
 		av="""Help on FSI dropbox:
 	Use Dropbox as a filesystem.
 	WARNING:
@@ -1070,6 +1219,45 @@ dropbox: a Dropbox-client (slow!)
 		The setup will help you configuring your dropbox.
 		
 """
+		self.stdout.write(av+"\n")
+	def help_remote_run(self,*args):
+		"""shows help on running commands on remote"""
+		av="""Help on running remote commands:
+	mc offers the the ability to run commands on the remote filesystem.
+	It does so by doing the following:
+		1) download files into a temorary folder
+		2) scan files
+		3) cd into the temporary folder
+		4) run the command
+		5) cd back
+		6) scan for differences between the files in the folder and the data collected in 2)
+		7) upload the files
+		8) remove the tempdir
+	The actions 2,6 and 7 are only done in "w"-mode (more about this later).
+	
+	HOW TO RUN A COMMAND REMOTELY
+		You do this by using the 'run' command.
+		USAGE:
+			run <ID> <FILENAME> <MODE> <COMMAND> [ARGS [ARGS...]]
+			
+			'ID': the interface to use.
+			'FIlENAME': which file to download. Passing a dir *should* work.
+				Passing "*" downloads the current dir.
+			'MODE': How to handle the files. Possible values: 
+				"r" or "R": only download the files. Changes will be discarded.
+				"w" or "W": download the files and upload the changes after the command has been executed.
+			'COMMAND' and 'ARGS':
+				passed to the shell-subcommand.
+		INFO:
+			Currently, file deletions are never transferred, regardless of mode.
+			
+			In "w"-mode, only previously downloaded files are uploaded.
+			(You can simple use '*' as a path)
+			
+			At the moment, there is a bug when trying to run a script in a dir which is not the current dir (e.g. tests/test.py).
+			However, you can simply cd into the target dir and run the script from there.
+"""
+		self.stdout.write(av+"\n")
 
 if __name__=="__main__":
 	McCmd().cmdloop()
