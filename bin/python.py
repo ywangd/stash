@@ -44,7 +44,7 @@ elif args.cmd is not None:
 
 elif args.file is not None:
 	try:
-		runpy.run_path(str(args.name), run_name='__main__')
+		runpy.run_path(str(args.file), run_name='__main__')
 	except Exception, e:
 		print 'Error: ' + str(e)
 else:
