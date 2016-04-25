@@ -24,7 +24,7 @@ except:
 #		-make run command transferring file deletions in "w"-mode (low prio)
 #		-make run command more efficient (only cp file changes) (low prio)
 #		-cleanup code (low prio)
-#		-fix bug when running a remote command in a subdir which is not the current dir (e.g. tests/test.py) (low prio)
+#		-fix dropbox-fsi freehing randomly (dropbox ddos-protection?)
 
 #======================
 #Errors
@@ -164,7 +164,7 @@ class LocalFSI(BaseFSI):
 			raise AlreadyExists("Already exists")
 		else:
 			try:
-				os.mkdir(ap)
+				os.makedirs(ap)
 			except Exception as e:
 				raise OperationFailure(str(e))
 	def close(self):
@@ -808,11 +808,11 @@ class McCmd(cmd.Cmd):
 		if isfile:
 			self.stdout.write("Copying file '{n}'...\n".format(n=rfp))
 			try:
-				self.stdout.write("Opening infile... ")
+				self.stdout.write("   Opening infile... ")
 				rf=rfsi.open(rfp,"rb")
-				self.stdout.write("Done.\nOpening outfile... ")
+				self.stdout.write("Done.\n   Opening outfile... ")
 				wf=wfsi.open(wfp,"wb")
-				self.stdout.write("Done.\nCopying... ")
+				self.stdout.write("Done.\n   Copying... ")
 				while True:
 					data=rf.read(4096)
 					if len(data)==0:
@@ -826,18 +826,19 @@ class McCmd(cmd.Cmd):
 				self.stdout.write("Error: {m}!\n".format(m=e.message))
 				return
 			finally:
-				self.stdout.write("Closing infile... ")
+				self.stdout.write("   Closing infile... ")
 				try:
 					rf.close()
 					self.stdout.write("Done.\n")
 				except Exception as e:
 					self.stdout.write("Error: {m}!\n".format(m=e.message))
-				self.stdout.write("Closing outfile... ")
+				self.stdout.write("   Closing outfile... ")
 				try:
 					wf.close()
 					self.stdout.write("Done.\n")
 				except Exception as e:
 					self.stdout.write("Error: {m}!\n".format(m=e.message))
+				self.stdout.write("Done.\n")
 		elif isdir:
 			crp=rfsi.get_path()
 			cwp=wfsi.get_path()
@@ -886,11 +887,11 @@ class McCmd(cmd.Cmd):
 		if isfile:
 			self.stdout.write("Moving file '{n}'...\n".format(n=rfp))
 			try:
-				self.stdout.write("Opening file to read... ")
+				self.stdout.write("   Opening file to read... ")
 				rf=rfsi.open(rfp,"rb")
-				self.stdout.write("Done.\nOpening file to write... ")
+				self.stdout.write("Done.\n   Opening file to write... ")
 				wf=wfsi.open(wfp,"wb")
-				self.stdout.write("Done.\nCopying... ")
+				self.stdout.write("Done.\n   Copying... ")
 				while True:
 					data=rf.read(4096)
 					if len(data)==0:
@@ -904,25 +905,26 @@ class McCmd(cmd.Cmd):
 				self.stdout.write("Error: {m}!\n".format(m=e.message))
 				return
 			finally:
-				self.stdout.write("Closing infile... ")
+				self.stdout.write("   Closing infile... ")
 				try:
 					rf.close()
 					self.stdout.write("Done.\n")
 				except Exception as e:
 					self.stdout.write("Error: {m}!\n".format(m=e.message))
-				self.stdout.write("Closing outfile... ")
+				self.stdout.write("   Closing outfile... ")
 				try:
 					wf.close()
 					self.stdout.write("Done.\n")
 				except Exception as e:
 					self.stdout.write("Error: {m}!\n".format(m=e.message))
 					return
-				self.stdout.write("Deleting Original... ")
+				self.stdout.write("   Deleting Original... ")
 				try: rfsi.remove(rfp)
 				except OperationFailure as e:
 					self.stdout.write("Error: {m}!\n".format(m=e.message))
 				else:
 					self.stdout.write("Done.\n")
+				self.stdout.write("Done.\n")
 		elif isdir:
 			crp=rfsi.get_path()
 			cwp=wfsi.get_path()
@@ -1021,7 +1023,11 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 			cd_path=localpath
 		try:
 			lfsi.cd(localpath)
-			lfp=remotepath
+			splitted=remotepath.split("/")
+			if len(splitted)>=2:
+				lfp=splitted[-2]
+			else:
+				lfp=remotepath
 			while lfp.startswith("/"):
 				lfp=lfp[1:]
 			if lfp=="":
@@ -1139,8 +1145,34 @@ This guide describes how to use mc.
 	You can run shell commands while using mc:
 		!echo test
 		shell python
+5.) Additional Info
+	-mc does not transfer file deletions when running a command on the remote fs
+	-mc may behave weird in subdirs
 """
 		self.stdout.write(help+"\n")
+	def help_troubleshooting(self,*args):
+		"""shows help on troubleshooting"""
+		av="""TROUBLESHOOTING
+==================
+
+I get the Error "to download a whole directory use '*'." when trying to copy a file:
+	-Check that the path refers to a file.
+	-Check that the file exists.
+My files arent updated in "w" mode:
+	-only files you downloaded are updated. If you want to update other files, download the whole dir with '*' as path.
+	-mc does not transfer file deletions (at the moment)
+I dont know how to use FSI XXX:
+	-see 'help fsi_XXX'
+I dont know how to use mc:
+	-see 'help usage'
+I dont know how to use command XXX:
+	-see 'help XXX'
+Running a command in a subdir on the remote filesystem behaves weirdly:
+	-this is a bug
+I dont know how to quit the command loop:
+	-use 'exit' or 'quit'
+"""
+	help_helpme=help_troubleshooting
 	def help_fsis(self,*args):
 		"""shows a list of aviable FSIs"""
 		av="""Aviable FSIs:
@@ -1154,7 +1186,7 @@ dropbox: a Dropbox-client (slow!)
 		av="""Help on FSI local:
 	The local filesystem.
 	USAGE:
-		'connect ' does not require any additional arguments (except ID).
+		'connect' does not require any additional arguments (except ID).
 """
 		self.stdout.write(av+"\n")
 	def help_fsi_ftp(self,*args):
