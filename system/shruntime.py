@@ -45,7 +45,7 @@ class ShRuntime(object):
     Runtime class responsible for parsing and executing commands.
     """
 
-    def __init__(self, stash, parser, expander, debug=False):
+    def __init__(self, stash, parser, expander, no_historyfile=False, debug=False):
         self.stash = stash
         self.parser = parser
         self.expander = expander
@@ -84,11 +84,14 @@ class ShRuntime(object):
 
         # load history from last session
         # NOTE the first entry in history is the latest one
-        try:
-            with open(self.historyfile) as ins:
-                # History from old to new, history at 0 is the oldest
-                self.history = [line.strip() for line in ins.readlines()]
-        except IOError:
+        if not no_historyfile:
+            try:
+                with open(self.historyfile) as ins:
+                    # History from old to new, history at 0 is the oldest
+                    self.history = [line.strip() for line in ins.readlines()]
+            except IOError:
+                self.history = []
+        else:
             self.history = []
         self.history_alt = []
 
@@ -97,13 +100,12 @@ class ShRuntime(object):
         self.idx_to_history = -1
         self.history_templine = ''
 
-    def load_rcfile(self):
+    def load_rcfile(self, no_rcfile=False):
         self.stash(_DEFAULT_RC.splitlines(),
                    persistent_level=1,
                    add_to_history=False, add_new_inp_line=False)
 
-        # TODO: NO RC FILE loading
-        if os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
+        if not no_rcfile and os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
             try:
                 with open(self.rcfile) as ins:
                     self.stash(ins.readlines(),

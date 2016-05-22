@@ -3,8 +3,8 @@
 """
 Launch StaSh in a more flexible and reliable way.
 """
-import os
 import sys
+import argparse
 
 module_names = (
     'stash',
@@ -21,45 +21,60 @@ module_names = (
     'system.shuseractionproxy',
 )
 
-# Find out where the launch script is located and import differently
-_LAUNCH_DIR = os.path.realpath(os.path.abspath(os.path.dirname(__file__)))
+# Attempt to reload modules when startup, does not seem to work
+if 'stash.stash' in sys.modules:
+    for name in module_names:
+        sys.modules.pop('stash.' + name)
+from stash import stash
 
-if os.path.isfile(os.path.join(_LAUNCH_DIR, 'stash.py')) \
-        and os.path.isfile(os.path.join(_LAUNCH_DIR, '__init__.py')) \
-        and os.path.isdir(os.path.join(_LAUNCH_DIR, 'system')):
-
-    if 'stash' in sys.modules:
-        for name in module_names:
-            sys.modules.pop(name)
-    import stash
-
-else:
-    if 'stash.stash' in sys.modules:
-        for name in module_names:
-            sys.modules.pop('stash.' + name)
-    from stash import stash
-
-# noinspection PyProtectedMember
-debug = (
-    # stash._DEBUG_STREAM,
-    # stash._DEBUG_RENDERER,
-    # stash._DEBUG_MAIN_SCREEN,
-    # stash._DEBUG_MINI_BUFFER,
-    # stash._DEBUG_IO,
-    # stash._DEBUG_UI,
-    # stash._DEBUG_TERMINAL,
-    # stash._DEBUG_TV_DELEGATE,
-    # stash._DEBUG_RUNTIME,
-    # stash._DEBUG_PARSER,
-    # stash._DEBUG_EXPANDER,
-    # stash._DEBUG_COMPLETER,
-)
+ap = argparse.ArgumentParser()
+ap.add_argument('--no-cfgfile', action='store_true',
+                help='do not load external config files')
+ap.add_argument('--no-rcfile', action='store_true',
+                help='do not load external resource file')
+ap.add_argument('--no-historyfile', action='store_true',
+                help='do not load history file from last session')
+ap.add_argument('--log-level',
+                choices=['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'],
+                default='INFO',
+                help='the logging level')
+ap.add_argument('--log-file',
+                help='the file to send logging messages')
+ap.add_argument('--debug-switch',
+                default='',
+                help='a comma separate list to turn on debug switch for components')
+ns = ap.parse_args()
 
 log_setting = {
-    'level': 'INFO',
-    'stdout': True,
+    'level': ns.log_level,
+    'file': ns.log_file,
 }
 
-_stash = stash.StaSh(debug=debug, log_setting=log_setting)
+if ns.debug_switch == '':
+    debug = (
+        # stash._DEBUG_STREAM,
+        # stash._DEBUG_RENDERER,
+        # stash._DEBUG_MAIN_SCREEN,
+        # stash._DEBUG_MINI_BUFFER,
+        # stash._DEBUG_IO,
+        # stash._DEBUG_UI,
+        # stash._DEBUG_TERMINAL,
+        # stash._DEBUG_TV_DELEGATE,
+        # stash._DEBUG_RUNTIME,
+        # stash._DEBUG_PARSER,
+        # stash._DEBUG_EXPANDER,
+        # stash._DEBUG_COMPLETER,
+    )
+else:
+    debug = []
+    for ds in ns.debug_switch.split(','):
+        ds = getattr(stash, '_DEBUG_{}'.format(ds.upper()), None)
+        if ds is not None:
+            debug.append(ds)
+
+
+_stash = stash.StaSh(debug=debug, log_setting=log_setting,
+                     no_cfgfile=ns.no_cfgfile, no_rcfile=ns.no_rcfile,
+                     no_historyfile=ns.no_historyfile)
 
 _stash.launch()
