@@ -288,7 +288,7 @@ class ShUI(ui.View):
         :return:
         """
         # TODO: temporarily disable will_close for pythonista 3 betas
-        if PYTHONISTA_VERSION_LONG > '300010':
+        if PYTHONISTA_VERSION_LONG < '300010':
             self.stash.runtime.save_history()
             self.stash.cleanup()
             # Clear the stack or the stdout becomes unusable for interactive prompt
