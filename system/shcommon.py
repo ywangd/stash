@@ -13,10 +13,13 @@ from itertools import chain
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 
 PYTHONISTA_VERSION = '0.0'
+PYTHONISTA_VERSION_LONG = '000000'
 if IN_PYTHONISTA:
     import plistlib
     PYTHONISTA_VERSION = plistlib.readPlist(
         os.path.join(os.path.dirname(sys.executable), 'Info.plist'))['CFBundleShortVersionString']
+    PYTHONISTA_VERSION_LONG = plistlib.readPlist(
+        os.path.join(os.path.dirname(sys.executable), 'Info.plist'))['CFBundleVersion']
 
 platform_string = platform.platform()
 

@@ -8,7 +8,7 @@ try:
 except ImportError:
     import dummyui as ui
 
-from .shcommon import IN_PYTHONISTA, ON_IPAD
+from .shcommon import IN_PYTHONISTA, ON_IPAD, PYTHONISTA_VERSION_LONG
 from .shterminal import ShTerminal, StubTerminal
 
 class ShVk(ui.View):
@@ -287,10 +287,12 @@ class ShUI(ui.View):
         Save stuff here
         :return:
         """
-        self.stash.runtime.save_history()
-        self.stash.cleanup()
-        # Clear the stack or the stdout becomes unusable for interactive prompt
-        self.stash.runtime.worker_registry.purge()
+        # TODO: temporarily disable will_close for pythonista 3 betas
+        if PYTHONISTA_VERSION_LONG > '300010':
+            self.stash.runtime.save_history()
+            self.stash.cleanup()
+            # Clear the stack or the stdout becomes unusable for interactive prompt
+            self.stash.runtime.worker_registry.purge()
 
     def toggle_k_grp(self):
         if self.on_k_grp == 0:
