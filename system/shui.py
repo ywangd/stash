@@ -287,12 +287,10 @@ class ShUI(ui.View):
         Save stuff here
         :return:
         """
-        # TODO: temporarily disable will_close for pythonista 3 betas
-        if PYTHONISTA_VERSION_LONG < '300010':
-            self.stash.runtime.save_history()
-            self.stash.cleanup()
-            # Clear the stack or the stdout becomes unusable for interactive prompt
-            self.stash.runtime.worker_registry.purge()
+        self.stash.runtime.save_history()
+        self.stash.cleanup()
+        # Clear the stack or the stdout becomes unusable for interactive prompt
+        self.stash.runtime.worker_registry.purge()
 
     def toggle_k_grp(self):
         if self.on_k_grp == 0:
