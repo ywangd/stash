@@ -1,7 +1,7 @@
 # coding: utf-8
 """easily work with multiple filesystems (e.g. local and FTP) synchronously"""
 #the name refers to midnight-commander, but this will probald never be a true counterpart
-import os,shutil,cmd,sys,ftplib,tempfile,base64,pickle
+import os,shutil,cmd,sys,ftplib,tempfile,base64,pickle,shlex
 import webbrowser,clipboard,keychain
 from dropbox import client,session,rest
 
@@ -11,7 +11,6 @@ except:
 	_stash=None
 
 #TODO:
-#		-fix commands only accept filenames without " " (mid prio)
 #		-fix mv command still deletes source directoy when a file-mv failed (mid prio)
 #		-fix spelling mistakes in help (low prio)
 #		-improve documentation (low prio)
@@ -24,7 +23,7 @@ except:
 #		-make run command transferring file deletions in "w"-mode (low prio)
 #		-make run command more efficient (only cp file changes) (low prio)
 #		-cleanup code (low prio)
-#		-fix dropbox-fsi freehing randomly (dropbox ddos-protection?)
+#		-fix dropbox-fsi freezing randomly (dropbox ddos-protection?)
 
 #======================
 #Errors
@@ -196,7 +195,7 @@ This means, that this FSI lad not work on all FTP-servers."""
 	def connect(self,cmd):
 		if self.ftp is not None:
 			return "Interface already connected"
-		args=cmd.split()
+		args=shlex.split(cmd)
 		if len(args)<1 or len(args)>5:
 			return "Invalid argument count"
 		user,pswd=None,None
@@ -652,7 +651,7 @@ class McCmd(cmd.Cmd):
 	do_EOF=do_quit=do_exit
 	def do_connect(self,cmd):
 		"""connect <id> <type> [args]: opens a new interface."""
-		args=cmd.split()
+		args=shlex.split(cmd)
 		if len(args)<2:
 			self.stdout.write("Error: expected at least 2 arguments!\n")
 			return
@@ -788,7 +787,7 @@ class McCmd(cmd.Cmd):
 			self.stdout.write("Done.\n")
 	def do_cp(self,command):
 		"""cp <ri> <rf> <wi> <wn>: copy file 'rf' from 'ri' to file 'wf' on 'wi'."""
-		args=command.split()
+		args=shlex.split(command)
 		if len(args)!=4:
 			self.stdout.write("Error: invalid argument count!\n")
 			return
@@ -853,7 +852,7 @@ class McCmd(cmd.Cmd):
 			try:
 				content=rfsi.listdir()
 				for fn in content:
-					subcommand="{rfi} {name} {wfi} {name}".format(rfi=rfi,name=fn,wfi=wfi)
+					subcommand='{rfi} "{name}" {wfi} "{name}"'.format(rfi=rfi,name=fn,wfi=wfi)
 					self.do_cp(subcommand)
 			except OperationFailure as e:
 				self.stdout.write("Error: {e}!\n".format(e=e.message))
@@ -867,7 +866,7 @@ class McCmd(cmd.Cmd):
 	do_copy=do_cp
 	def do_mv(self,command):
 		"""mv <ri> <rf> <wi> <wn>: move file 'rf' from 'ri' to file 'wf' on 'wi'."""
-		args=command.split()
+		args=shlex.split(command)
 		if len(args)!=4:
 			self.stdout.write("Error: invalid argument count!\n")
 			return
@@ -937,7 +936,7 @@ class McCmd(cmd.Cmd):
 			try:
 				content=rfsi.listdir()
 				for fn in content:
-					subcommand="{rfi} {name} {wfi} {name}".format(rfi=rfi,name=fn,wfi=wfi)
+					subcommand='{rfi} "{name}" {wfi} "{name}"'.format(rfi=rfi,name=fn,wfi=wfi)
 					self.do_mv(subcommand)
 				rfsi.cd(crp)
 				rfsi.remove(rfp)
@@ -994,7 +993,7 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 		rfsi,args=self.parse_fs_command(command,nargs=-1,ret=tuple)
 		if (rfsi is None) or (args is None):
 			return
-		rid=int(command.split()[0])
+		rid=int(shlex.split(command)[0])
 		if len(args)<3:
 			self.stdout.write("Error: invalid argument count!\n")
 			return
@@ -1032,14 +1031,14 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 				lfp=lfp[1:]
 			if lfp=="":
 				lfp="exec"
-			self.do_cp("{ri} {rp} 0 {lfp}".format(ri=rid,rp=remotepath,lfp=lfp))
+			self.do_cp('{ri} "{rp}" 0 "{lfp}"'.format(ri=rid,rp=remotepath,lfp=lfp))
 			if mode in ("w","W"):
 				self.stdout.write("Scanning content... ")
 				oldstate=modified(localpath,prev=None)
 				self.stdout.write("Done.\n")
 			if cd_path is None:
 				cd_path=os.path.join(localpath,os.listdir(localpath)[0])
-			self.do_shell("cd {p}".format(p=cd_path))
+			self.do_shell('cd "{p}"'.format(p=cd_path))
 			self.do_shell(shellcommand)
 		except Exception as e:
 			self.stdout.write("Error: {e}!\n".format(e=e.message))
@@ -1065,7 +1064,7 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 								lfp=lfp[1:]
 							lfsi.cd(lfp)
 							lfp=lfp.split("/")[-1]
-						cpcmd="0 {lfp} {ri} {tp}".format(lfp=lfp,ri=rid,tp=tp)
+						cpcmd='0 "{lfp}" {ri} "{tp}"'.format(lfp=lfp,ri=rid,tp=tp)
 						self.do_cp(cpcmd)
 						self.stdout.write("Copying finished.\n")
 				else:
@@ -1074,7 +1073,7 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 				self.stdout.write("Error: {m}!\n".format(m=e.message))
 		finally:
 			self.stdout.write("Cleaning up... ")
-			self.do_shell("cd {p}".format(p=op))
+			self.do_shell('cd "{p}"'.format(p=op))
 			try:
 				shutil.rmtree(localpath)
 			except:
@@ -1084,7 +1083,7 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 	def parse_fs_command(self,command,nargs=0,ret=str):
 		"""parses a filesystem command. returns the interface and the actual command.
 nargs specifies the number of arguments, -1 means any number."""
-		args=command.split()
+		args=shlex.split(command)
 		if len(args)<1 or (len(args)!=nargs+1 and nargs!=-1):
 			self.stdout.write("Error: invalid argument count!\n")
 			return None,None
@@ -1171,6 +1170,8 @@ Running a command in a subdir on the remote filesystem behaves weirdly:
 	-this is a bug
 I dont know how to quit the command loop:
 	-use 'exit' or 'quit'
+I cant copy/move/... a file with a space in its name:
+	-use something like 'cp 1 "name with space" 1 "some othrr name with spaces"'
 """
 	help_helpme=help_troubleshooting
 	def help_fsis(self,*args):
