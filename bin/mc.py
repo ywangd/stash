@@ -5,10 +5,7 @@ import os,shutil,cmd,sys,ftplib,tempfile,base64,pickle,shlex
 import webbrowser,clipboard,keychain
 from dropbox import client,session,rest
 
-try:
-	_stash=globals()["_stash"]
-except:
-	_stash=None
+_stash=globals()["_stash"]
 
 #TODO:
 #		-fix mv command still deletes source directoy when a file-mv failed (mid prio)
@@ -24,6 +21,12 @@ except:
 #		-make run command more efficient (only cp file changes) (low prio)
 #		-cleanup code (low prio)
 #		-fix dropbox-fsi freezing randomly (dropbox ddos-protection?)
+
+#=====================
+#Constants
+
+INTERN_FS_ID="_<intern>"#the id used for internal commands
+assert not " " in INTERN_FS_ID,"Invalid configuration!"
 
 #======================
 #Errors
@@ -628,13 +631,13 @@ class McCmd(cmd.Cmd):
 	def __init__(self):
 		cmd.Cmd.__init__(self)
 		internal_fsi=InternalFSI(self)
-		self.FSIs={0:internal_fsi}
+		self.FSIs={INTERN_FS_ID:internal_fsi}
 	def do_connected(self,cmd):
 		"""prints a list of connected interfaces and their id."""
 		if len(self.FSIs.keys())<=1:
 			self.stdout.write("No Interfaces connected.\n")
 		for k in sorted(self.FSIs.keys()):
-			if k==0:
+			if k==INTERN_FS_ID:
 				continue
 			i=self.FSIs[k]
 			name=i.repr()
@@ -660,11 +663,6 @@ class McCmd(cmd.Cmd):
 			args=" ".join(args[2:])
 		else:
 			args=""
-		try:
-			ID=int(ID)
-		except ValueError:
-			self.stdout.write("Error: expected a integer!\n")
-			return
 		if ID in self.FSIs:
 			self.stdout.write("Error: ID already registered!\n")
 			return
@@ -690,15 +688,15 @@ class McCmd(cmd.Cmd):
 			return
 	def do_disconnect(self,command):
 		"""disconnect <interface>: close 'interface'."""
-		try:
-			ID=int(command)
-		except:
-			self.stdout.write("Error: expected a int as argument!\n")
+		args=shlex.split(command)
+		if len(args)!=1:
+			self.stdout.write("Error: expected exactly on argument!\n")
 			return
+		ID=args[0]
 		if ID not in self.FSIs:
 			self.stdout.write("Error: ID does not refer to any Interface!\n")
 			return
-		if ID==0:
+		if ID==INTERN_FS_ID:
 			self.stdout.write("Error: cannot close internal FSI!\n")
 			return
 		try:
@@ -792,11 +790,6 @@ class McCmd(cmd.Cmd):
 			self.stdout.write("Error: invalid argument count!\n")
 			return
 		rfi,rfp,wfi,wfp=args
-		try:
-			rfi,wfi=int(rfi),int(wfi)
-		except ValueError:
-			self.stdout.write("Error: Expected integers for first and third argument!\n")
-			return
 		if (rfi not in self.FSIs) or (wfi not in self.FSIs):
 			self.stdout.write("Error: Interface not found!\n")
 			return
@@ -871,11 +864,6 @@ class McCmd(cmd.Cmd):
 			self.stdout.write("Error: invalid argument count!\n")
 			return
 		rfi,rfp,wfi,wfp=args
-		try:
-			rfi,wfi=int(rfi),int(wfi)
-		except ValueError:
-			self.stdout.write("Error: Expected integers for first and third argument!\n")
-			return
 		if (rfi not in self.FSIs) or (wfi not in self.FSIs):
 			self.stdout.write("Error: Interface not found!\n")
 			return
@@ -993,7 +981,7 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 		rfsi,args=self.parse_fs_command(command,nargs=-1,ret=tuple)
 		if (rfsi is None) or (args is None):
 			return
-		rid=int(shlex.split(command)[0])
+		rid=shlex.split(command)[0]
 		if len(args)<3:
 			self.stdout.write("Error: invalid argument count!\n")
 			return
@@ -1006,7 +994,7 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 		if mode not in ("r","R","w","W"):
 			self.stdout.write("Error: Unknown mode!\n")
 			return
-		lfsi=self.FSIs[0]
+		lfsi=self.FSIs[INTERN_FS_ID]
 		shellcommand=" ".join(args[2:])
 		self.stdout.write("Creating tempdir... ")
 		localpath=os.path.join(tempfile.gettempdir(),"stash_mc_run")
@@ -1031,7 +1019,7 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 				lfp=lfp[1:]
 			if lfp=="":
 				lfp="exec"
-			self.do_cp('{ri} "{rp}" 0 "{lfp}"'.format(ri=rid,rp=remotepath,lfp=lfp))
+			self.do_cp('{ri} "{rp}" {li} "{lfp}"'.format(ri=rid,rp=remotepath,lfp=lfp,li=INTERN_FS_ID))
 			if mode in ("w","W"):
 				self.stdout.write("Scanning content... ")
 				oldstate=modified(localpath,prev=None)
@@ -1064,7 +1052,7 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 								lfp=lfp[1:]
 							lfsi.cd(lfp)
 							lfp=lfp.split("/")[-1]
-						cpcmd='0 "{lfp}" {ri} "{tp}"'.format(lfp=lfp,ri=rid,tp=tp)
+						cpcmd='{li} "{lfp}" {ri} "{tp}"'.format(lfp=lfp,ri=rid,tp=tp,li=INTERN_FS_ID)
 						self.do_cp(cpcmd)
 						self.stdout.write("Copying finished.\n")
 				else:
@@ -1087,10 +1075,7 @@ nargs specifies the number of arguments, -1 means any number."""
 		if len(args)<1 or (len(args)!=nargs+1 and nargs!=-1):
 			self.stdout.write("Error: invalid argument count!\n")
 			return None,None
-		try: i=int(args[0])
-		except ValueError:
-			self.stdout.write("Error: expected an integer as first argument!\n")
-			return None,None
+		i=args[0]
 		if i not in self.FSIs:
 			self.stdout.write("Error: Interface not found!\n")
 			return None,None
