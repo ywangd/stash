@@ -6,6 +6,7 @@ import webbrowser,clipboard,keychain
 from dropbox import client,session,rest
 
 _stash=globals()["_stash"]
+Text=_stash.text_color#alias for cleaner code
 
 #TODO:
 #		-fix mv command still deletes source directoy when a file-mv failed (mid prio)
@@ -253,14 +254,15 @@ This means, that this FSI lad not work on all FTP-servers."""
 			return e.message
 		else:
 			if secure:
-				self.master.stdout.write("Done.\nSecuring Connection... ")
+				self.master.stdout.write(Text("Done","green"))
+				self.master.stdout.write(".\nSecuring Connection... ")
 				try:
 					self.ftp.prot_p()
 				except Exception as e:
 					self.close()
 					return e.message
-				self.master.stdo
-			self.master.stdout.write("Done.\nLogging in... ")
+			self.master.stdout.write(Text("Done","green"))
+			self.master.stdout.write(".\nLogging in... ")
 			try:
 				self.ftp.login(user,pswd)
 			except Exception as e:
@@ -318,8 +320,8 @@ This means, that this FSI lad not work on all FTP-servers."""
 			try:
 				self.ftp.rmd(ap)
 			except Exception as e2:
-				self.master.stdout.write("Error trying to delete file: {e}!\n".format(e=e.message))
-				self.master.stdout.write("Error trying to delete dir (after file-deletion failed)!\n")
+				self.master.stdout.write(Text("Error trying to delete file: {e}!\n".format(e=e.message),"red"))
+				self.master.stdout.write(Text("Error trying to delete dir (after file-deletion failed)!\n","red"))
 				raise OperationFailure(e2.message)
 	def open(self,name,mode="rb"):
 		ap=os.path.join(self.path,name)
@@ -480,9 +482,9 @@ this class creates a tempfile, which is uploaded onto the server when closed."""
 
 def dropbox_setup(stdin,stdout):
 	"""helper-interface to setup dropbox."""
-	stdout.write("="*40+"\nDropbox-setup\n"+"="*25+"\n")
+	stdout.write(Text("="*40+"\nDropbox-setup\n"+"="*25+"\n","blue"))
 	header="This interface will help you setup your dropbox access."
-	choices=("abort","I already have an appkey+secret","I dont have a appkey+secret")
+	choices=(Text("abort","yellow"),"I already have an appkey+secret","I dont have a appkey+secret")
 	choice=menu(header,choices,stdin,stdout)
 	if choice==0:
 		raise OperationFailure("Setup aborted.")
@@ -495,11 +497,11 @@ def dropbox_setup(stdin,stdout):
 		stdout.write("  2) Upgrade your Account to a dropbox-developer account.\n")
 		stdout.write("  3) Create a dropbox-app.\n")
 		stdout.write("  4) Enter your app-key,app-secret and access-type in mc.\n")
-		stdout.write("Continue?")
+		stdout.write(Text("Continue?","yellow"))
 		stdin.readline()
 		while True:
 			header="Select action"
-			choices=("Register to dropbox","Go to the developer-page","proceed","abort")
+			choices=("Register to dropbox","Go to the developer-page","proceed",Text("abort","yellow"))
 			choice=menu(header,choices,stdin,stdout)
 			if choice==0:
 				webbrowser.open("https://www.dropbox.com/register")
@@ -523,23 +525,28 @@ def dropbox_setup(stdin,stdout):
 		stdout.write("Enter access type:\n")
 		accesstype=stdin.readline().strip()
 		if accesstype not in ("dropbox","app_folder"):
-			stdout.write("Invalid access type! Valid values: 'dropbox' and 'app_folder'.\n")
+			stdout.write(Text("Invalid access type! Valid values: 'dropbox' and 'app_folder'.\n","red"))
 		else:
 			break
 	stdout.write("Creating session... ")
 	sess=session.DropboxSession(appkey,appsecret,accesstype)
-	stdout.write("Done.\nObtaining request token... ")
+	stdout.write(Text("Done","green"))
+	stdout.write(".\nObtaining request token... ")
 	request_token=sess.obtain_request_token()
-	stdout.write("Done.\nBuilding authorization-URL... ")
+	stdout.write(Text("Done","green"))
+	stdout.write(".\nBuilding authorization-URL... ")
 	url=sess.build_authorize_url(request_token)
-	stdout.write("Done.\nPlease press enter after you allowed access.")
+	stdout.write(Text("Done","green"))
+	stdout.write(".\nPlease press enter after you allowed access.")
 	webbrowser.open(url)
 	stdin.readline()
 	stdout.write("Obtaining Access token... ")
 	access_token=sess.obtain_access_token(request_token)
-	stdout.write("Done.\nSaving... ")
+	stdout.write(Text("Done","green"))
+	stdout.write(".\nSaving... ")
 	save_dropbox_data(appkey,appsecret,accesstype,access_token)
-	stdout.write("Done.\n")
+	stdout.write(Text("Done","green"))
+	stdout.write(".\n")
 	return True
 
 def save_dropbox_data(key,sec,access_type,access_token):
@@ -625,8 +632,9 @@ INTERFACES={
 #User-Interface
 
 class McCmd(cmd.Cmd):
-	prompt="(mc)"
-	intro="Entering mc's command-loop.\nType 'help' for help and 'exit' to exit."
+	prompt=Text("(mc)","blue")
+	intro=Text("Entering mc's command-loop.\nType 'help' for help and 'exit' to exit.","yellow")
+	ruler=Text("=","yellow")
 	use_rawinput=True
 	def __init__(self):
 		cmd.Cmd.__init__(self)
@@ -649,14 +657,15 @@ class McCmd(cmd.Cmd):
 			try: self.FSIs[k].close()
 			except: pass
 			del self.FSIs[k]
-		self.stdout.write("Done.\ngoodbye!\n")
+		self.stdout.write(Text("Done","green"))
+		self.stdout.write(".\ngoodbye!\n")
 		sys.exit(0)
 	do_EOF=do_quit=do_exit
 	def do_connect(self,cmd):
 		"""connect <id> <type> [args]: opens a new interface."""
 		args=shlex.split(cmd)
 		if len(args)<2:
-			self.stdout.write("Error: expected at least 2 arguments!\n")
+			self.stdout.write(Text("Error: expected at least 2 arguments!\n","red"))
 			return
 		ID,name=args[0],args[1]
 		if len(args)>2:
@@ -664,47 +673,49 @@ class McCmd(cmd.Cmd):
 		else:
 			args=""
 		if ID in self.FSIs:
-			self.stdout.write("Error: ID already registered!\n")
+			self.stdout.write(Text("Error: ID already registered!\n","red"))
 			return
 		if name not in INTERFACES:
-			self.stdout.write("Error: FSI not found!\n")
+			self.stdout.write(Text("Error: FSI not found!\n","red"))
 			return
 		self.stdout.write("Creating Interface... ")
 		fsic=INTERFACES[name]
 		fsi=fsic(self)
-		self.stdout.write("Done.\nConnecting... ")
+		self.stdout.write(Text("Done","green"))
+		self.stdout.write(".\nConnecting... ")
 		try:
 			state=fsi.connect(args)
 		except OperationFailure as e:
-			self.stdout.write("Error: {e}!\n".format(e=e.message))
+			self.stdout.write(Text("Error: {e}!\n".format(e=e.message),"red"))
 			return
 		if state is True:
 			self.FSIs[ID]=fsi
-			self.stdout.write("Done.\n")
+			self.stdout.write(Text("Done","green"))
+			self.stdout.write(".\n")
 		elif isinstance(state,str):
-			self.stdout.write("Error: {e}!\n".format(e=state))
+			self.stdout.write(Text("Error: {e}!\n".format(e=state),"red"))
 		else:
-			self.stdout.write("Error: cannot interpret return-Value of connect()!\n")
+			self.stdout.write(Text("Error: cannot interpret return-Value of connect()!\n","red"))
 			return
 	def do_disconnect(self,command):
 		"""disconnect <interface>: close 'interface'."""
 		args=shlex.split(command)
 		if len(args)!=1:
-			self.stdout.write("Error: expected exactly on argument!\n")
+			self.stdout.write(Text("Error: expected exactly on argument!\n","red"))
 			return
 		ID=args[0]
 		if ID not in self.FSIs:
-			self.stdout.write("Error: ID does not refer to any Interface!\n")
+			self.stdout.write(Text("Error: ID does not refer to any Interface!\n","red"))
 			return
 		if ID==INTERN_FS_ID:
-			self.stdout.write("Error: cannot close internal FSI!\n")
+			self.stdout.write(Text("Error: cannot close internal FSI!\n","red"))
 			return
 		try:
 			self.FSIs[ID].close()
 		except OperationFailure as e:
-			self.stdout.write("Error closing Interface: {m}!\n".format(m=e.message))
+			self.stdout.write(Text("Error closing Interface: {m}!\n".format(m=e.message),"red"))
 		del self.FSIs[ID]
-		self.stdout.write("Interface closed.\n")
+		self.stdout.write(Text("Interface closed.\n","green"))
 	def do_shell(self,command):
 		"""shell <command>: run 'command' in shell"""
 		if _stash is not None:
@@ -714,7 +725,7 @@ class McCmd(cmd.Cmd):
 			content=p.read()
 			code=p.close()
 			self.stdout.write(content+"\n")
-			self.stdout.write("Exit status: {s}\n".format(s=code))
+			self.stdout.write(Text("Exit status: {s}\n".format(s=code),"yellow"))
 	def do_cd(self,command):
 		"""cd <interface> <dirname>: change path of 'interface' to 'dirname'."""
 		fsi,name=self.parse_fs_command(command,nargs=1)
@@ -728,14 +739,14 @@ class McCmd(cmd.Cmd):
 			except:
 				isdir=True#lets just try. It worked before isdir() was added so it should still work
 		if not isdir:
-			self.stdout.write("Error: dirname does not refer to a dir!\n")
+			self.stdout.write(Text("Error: dirname does not refer to a dir!\n","red"))
 			return
 		try:
 			fsi.cd(name)
 		except IsFile:
-			self.stdout.write("Error: dirname does not refer to a dir!\n")
+			self.stdout.write(Text("Error: dirname does not refer to a dir!\n","red"))
 		except OperationFailure as e:
-			self.stdout.write("Error: {m}\n".format(m=e.message))
+			self.stdout.write(Text("Error: {m}\n".format(m=e.message),"red"))
 	def do_path(self,command):
 		"""path <interface>: shows current path of 'interface'."""
 		fsi,name=self.parse_fs_command(command,nargs=0)
@@ -744,7 +755,7 @@ class McCmd(cmd.Cmd):
 		try:
 			self.stdout.write(fsi.get_path()+"\n")
 		except OperationFailure as e:
-			self.stdout.write("Error: {m}\n".format(m=e.message))
+			self.stdout.write(Text("Error: {m}\n".format(m=e.message),"red"))
 	do_cwd=do_pwd=do_path
 	def do_ls(self,command):
 		"""ls <interface>: shows the content of the current dir of 'interface'."""
@@ -754,7 +765,7 @@ class McCmd(cmd.Cmd):
 		try:
 			content=fsi.listdir()
 		except OperationFailure as e:
-			self.stdout.write("Error: {m}\n".format(m=e.message))
+			self.stdout.write(Text("Error: {m}\n".format(m=e.message),"red"))
 		else:
 			self.stdout.write("  "+"\n  ".join(content)+"\n")
 	do_dir=do_ls
@@ -767,9 +778,10 @@ class McCmd(cmd.Cmd):
 		try:
 			fsi.remove(name)
 		except OperationFailure as e:
-			self.stdout.write("Error: {m}\n".format(m=e.message))
+			self.stdout.write(Text("Error: {m}\n".format(m=e.message),"red"))
 		else:
-			self.stdout.write("Done.\n")
+			self.stdout.write(Text("Done","green"))
+			self.stdout.write(".\n")
 	do_del=do_remove=do_rm
 	def do_mkdir(self,command):
 		"""mkdir <interface> <name>: creates the dir 'name'."""
@@ -780,18 +792,21 @@ class McCmd(cmd.Cmd):
 		try:
 			fsi.mkdir(name)
 		except OperationFailure as e:
-			self.stdout.write("Error: {m}\n".format(m=e.message))
+			self.stdout.write(Text("Error: {m}\n".format(m=e.message),"red"))
 		else:
-			self.stdout.write("Done.\n")
+			self.stdout.write(Text("Done","green"))
+			self.stdout.write(".\n")
 	def do_cp(self,command):
 		"""cp <ri> <rf> <wi> <wn>: copy file 'rf' from 'ri' to file 'wf' on 'wi'."""
 		args=shlex.split(command)
 		if len(args)!=4:
-			self.stdout.write("Error: invalid argument count!\n")
+			self.stdout.write(Text("Error: invalid argument count!\n","red"))
 			return
 		rfi,rfp,wfi,wfp=args
+		if wfi==rfi:
+			self.stdout.write(Text("Error: can only copy between different interfaces!","red"))
 		if (rfi not in self.FSIs) or (wfi not in self.FSIs):
-			self.stdout.write("Error: Interface not found!\n")
+			self.stdout.write(Text("Error: Interface not found!\n","red"))
 			return
 		rfsi=self.FSIs[rfi]
 		wfsi=self.FSIs[wfi]
@@ -802,35 +817,41 @@ class McCmd(cmd.Cmd):
 			try:
 				self.stdout.write("   Opening infile... ")
 				rf=rfsi.open(rfp,"rb")
-				self.stdout.write("Done.\n   Opening outfile... ")
+				self.stdout.write(Text("Done","green"))
+				self.stdout.write(".\n   Opening outfile... ")
 				wf=wfsi.open(wfp,"wb")
-				self.stdout.write("Done.\n   Copying... ")
+				self.stdout.write(Text("Done","green"))
+				self.stdout.write(".\n   Copying... ")
 				while True:
 					data=rf.read(4096)
 					if len(data)==0:
 						break
 					wf.write(data)
-				self.stdout.write("Done.\n")
+				self.stdout.write(Text("Done","green"))
+				self.stdout.write(".\n")
 			except IsDir:
-				self.stdout.write("Error: expected a filepath!\n")
+				self.stdout.write(Text("Error: expected a filepath!\n","red"))
 				return
 			except OperationFailure as e:
-				self.stdout.write("Error: {m}!\n".format(m=e.message))
+				self.stdout.write(Text("Error: {m}!\n".format(m=e.message),"red"))
 				return
 			finally:
 				self.stdout.write("   Closing infile... ")
 				try:
 					rf.close()
-					self.stdout.write("Done.\n")
+					self.stdout.write(Text("Done","green"))
+					self.stdout.write(".\n")
 				except Exception as e:
-					self.stdout.write("Error: {m}!\n".format(m=e.message))
+					self.stdout.write(Text("Error: {m}!\n".format(m=e.message),"red"))
 				self.stdout.write("   Closing outfile... ")
 				try:
 					wf.close()
-					self.stdout.write("Done.\n")
+					self.stdout.write(Text("Done","green"))
+					self.stdout.write(".\n")
 				except Exception as e:
-					self.stdout.write("Error: {m}!\n".format(m=e.message))
-				self.stdout.write("Done.\n")
+					self.stdout.write(Text("Error: {m}!\n".format(m=e.message),"red"))
+				self.stdout.write(Text("Done","green"))
+				self.stdout.write(".\n")
 		elif isdir:
 			crp=rfsi.get_path()
 			cwp=wfsi.get_path()
@@ -840,7 +861,8 @@ class McCmd(cmd.Cmd):
 				try: wfsi.mkdir(wfp)
 				except AlreadyExists as e:
 					pass
-				self.stdout.write("Done.\n")
+				self.stdout.write(Text("Done","green"))
+				self.stdout.write(".\n")
 			wfsi.cd(wfp)
 			try:
 				content=rfsi.listdir()
@@ -848,25 +870,27 @@ class McCmd(cmd.Cmd):
 					subcommand='{rfi} "{name}" {wfi} "{name}"'.format(rfi=rfi,name=fn,wfi=wfi)
 					self.do_cp(subcommand)
 			except OperationFailure as e:
-				self.stdout.write("Error: {e}!\n".format(e=e.message))
+				self.stdout.write(Text("Error: {e}!\n".format(e=e.message),"red"))
 				return
 			finally:
 				rfsi.cd(crp)
 				wfsi.cd(cwp)
 		else:
-			self.stdout.write("Error: Not found!\n")
+			self.stdout.write(Text("Error: Not found!\n","red"))
 			return
 	do_copy=do_cp
 	def do_mv(self,command):
 		"""mv <ri> <rf> <wi> <wn>: move file 'rf' from 'ri' to file 'wf' on 'wi'."""
 		args=shlex.split(command)
 		if len(args)!=4:
-			self.stdout.write("Error: invalid argument count!\n")
+			self.stdout.write(Text("Error: invalid argument count!\n","red"))
 			return
 		rfi,rfp,wfi,wfp=args
 		if (rfi not in self.FSIs) or (wfi not in self.FSIs):
-			self.stdout.write("Error: Interface not found!\n")
+			self.stdout.write(Text("Error: Interface not found!\n","red"))
 			return
+		if wfi==rfi:
+			self.stdout.write(Text("Error: can only move between different interfaces!","red"))
 		rfsi=self.FSIs[rfi]
 		wfsi=self.FSIs[wfi]
 		isdir=rfsi.isdir(rfp)
@@ -876,42 +900,49 @@ class McCmd(cmd.Cmd):
 			try:
 				self.stdout.write("   Opening file to read... ")
 				rf=rfsi.open(rfp,"rb")
-				self.stdout.write("Done.\n   Opening file to write... ")
+				self.stdout.write(Text("Done","green"))
+				self.stdout.write(".\n   Opening file to write... ")
 				wf=wfsi.open(wfp,"wb")
-				self.stdout.write("Done.\n   Copying... ")
+				self.stdout.write(Text("Done","green"))
+				self.stdout.write(".\n   Copying... ")
 				while True:
 					data=rf.read(4096)
 					if len(data)==0:
 						break
 					wf.write(data)
-				self.stdout.write("Done.\n")
+				self.stdout.write(Text("Done","green"))
+				self.stdout.write(".\n")
 			except IsDir:
-				self.stdout.write("Error: expected a filepath!\n")
+				self.stdout.write(Text("Error: expected a filepath!\n","red"))
 				return
 			except OperationFailure as e:
-				self.stdout.write("Error: {m}!\n".format(m=e.message))
+				self.stdout.write(Text("Error: {m}!\n".format(m=e.message),"red"))
 				return
 			finally:
 				self.stdout.write("   Closing infile... ")
 				try:
 					rf.close()
-					self.stdout.write("Done.\n")
+					self.stdout.write(Text("Done","green"))
+					self.stdout.write(".\n")
 				except Exception as e:
-					self.stdout.write("Error: {m}!\n".format(m=e.message))
+					self.stdout.write(Text("Error: {m}!\n".format(m=e.message),"red"))
 				self.stdout.write("   Closing outfile... ")
 				try:
 					wf.close()
-					self.stdout.write("Done.\n")
+					self.stdout.write(Text("Done","green"))
+					self.stdout.write(".\n")
 				except Exception as e:
-					self.stdout.write("Error: {m}!\n".format(m=e.message))
+					self.stdout.write(Text("Error: {m}!\n".format(m=e.message),"red"))
 					return
 				self.stdout.write("   Deleting Original... ")
 				try: rfsi.remove(rfp)
 				except OperationFailure as e:
-					self.stdout.write("Error: {m}!\n".format(m=e.message))
+					self.stdout.write(Text("Error: {m}!\n".format(m=e.message),"red"))
 				else:
-					self.stdout.write("Done.\n")
-				self.stdout.write("Done.\n")
+					self.stdout.write(Text("Done","green"))
+					self.stdout.write(".\n")
+				self.stdout.write(Text("Done","green"))
+				self.stdout.write(".\n")
 		elif isdir:
 			crp=rfsi.get_path()
 			cwp=wfsi.get_path()
@@ -919,7 +950,8 @@ class McCmd(cmd.Cmd):
 			if not (wfp in wfsi.listdir() or wfp=="/"):
 				self.stdout.write("Creating dir '{n}'... ".format(n=wfp))
 				wfsi.mkdir(wfp)
-				self.stdout.write("Done.\n")
+				self.stdout.write(Text("Done","green"))
+				self.stdout.write(".\n")
 			wfsi.cd(wfp)
 			try:
 				content=rfsi.listdir()
@@ -929,13 +961,13 @@ class McCmd(cmd.Cmd):
 				rfsi.cd(crp)
 				rfsi.remove(rfp)
 			except OperationFailure as e:
-				self.stdout.write("Error: {e}!\n".format(e=e.message))
+				self.stdout.write(Text("Error: {e}!\n".format(e=e.message),"red"))
 				return
 			finally:
 				rfsi.cd(crp)
 				wfsi.cd(cwp)
 		else:
-			self.stdout.write("Error: Not found!\n")
+			self.stdout.write(Text("Error: Not found!\n","red"))
 			return
 	do_move=do_mv
 	def do_cat(self,command):
@@ -950,11 +982,11 @@ otherwise, print repr(content)[1:-1]
 			if args[1] in ("-b","--binary"):#never print nullbytes until explictly told.
 				binary=True
 			else:
-				self.stdout.write("Error: Unknown read-mode!\n")
+				self.stdout.write(Text("Error: Unknown read-mode!\n","red"))
 				return
 			name,binary=args[0],binary
 		elif len(args) not in (1,2):
-			self.stdout.write("Error: invalid argument count!\n")
+			self.stdout.write(Text("Error: invalid argument count!\n","red"))
 			return
 		else:
 			name,binary=args[0],False
@@ -963,14 +995,18 @@ otherwise, print repr(content)[1:-1]
 			f=fsi.open(name,"r"+("b" if binary else ""))
 			content=f.read()
 		except IsDir:
-			self.stdout.write("Error: expected a filepath!\n")
+			self.stdout.write(Text("Error: expected a filepath!\n","red"))
 		except OperationFailure as e:
-			self.stdout.write("Error: {m}\n".format(m=e.message))
+			self.stdout.write(Text("Error: {m}\n".format(m=e.message),"red"))
 		else:
-			self.stdout.write("Done.\n")
+			self.stdout.write(Text("Done","green"))
+			self.stdout.write(".\n")
 			if not binary:
 				content=repr(content)[1:-1]
+			self.stdout.write(Text("="*25,"yellow"))
 			self.stdout.write("\n{c}\n".format(c=content))
+			self.stdout.write(Text("="*25,"yellow"))
+			self.stdout.write("\n")
 		finally:
 			try: f.close()
 			except: pass
@@ -983,16 +1019,16 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 			return
 		rid=shlex.split(command)[0]
 		if len(args)<3:
-			self.stdout.write("Error: invalid argument count!\n")
+			self.stdout.write(Text("Error: invalid argument count!\n","red"))
 			return
 		mode=args[1]
 		remotepath=args[0]
 		orgpath=remotepath
 		if not (rfsi.isfile(remotepath) or remotepath=="*"):
-			self.stdout.write("Error: to download a whole directory use '*'.\n")
+			self.stdout.write(Text("Error: to download a whole directory use '*'.\n","red"))
 			return
 		if mode not in ("r","R","w","W"):
-			self.stdout.write("Error: Unknown mode!\n")
+			self.stdout.write(Text("Error: Unknown mode!\n","red"))
 			return
 		lfsi=self.FSIs[INTERN_FS_ID]
 		shellcommand=" ".join(args[2:])
@@ -1001,7 +1037,8 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 		if os.path.exists(localpath):
 			shutil.rmtree(localpath)
 		os.mkdir(localpath)
-		self.stdout.write("Done.\n")
+		self.stdout.write(Text("Done","green"))
+		self.stdout.write(".\n")
 		op=os.getcwd()
 		if remotepath=="*":
 			remotepath=rfsi.get_path()
@@ -1023,20 +1060,22 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 			if mode in ("w","W"):
 				self.stdout.write("Scanning content... ")
 				oldstate=modified(localpath,prev=None)
-				self.stdout.write("Done.\n")
+				self.stdout.write(Text("Done","green"))
+				self.stdout.write(".\n")
 			if cd_path is None:
 				cd_path=os.path.join(localpath,os.listdir(localpath)[0])
 			self.do_shell('cd "{p}"'.format(p=cd_path))
 			self.do_shell(shellcommand)
 		except Exception as e:
-			self.stdout.write("Error: {e}!\n".format(e=e.message))
+			self.stdout.write(Text("Error: {e}!\n".format(e=e.message),"red"))
 			return
 		else:
 			try:
 				if mode in ("w","W"):
 					self.stdout.write("Checking for content modification... ")
 					moded=modified(localpath,prev=oldstate)
-					self.stdout.write("Done.\nContent modified: {m}\n".format(m=moded))
+					self.stdout.write(Text("Done","green"))
+					self.stdout.write(".\nContent modified: {m}\n".format(m=moded))
 					if moded:
 						self.stdout.write("Copying modifified content... \n")
 						if lfp=="exec":
@@ -1054,11 +1093,11 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 							lfp=lfp.split("/")[-1]
 						cpcmd='{li} "{lfp}" {ri} "{tp}"'.format(lfp=lfp,ri=rid,tp=tp,li=INTERN_FS_ID)
 						self.do_cp(cpcmd)
-						self.stdout.write("Copying finished.\n")
+						self.stdout.write(Text("Copying finished.\n","green"))
 				else:
 					pass
 			except Exception as e:
-				self.stdout.write("Error: {m}!\n".format(m=e.message))
+				self.stdout.write(Text("Error: {m}!\n".format(m=e.message),"red"))
 		finally:
 			self.stdout.write("Cleaning up... ")
 			self.do_shell('cd "{p}"'.format(p=op))
@@ -1066,18 +1105,19 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files, 'w' additionally
 				shutil.rmtree(localpath)
 			except:
 				pass
-			self.stdout.write("Done.\n")
+			self.stdout.write(Text("Done","green"))
+			self.stdout.write(".\n")
 		
 	def parse_fs_command(self,command,nargs=0,ret=str):
 		"""parses a filesystem command. returns the interface and the actual command.
 nargs specifies the number of arguments, -1 means any number."""
 		args=shlex.split(command)
 		if len(args)<1 or (len(args)!=nargs+1 and nargs!=-1):
-			self.stdout.write("Error: invalid argument count!\n")
+			self.stdout.write(Text("Error: invalid argument count!\n","red"))
 			return None,None
 		i=args[0]
 		if i not in self.FSIs:
-			self.stdout.write("Error: Interface not found!\n")
+			self.stdout.write(Text("Error: Interface not found!\n","red"))
 			return None,None
 		if ret==str:
 			if len(args)>1:
@@ -1157,6 +1197,11 @@ I dont know how to quit the command loop:
 	-use 'exit' or 'quit'
 I cant copy/move/... a file with a space in its name:
 	-use something like 'cp 1 "name with space" 1 "some othrr name with spaces"'
+I cant copy/move a directory on the same interface:
+	-this is because mc is designed to be flexible and only require a minimal API to the target filesystem.
+		Due to this, there is no real working directory but the interface keep track of the CWD.
+		While this is very flexible, it prevents the cp/mv-commands to work on the same interface.
+		You can fix this by creating a second interface with the same dir and copy/move between them instead.
 """
 	help_helpme=help_troubleshooting
 	def help_fsis(self,*args):
