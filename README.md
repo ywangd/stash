@@ -222,7 +222,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `edit.py` - Open any text type files in Pythonista editor
     * `find.py` - Powerful file searching tool
     * `fg.py` - Bring a background job to foreground
-    * `gci.py - Interface to Python's built-in garbage collector
+    * `gci.py` - Interface to Python's built-in garbage collector
     * `git.py` - Git client ported from shellista
     * `grep.py` - search contents of file(s)
     * `httpserver.py` - A simple HTTP server with upload function (ripped from
