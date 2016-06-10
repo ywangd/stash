@@ -8,8 +8,8 @@ Can also be used to run a script in the background, such as a server, with the b
 usage:
     python
     python -m module_name [args]
+    python -c command
     python python_file.py [args]
-    python -c cmd
 """
 
 import runpy
@@ -18,40 +18,58 @@ import argparse
 import code
 import __builtin__
 
+args = sys.argv[1:]
+
+passing_h = False
+if '-h' in args and len(args) > 1:
+    args.remove('-h')
+    passing_h = True
+
 ap = argparse.ArgumentParser()
-ap.add_argument('-m', '--module', action='store', default=None, help='run module')
-ap.add_argument('-c', '--cmd', action='store', default=None, help='program passed in as string (terminates option list)')
-ap.add_argument('file', action='store', default=None, help='program read from script file (terminates option list)', nargs='?')#,required=False)
-ap.add_argument('args_to_pass', nargs=argparse.REMAINDER, help='arguments passed to program in sys.argv[1:]')
-args = ap.parse_args()
 
-sys.argv = [sys.argv[0]] + args.args_to_pass
+group = ap.add_mutually_exclusive_group()
+group.add_argument('-m', '--module',
+                   action='store', default=None,
+                   help='run module')
+group.add_argument('-c', '--cmd',
+                   action='store', default=None,
+                   help='program passed in as string (terminates option list)')
 
-if (args.module is not None) and (args.cmd is not None):
-	print 'Error: Please only pass either "-c" or "-m", but not both!'
-	sys.exit(1)
-elif args.module is not None:
-	try:
-		runpy.run_module(str(args.module), run_name='__main__')
-	except ImportError, e:
-		print 'ImportError: ' + str(e)
-		sys.exit(1)
-	sys.exit(0)
+ap.add_argument('args_to_pass',
+                metavar='[file] args_to_pass',
+                default=[],
+                nargs=argparse.REMAINDER,
+                help='Python script and arguments')
 
-elif args.cmd is not None:
-	exec args.cmd
-	sys.exit(0)
+ns = ap.parse_args(args)
+if passing_h:
+    ns.args_to_pass.append('-h')
 
-elif args.file is not None:
-	try:
-		runpy.run_path(str(args.name), run_name='__main__')
-	except Exception, e:
-		print 'Error: ' + str(e)
+if ns.module:
+    sys.argv = [ns.module] + ns.args_to_pass
+    try:
+        runpy.run_module(str(ns.module), run_name='__main__')
+    except ImportError as e:
+        print('ImportError: ' + str(e))
+        sys.exit(1)
+    sys.exit(0)
+
+elif ns.cmd:
+    exec ns.cmd
+    sys.exit(0)
+
 else:
-	locals={
-	'__name__':'__main__',
-	'__doc__':None,
-	'__package__':None,
-	'__builtins__':__builtin__,#yes, __builtins__
-	}
-	code.interact(local=locals)
+    if ns.args_to_pass:
+        sys.argv = ns.args_to_pass
+        try:
+            runpy.run_path(str(sys.argv[0]), run_name='__main__')
+        except Exception as e:
+            print('Error: ' + str(e))
+    else:
+        locals = {
+            '__name__': '__main__',
+            '__doc__': None,
+            '__package__': None,
+            '__builtins__': __builtin__,  # yes, __builtins__
+        }
+        code.interact(local=locals)

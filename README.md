@@ -28,7 +28,7 @@ environment and great treasures may be found within.
 **StaSh can be easily installed via one line of python command**
 (courtesy of [@whitone](https://forum.omz-software.com/user/whitone)). 
 ```Python
-import requests as r; exec r.get('http://bit.ly/get-stash').text
+import requests as r; exec(r.get('http://bit.ly/get-stash').text)
 ```
 Simply copy the above line, paste into Pythonista interactive prompt and
 execute. It installs StaSh as a Python module under the `site-packages` 
@@ -222,6 +222,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `edit.py` - Open any text type files in Pythonista editor
     * `find.py` - Powerful file searching tool
     * `fg.py` - Bring a background job to foreground
+    * `gci.py` - Interface to Python's built-in garbage collector
     * `git.py` - Git client ported from shellista
     * `grep.py` - search contents of file(s)
     * `httpserver.py` - A simple HTTP server with upload function (ripped from
@@ -231,6 +232,8 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `ls.py` - List files
     * `mail.py` - Send emails with optional file attachment
     * `man.py` - Show help message (docstring) of a given command
+    * `mc.py` - Easily work with multiple filesystems (e.g. local and FTP) 
+      synchronously.
     * `md5sum.py` - Print or check MD5 checksums
     * `mkdir.py` - Create directory
     * `mv.py` - Move file
@@ -293,7 +296,4 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   ideas of features and/or bugs
 * Fork the repository, make changes, and send pull requests 
     - Please send pull requests to the **dev** branch instead of master
-
-
-
 

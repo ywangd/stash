@@ -276,6 +276,9 @@ def fake_setuptools_modules():
     for m in distutils_command_modules:
         fake_module(m)
     sys.modules['distutils.util'].get_platform = OmniClass()
+    # fix for new problem in issue 169 
+    sys.modules['distutils.command.build_ext'].sub_commands = []
+    sys.modules['setuptools.command.build_ext'].sub_commands = []
 
 
 @contextlib.contextmanager
