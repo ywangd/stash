@@ -1,40 +1,46 @@
 import os
 import shutil
 import sys
-import urllib2
+import requests
 import zipfile
 
 try:
     branch = locals()['_br']
 except KeyError:
     branch = 'master'
+try:
+    repo = locals()['_repo']
+except:
+    repo = 'ywangd'
 
 _IS_UPDATE = '_IS_UPDATE' in locals()
 
-URL_ZIPFILE = 'https://github.com/ywangd/stash/archive/%s.zip' % branch
-TEMP_ZIPFILE = os.path.join(os.environ.get('TMPDIR', os.environ.get('TMP')),
-                            '%s.zip' % branch)
+TMPDIR = os.environ.get('TMPDIR', os.environ.get('TMP'))
+URL_ZIPFILE = 'https://github.com/{}/stash/archive/{}.zip'.format(repo, branch)
+TEMP_ZIPFILE = os.path.join(TMPDIR, '{}.zip'.format(branch))
+TEMP_PTI = os.path.join(TMPDIR, 'ptinstaller.py')
+URL_PTI = 'https://raw.githubusercontent.com/ywangd/pythonista-tools-installer/master/ptinstaller.py'
 
-print('Downloading %s ...' % URL_ZIPFILE)
+print('Downloading {} ...'.format(URL_ZIPFILE))
 
 try:
-    u = urllib2.urlopen(URL_ZIPFILE)
-    meta = u.info()
-    try:
-        file_size = int(meta.getheaders("Content-Length")[0])
-    except IndexError:
-        file_size = None
-    with open(TEMP_ZIPFILE, 'wb') as outs:
-        file_size_dl = 0
-        block_sz = 8192
-        while True:
-            buf = u.read(block_sz)
-            if not buf:
-                break
-            file_size_dl += len(buf)
-            outs.write(buf)
+    r = requests.get(URL_ZIPFILE, stream=True)
+    file_size = r.headers.get('Content-Length')
+    if file_size is not None:
+        file_size = int(file_size)
 
-except:
+    with open(TEMP_ZIPFILE, 'wb') as outs:
+        block_sz = 8192
+        for chunk in r.iter_content(block_sz):
+            outs.write(chunk)
+
+    # Get Pythonista Tools Installer
+    r = requests.get(URL_PTI)
+    with open(TEMP_PTI, 'w') as outs:
+        outs.write(r.text)
+
+except Exception as e:
+    sys.stderr.write('{}\n'.format(e))
     sys.stderr.write('Download failed! Please make sure internet connection is available.\n')
     sys.exit(1)
 
@@ -68,10 +74,17 @@ with open(TEMP_ZIPFILE, 'rb') as ins:
         sys.exit(1)
 
 print('Preparing the folder structure ...')
-shutil.copy(os.path.join(TARGET_DIR, 'launch_stash.py'),
+# Move ptinstaller.py to bin
+shutil.move(TEMP_PTI, os.path.join(TARGET_DIR, 'bin/ptinstaller.py'))
+
+# Move launch script to Documents for easy access
+shutil.move(os.path.join(TARGET_DIR, 'launch_stash.py'),
             os.path.join(BASE_DIR, 'Documents/launch_stash.py'))
 
+# Remove setup files and possible legacy files
 try:
+    os.remove(TEMP_ZIPFILE)
+
     shutil.rmtree(os.path.join(TARGET_DIR, 'tests'))
 
     unwanted_files = ['getstash.py', 'run_tests.py', 'testing.py', 
@@ -86,4 +99,3 @@ except:
 if not _IS_UPDATE:
     print('Installation completed.')
     print('Please run launch_stash.py under the Home directory to start StaSh.')
-
