@@ -49,6 +49,13 @@ _subcmd_cfg = {
         },
 
     },
+    "gci": {
+        "1": {
+            'candidates': ['enable', 'disable', 'status', 'collect', 'threshold', 'debug', 'break'],
+            'blank_completion': True,
+            'with_normal_completion': False,
+        },
+    },
 
 }
 
