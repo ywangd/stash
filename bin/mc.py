@@ -1,8 +1,8 @@
 # coding: utf-8
 """easily work with multiple filesystems (e.g. local and FTP) synchronously"""
 #the name refers to midnight-commander, but this will probald never be a true counterpart
-import os,shutil,cmd,sys,ftplib,tempfile,base64,pickle,shlex
-import webbrowser,clipboard,keychain
+import os,shutil,cmd,sys,ftplib,tempfile,base64,pickle,shlex,argparse
+import clipboard,keychain
 from dropbox import client,session,rest
 
 _stash=globals()["_stash"]
@@ -34,12 +34,15 @@ assert not " " in INTERN_FS_ID,"Invalid configuration!"
 
 class OperationFailure(IOError):
 	"""raise this if a operation (e.g. cd) fails. The FSI is responsible for undoing errors."""
+	pass
 class IsDir(OperationFailure):
 	"""raise this if a command only works on a file but a dirname is passed."""
+	pass
 class IsFile(OperationFailure):
 	"""raise this if a command only works on a dir but a filename is passed."""
+	pass
 class AlreadyExists(OperationFailure):
-	"""raise this if sometjibg already exists."""
+	"""raise this if something already exists."""
 	pass
 
 #===================
@@ -480,6 +483,11 @@ this class creates a tempfile, which is uploaded onto the server when closed."""
 		finally:
 			self.tf.close()
 
+def open_url(url):
+	"""opens a url in the webbrowser."""
+	cmd="webviewer {u}".format(u=url)
+	_stash(cmd)
+
 def dropbox_setup(stdin,stdout):
 	"""helper-interface to setup dropbox."""
 	stdout.write(Text("="*40+"\nDropbox-setup\n"+"="*25+"\n","blue"))
@@ -504,9 +512,9 @@ def dropbox_setup(stdin,stdout):
 			choices=("Register to dropbox","Go to the developer-page","proceed",Text("abort","yellow"))
 			choice=menu(header,choices,stdin,stdout)
 			if choice==0:
-				webbrowser.open("https://www.dropbox.com/register")
+				open_url("https://www.dropbox.com/register")
 			elif choice==1:
-				webbrowser.open("https://developer.dropbox.com")
+				open_url("https://developer.dropbox.com")
 			elif choice==2:
 				break
 			elif choice==3:
@@ -538,7 +546,7 @@ def dropbox_setup(stdin,stdout):
 	url=sess.build_authorize_url(request_token)
 	stdout.write(Text("Done","green"))
 	stdout.write(".\nPlease press enter after you allowed access.")
-	webbrowser.open(url)
+	open_url(url)
 	stdin.readline()
 	stdout.write("Obtaining Access token... ")
 	access_token=sess.obtain_access_token(request_token)
@@ -1261,8 +1269,6 @@ dropbox: a Dropbox-client (slow!)
 		"""shows help on the dropbox-FSI"""
 		av="""Help on FSI dropbox:
 	Use Dropbox as a filesystem.
-	WARNING:
-		The Dropbox-FSI does not provide a way to logout.
 	INFO:
 		The Dropbox-FSI may be very slow.
 	NOTE:
@@ -1273,6 +1279,7 @@ dropbox: a Dropbox-client (slow!)
 			This leads to some 'weird' operation times.
 		The Dropbox-FSI requires a one-time setup and a dropbox developer account.
 		The Dropbox-FSI does not support loging in with a username other than the one used in the setup.
+		If you want to logout, call mc with the '--reset_dropbox'-option
 	USAGE:
 		connect <ID> dropbox
 		
@@ -1323,4 +1330,10 @@ dropbox: a Dropbox-client (slow!)
 		self.stdout.write(av+"\n")
 
 if __name__=="__main__":
+	parser=argparse.ArgumentParser(description=__doc__)
+	parser.add_argument("--reset_dropbox",action="store_true",help="resets the dropbox configuration",dest="db_reset")
+	ns=parser.parse_args()
+	if ns.db_reset:
+		keychain.delete_password("stash:mc","dropbox")
+		sys.stdout.write(Text("Dropbox configuration deleted.\n","red"))
 	McCmd().cmdloop()
