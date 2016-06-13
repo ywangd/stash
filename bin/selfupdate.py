@@ -2,9 +2,10 @@
 """
 Selfupdate StaSh from the GitHub repo.
 
-Usage: selfupdate.py [-n] [-f] [branch]
+Usage: selfupdate.py [-n] [-f] [branch] [repository]
 
        branch         default to master
+       repository     default to ywangd
 
        -n, --check    check for update only
        -f, --force    update without checking for new version
