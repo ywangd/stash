@@ -63,8 +63,28 @@ _subcmd_cfg = {
             'with_normal_completion': False,
         },
         "-": {
-            'candidate_groups': [None, ['-l', '--list', '-h', '--help']],
+            'candidate_groups': [
+                [None, ['-l', '--list', '-h', '--help']],
+            ],
             'blank_completion': False,
+            'with_normal_completion': False,
+        },
+    },
+    "webviewer": {
+        "-": {
+            'candidate_groups': [
+                [None, ['-i', '--insecure', '-h', '--help']],
+            ],
+            'blank_completion': True,
+            'with_normal_completion': False,
+        },
+    },
+     "mc": {
+        "-": {
+            'candidate_groups': [
+                [None, ['--reset_dropbox', '-h', '--help']],
+            ],
+            'blank_completion': True,
             'with_normal_completion': False,
         },
     },
