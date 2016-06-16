@@ -780,7 +780,7 @@ class PyPIRepository(PackageRepository):
     def __init__(self):
         super(PyPIRepository, self).__init__()
         import xmlrpclib
-        self.pypi = xmlrpclib.ServerProxy('http://pypi.python.org/pypi')
+        self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
 
     def search(self, pkg_name):
         hits = self.pypi.search({'name': pkg_name}, 'and')
