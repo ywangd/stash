@@ -148,7 +148,7 @@ class PackageConfigHandler(object):
 
 class Pypi(object):
     def __init__(self, pkg_name='', url=False, pkg_version='', limit=10):
-        self.pypi = xmlrpclib.ServerProxy('http://pypi.python.org/pypi')
+        self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
         self.config = PackageConfigHandler()
         self.url = url
         self.config.pypi_package = False if self.url else True
