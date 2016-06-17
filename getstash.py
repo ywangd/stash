@@ -8,11 +8,15 @@ try:
     branch = locals()['_br']
 except KeyError:
     branch = 'master'
+try:
+    repo = locals()['_repo']
+except:
+    repo = 'ywangd'
 
 _IS_UPDATE = '_IS_UPDATE' in locals()
 
 TMPDIR = os.environ.get('TMPDIR', os.environ.get('TMP'))
-URL_ZIPFILE = 'https://github.com/ywangd/stash/archive/{}.zip'.format(branch)
+URL_ZIPFILE = 'https://github.com/{}/stash/archive/{}.zip'.format(repo, branch)
 TEMP_ZIPFILE = os.path.join(TMPDIR, '{}.zip'.format(branch))
 TEMP_PTI = os.path.join(TMPDIR, 'ptinstaller.py')
 URL_PTI = 'https://raw.githubusercontent.com/ywangd/pythonista-tools-installer/master/ptinstaller.py'
@@ -95,4 +99,3 @@ except:
 if not _IS_UPDATE:
     print('Installation completed.')
     print('Please run launch_stash.py under the Home directory to start StaSh.')
-

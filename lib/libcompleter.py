@@ -49,6 +49,45 @@ _subcmd_cfg = {
         },
 
     },
+    "gci": {
+        "1": {
+            'candidates': ['enable', 'disable', 'status', 'collect', 'threshold', 'debug', 'break'],
+            'blank_completion': True,
+            'with_normal_completion': False,
+        },
+    },
+    "stashconf": {
+        "1": {
+            'candidates': ['input_encoding_utf8', 'ipython_style_history_search', 'py_pdb', 'py_traceback'],
+            'blank_completion': True,
+            'with_normal_completion': False,
+        },
+        "-": {
+            'candidate_groups': [
+                [None, ['-l', '--list', '-h', '--help']],
+            ],
+            'blank_completion': False,
+            'with_normal_completion': False,
+        },
+    },
+    "webviewer": {
+        "-": {
+            'candidate_groups': [
+                [None, ['-i', '--insecure', '-h', '--help']],
+            ],
+            'blank_completion': True,
+            'with_normal_completion': False,
+        },
+    },
+     "mc": {
+        "-": {
+            'candidate_groups': [
+                [None, ['--reset_dropbox', '-h', '--help']],
+            ],
+            'blank_completion': True,
+            'with_normal_completion': False,
+        },
+    },
 
 }
 
