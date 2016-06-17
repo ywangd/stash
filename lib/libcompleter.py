@@ -1,7 +1,6 @@
 import os
 import json
 
-
 _subcmd_cfgfile = os.path.join(os.environ['STASH_ROOT'], '.completer_subcmd.json')
 
 _subcmd_cfg = {
@@ -9,7 +8,7 @@ _subcmd_cfg = {
         "1": {
             'candidates': ['branch', 'checkout', 'clone', 'commit', 'help',
                            'log', 'modified', 'pull', 'push', 'remote', 'reset',
-                           'rm', 'status'],
+                           'rm', 'status', 'add', 'diff', 'merge', 'init', 'fetch'],
             'blank_completion': True,
             'with_normal_completion': False,
         },
@@ -34,16 +33,7 @@ _subcmd_cfg = {
 
     "pip": {
         "1": {
-            'candidates': ['install', 'list', 'remove', 'search', 'update', 'versions'],
-            'blank_completion': True,
-            'with_normal_completion': False,
-        },
-
-    },
-
-    "pcsm": {
-        "1": {
-            'candidates': ['info', 'install', 'list', 'remove'],
+            'candidates': ['install', 'list', 'remove', 'download', 'search', 'update', 'versions'],
             'blank_completion': True,
             'with_normal_completion': False,
         },
@@ -79,7 +69,7 @@ _subcmd_cfg = {
             'with_normal_completion': False,
         },
     },
-     "mc": {
+    "mc": {
         "-": {
             'candidate_groups': [
                 [None, ['--reset_dropbox', '-h', '--help']],
@@ -90,7 +80,6 @@ _subcmd_cfg = {
     },
 
 }
-
 
 if os.path.exists(_subcmd_cfgfile) and os.path.isfile(_subcmd_cfgfile):
     try:
