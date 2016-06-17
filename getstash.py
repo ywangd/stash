@@ -9,7 +9,7 @@ try:
 except KeyError:
     branch = 'master'
 try:
-    repo = locals()['_repo']
+    repo = locals()['_owner']
 except:
     repo = 'ywangd'
 
