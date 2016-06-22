@@ -9,7 +9,7 @@ try:
     import clipboard
     import console
 except:
-    pass
+    import dummyconsole as console
 
 
 def main(args):
