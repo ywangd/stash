@@ -1,0 +1,18 @@
+
+-----------------------------------------------------------------------------
+    Shell Grammar Simplified
+-----------------------------------------------------------------------------
+complete_command : pipe_sequence (punctuator pipe_sequence)* [punctuator]
+punctuator       : ';' | '&'
+pipe_sequence    : simple_command ('|' simple_command)*
+simple_command   : cmd_prefix [cmd_word] [cmd_suffix]
+                 | cmd_word [cmd_suffix]
+cmd_prefix       : assignment_word+
+cmd_suffix       : word + [io_redirect]
+                 | io_redirect
+io_redirect      : ('>' | '>>') filename
+modifier         : '!' | '\'
+cmd_word         : [modifier] word
+filename         : word
+word             : escaped | uq_word | bq_word | dq_word | sq_word
+uq_word          : (WORD_CHARS)+ | '&3'
