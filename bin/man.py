@@ -9,7 +9,7 @@ import os
 import sys
 
 if sys.version_info[0] > 2:
-	#py3 compatibility
+	# py3 compatibility
 	raw_input = input
 
 _stash = globals()["_stash"]
@@ -23,7 +23,8 @@ PAGEPATH = os.path.join(os.environ["STASH_ROOT"], "man")
 
 if not os.path.exists(PAGEPATH):
 	os.mkdir(PAGEPATH)
-	
+
+		
 def all_commands():
 	cmds = [
 	fn[:-3] for fn in os.listdir(BINPATH)
@@ -33,7 +34,8 @@ def all_commands():
 	]
 	cmds.sort()
 	return cmds
-	
+
+		
 def get_type(search):
 	"""returns (type, path) for a given topic/command."""
 	cmdpath = find_command(search)
@@ -49,6 +51,12 @@ def get_type(search):
 	else:
 		pn = 1
 	if "." in search:
+		# FIXME: fix '.' in search shoild search only matching extensions
+		# Example: 'man test.md' searches for 'test.md' instead of 'test'
+		print(
+			_stash.text_color("Searching for pages with '.' in the name is bugged and has been disabled.","red")
+			)
+		sys.exit(1)
 		to_search = search
 		found = os.listdir(PAGEPATH)
 	else:
@@ -58,7 +66,7 @@ def get_type(search):
 		ffns= [fn if fn.startswith(to_search+".") else None for fn in os.listdir(PAGEPATH)]
 		ffn = filter(None, ffns)
 		if len(ffn) == 0:
-			#isdir
+			# isdir
 			pname = "page_" + str(pn)
 			dirpath = os.path.join(PAGEPATH, to_search)
 			for fn in os.listdir(dirpath):
@@ -66,7 +74,7 @@ def get_type(search):
 					fp = os.path.join(dirpath, fn)
 					if not os.path.exists(fp):
 						print(
-						_stash.text_color("Page not found!", "red")
+							_stash.text_color("Page not found!", "red")
 						)
 					return (TYPE_PAGE, fp)
 			return (TYPE_NOTFOUND, None)
@@ -80,28 +88,31 @@ def find_command(cmd):
 	if os.path.exists(BINPATH) and cmd + ".py" in os.listdir(BINPATH):
 		return os.path.join(BINPATH, cmd + ".py")
 	return None
-	
+
+		
 def get_docstring(filename):
 	with open(filename) as f:
 		tree = ast.parse(f.read(), os.path.basename(filename))
 	return ast.get_docstring(tree)
-	
+
+		
 def get_summary(filename):
 	docstring = get_docstring(filename)
 	return docstring.splitlines()[0] if docstring else ''
-	
+
+		
 def show_page(path):
 	"""shows the page at path."""
 	if not os.path.exists(path):
 		print(
-		_stash.text_color("Error: cannot find page!", "red"),
+			_stash.text_color("Error: cannot find page!", "red"),
 		)
 		sys.exit(1)
 	with open(path, "r") as fin:
 		content = fin.read()
-	if len(content.replace("\n","")) == 0:
+	if len(content.replace("\n", "")) == 0:
 		print(
-		_stash.text_color("Error: help empty!", "red")
+			_stash.text_color("Error: help empty!", "red")
 		)
 		sys.exit(1)
 	if path.endswith(".txt"):
@@ -109,16 +120,19 @@ def show_page(path):
 	elif path.endswith(".url"):
 		if content.startswith("stash://"):
 			# local file
-			path = os.path.join(os.getenv("STASH_ROOT"), content.replace("stash://", ""))
+			path = os.path.join(
+				os.getenv("STASH_ROOT"), content.replace("stash://", "")
+				)
 			show_page(path.replace("\n", ""))
 			return
 		print("Opening webviewer...")
-		_stash("webviewer -n '{u}'".format(u=content.replace("\n","")))
+		_stash("webviewer -n '{u}'".format(u=content.replace("\n", "")))
 	elif path.endswith(".html"):
 		print("Opening quicklook...")
 		_stash("quicklook {p}".format(p=path))
 	else:
 		show_text(content)
+
 		
 def show_text(text):
 	print(_stash.text_color("="*20, "yellow"))
@@ -133,7 +147,8 @@ def show_text(text):
 			prompt = _stash.text_color("(Press Return to continue)", "yellow")
 			raw_input(prompt)
 	print("\n")
-	
+
+
 def main(args):
 	ap = argparse.ArgumentParser(description=__doc__)
 	ap.add_argument("topic", nargs="?", help="the command/topic to get help for")
@@ -145,14 +160,16 @@ def main(args):
 			if raw_input("List all {} commands?".format(len(cmds))).strip().lower() not in ("y", "yes"):
 				sys.exit(0)
 		for cmd in cmds:
-			print(_stash.text_bold('{:>11}: '.format(cmd)) + get_summary(find_command(cmd)))
+			print(
+				_stash.text_bold('{:>11}: '.format(cmd)) + get_summary(find_command(cmd))
+				)
 		sys.exit(0)
 	else:
 		ft, path = get_type(ns.topic)
 		
 		if ft == TYPE_NOTFOUND:
 			print(
-			_stash.text_color("man: no help for '{}'".format(ns.topic), "red")
+				_stash.text_color("man: no help for '{}'".format(ns.topic), "red")
 			)
 			sys.exit(1)
 		if ft == TYPE_CMD:
@@ -160,8 +177,8 @@ def main(args):
 				docstring = get_docstring(path)
 			except Exception as err:
 				print(
-				_stash.text_color("man: {}: {!s}".format(type(err).__name__, err), "red"),
-				file=sys.stderr
+					_stash.text_color("man: {}: {!s}".format(type(err).__name__, err), "red"),
+					file=sys.stderr
 				)
 				sys.exit(1)
 				
@@ -169,7 +186,9 @@ def main(args):
 				print("Docstring of command '{}':\n{}".format(ns.topic, docstring))
 			else:
 				print(
-				_stash.text_color("man: command '{}' has no docstring".format(ns.topic), "red")
+				_stash.text_color(
+					"man: command '{}' has no docstring".format(ns.topic),
+					"red")
 				)
 			sys.exit(0)
 		elif ft == TYPE_PAGE:
