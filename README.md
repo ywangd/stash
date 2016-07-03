@@ -35,6 +35,11 @@ execute. It installs StaSh as a Python module under the `site-packages`
 folder (`~/Documents/site-packages/stash`) and copies **a launching script, 
 `~/Documents/launch_stash.py`** for easy access.
 
+*StaSh works with both Pythonista 2 and 3. Though it always runs with the
+Python 2 interpreter, there is no need to change your default interpreter setting
+thanks to [the shebang line](http://omz-software.com/pythonista/docs/ios/new.html)
+in the launch script*
+
 *If you have previous versions of StaSh installed (e.g. v0.4.x), 
 You may need to restart Pythonista BEFORE the installation.*
 

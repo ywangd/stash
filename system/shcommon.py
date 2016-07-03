@@ -7,18 +7,31 @@ import sys
 import platform
 import functools
 import threading
+import ctypes
 from itertools import chain
-
 
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 
-PYTHONISTA_VERSION = '0.0'
-PYTHONISTA_VERSION_LONG = '000000'
 if IN_PYTHONISTA:
     import plistlib
+
     _properties = plistlib.readPlist(os.path.join(os.path.dirname(sys.executable), 'Info.plist'))
     PYTHONISTA_VERSION = _properties['CFBundleShortVersionString']
     PYTHONISTA_VERSION_LONG = _properties['CFBundleVersion']
+
+    if PYTHONISTA_VERSION < '3.0':
+        python_capi = ctypes.pythonapi
+    else:
+        # The default pythonapi always points to Python 3 in Pythonista 3
+        # So we need to load the Python 2 API manually
+        python_capi = ctypes.PyDLL(
+            os.path.join(os.path.dirname(sys.executable),
+                         'Frameworks/PythonistaKit.framework/PythonistaKit')
+        )
+else:
+    PYTHONISTA_VERSION = '0.0'
+    PYTHONISTA_VERSION_LONG = '000000'
+    python_capi = ctypes.pythonapi
 
 platform_string = platform.platform()
 
@@ -33,7 +46,6 @@ _STASH_ROOT = os.path.realpath(os.path.abspath(
     os.path.dirname(os.path.dirname(__file__))))
 _STASH_CONFIG_FILES = ('.stash_config', 'stash.cfg')
 _STASH_HISTORY_FILE = '.stash_history'
-
 
 # Save the true IOs
 if IN_PYTHONISTA:
@@ -55,6 +67,7 @@ if IN_PYTHONISTA:
 
             def readline(self):
                 return _outputcapture.ReadStdin()
+
 
         _SYS_STDIN = StdinCatcher()
 
@@ -79,6 +92,7 @@ if IN_PYTHONISTA:
             def writelines(self, lines):
                 self.write(''.join(lines))
 
+
         _SYS_STDOUT = StdoutCatcher()
 
     if sys.stderr.__class__.__name__ == 'StderrCatcher':
@@ -101,6 +115,7 @@ if IN_PYTHONISTA:
 
             def writelines(self, lines):
                 self.write(''.join(lines))
+
 
         _SYS_STDERR = StderrCatcher()
 
@@ -142,38 +157,46 @@ def sh_background(name=None):
             t = threading.Thread(name=name, target=func, args=args, kwargs=kwargs)
             t.start()
             return t
+
         return wrapped_func
+
     return wrap
 
 
 class ShFileNotFound(Exception):
     pass
 
+
 class ShIsDirectory(Exception):
     pass
+
 
 class ShNotExecutable(Exception):
     def __init__(self, filename):
         super(Exception, self).__init__('{}: not executable\n'.format(filename))
 
+
 class ShSingleExpansionRequired(Exception):
     pass
+
 
 class ShEventNotFound(Exception):
     pass
 
+
 class ShBadSubstitution(Exception):
     pass
 
+
 class ShSyntaxError(Exception):
     pass
+
 
 class ShInternalError(Exception):
     pass
 
 
 class Control(object):
-
     """
         pyte.control
         ~~~~~~~~~~~~
@@ -428,7 +451,6 @@ class Graphics(object):
         27: "-reverse",
         29: "-strikethrough"
     }
-
 
     #: A mapping of ANSI foreground color codes to color names, example:
     #:

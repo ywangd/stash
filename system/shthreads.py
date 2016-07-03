@@ -9,7 +9,7 @@ import weakref
 import ctypes
 from collections import OrderedDict
 
-from .shcommon import M_64, _SYS_STDOUT
+from .shcommon import M_64, _SYS_STDOUT, python_capi
 
 _STATE_STR_TEMPLATE = """enclosed_cwd: {}
 aliases: {}
@@ -24,6 +24,7 @@ environ: {}
 class ShState(object):
     """ State of the current worker thread
     """
+
     def __init__(self,
                  aliases=None,
                  environ=None,
@@ -80,7 +81,7 @@ class ShState(object):
         if persistent_level == 0:
             if os.getcwd() != child_state.enclosed_cwd:
                 os.chdir(child_state.enclosed_cwd)
-            # TODO: return status?
+                # TODO: return status?
 
         elif persistent_level == 1:
             self.aliases = dict(child_state.aliases)
@@ -186,7 +187,7 @@ class ShWorkerRegistry(object):
         """
         for worker in self.registry.values():
             worker.kill()
-        # The worker removes itself from the registry when killed.
+            # The worker removes itself from the registry when killed.
 
 
 class ShBaseThread(threading.Thread):
@@ -317,14 +318,14 @@ class ShCtypesThread(ShBaseThread):
 
     def _async_raise(self):
         tid = self.ident
-        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid) if M_64 else tid,
-                                                         ctypes.py_object(KeyboardInterrupt))
+        res = python_capi.PyThreadState_SetAsyncExc(ctypes.c_long(tid) if M_64 else tid,
+                                                    ctypes.py_object(KeyboardInterrupt))
         if res == 0:
             raise ValueError("invalid thread id")
         elif res != 1:
             # "if it returns a number greater than one, you're in trouble,
             # and you should call it again with exc=NULL to revert the effect"
-            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), 0)
+            python_capi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), 0)
             raise SystemError("PyThreadState_SetAsyncExc failed")
 
         return res
@@ -338,4 +339,3 @@ class ShCtypesThread(ShBaseThread):
                 res = self._async_raise()
             except (ValueError, SystemError):
                 self.killed = False
-

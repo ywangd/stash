@@ -65,7 +65,6 @@ class PipError(Exception):
 
 
 class OmniClass(object):
-
     def __init__(self, *args, **kwargs):
         pass
 
@@ -74,7 +73,7 @@ class OmniClass(object):
 
     def __getattr__(self, item):
         return OmniClass()
-        
+
     def __getitem__(self, item):
         return OmniClass()
 
@@ -162,7 +161,6 @@ class PackageFinder(object):
 
 
 class SetuptoolsStub(types.ModuleType):
-
     """
     Approximate setuptools by providing and empty module and objects
     """
@@ -290,7 +288,7 @@ def save_current_sys_modules():
     save_setuptools = {}
     for name in sorted(sys.modules.keys()):
         if name == 'setuptools' or name.startswith('setuptools.') or \
-                name == 'pkg_resources' or name.startswith('pkg_resources.'):
+                        name == 'pkg_resources' or name.startswith('pkg_resources.'):
             save_setuptools[name] = sys.modules.pop(name)
 
     yield
@@ -298,7 +296,7 @@ def save_current_sys_modules():
     # sys.modules = saved_sys_modules
     for name in sorted(sys.modules.keys()):
         if name == 'setuptools' or name.startswith('setuptools.') or \
-                name == 'pkg_resources' or name.startswith('pkg_resources.'):
+                        name == 'pkg_resources' or name.startswith('pkg_resources.'):
             sys.modules.pop(name)
     for k, v in save_setuptools.items():
         sys.modules[k] = v
@@ -518,13 +516,13 @@ class ArchiveFileInstaller(object):
         os.chdir(source_folder)
         sys.path.insert(0, source_folder)
         try:
-            exec(codeobj, namespace, namespace)
+            exec (codeobj, namespace, namespace)
         finally:
             os.chdir(saved_cwd)
             sys.path = saved_sys_path
 
         args, kwargs = sys.modules['setuptools']._setup_params_
-        #for k in sorted(kwargs.keys()): print('{}: {!r}'.format(k, kwargs[k]))
+        # for k in sorted(kwargs.keys()): print('{}: {!r}'.format(k, kwargs[k]))
 
         if 'ext_modules' in kwargs:
             print('WARNING: Extension modules and skipped: {}'.format(kwargs['ext_modules']))
@@ -780,7 +778,7 @@ class PyPIRepository(PackageRepository):
     def __init__(self):
         super(PyPIRepository, self).__init__()
         import xmlrpclib
-        self.pypi = xmlrpclib.ServerProxy('http://pypi.python.org/pypi')
+        self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
 
     def search(self, pkg_name):
         hits = self.pypi.search({'name': pkg_name}, 'and')
@@ -792,14 +790,14 @@ class PyPIRepository(PackageRepository):
 
     def versions(self, pkg_name):
         hits = self.pypi.package_releases(pkg_name, True)  # True to show all versions
-        
+
         if not hits:
             raise PipError('No matches found: {}'.format(pkg_name))
 
         return hits
 
     def download(self, pkg_name, ver_spec):
-        print('Querying PyPI ...')
+        print('Querying PyPI ... ')
         hit = self._determin_hit(pkg_name, ver_spec)
 
         downloads = self.pypi.release_urls(pkg_name, hit)
@@ -856,7 +854,7 @@ class PyPIRepository(PackageRepository):
             return hits[0]
         else:
             for hit in hits:
-                if all([op(hit,ver) for op,ver in ver_spec.specs]):
+                if all([op(hit, ver) for op, ver in ver_spec.specs]):
                     return hit
             else:
                 raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec))
@@ -868,11 +866,14 @@ class GitHubRepository(PackageRepository):
     """
     This repository performs actions using GitHub as a backend store.
     """
+
     def _get_release_from_version_specifier(self, ver_spec):
         if isinstance(ver_spec, VersionSpecifier):
             try:
-                return version_specifiers[zip(*version_specifiers)[0].index('==')][1]
-            except ValueError: 
+                for op, ver in ver_spec.specs:
+                    if op == operator.eq:
+                        return ver
+            except ValueError:
                 raise PipError('GitHub repository requires exact version match')
         else:
             return ver_spec if ver_spec is not None else 'master'
@@ -916,6 +917,7 @@ class UrlRepository(PackageRepository):
     """
     This repository deals with a package from a single URL
     """
+
     def download(self, url, ver_spec):
         archive_filename = os.path.basename(url)
         if os.path.splitext(archive_filename)[1] not in ('.zip', '.gz', '.bz2'):
@@ -942,6 +944,7 @@ class LocalRepository(PackageRepository):
     """
     This repository deals with a local archive file.
     """
+
     def install(self, archive_filename, ver_spec):
         pkg_info = {
             'name': archive_filename,
@@ -959,7 +962,6 @@ pypi_repository = PyPIRepository()
 
 
 def get_repository(pkg_name):
-
     """
     The corresponding repository based on the given package name.
     :param pkg_name: It can be one of the four following options:
@@ -993,19 +995,19 @@ class VersionSpecifier(object):
     """
     This class is to represent the versions of a requirement, e.g. pyte==0.4.10.
     """
-    OPS={'<=':operator.le,
-        '<':operator.lt,
-        '!=':operator.ne,
-        '>=':operator.ge,
-        '>':operator.gt,
-        '==':operator.eq,
-        '~=':operator.ge}
+    OPS = {'<=': operator.le,
+           '<': operator.lt,
+           '!=': operator.ne,
+           '>=': operator.ge,
+           '>': operator.gt,
+           '==': operator.eq,
+           '~=': operator.ge}
 
     def __init__(self, version_specs):
-        self.specs=[(VersionSpecifier.OPS[op],version) for (op,version) in version_specs ]
-        self.str=str(version_specs)
-    def __str__(self):
+        self.specs = [(VersionSpecifier.OPS[op], version) for (op, version) in version_specs]
+        self.str = str(version_specs)
 
+    def __str__(self):
         return self.str
 
     @staticmethod
@@ -1013,25 +1015,23 @@ class VersionSpecifier(object):
         """
         Factory method to create a VersionSpecifier object from a requirement
         """
-        requirement = requirement.replace(' ', '')   # remove all whitespaces
-        import re,operator
+        requirement = requirement.replace(' ', '')  # remove all whitespaces
         letterOrDigit = r'\w'
-        PAREN=lambda x:'('+x+')'
+        PAREN = lambda x: '(' + x + ')'
 
-
-        version_cmp   = PAREN('?:'+'|'.join(('<=' , '<' , '!='  , '>=' , '>' , '~=' , '==')))
-        version_re    = PAREN('?:'+'|'.join( (letterOrDigit , '-' , '_' , '\.' ,'\*' , '\+' , '\!') ))+'+'
-        version_one   = PAREN(version_cmp) + PAREN(version_re)
-        package_name   = '^([a-z0-9]|[a-z0-9][a-z0-9._-]*[a-z0-9])'
-        parsed = re.findall(package_name+version_one,requirement)
+        version_cmp = PAREN('?:' + '|'.join(('<=', '<', '!=', '>=', '>', '~=', '==')))
+        version_re = PAREN('?:' + '|'.join((letterOrDigit, '-', '_', '\.', '\*', '\+', '\!'))) + '+'
+        version_one = PAREN(version_cmp) + PAREN(version_re)
+        package_name = '^([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9._-]*[A-Za-z0-9])'
+        parsed = re.findall(package_name + version_one, requirement)
 
         if not parsed:
             return requirement, None
-        name=parsed[0][0]
-        reqt=zip(*parsed)
-        version_specifiers=zip(*reqt[1:]) #((op,version),(op,version))
-        version=VersionSpecifier(version_specifiers)
-    
+        name = parsed[0][0]
+        reqt = zip(*parsed)
+        version_specifiers = zip(*reqt[1:])  # ((op,version),(op,version))
+        version = VersionSpecifier(version_specifiers)
+
         return name, version
 
 

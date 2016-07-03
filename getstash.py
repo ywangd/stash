@@ -9,7 +9,7 @@ try:
 except KeyError:
     branch = 'master'
 try:
-    repo = locals()['_repo']
+    repo = locals()['_owner']
 except:
     repo = 'ywangd'
 
@@ -98,4 +98,4 @@ except:
 
 if not _IS_UPDATE:
     print('Installation completed.')
-    print('Please run launch_stash.py under the Home directory to start StaSh.')
+    print('Please Restart Pythonista and run launch_stash.py under the Home directory to start StaSh.')
