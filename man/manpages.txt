@@ -1,0 +1,12 @@
+The 'man' command
+------------------
+- If no arguments are given, man wil list all commands in '$STASH_ROOT/bin/'.
+- If one argument is given and a command has this name, man will print the docstring of this command.
+- If one argument is given and no command has this name, man will search for files and folders with this name in '$STASH_ROOT/man/'.
+man will ignore file-extensions and numbers in brackets when searching for files.
+  - If a file with this name has been found, man will check the file extenson.
+    - If the extension is '.txt' or unknown, man will print the content of the file.
+    - If the extension is '.html', man will open the file in quicklook.
+    - If the extension is '.url':
+      - If the content of the file starts with 'stash://', man will restart it's search in the path specified in the content of the file, replacing 'stash://' with '$STASH_ROOT/'.
+  - If a dir with this name has been found, man will check wether argument passed contains brackets with a number between. If no number if given, man will use 1. man will then show the page starting with page_N, where n is the number.
