@@ -111,7 +111,7 @@ class ShIO(object):
         for line in ret.splitlines():
             self.stash.runtime.add_history(line)
 
-        return ret
+        return ret.splitlines(True)
 
     def read1(self):
         """
