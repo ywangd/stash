@@ -18,6 +18,8 @@ import argparse
 import code
 import __builtin__
 
+_stash = globals()["_stash"]
+
 args = sys.argv[1:]
 
 passing_h = False
@@ -70,6 +72,8 @@ else:
             '__name__': '__main__',
             '__doc__': None,
             '__package__': None,
+            '__debug__': True,
             '__builtins__': __builtin__,  # yes, __builtins__
+            '_stash': _stash,
         }
         code.interact(local=locals)

@@ -368,10 +368,10 @@ This means, that this FSI lad not work on all FTP-servers."""
 			self.ftp.mkd(ap)
 		except Exception as e:
 			# test wether the dir exists
-			cwd = self.get_path()
+			self.get_path()
 			try:
 				self.cd(ap)
-			except Exception as e2:
+			except Exception:
 				raise e
 			else:
 				raise AlreadyExists("Already exists!")
@@ -473,7 +473,7 @@ class DropboxFSI(BaseFSI):
 			meta = self.client.metadata(path)
 			if not meta["is_dir"]:
 				raise IsDir()
-		except rest.ErrorResponse as e:
+		except rest.ErrorResponse:
 			raise OperationFailure("Not found!")
 		else:
 			self.path = path
@@ -483,7 +483,7 @@ class DropboxFSI(BaseFSI):
 			meta = self.client.metadata(self.path)
 		except rest.ErrorResponse as e:
 			raise OperationFailure(e.error_msg)
-		return [e["path"].split("/")[-1] for e in meta["contents"]]
+		return [el["path"].split("/")[-1] for el in meta["contents"]]
 
 	def mkdir(self, name):
 		if name.startswith("/"):
@@ -504,7 +504,7 @@ class DropboxFSI(BaseFSI):
 			path = os.path.join(self.path, name)
 		try:
 			self.client.file_delete(path)
-		except rest.ErrorResponse as e:
+		except rest.ErrorResponse:
 			raise OperationFailure("Can not delete target!")
 
 	def isdir(self, name):
@@ -515,7 +515,7 @@ class DropboxFSI(BaseFSI):
 		try:
 			meta = self.client.metadata(path)
 			return meta["is_dir"]
-		except rest.ErrorResponse as e:
+		except rest.ErrorResponse:
 			return False
 
 	def isfile(self, name):
@@ -526,7 +526,7 @@ class DropboxFSI(BaseFSI):
 		try:
 			meta = self.client.metadata(path)
 			return not meta["is_dir"]
-		except rest.ErrorResponse as e:
+		except rest.ErrorResponse:
 			return False
 
 	def open(self, name, mode="rb"):
@@ -611,11 +611,11 @@ def dropbox_setup(stdin, stdout):
 		"I dont have a appkey+secret", abort
 		)
 	choice = menu(header, choices, stdin, stdout)
-	if choice == 0:
+	if choice == 2:
 		raise OperationFailure("Setup aborted.")
-	elif choice == 1:
+	elif choice == 0:
 		pass
-	elif choice == 2:
+	elif choice == 1:
 		stdout.write("Please read this. After reading, press enter to continue.\n")
 		text1 = "To allow mc access to your dropbox, "
 		text2 = "you will have to perform the following steps:\n"
@@ -653,7 +653,7 @@ def dropbox_setup(stdin, stdout):
 		appsecret = clipboard.get()
 		stdout.write("Using clipboard (length={l}).\n".format(l=len(appsecret)))
 	while True:
-		stdout.write("Enter access type:\n")
+		stdout.write("Enter access type (dropbox/app_folder):\n")
 		accesstype = stdin.readline().strip()
 		if accesstype not in ("dropbox", "app_folder"):
 			text = Text(
@@ -744,7 +744,7 @@ def menu(header, choices, stdin=None, stdout=None):
 		try:
 			answer = int(answer)
 			return answer
-		except (KeyError, ValueError, IndexError) as e:
+		except (KeyError, ValueError, IndexError):
 			stdout.write("\n"*20)
 
 
@@ -1222,7 +1222,7 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files,
 			return
 		mode = args[1]
 		remotepath = args[0]
-		orgpath = remotepath
+		# orgpath = remotepath
 		if not (rfsi.isfile(remotepath) or remotepath == "*"):
 			self.stdout.write(
 				Text("Error: to download a whole directory use '*'.\n", "red")
@@ -1415,6 +1415,7 @@ I cant copy/move a directory on the same interface:
 		You can fix this by creating a second interface with the same
 			dir and copy/move between them instead.
 """
+		sys.stdout.write(av + "\n")
 	help_helpme = help_troubleshooting
 
 	def help_fsis(self, *args):
