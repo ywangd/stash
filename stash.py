@@ -4,13 +4,15 @@ StaSh - Pythonista Shell
 
 https://github.com/ywangd/stash
 """
+from __future__ import unicode_literals
 
 __version__ = '0.6.11'
 
 import os
 import sys
-from ConfigParser import ConfigParser
-from StringIO import StringIO
+# noinspection PyUnresolvedReferences
+from six.moves.configparser import ConfigParser
+from io import StringIO, TextIOWrapper, BufferedReader
 import imp as pyimp  # rename to avoid name conflict with objc_util
 import logging
 import logging.handlers
@@ -225,18 +227,23 @@ class StaSh(object):
         """
         Style the given string with ASCII escapes.
 
-        :param str s: String to decorate
+        :param bytes|unicode s: String to decorate
         :param dict style: A dictionary of styles
         :param bool always: If true, style will be applied even for pipes.
         :return:
         """
+        # Unicode everywhere, so we convert if input is not and latin-1 seems to
+        # be the most reliable encoding for conversion.
+        if isinstance(s, bytes):
+            s = s.decode('latin-1', errors='ignore')
+
         # No color for pipes, files and Pythonista console
         if not always and (isinstance(sys.stdout, StringIO)
-                           or isinstance(sys.stdout, file)
-                           or sys.stdout.write.im_self is _SYS_STDOUT):
+                           or isinstance(sys.stdout, (TextIOWrapper, BufferedReader))
+                           or sys.stdout.write.__self__ is _SYS_STDOUT):
             return s
 
-        fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)
+        fmt_string = '%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)
         for style_name, style_value in style.items():
             if style_name == 'color':
                 color_id = graphics._SGR.get(style_value.lower())
