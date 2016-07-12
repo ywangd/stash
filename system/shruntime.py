@@ -419,6 +419,14 @@ class ShRuntime(object):
             # This catch all exception is for when the exception is raised
             # outside of the actual command execution, i.e. exec_py_file
             # exec_sh_file, e.g. command not found, not executable etc.
+            except ShFileNotFound as e:
+                err_msg = '%s\n' % e.message
+                if self.debug:
+                    self.logger.debug(err_msg)
+                self.stash.write_message(err_msg)
+                # set exit code to 127
+                current_state.return_value = 127
+                break  # break out of the pipe_sequence, but NOT pipe_sequence list
             except Exception as e:
                 err_msg = '%s\n' % e.message
                 if self.debug:
