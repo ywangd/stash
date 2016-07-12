@@ -131,12 +131,13 @@ class StaSh(object):
         # Show tip of the day (this calls script_will_end)
         self('$STASH_ROOT/bin/totd.py', add_to_history=False, persistent_level=0)
 
-    def __call__(self, input_, persistent_level=2, *args, **kwargs):
+    def __call__(self, input_, persistent_level=2, wait=True, *args, **kwargs):
         """ This function is to be called by external script for
          executing shell commands """
         worker = self.runtime.run(
             input_, persistent_level=persistent_level, *args, **kwargs)
-        worker.join()
+        if wait:
+            worker.join()
         return worker
 
     @staticmethod
