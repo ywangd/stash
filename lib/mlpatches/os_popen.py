@@ -1,6 +1,8 @@
 import os
+import time
+from mlpatches import base
 
-_stash = globals()["_stash"]
+_stash = base._stash
 
 
 class _PipeEndpoint(object):
@@ -29,7 +31,7 @@ class _PipeEndpoint(object):
 		"""closes the pipe."""
 		try:
 			os.close(self.__pipe.fileno())
-		except OSError:
+		except (OSError, IOError):
 			pass
 		ec = self.__root.get_exit_code(wait=True)
 		if ec == 0:
@@ -40,13 +42,18 @@ class _PipeEndpoint(object):
 		
 class _PopenCmd(object):
 	"""This class handles the command processing."""
+	# TODO: replace state mechanics with single bool and threading.Lock()
+	STATE_INIT = "INIT"
+	STATE_RUNNING = "RUNNING"
+	STATE_FINISHED = "FINISHED"
+	
 	def __init__(self, cmd, mode, bufsize, shared_eo=False):
 		self.cmd = cmd
 		self.mode = mode
 		self.bufsize = bufsize
 		self.fds = []
-		self.exitstatus = None
 		self.worker = None
+		self.state = self.STATE_INIT
 		self.shared_eo = shared_eo
 		self.chinr, self.chinw = self.create_pipe(wbuf=bufsize)
 		self.choutr, self.choutw = self.create_pipe(rbuf=bufsize)
@@ -87,6 +94,9 @@ class _PopenCmd(object):
 	
 	def run(self):
 		"""runs the command."""
+		print "called"
+		print "_stash: "+repr(_stash)
+		self.state = self.STATE_RUNNING
 		self.worker = _stash(
 			input_=self.cmd,
 			persistent_level=2,
@@ -97,13 +107,24 @@ class _PopenCmd(object):
 			final_outs=self.choutw,
 			final_errs=self.cherrw
 			)
+		if not self.worker.is_alive():
+			# sometimes stash is faster than the return
+			self.state = self.STATE_FINISHED
+		print "done"
 	
 	def get_exit_code(self, wait=True):
 		"""returns the exitcode. 
 		If wait is False and the worker has not finishef yet, return None."""
-		if self.worker is not None:
-			if wait:
+		if self.state != self.STATE_INIT:
+			if self.worker is None:
+				# temp fix for pipes for fast commands
+				if not wait:
+					return 0
+				while self.worker is None:
+					time.sleep(0.01)
+			if wait and self.worker.is_alive():
 				self.worker.join()
+				self.state = self.STATE_FINISHED
 			elif self.worker.status() != self.worker.STOPPED:
 				return None
 			es = self.worker.state.return_value
@@ -111,7 +132,7 @@ class _PopenCmd(object):
 		raise RuntimeError("get_exit_code() called before run()!")
 	
 
-def popen(cmd, mode="r", bufsize=0):
+def popen(patch, cmd, mode="r", bufsize=0):
 	"""Execute cmd as a sub-process and return the file objects (child_stdin, child_stdout)."""
 	cmd = _PopenCmd(cmd, mode, bufsize, shared_eo=False)
 	pipes = cmd.get_pipes()
@@ -122,7 +143,7 @@ def popen(cmd, mode="r", bufsize=0):
 		return pipes[0]
 
 
-def popen2(cmd, mode="r", bufsize=0):
+def popen2(patch, cmd, mode="r", bufsize=0):
 	"""Execute cmd as a sub-process and return the file objects (child_stdin, child_stdout)."""
 	cmd = _PopenCmd(cmd, mode, bufsize, shared_eo=False)
 	pipes = cmd.get_pipes()
@@ -130,7 +151,7 @@ def popen2(cmd, mode="r", bufsize=0):
 	return pipes[0], pipes[1]
 
 
-def popen3(cmd, mode="r", bufsize=0):
+def popen3(patch, cmd, mode="r", bufsize=0):
 	"""Execute cmd as a sub-process and return the file objects (child_stdin, child_stdout, child_stderr)."""
 	cmd = _PopenCmd(cmd, mode, bufsize, shared_eo=False)
 	pipes = cmd.get_pipes()
@@ -138,7 +159,7 @@ def popen3(cmd, mode="r", bufsize=0):
 	return pipes[0], pipes[1], pipes[2]
 
 
-def popen4(cmd, mode="r", bufsize=0):
+def popen4(patch, cmd, mode="r", bufsize=0):
 	"""Execute cmd as a sub-process and return the file objects (child_stdin, child_stdout_and_stderr)."""
 	cmd = _PopenCmd(cmd, mode, bufsize, shared_eo=True)
 	pipes = cmd.get_pipes()
