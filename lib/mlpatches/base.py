@@ -34,11 +34,13 @@ class BasePatch(object):
 			if pyv == 3 and not self.PY3:
 				raise IncompatiblePatch("Python 3 not supported!")
 			self.do_enable()
+			self.enabled = True
 	
 	def disable(self):
 		"""disable the patch."""
 		if self.enabled:
 			self.do_disable()
+			self.enabled = False
 	
 	def do_enable(self):
 		"""this should be overwritten in subclasses and apply the patch."""
@@ -116,6 +118,16 @@ class PatchGroup(BasePatch):
 	Subclasses should overwrite self.patches.
 	"""
 	patches = []
+	
+	@property
+	def enabled(self):
+		"""checks wether all patches of this group are enabled."""
+		return all([p.enabled for p in self.patches])
+	
+	@enabled.setter
+	def enabled(self, value):
+		# no-op
+		pass
 	
 	def enable(self):
 		# we need to overwrite enable() because
