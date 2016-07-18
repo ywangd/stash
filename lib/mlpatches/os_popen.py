@@ -92,7 +92,6 @@ class _PopenCmd(object):
 		self.shared_eo = shared_eo
 		self.chinr, self.chinw = self.create_pipe(wbuf=bufsize)
 		self.choutr, self.choutw = self.create_pipe(rbuf=bufsize)
-		self.killer = 0
 		if shared_eo:
 			self.cherrr, self.cherrw = self.choutr, self.choutw
 		else:
@@ -129,8 +128,6 @@ class _PopenCmd(object):
 	
 	def run(self):
 		"""runs the command."""
-		print "called"
-		print "_stash: "+repr(_stash)
 		self.state = self.STATE_RUNNING
 		self.worker = _stash(
 			input_=self.cmd,
@@ -145,7 +142,6 @@ class _PopenCmd(object):
 		if not self.worker.is_alive():
 			# sometimes stash is faster than the return
 			self.state = self.STATE_FINISHED
-		print "done"
 	
 	def get_exit_code(self, wait=True):
 		"""returns the exitcode.
@@ -163,7 +159,7 @@ class _PopenCmd(object):
 			elif self.worker.status() != self.worker.STOPPED:
 				return None
 			es = self.worker.state.return_value
-			return _get_status(es, self.killer)
+			return _get_status(es, self.worker.killer)
 		raise RuntimeError("get_exit_code() called before run()!")
 	
 
@@ -223,6 +219,5 @@ The subprocess module provides more powerful facilities for spawning new process
 		)
 	worker.join()  # just to be sure
 	es = worker.state.return_value
-	killer = 0
-	return _get_status(es, killer)
+	return _get_status(es, worker.killer)
 

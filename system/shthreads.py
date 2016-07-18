@@ -222,6 +222,7 @@ class ShBaseThread(threading.Thread):
         self.state = ShState.new_from_parent(parent.state)
 
         self.killed = False
+        self.killer = 0
         self.child_thread = None
 
         self.set_background(is_background)
@@ -270,6 +271,17 @@ class ShBaseThread(threading.Thread):
             assert self.parent.child_thread is self
             self.parent.child_thread = None
 
+    def on_kill(self):
+        """
+        This should be called when a thread was killed.
+        Calling this method will set self.killer to the job_id of the current Thread.
+        """
+        ct = threading.current_thread()
+        if not isinstance(ct, ShBaseThread):
+            self.killer = 0
+        else:
+            self.killer = ct.job_id
+
 
 # noinspection PyAttributeOutsideInit
 class ShTracedThread(ShBaseThread):
@@ -303,7 +315,9 @@ class ShTracedThread(ShBaseThread):
         return self.localtrace
 
     def kill(self):
-        self.killed = True
+        if not self.killed:
+            self.killed = True
+            self.on_kill()
 
 
 class ShCtypesThread(ShBaseThread):
@@ -339,3 +353,5 @@ class ShCtypesThread(ShBaseThread):
                 res = self._async_raise()
             except (ValueError, SystemError):
                 self.killed = False
+            else:
+                self.on_kill()
