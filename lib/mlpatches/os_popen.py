@@ -5,6 +5,41 @@ from mlpatches import base
 _stash = base._stash
 
 
+def _get_status(exitcode, killer=0):
+	"""
+	calculates the exit status for a command.
+	see the documentation of os.wait for info about this.
+	"""
+	return (exitcode * 256) + killer
+
+
+class VoidIO(object):
+	"""no-op I/O"""
+	def __init__(self):
+		pass
+		
+	def write(self, *args):
+		pass
+	
+	def writelines(self, *args):
+		pass
+	
+	def read(self, *args):
+		return ""
+	
+	def readline(self, *args):
+		return ""
+	
+	def readlines(self, *args):
+		return []
+	
+	def close(self):
+		pass
+	
+	def flush(self):
+		pass
+
+
 class _PipeEndpoint(object):
 	"""this class represents a pipe endpoint."""
 	def __init__(self, root, pipe):
@@ -113,7 +148,7 @@ class _PopenCmd(object):
 		print "done"
 	
 	def get_exit_code(self, wait=True):
-		"""returns the exitcode. 
+		"""returns the exitcode.
 		If wait is False and the worker has not finishef yet, return None."""
 		if self.state != self.STATE_INIT:
 			if self.worker is None:
@@ -128,12 +163,12 @@ class _PopenCmd(object):
 			elif self.worker.status() != self.worker.STOPPED:
 				return None
 			es = self.worker.state.return_value
-			return (es * 256) + self.killer
+			return _get_status(es, self.killer)
 		raise RuntimeError("get_exit_code() called before run()!")
 	
 
 def popen(patch, cmd, mode="r", bufsize=0):
-	"""Execute cmd as a sub-process and return the file objects (child_stdin, child_stdout)."""
+	"""Open a pipe to or from command. The return value is an open file object connected to the pipe, which can be read or written depending on whether mode is 'r' (default) or 'w'. The bufsize argument has the same meaning as the corresponding argument to the built-in open() function. The exit status of the command (encoded in the format specified for wait()) is available as the return value of the close() method of the file object, except that when the exit status is zero (termination without errors), None is returned."""
 	cmd = _PopenCmd(cmd, mode, bufsize, shared_eo=False)
 	pipes = cmd.get_pipes()
 	cmd.run()
@@ -167,35 +202,27 @@ def popen4(patch, cmd, mode="r", bufsize=0):
 	return pipes[0], pipes[1]
 
 
-if __name__ == "__main__":
-	# testcode
-	import select
-	cmd = raw_input("cmd: ")
-	i, o = popen4(cmd)
-	rs = [o]
-	ws = [i]
-	while True:
-		if len(rs + ws) == 0:
-			break
-		ra, wa, x = select.select(rs, ws, rs + ws)
-		for p in x:
-			print _stash.text_color("Error in pipe: "+repr(p), "yellow")
-			p.close()
-			if p in rs:
-				rs.remove(p)
-			if p in ws:
-				ws.remove(p)
-			continue
-		for p in ra:
-			data = p.read(4096)
-			if data:
-				print data
-			else:
-				print _stash.text_color("stdout closed", "yellow")
-				p.close()
-				rs.remove(p)
-				ws = []
-		#for p in wa:
-		#	inp = raw_input()
-		#	p.write(inp)
-	print _stash.text_color("es:", "yellow"), o.close()
+def system(patch, command):
+	"""Execute the command (a string) in a subshell. This is implemented by calling the Standard C function system(), and has the same limitations. Changes to sys.stdin, etc. are not reflected in the environment of the executed command.
+
+On Unix, the return value is the exit status of the process encoded in the format specified for wait(). Note that POSIX does not specify the meaning of the return value of the C system() function, so the return value of the Python function is system-dependent.
+
+On Windows, the return value is that returned by the system shell after running command, given by the Windows environment variable COMSPEC: on command.com systems (Windows 95, 98 and ME) this is always 0; on cmd.exe systems (Windows NT, 2000 and XP) this is the exit status of the command run; on systems using a non-native shell, consult your shell documentation.
+
+The subprocess module provides more powerful facilities for spawning new processes and retrieving their results; using that module is preferable to using this function. See the Replacing Older Functions with the subprocess Module section in the subprocess documentation for some helpful recipes."""
+	io = VoidIO()
+	worker = _stash(
+		input_=command,
+		wait=True,
+		persistent_level=2,
+		is_background=False,
+		add_to_history=None,
+		final_ins=io,
+		final_outs=io,
+		final_errs=io,
+		)
+	worker.join()  # just to be sure
+	es = worker.state.return_value
+	killer = 0
+	return _get_status(es, killer)
+

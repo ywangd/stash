@@ -136,7 +136,7 @@ class PatchGroup(BasePatch):
 	
 	def disable(self):
 		# see enable
-		self.do_enable()
+		self.do_disable()
 	
 	def do_enable(self):
 		for p in self.patches:
