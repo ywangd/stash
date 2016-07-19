@@ -11,6 +11,7 @@ from mlpatches import patches
 
 def main(ns):
 	if (ns.name is None) and (ns.action in ("enable", "disable")):
+		# error check
 		print(
 			_stash.text_color(
 				"Error: action requires name to be defined!", "red"
@@ -18,6 +19,7 @@ def main(ns):
 			)
 		sys.exit(2)
 	if ns.action == "enable":
+		# enable a patch
 		if ns.name not in patches.PATCHES:
 			print(
 				_stash.text_color(
@@ -29,6 +31,7 @@ def main(ns):
 		patch = patches.PATCHES[ns.name]
 		patch.enable()
 	elif ns.action == "disable":
+		# disable a patch
 		if ns.name not in patches.PATCHES:
 			print(
 				_stash.text_color(
@@ -40,6 +43,7 @@ def main(ns):
 		patch = patches.PATCHES[ns.name]
 		patch.disable()
 	elif ns.action == "list":
+		# show monkeypatches and their state
 		print(_stash.text_bold("Available Monkeypatches:"))
 		mlength = max([len(e) for e in patches.PATCHES.keys()]) + 2
 		for pn in sorted(patches.PATCHES.keys()):
@@ -61,6 +65,7 @@ def main(ns):
 			
 
 if __name__ == "__main__":
+	# main code
 	parser = argparse.ArgumentParser(description=__doc__)
 	parser.add_argument(
 		"action", choices=["enable", "disable", "list"],

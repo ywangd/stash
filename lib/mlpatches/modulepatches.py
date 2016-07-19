@@ -6,7 +6,8 @@ class Popen2Patch(base.ModulePatch):
 	"""the patch for the popen2 module."""
 	PY2 = True
 	PY3 = False
-	relpath = "popen2"
+	relpath = "popen2.py"
+	name = "popen2"
 
 
 # create instances

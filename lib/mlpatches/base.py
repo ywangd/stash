@@ -90,9 +90,12 @@ class FunctionPatch(BasePatch):
 class ModulePatch(BasePatch):
 	"""
 	This is a baseclass for patches replacing/adding modules.
-	Subclasses should overwrite self.relpath to point to the dir containing the module.
-	self.relpath is relative to self.BASEPATH .
+	Subclasses should overwrite self.relpath to point to the the module.
+	self.relpath is relative to self.BASEPATH.
+	Subclasses may also overwrite self.name with the module name.
+	Otherwise, self.name = relpath
 	"""
+	name = None
 	relpath = None
 	BASEPATH = os.path.join(os.path.dirname(__file__), "modules")
 	
@@ -101,19 +104,19 @@ class ModulePatch(BasePatch):
 		if self.relpath is None:
 			raise ValueError("Invalid Patch definition!")
 		self.path = os.path.join(self.BASEPATH, self.relpath)
+		if self.name is None:
+			self.name = self.relpath
 		
 	def do_enable(self):
-		print self.path
-		print sys.path
-		sys.path.insert(
-			min(1, len(sys.path)),
-			self.path
-			)
-		print sys.path
+		if self.name in sys.modules:
+			del sys.modules[self.name]
+		with open(self.path, "r") as f:
+			nmod = imp.load_source(self.name, self.path, f)
+		sys.modules[self.name] = nmod
 	
 	def do_disable(self):
-		if self.path in sys.path:
-			sys.path.remove(self.path)
+		if self.name in sys.modules:
+			del sys.modules[self.name]
 
 
 class PatchGroup(BasePatch):

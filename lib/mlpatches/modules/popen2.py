@@ -53,6 +53,11 @@ If not using one of the helper functions to create Popen3 objects, the parameter
 			return -1
 		else:
 			return self._p.worker.state.return_value
+	
+	def wait(self):
+		"""Waits for and returns the status code of the child process. The status code encodes both the return code of the process and information about whether it exited using the exit() system call or died due to a signal. Functions to help interpret the status code are defined in the os module; see section Process Management for the W*() family of functions."""
+		self._p.worker.join()
+		return self._p.worker.state.return_value
 
 
 class Popen4(Popen3):
