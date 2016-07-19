@@ -1,6 +1,6 @@
 """This module contains a dictionary containing all patches and their name."""
 
-from mlpatches import base, os_patches
+from mlpatches import base, os_patches, modulepatches
 
 PATCHES = {  # name -> Patch()
 	"os_popen": os_patches.POPEN_PATCH,
@@ -12,6 +12,12 @@ PATCHES = {  # name -> Patch()
 	"OS": os_patches.OS_PATCHES,
 	
 }
+
+
+# update with modulepatches
+
+PATCHES.update(modulepatches.MODULE_PATCHES)
+
 
 # define a PatchGroup with all patches
 

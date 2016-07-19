@@ -40,7 +40,7 @@ def main(ns):
 		patch = patches.PATCHES[ns.name]
 		patch.disable()
 	elif ns.action == "list":
-		print(_stash.text_bold("Available Monkeypathes:"))
+		print(_stash.text_bold("Available Monkeypatches:"))
 		mlength = max([len(e) for e in patches.PATCHES.keys()]) + 2
 		for pn in sorted(patches.PATCHES.keys()):
 			patch = patches.PATCHES[pn]
