@@ -1,13 +1,6 @@
 """Subprocesses with accessible I/O streams"""
-import pipes
 from mlpatches import os_popen
-
-
-def _get_str(args):
-	if isinstance(args, str) or isinstance(args, unicode):
-		return args
-	else:
-		return pipes.quote(args)
+from mlpatches.l2c import _get_str
 
 
 def popen2(cmd, bufsize=0, mode="t"):
