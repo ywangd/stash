@@ -69,7 +69,7 @@ class _PipeEndpoint(object):
 		except (OSError, IOError):
 			pass
 		ec = self.__root.get_exit_code(wait=True)
-		if ec == 0:
+		if ec / 256 == 0:
 			return None  # see os.popen
 		else:
 			return ec
