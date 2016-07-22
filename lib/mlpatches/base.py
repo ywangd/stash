@@ -18,15 +18,19 @@ class BasePatch(object):
 	This class also keeps track wether patches are enabled or not.
 	Subclasses should call BasePatch.__init__(self) and should
 	overwrite do_enable() and do_disable().
+	Subclasses may also overwrite self.requirements with a list of patches which need to be enabled before the patch will be enabled.
 	"""
 	PY2 = True  # Python 2 compatibility
 	PY3 = False  # Python 3 compatibility
+	dependencies = []
 	
 	def __init__(self):
 		self.enabled = False
 	
 	def enable(self):
 		"""enable the patch."""
+		for patch in self.dependencies:
+			patch.enable()
 		if not self.enabled:
 			pyv = sys.version_info[0]
 			if pyv == 2 and not self.PY2:
@@ -37,7 +41,7 @@ class BasePatch(object):
 			self.enabled = True
 	
 	def disable(self):
-		"""disable the patch."""
+		"""disable the patch. Do NOT disable dependencies."""
 		if self.enabled:
 			self.do_disable()
 			self.enabled = False

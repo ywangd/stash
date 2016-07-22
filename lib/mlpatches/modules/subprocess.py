@@ -7,8 +7,6 @@
 #	- shell
 #	- startupinfo
 #	- preexec_fn
-#	- cwd
-#	- env
 #	- bufsize
 #	- creationflags
 #	- close_fds
@@ -30,7 +28,7 @@ list2cmdline = l2c.list2cmdline
 
 # constants
 try:
-	# setup MAXFD. we dont reauire this, but other scripts may expect this value to be present
+	# setup MAXFD. we dont require this, but other scripts may expect this value to be present
 	MAXFD = os.sysconf("SC_OPEN_MAX")
 except:
 	MAXFD = 256
@@ -89,6 +87,8 @@ class Popen(object):
 		self._fds = []
 		self.returncode = None
 		self._worker = None
+		self._cwd = cwd
+		self._environ = (env if env is not None else {})
 		
 		if isinstance(args, (str, unicode)):
 			self.cmd = args
@@ -172,7 +172,7 @@ class Popen(object):
 	
 	def _run(self):
 		"""creates and starts the worker."""
-		self._worker = _stash(
+		self._worker = _stash.runtime.run(
 			input_=self.cmd,
 			final_ins=self._sp_stdin,
 			final_outs=self._sp_stdout,
@@ -180,6 +180,8 @@ class Popen(object):
 			add_to_history=None,
 			persistent_level=2,
 			is_background=False,
+			cwd=self._cwd,
+			environ=self._environ
 			)
 		self.pid = self._worker.job_id
 	

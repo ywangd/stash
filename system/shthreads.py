@@ -198,7 +198,7 @@ class ShBaseThread(threading.Thread):
     STARTED = 2
     STOPPED = 3
 
-    def __init__(self, registry, parent, command, target=None, is_background=False):
+    def __init__(self, registry, parent, command, target=None, is_background=False, environ={}, cwd=None):
         super(ShBaseThread, self).__init__(group=None,
                                            target=target,
                                            name='_shthread',
@@ -220,6 +220,10 @@ class ShBaseThread(threading.Thread):
 
         # Set up the state based on parent's state
         self.state = ShState.new_from_parent(parent.state)
+        self.state.environ.update(environ)
+        if cwd is not None:
+            self.state.enclosed_cwd = cwd
+            os.chdir(cwd)
 
         self.killed = False
         self.killer = 0
@@ -287,9 +291,9 @@ class ShBaseThread(threading.Thread):
 class ShTracedThread(ShBaseThread):
     """ Killable thread implementation with trace """
 
-    def __init__(self, registry, parent, command, target=None, is_background=False):
+    def __init__(self, registry, parent, command, target=None, is_background=False, environ={}, cwd=None):
         super(ShTracedThread, self).__init__(
-            registry, parent, command, target=target, is_background=is_background)
+            registry, parent, command, target=target, is_background=is_background, environ=environ, cwd=cwd)
 
     def start(self):
         """Start the thread."""
@@ -326,9 +330,9 @@ class ShCtypesThread(ShBaseThread):
     another thread (with ctypes).
     """
 
-    def __init__(self, registry, parent, command, target=None, is_background=False):
+    def __init__(self, registry, parent, command, target=None, is_background=False, environ={}, cwd=None):
         super(ShCtypesThread, self).__init__(
-            registry, parent, command, target=target, is_background=is_background)
+            registry, parent, command, target=target, is_background=is_background, environ=environ, cwd=cwd)
 
     def _async_raise(self):
         tid = self.ident

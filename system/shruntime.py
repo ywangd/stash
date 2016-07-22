@@ -159,7 +159,9 @@ class ShRuntime(object):
             add_to_history=None,
             add_new_inp_line=None,
             persistent_level=0,
-            is_background=False):
+            is_background=False,
+            environ={},
+            cwd=None):
         """
         This is the entry for running shell commands.
 
@@ -179,6 +181,8 @@ class ShRuntime(object):
                     2 - Semi persistent. Any more future children will have starting
                         variables as the current child's ending variables. (__call__
                         interface is by default in this mode).
+        :param environ:
+        :param cwd:
         :return:
         :rtype: ShBaseThread
         """
@@ -197,7 +201,9 @@ class ShRuntime(object):
                     self.run_pipe_sequence(input_,
                                            final_ins=final_ins,
                                            final_outs=final_outs,
-                                           final_errs=final_errs)
+                                           final_errs=final_errs,
+                                           environ=environ,
+                                           cwd=cwd)
 
                 else:
                     if type(input_) is list:
@@ -237,12 +243,16 @@ class ShRuntime(object):
                                              final_outs=final_outs,
                                              final_errs=final_errs,
                                              persistent_level=0,
-                                             is_background=True)
+                                             is_background=True,
+                                             environ=environ,
+                                             cwd=cwd)
                                 else:
                                     self.run_pipe_sequence(pipe_sequence,
                                                            final_ins=final_ins,
                                                            final_outs=final_outs,
-                                                           final_errs=final_errs)
+                                                           final_errs=final_errs,
+                                                           
+                            environ=environ, cwd=cwd)
                         finally:
                             if is_top:
                                 self.history_swap()
@@ -312,7 +322,7 @@ class ShRuntime(object):
             parent_thread = self
 
         child_thread = self.ShThread(
-            self.worker_registry, parent_thread, input_, target=fn, is_background=is_background)
+            self.worker_registry, parent_thread, input_, target=fn, is_background=is_background, environ=environ, cwd=cwd)
         child_thread.start()
 
         return child_thread
@@ -326,7 +336,7 @@ class ShRuntime(object):
         self.stash.external_tab_handler = None
 
     def run_pipe_sequence(self, pipe_sequence,
-                          final_ins=None, final_outs=None, final_errs=None):
+                          final_ins=None, final_outs=None, final_errs=None, environ={}, cwd=None):
         if self.debug:
             self.logger.debug(str(pipe_sequence))
 

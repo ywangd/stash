@@ -129,11 +129,10 @@ class _PopenCmd(object):
 	def run(self):
 		"""runs the command."""
 		self.state = self.STATE_RUNNING
-		self.worker = _stash(
+		self.worker = _stash.runtime.run(
 			input_=self.cmd,
 			persistent_level=2,
 			is_background=False,
-			wait=False,
 			add_to_history=None,
 			final_ins=self.chinr,
 			final_outs=self.choutw,
@@ -207,9 +206,8 @@ On Windows, the return value is that returned by the system shell after running 
 
 The subprocess module provides more powerful facilities for spawning new processes and retrieving their results; using that module is preferable to using this function. See the Replacing Older Functions with the subprocess Module section in the subprocess documentation for some helpful recipes."""
 	io = VoidIO()
-	worker = _stash(
+	worker = _stash.runtime.run(
 		input_=command,
-		wait=True,
 		persistent_level=2,
 		is_background=False,
 		add_to_history=None,
@@ -217,7 +215,7 @@ The subprocess module provides more powerful facilities for spawning new process
 		final_outs=io,
 		final_errs=io,
 		)
-	worker.join()  # just to be sure
+	worker.join()  # wait for completion
 	es = worker.state.return_value
 	return _get_status(es, worker.killer)
 
