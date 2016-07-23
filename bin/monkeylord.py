@@ -10,37 +10,36 @@ from mlpatches import patches
 
 
 def main(ns):
-	if (ns.name is None) and (ns.action in ("enable", "disable")):
-		# error check
-		print(
-			_stash.text_color(
-				"Error: action requires name to be defined!", "red"
-				)
-			)
-		sys.exit(2)
+	if (ns.name is None):
+		if ns.action == "enable":
+			name = "STABLE"
+		elif ns.action == "disable":
+			name = "ALL"
+	else:
+		name = ns.name
 	if ns.action == "enable":
 		# enable a patch
-		if ns.name not in patches.PATCHES:
+		if name not in patches.PATCHES:
 			print(
 				_stash.text_color(
-					"Error: Patch '{n}' not found!".format(n=ns.name),
+					"Error: Patch '{n}' not found!".format(n=name),
 					"red"
 					)
 				)
 			sys.exit(1)
-		patch = patches.PATCHES[ns.name]
+		patch = patches.PATCHES[name]
 		patch.enable()
 	elif ns.action == "disable":
 		# disable a patch
-		if ns.name not in patches.PATCHES:
+		if name not in patches.PATCHES:
 			print(
 				_stash.text_color(
-					"Error: Patch '{n}' not found!".format(n=ns.name),
+					"Error: Patch '{n}' not found!".format(n=name),
 					"red"
 					)
 				)
 			sys.exit(1)
-		patch = patches.PATCHES[ns.name]
+		patch = patches.PATCHES[name]
 		patch.disable()
 	elif ns.action == "list":
 		# show monkeypatches and their state

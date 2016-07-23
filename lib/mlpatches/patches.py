@@ -2,7 +2,7 @@
 
 from mlpatches import base, os_patches, modulepatches
 
-PATCHES = {  # name -> Patch()
+STABLE_PATCHES = {  # name -> Patch()
 	"os_popen": os_patches.POPEN_PATCH,
 	"os_popen2": os_patches.POPEN2_PATCH,
 	"os_popen3": os_patches.POPEN3_PATCH,
@@ -10,20 +10,29 @@ PATCHES = {  # name -> Patch()
 	"os_system": os_patches.SYSTEM_PATCH,
 	"OS_POPEN": os_patches.POPEN_PATCHES,
 	"OS": os_patches.OS_PATCHES,
+}
+
+INSTABLE_PATCHES = {  # name -> Patch()
 	
 }
 
+# create a empty dict and update it
 
-# update with modulepatches
+PATCHES = {}
 
-PATCHES.update(modulepatches.MODULE_PATCHES)
+STABLE_PATCHES.update(modulepatches.MODULE_PATCHES)  # modulepatches should be available in STABLE
+PATCHES.update(INSTABLE_PATCHES)  # update with INSTABLE first
+PATCHES.update(STABLE_PATCHES)  # update with STABLE patches (overwriting INSTABLE patches if required)
+# PATCHES.update(modulepatches.MODULE_PATCHES)
 
 
 # define a PatchGroup with all patches
 
-class AllPatches(base.PatchGroup):
-	"""a patch-group containing all patches."""
-	patches = PATCHES.values()
+STABLE_GROUP = base.VariablePatchGroup(STABLE_PATCHES.values())
+INSTABLE_GROUP = base.VariablePatchGroup(INSTABLE_PATCHES.values())
+ALL_GROUP = base.VariablePatchGroup(PATCHES.values())
 
-ALL_PATCHES = AllPatches()
-PATCHES["ALL"] = ALL_PATCHES
+
+PATCHES["ALL"] = ALL_GROUP
+PATCHES["STABLE"] = STABLE_GROUP
+PATCHES["INSTABLE"] = INSTABLE_GROUP

@@ -4,7 +4,7 @@ import imp
 import os
 
 
-_stash = None  # set this
+_stash = None  # set this before importing other modules from mlpatches
 
 
 class IncompatiblePatch(Exception):
@@ -18,7 +18,7 @@ class BasePatch(object):
 	This class also keeps track wether patches are enabled or not.
 	Subclasses should call BasePatch.__init__(self) and should
 	overwrite do_enable() and do_disable().
-	Subclasses may also overwrite self.requirements with a list of patches which need to be enabled before the patch will be enabled.
+	Subclasses may also overwrite self.dependencies with a list of patches which need to be enabled before the patch will be enabled.
 	"""
 	PY2 = True  # Python 2 compatibility
 	PY3 = False  # Python 3 compatibility
@@ -133,11 +133,11 @@ class PatchGroup(BasePatch):
 	@property
 	def enabled(self):
 		"""checks wether all patches of this group are enabled."""
-		return all([p.enabled for p in self.patches])
+		return (all([p.enabled for p in self.patches]) and len(self.patches) > 0)
 	
 	@enabled.setter
 	def enabled(self, value):
-		# no-op
+		# no-op, bur required
 		pass
 	
 	def enable(self):
@@ -156,3 +156,13 @@ class PatchGroup(BasePatch):
 	def do_disable(self):
 		for p in self.patches:
 			p.disable()
+
+
+class VariablePatchGroup(PatchGroup):
+	"""
+	A patchgroup which patches are passed to __init__().
+	This allows a variable definition on import.
+	"""
+	def __init__(self, patches):
+		PatchGroup.__init__(self)
+		self.patches = patches
