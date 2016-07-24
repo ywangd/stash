@@ -5,7 +5,7 @@ StaSh - Pythonista Shell
 https://github.com/ywangd/stash
 """
 
-__version__ = '0.6.12'
+__version__ = '0.6.13'
 
 import os
 import sys
@@ -281,7 +281,3 @@ class StaSh(object):
     def text_strikethrough(self, s, **kwargs):
         return self.text_style(s, {'traits': ['strikethrough']}, **kwargs)
 
-
-if __name__ == '__main__':
-    _stash = StaSh()
-    _stash.launch()
