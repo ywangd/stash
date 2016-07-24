@@ -1,0 +1,13 @@
+monkeypatching(1) --- INDEX
+============================
+
+Content
+   Index........................1
+   Warnings.....................2
+   Managing Patches.............3
+   Patches......................4
+   Creating new
+   Patches.........5
+
+To view a page, type "man monkeypatching(n)" where n is the pagenumber.
+

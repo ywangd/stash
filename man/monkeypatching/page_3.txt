@@ -1,0 +1,14 @@
+monkeypatching(3) --- MANAGING PATCHES
+======================================
+
+StaSh provides the "monkeylord" command for managing monkeypatches.
+
+Usage:
+   "monkeylord -h" to get help
+   "monkeylord list" to get a list of all patches and their state
+   "monkeylord enable [NAME]" to enable patches
+   "monkeylord disable [NAME]" to disable patches
+
+The optional argument NAME defines the patch(es) to enable/disable.
+It defaults to "STABLE" for "monkeylord enable" and "ALL" for "monkeylord disable".
+To get a list of available patches and some help, see the "Patches"-Chapter.

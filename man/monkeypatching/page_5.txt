@@ -1,0 +1,51 @@
+monkeypatching(5) --- CREATING NEW PATCHES
+==========================================
+
+All Patches are contained in modules in "$STASH_ROOT/lib/mlpatches".
+
+The following Patchtypes are available:
+   BasePatch():
+      - does nothing
+      - superclass for other patches
+      - overwrite PY2 and PY3 with bools to define compatibility
+      - overwrite do_enable() to enable the patch
+      - overwrite do_disable() to disable the patch
+      - overwrite dependencies with a list of patches to enable first
+      - Most overwrite are optional and already done in the available subclasses.
+   FunctionPatch():
+      - replaces one attribute (=function, var, ...) in a module
+      - overwrite "module" with the name of the module to apply the patch on
+      - overwrite "function" with the name of the function go replace
+      - overwrite "replacement" with the function to install
+         INFO: due to a bug, the function needs to accept the patch as first argument!
+   ModulePatch():
+      - replaces or insert the module in "sys.modules"
+      - overwrite "name" with the name the module has in "sys.modules"
+      - (OPTIONAL) overwrite "BASEPATH" to the parentdir of the module
+         DEFAULT: "$STASH_ROOT/lib/mlpatches/modules/"
+      - overwrite "relpath" with the path of the new module relative to "BASEPATH"
+   PatchGroup():
+      - overwrite "patches" with a list of patches
+   VariablePatchGroup(patches):
+      - like PatchGroup(), but patches passed to __init__()
+
+The recommended way to define a Patch is the following way (example):
+
+'''
+from mlpatches import base
+class MyPatch(base.FunctionPatch):
+   PY2 = True
+   PY3 = False
+   module = "os"
+   function = "system"
+   replacement = my_function
+
+MY_PATCH = MyPatch()
+'''
+
+ModulePatches should be defined in the "modulepatches"-submodule of mlpatches.
+They need to be registered in "modulepatches.MODULE_PATCHES" dictionary.
+This should be done in a hardcoded way.
+
+All other Patches should be defined and instanciated in their own module.
+They should then be imported in the "patches" submodule and registered in the "patches.(IN)STABLE_PATCHES" dictionary.

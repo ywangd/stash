@@ -15,6 +15,8 @@ def main(ns):
 			name = "STABLE"
 		elif ns.action == "disable":
 			name = "ALL"
+		else:
+			name = "ALL"
 	else:
 		name = ns.name
 	if ns.action == "enable":

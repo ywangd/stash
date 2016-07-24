@@ -1,6 +1,6 @@
 """This module contains a dictionary containing all patches and their name."""
 
-from mlpatches import base, os_patches, modulepatches
+from mlpatches import base, os_patches, modulepatches, tl_patches
 
 STABLE_PATCHES = {  # name -> Patch()
 	"os_popen": os_patches.POPEN_PATCH,
@@ -13,7 +13,7 @@ STABLE_PATCHES = {  # name -> Patch()
 }
 
 INSTABLE_PATCHES = {  # name -> Patch()
-	
+	"tl_argv": tl_patches.TL_ARGV_PATCH,
 }
 
 # create a empty dict and update it

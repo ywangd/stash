@@ -137,7 +137,7 @@ class PatchGroup(BasePatch):
 	
 	@enabled.setter
 	def enabled(self, value):
-		# no-op, bur required
+		# no-op, but required
 		pass
 	
 	def enable(self):

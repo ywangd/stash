@@ -78,6 +78,18 @@ _subcmd_cfg = {
             'with_normal_completion': False,
         },
     },
+    "monkeylord": {
+        "1": {
+            "candidates": ["list", "enable", "disable"],
+            "blank_completion": True,
+            "with_normal_completion": False,
+        },
+        "-": {
+            "candidates": ["-h", "--help"],
+            "blank_completion": False,
+            "with_normal_completion": False,
+        },
+    },
 
 }
 
