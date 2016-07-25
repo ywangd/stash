@@ -1,7 +1,7 @@
 # coding=utf-8
 import unittest
 
-import stash
+from stash import stash
 
 class TermemuTests(unittest.TestCase):
 

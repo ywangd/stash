@@ -17,17 +17,17 @@ import logging.handlers
 
 
 # noinspection PyPep8Naming
-from system.shcommon import IN_PYTHONISTA, ON_IPAD
-from system.shcommon import _STASH_ROOT, _STASH_CONFIG_FILES, _SYS_STDOUT
-from system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
-from system.shuseractionproxy import ShUserActionProxy
-from system.shiowrapper import enable as enable_io_wrapper, disable as disable_io_wrapper
-from system.shparsers import ShParser, ShExpander, ShCompleter
-from system.shruntime import ShRuntime
-from system.shstreams import ShMiniBuffer, ShStream
-from system.shscreens import ShSequentialScreen, ShSequentialRenderer
-from system.shui import ShUI
-from system.shio import ShIO
+from .system.shcommon import IN_PYTHONISTA, ON_IPAD
+from .system.shcommon import _STASH_ROOT, _STASH_CONFIG_FILES, _SYS_STDOUT
+from .system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
+from .system.shuseractionproxy import ShUserActionProxy
+from .system.shiowrapper import enable as enable_io_wrapper, disable as disable_io_wrapper
+from .system.shparsers import ShParser, ShExpander, ShCompleter
+from .system.shruntime import ShRuntime
+from .system.shstreams import ShMiniBuffer, ShStream
+from .system.shscreens import ShSequentialScreen, ShSequentialRenderer
+from .system.shui import ShUI
+from .system.shio import ShIO
 
 
 # Setup logging

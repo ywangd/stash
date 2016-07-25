@@ -1,3 +1,0 @@
-test:
-    script:
-    - python run_tests.py -v

@@ -4,7 +4,7 @@ import time
 import unittest
 from StringIO import StringIO
 
-import stash
+from stash import stash
 
 class ThreadsTests(unittest.TestCase):
 

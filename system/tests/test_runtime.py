@@ -2,7 +2,7 @@
 import os
 import unittest
 
-import stash
+from stash import stash
 
 class RuntimeTests(unittest.TestCase):
 
