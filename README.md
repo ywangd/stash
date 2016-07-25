@@ -268,6 +268,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
       full-fledged SSH client. 
     * `ssh-keygen.py` - Generate RSA/DSA SSH Keys.
     * `stashconf.py` - Change StaSh configuration on the fly
+    * `tail.py` - Print last lines of a FILE.
     * `tar.py` - Manipulate archive files
     * `touch.py` - Update timestamp of the given file or create it if not exist
     * `uniq.py` - Remove duplicates from list, also see sort
