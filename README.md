@@ -16,7 +16,8 @@ Remarkable contributions are also made by
 [@cclauss](https://github.com/cclauss),
 [@georg.viehoever](https://github.com/GeorgViehoever),
 [@BBOOXX](https://github.com/BBOOXX) and
-[@bennr01](https://github.com/stars/bennr01). 
+[@bennr01](https://github.com/stars/bennr01)
+[@glider-gun](https://github.com/glider-gun). 
 
 StaSh stands for Pythoni**sta** **Sh**ell. While **Sta** may not be the best
 abbreviation for Pythonista, it forms a concise and meaningful word with the
@@ -227,9 +228,11 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `edit.py` - Open any text type files in Pythonista editor
     * `find.py` - Powerful file searching tool
     * `fg.py` - Bring a background job to foreground
+    * `ftpserver.py` - A simple FTP server
     * `gci.py` - Interface to Python's built-in garbage collector
     * `git.py` - Git client ported from shellista
     * `grep.py` - search contents of file(s)
+    * `head.py` - Display first lines of a file
     * `httpserver.py` - A simple HTTP server with upload function (ripped from
       https://gist.github.com/UniIsland/3346170)
     * `jobs.py` - List all jobs that are currently running
@@ -265,6 +268,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
       full-fledged SSH client. 
     * `ssh-keygen.py` - Generate RSA/DSA SSH Keys.
     * `stashconf.py` - Change StaSh configuration on the fly
+    * `tail.py` - Print last lines of a FILE.
     * `tar.py` - Manipulate archive files
     * `touch.py` - Update timestamp of the given file or create it if not exist
     * `uniq.py` - Remove duplicates from list, also see sort

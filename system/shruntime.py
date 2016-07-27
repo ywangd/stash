@@ -13,8 +13,8 @@ try:
     import ui
     from objc_util import on_main_thread
 except ImportError:
-    import system.dummyui as ui
-    from dummyobjc_util import on_main_thread
+    from . import dummyui as ui
+    from .dummyobjc_util import on_main_thread
 
 from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
     ShFileNotFound, ShEventNotFound, ShNotExecutable
