@@ -49,7 +49,6 @@ def main(ns):
 		mlength = max([len(e) for e in patches.PATCHES.keys()]) + 2
 		for pn in sorted(patches.PATCHES.keys()):
 			patch = patches.PATCHES[pn]
-			tl = len(pn)
 			if patch.enabled:
 				t = "[enabled]"
 				c = "green"

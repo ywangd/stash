@@ -31,6 +31,7 @@ INSTABLE: All instable Patches. Do not use these!
 
 OS: All patches for the "os"-module.
 OS_POPEN: The patches for "os.popen*".
+OS_PROCESSING: patches to emulate process-like behavior
 
 
 Available Patches:
@@ -41,5 +42,8 @@ os_popen2: make "os.popen2" use StaSh.
 os_popen3: make "os.popen3" use StaSh.
 os_popen4: make "os.popen4" use StaSh.
 os_system: make "os.system" use StaSh.
+os_getpid: make "os.getpid" return the current job_id instead of the pid.
+os_getppid: like os_getpid, but for the parent-job.
+os_kill: make "os.kill" kill the job_id.
 popen2: the "popen2"-module.
 subprocess: the "subprocess module".

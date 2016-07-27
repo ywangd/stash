@@ -2,6 +2,7 @@
 from mlpatches.base import FunctionPatch, PatchGroup
 
 from mlpatches.os_popen import popen, popen2, popen3, popen4, system
+from mlpatches.os_process import getpid, getppid, kill
 
 
 # define patches
@@ -37,12 +38,37 @@ class Popen4Patch(FunctionPatch):
 	function = "popen4"
 	replacement = popen4
 
+
 class SystemPatch(FunctionPatch):
 	PY2 = True
 	PY3 = False
 	module = "os"
 	function = "system"
 	replacement = system
+
+
+class GetpidPatch(FunctionPatch):
+	PY2 = True
+	PY3 = True
+	module = "os"
+	function = "getpid"
+	replacement = getpid
+
+
+class GetppidPatch(FunctionPatch):
+	PY2 = True
+	PY3 = True
+	module = "os"
+	function = "getppid"
+	replacement = getppid
+
+
+class KillPatch(FunctionPatch):
+	PY2 = True
+	PY3 = True
+	module = "os"
+	function = "kill"
+	replacement = kill
 
 
 # create patch instances
@@ -53,6 +79,10 @@ POPEN3_PATCH = Popen3Patch()
 POPEN4_PATCH = Popen4Patch()
 
 SYSTEM_PATCH = SystemPatch()
+
+GETPID_PATCH = GetpidPatch()
+GETPPID_PATCH = GetppidPatch()
+KILL_PATCH = KillPatch()
 
 
 # define groups
@@ -66,6 +96,16 @@ class PopenPatches(PatchGroup):
 		POPEN4_PATCH,
 		]
 
+
+class ProcessingPatches(PatchGroup):
+	"""all patches to emulate prcessing behavior"""
+	patches = [
+		GETPID_PATCH,
+		GETPPID_PATCH,
+		KILL_PATCH,
+		]
+
+
 class OsPatches(PatchGroup):
 	"""all os patches."""
 	patches = [
@@ -74,6 +114,9 @@ class OsPatches(PatchGroup):
 		POPEN3_PATCH,
 		POPEN4_PATCH,
 		SYSTEM_PATCH,
+		GETPID_PATCH,
+		GETPPID_PATCH,
+		KILL_PATCH,
 		]
 
 
@@ -81,3 +124,4 @@ class OsPatches(PatchGroup):
 
 POPEN_PATCHES = PopenPatches()
 OS_PATCHES = OsPatches()
+PROCESSING_PATCHES = ProcessingPatches()
