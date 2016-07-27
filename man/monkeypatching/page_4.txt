@@ -27,7 +27,7 @@ Available PatchGroups
 
 ALL: This Group contains all Patches and is generated automatically.
 STABLE: All stable patches and all ModulePatches
-INSTABLE: All instable Patches. Do not use these!
+INSTABLE: All instable Patches. Do not use these unless you know what you are doing!
 
 OS: All patches for the "os"-module.
 OS_POPEN: The patches for "os.popen*".
@@ -46,4 +46,4 @@ os_getpid: make "os.getpid" return the current job_id instead of the pid.
 os_getppid: like os_getpid, but for the parent-job.
 os_kill: make "os.kill" kill the job_id.
 popen2: the "popen2"-module.
-subprocess: the "subprocess module".
+subprocess: the "subprocess" module.

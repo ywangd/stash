@@ -7,17 +7,17 @@ The following Patchtypes are available:
    BasePatch():
       - does nothing
       - superclass for other patches
-      - overwrite PY2 and PY3 with bools to define compatibility
-      - overwrite do_enable() to enable the patch
-      - overwrite do_disable() to disable the patch
-      - overwrite dependencies with a list of patches to enable first
+      - overwrite "PY2" and "PY3" with bools to define compatibility
+      - overwrite "do_enable()" to enable the patch
+      - overwrite "do_disable()" to disable the patch
+      - overwrite "dependencies" with a list of patches to enable first
       - Most overwrite are optional and already done in the available subclasses.
    FunctionPatch():
       - replaces one attribute (=function, var, ...) in a module
       - overwrite "module" with the name of the module to apply the patch on
       - overwrite "function" with the name of the function go replace
       - overwrite "replacement" with the function to install
-         INFO: due to a bug, the function needs to accept the patch as first argument!
+         INFO: due to a bug, the function needs to accept the patch as the first argument!
    ModulePatch():
       - replaces or insert the module in "sys.modules"
       - overwrite "name" with the name the module has in "sys.modules"
