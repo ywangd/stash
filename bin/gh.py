@@ -32,11 +32,14 @@ def install_module_from_github(username, package_name, folder, version):
 
 
 try:
+    libpath=os.path.join(os.environ['STASH_ROOT'] ,'lib')
+    if not libpath in sys.path:
+        sys.path.insert(1,libpath)
     import github
 except ImportError:
+    print 'no github found in ',libpath
     install_module_from_github('pygithub', 'pygithub', 'github','master')
     import github
-
 try: 
 	import docopt
 except  ImportError:
