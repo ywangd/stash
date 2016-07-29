@@ -779,8 +779,20 @@ class PyPIRepository(PackageRepository):
         super(PyPIRepository, self).__init__()
         import xmlrpclib
         self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
+        self.standard_package_names = {}
+
+    def get_standard_package_name(self, pkg_name):
+        if pkg_name not in self.standard_package_names:
+            try:
+                r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
+                self.standard_package_names[pkg_name] = r.json()['info']['name']
+            except:
+                return pkg_name
+
+        return self.standard_package_names[pkg_name]
 
     def search(self, pkg_name):
+        pkg_name = self.get_standard_package_name(pkg_name)
         hits = self.pypi.search({'name': pkg_name}, 'and')
         if not hits:
             raise PipError('No matches found: {}'.format(pkg_name))
@@ -789,6 +801,7 @@ class PyPIRepository(PackageRepository):
         return hits
 
     def versions(self, pkg_name):
+        pkg_name = self.get_standard_package_name(pkg_name)
         hits = self.pypi.package_releases(pkg_name, True)  # True to show all versions
 
         if not hits:
@@ -798,6 +811,7 @@ class PyPIRepository(PackageRepository):
 
     def download(self, pkg_name, ver_spec):
         print('Querying PyPI ... ')
+        pkg_name = self.get_standard_package_name(pkg_name)
         hit = self._determin_hit(pkg_name, ver_spec)
 
         downloads = self.pypi.release_urls(pkg_name, hit)
@@ -827,6 +841,7 @@ class PyPIRepository(PackageRepository):
         return os.path.join(os.getenv('TMPDIR'), source['filename']), pkg_info
 
     def install(self, pkg_name, ver_spec):
+        pkg_name = self.get_standard_package_name(pkg_name)
         if not self.config.module_exists(pkg_name):
             archive_filename, pkg_info = self.download(pkg_name, ver_spec)
             self._install(pkg_name, pkg_info, archive_filename)
@@ -834,6 +849,7 @@ class PyPIRepository(PackageRepository):
             raise PipError('Package already installed')
 
     def update(self, pkg_name):
+        pkg_name = self.get_standard_package_name(pkg_name)
         if self.config.module_exists(pkg_name):
             current = self.config.get_info(pkg_name)
             hit = self.pypi.package_releases(pkg_name)[0]
@@ -848,7 +864,7 @@ class PyPIRepository(PackageRepository):
             raise PipError('package not installed: {}'.format(pkg_name))
 
     def _determin_hit(self, pkg_name, ver_spec):
-
+        pkg_name = self.get_standard_package_name(pkg_name)
         hits = self.versions(pkg_name)
         if ver_spec is None:  # latest version
             return hits[0]

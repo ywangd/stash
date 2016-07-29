@@ -244,6 +244,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
       synchronously.
     * `md5sum.py` - Print or check MD5 checksums
     * `mkdir.py` - Create directory
+    * `monkeylord.py` - Manage monkey patches with the goal to make Pythonista more viable
     * `mv.py` - Move file
     * `openin.py` - Show the **open in** dialog to open a file in external apps.
     * `pbcopy.py` - Copy to iOS clipboard
