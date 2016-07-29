@@ -1,0 +1,49 @@
+monkeypatching(4) --- PATCHES
+=============================
+
+There are 3 types of Patches (actually 5, but the other two types are only important to developers):
+   A "FunctionPatch" modifies a module, importing it if neccessary.
+         Regardless of their name, they may also patch other attributes of a module.
+         Reloading a module will break any "FunctionPatch"
+   A "ModulePatch" adds or overwrites a whole module.
+         This can result in missing attributes (in case they are not implemented).
+         However, the most patches will try to implement everything documented in the docs.
+   A "PatchGroup" consists of other Patches.
+
+To make it easier to find the right patch, most patchnames are following this schema:
+   PatchGroups have a uppercase name, for example "STABLE".
+   FunctionPatches have a lowercase name constructed this way:
+      <modulename>_<functionname>
+   module_patches are named like the module.
+
+There are two subtypes of patches:
+   "STABLE"-Patches a more-or-less working and should be pretty stable:
+   "INSTABLE"-Patches are still in developement, not working or buggy. They often crash.
+"ModulePatches" are always seen as stable.
+
+
+Available PatchGroups
+---------------------
+
+ALL: This Group contains all Patches and is generated automatically.
+STABLE: All stable patches and all ModulePatches
+INSTABLE: All instable Patches. Do not use these unless you know what you are doing!
+
+OS: All patches for the "os"-module.
+OS_POPEN: The patches for "os.popen*".
+OS_PROCESSING: patches to emulate process-like behavior
+
+
+Available Patches:
+------------------
+
+os_popen: make "os.popen" use StaSh.
+os_popen2: make "os.popen2" use StaSh.
+os_popen3: make "os.popen3" use StaSh.
+os_popen4: make "os.popen4" use StaSh.
+os_system: make "os.system" use StaSh.
+os_getpid: make "os.getpid" return the current job_id instead of the pid.
+os_getppid: like os_getpid, but for the parent-job.
+os_kill: make "os.kill" kill the job_id.
+popen2: the "popen2"-module.
+subprocess: the "subprocess" module.
