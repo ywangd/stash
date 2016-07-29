@@ -8,7 +8,10 @@ Usage:
    "monkeylord list" to get a list of all patches and their state
    "monkeylord enable [NAME]" to enable patches
    "monkeylord disable [NAME]" to disable patches
+   "monkeylord saveconf PATH" to save the current configuration
+   "monkeylord loadconf PATH" to load a configuration from a file.
 
 The optional argument NAME defines the patch(es) to enable/disable.
-It defaults to "STABLE" for "monkeylord enable" and "ALL" for "monkeylord disable".
+It defaults to "STABLE" for "monkeylord enable" and "ALL" for "monkeylord disable"
+You can save your monkeypatch configuration using "monkeylord saveconf PATH" and later load it by using "monkeylord loadconf PATH".
 To get a list of available patches and some help, see the "Patches"-Chapter.

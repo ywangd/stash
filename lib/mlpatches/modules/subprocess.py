@@ -21,6 +21,7 @@
 import os
 import select
 import time
+import sys
 from mlpatches import base, l2c
 
 _stash = base._stash
@@ -93,6 +94,9 @@ class Popen(object):
 		if isinstance(args, (str, unicode)):
 			self.cmd = args
 		else:
+			if args[0] == sys.executable:
+				# common use case
+				args = ["python"] + list(args)
 			self.cmd = l2c.list2cmdline(args)
 
 		# === setup std* ===
