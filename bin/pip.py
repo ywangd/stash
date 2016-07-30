@@ -302,20 +302,59 @@ def save_current_sys_modules():
         sys.modules[k] = v
 
 
+# noinspection PyUnresolvedReferences
+from six.moves.configparser import SafeConfigParser, NoSectionError
+
+class CIConfigParer(SafeConfigParser):
+    """
+    This config parser is case insensitive for section names so that
+    the behaviour matches pypi queries.
+    """
+
+    def _get_section_name(self, name):
+        for section_name in self.sections():
+            if section_name.lower() == name.lower():
+                return section_name
+        else:
+            raise NoSectionError(name)
+
+    def has_section(self, name):
+        names = [n.lower() for n in self.sections()]
+        return name.lower() in names
+
+    def has_option(self, name, option_name):
+        section_name = self._get_section_name(name)
+        return SafeConfigParser.has_option(self, section_name, option_name)
+
+    def items(self, name):
+        section_name = self._get_section_name(name)
+        return SafeConfigParser.items(self, section_name)
+
+    def get(self, name, option_name):
+        section_name = self._get_section_name(name)
+        return SafeConfigParser.get(self, section_name, option_name)
+
+    def set(self, name, option_name, value):
+        section_name = self._get_section_name(name)
+        return SafeConfigParser.set(self, section_name, option_name, value)
+
+    def remove_section(self, name):
+        section_name = self._get_section_name(name)
+        return SafeConfigParser.remove_section(self, section_name)
+
+
 class PackageConfigHandler(object):
     """
     Manager class for packages files for tracking installation of modules
     """
 
     def __init__(self):
-        # noinspection PyUnresolvedReferences
-        from six.moves.configparser import SafeConfigParser
         self.package_cfg = os.path.expanduser('~/Documents/site-packages/.pypi_packages')
         if not os.path.isfile(self.package_cfg):
             print('Creating package file')
             with open(self.package_cfg, 'w') as outs:
                 outs.close()
-        self.parser = SafeConfigParser()
+        self.parser = CIConfigParer()
         self.parser.read(self.package_cfg)
 
     def save(self):
@@ -874,8 +913,6 @@ class PyPIRepository(PackageRepository):
                     return hit
             else:
                 raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec))
-
-            return hits[idx_max]
 
 
 class GitHubRepository(PackageRepository):
