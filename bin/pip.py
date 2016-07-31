@@ -248,8 +248,8 @@ def fake_setuptools_modules():
         'setuptools.utils',
         'setuptools.version',
         'setuptools.windows_support',
-        'pkg_resources',
-        'pkg_resources.extern',
+        # 'pkg_resources',
+        # 'pkg_resources.extern',
     ]
 
     for m in setuptools_modules:
@@ -279,6 +279,17 @@ def fake_setuptools_modules():
     sys.modules['setuptools.command.build_ext'].sub_commands = []
 
 
+def ensure_pkg_resources():
+    try:
+        import pkg_resources
+    except ImportError:
+        try:
+            print('Approximating pkg_resources ...')
+            GitHubRepository().install('ywangd/pkg_resources', None)
+        except:  # silently fail as it may not be important or necessary
+            pass
+
+
 @contextlib.contextmanager
 def save_current_sys_modules():
     """
@@ -287,16 +298,14 @@ def save_current_sys_modules():
     saved_sys_modules = dict(sys.modules)
     save_setuptools = {}
     for name in sorted(sys.modules.keys()):
-        if name == 'setuptools' or name.startswith('setuptools.') or \
-                        name == 'pkg_resources' or name.startswith('pkg_resources.'):
+        if name == 'setuptools' or name.startswith('setuptools.'):
             save_setuptools[name] = sys.modules.pop(name)
 
     yield
 
     # sys.modules = saved_sys_modules
     for name in sorted(sys.modules.keys()):
-        if name == 'setuptools' or name.startswith('setuptools.') or \
-                        name == 'pkg_resources' or name.startswith('pkg_resources.'):
+        if name == 'setuptools' or name.startswith('setuptools.'):
             sys.modules.pop(name)
     for k, v in save_setuptools.items():
         sys.modules[k] = v
@@ -304,6 +313,7 @@ def save_current_sys_modules():
 
 # noinspection PyUnresolvedReferences
 from six.moves.configparser import SafeConfigParser, NoSectionError
+
 
 class CIConfigParer(SafeConfigParser):
     """
@@ -1147,6 +1157,7 @@ if __name__ == '__main__':
 
             with save_current_sys_modules():
                 fake_setuptools_modules()
+                ensure_pkg_resources()  # install pkg_resources if needed
                 # start with what we have installed (i.e. in the config file)
                 sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
                 repository.install(pkg_name, ver_spec)

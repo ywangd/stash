@@ -15,8 +15,8 @@ Remarkable contributions are also made by
 [@oefe](https://github.com/oefe), 
 [@cclauss](https://github.com/cclauss),
 [@georg.viehoever](https://github.com/GeorgViehoever),
-[@BBOOXX](https://github.com/BBOOXX) and
-[@bennr01](https://github.com/stars/bennr01)
+[@BBOOXX](https://github.com/BBOOXX),
+[@bennr01](https://github.com/stars/bennr01) and
 [@glider-gun](https://github.com/glider-gun). 
 
 StaSh stands for Pythoni**sta** **Sh**ell. While **Sta** may not be the best
