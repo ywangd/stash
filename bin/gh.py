@@ -6,6 +6,8 @@ supported commands are:
 	gh fork <repo>		forks user/repo
 	gh create <repo>		creates a new repo
 	gh pull <repo> <base> <head>	  create a pull request
+	gh list_keys	list user keys
+	gh create_key <title> [<public_key_path>] add a key to github (or create new key if none exist)
 For all commands, use gh <command> --help for more detailed help
 
 NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.com', which is also the default from the git module.  
@@ -58,7 +60,8 @@ def command(func):
     @wraps(func)
     def tmp(argv):
        if len(argv)==1:
-         argv.append('--help')
+         if func.__name__ not in ['gh_list_keys']:
+         	argv.append('--help')
        try:
        	 args=docopt(func.__doc__,argv=argv)
        	 return func(args)
@@ -189,6 +192,54 @@ Examples:
 	finally:
 		console.hide_activity()
 	print('success')
+
+@command
+def gh_list_keys(args):
+	'''Usage:
+		gh list_keys [options]
+Options:
+	-h, --help   							This message
+
+List keys
+	'''
+	g,u=setup_gh()
+	for key in u.get_keys():
+		print('{}:\n {}\n'.format(key.title,key.key))
+	
+@command
+def gh_create_key(args):
+	'''Usage: 
+	gh create_key <title> [<public_key_path>]
+
+Options:
+	-h, --help   							This message
+
+Examples:
+	gh create_key ipad ~/.ssh/id_rsa.pub
+	gh create_key ipad    (checks for ~/.ssh/id_rsa.pub, or creates new key if needed using ssh-keygen )
+	'''
+	title=args['<title>']
+	default_keyfile=os.path.expanduser('~/.ssh/id_rsa.pub')
+	if not args['<public_key_path>']:		
+		if not os.path.exists(default_keyfile):
+			print('Creating a ssh key in ~/.ssh/')
+			cmd_string = '''
+			echo ssh-keygen -d rsa -b2048
+			ssh-keygen -trsa -b2048
+			'''
+			globals()['_stash'](cmd_string)
+		args['<public_key_path>']=default_keyfile
+	#if private key, use pub key
+	if not args['<public_key_path>'].endswith('.pub'):
+		args['<public_key_path>']+='.pub'
+	if not os.path.exists(args['<public_key_path>']):
+		raise Exception('Public Key file not found!')
+	g,u=setup_gh()
+	with open(args['<public_key_path>']) as pubkey:
+		u.create_key(title,pubkey.read())
+		
+	
+
 def setup_gh():
 	keychainservice='stash.git.github.com'
 	user = dict(keychain.get_services())[keychainservice]
