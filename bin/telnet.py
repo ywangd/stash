@@ -23,7 +23,7 @@ _stash = globals()['_stash']
 try:
     import pyte
 except ImportError:
-    _stash('pip install pyte 0.4.10')
+    _stash('pip install pyte==0.4.10')
 
 
 class StashTelnet(object):
