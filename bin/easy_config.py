@@ -8,6 +8,8 @@ from stash.system.shcommon import _STASH_CONFIG_FILES
 
 _stash = globals()["_stash"]
 
+ORIENTATIONS = ("landscape", "landscape_left", "landscape_right")
+
 # define option types
 TYPE_BOOL = 1
 TYPE_INT = 2
@@ -222,30 +224,25 @@ class ColorPicker(object):
 		"""lets the user pick a color."""
 		self.view.present(
 			"sheet",
-			orientations=("landscape", "landscape_right", "landscape_left")
+			orientations=ORIENTATIONS,
 			)
 		self.view.wait_modal()
 		return self.rgb
 
-'''
-# not used; definition incomplete
-class FilePicker(object):
-	"""this object can be used to prompt a user after a file."""
-	def __init__(self, fp):
-		if not os.path.exists
-		if os.path.isfile(fp):
-			self.path = os.path.dirname(fp)
-		else:
-			self.path = fp
-		self.view = ui.View()
-'''
 
-
-class ConfigGui(object):
-	"""The GUI"""
+class ConfigGui(ui.View):
+	"""
+	The main GUI.
+	This class was originaly designed to use dialogs.
+	Todo: rewrite as ui.View subclass.
+	"""
 	def __init__(self):
-		self.view = ui.TableView()
-		self.view.delegate = self.view.data_source = self
+		ui.View.__init__(self)
+		self.background_color = "#ffffff"
+		self.table = ui.TableView()
+		self.table.delegate = self.table.data_source = self
+		self.table.flex = "WH"
+		self.add_subview(self.table)
 		self.subview_open = False
 		self.cur_tf = None
 		self.hide_kb_button = ui.ButtonItem(
@@ -253,11 +250,11 @@ class ConfigGui(object):
 			action=self.hide_keyboard,
 			enabled=False,
 			)
-		self.view.right_button_items = (self.hide_kb_button,)
+		self.right_button_items = (self.hide_kb_button,)
 	
 	def show(self):
 		"""shows the gui"""
-		self.view.present()
+		self.present(orientations=ORIENTATIONS)
 		# launch a background thread
 		# we can not use ui.in_background here
 		# because some dialogs would not open anymoe
@@ -274,7 +271,7 @@ class ConfigGui(object):
 			hide_cancel_button=True,
 			)
 		while True:
-			self.view.wait_modal()
+			self.wait_modal()
 			if not self.subview_open:
 				break
 		console.alert(
@@ -284,7 +281,7 @@ class ConfigGui(object):
 			hide_cancel_button=True,
 			)
 	
-	# data source functions. see docs
+	# data source and delegate functions. see docs
 	
 	def tableview_number_of_sections(self, tv):
 		return len(SECTIONS)
@@ -372,6 +369,7 @@ class ConfigGui(object):
 			tf.y = (cell.height / 2.0) - (tf.height / 2.0)
 			tf.x = (cell.width - tf.width) - (cell.width / 20)
 		elif otype == TYPE_FILE:
+			# incomplete!
 			b = ui.Button()
 			fp = _stash.config.get(sn, info["option_name"])
 			fn = fp.replace(os.path.dirname(fp), "", 1)
@@ -405,6 +403,13 @@ class ConfigGui(object):
 	def textfield_did_begin_editing(self, tf):
 		self.cur_tf = tf
 		self.hide_kb_button.enabled = True
+	
+	def keyboard_frame_did_change(self, frame):
+		"""called when the keyboard appears/disappears."""
+		h = frame[3]
+		self.table.height = self.height - h
+		if h == 0:
+			self.hide_kb_button.enabled = False
 		
 	def save(self):
 		"""saves the config."""
@@ -418,6 +423,8 @@ class ConfigGui(object):
 		self.cur_tf.end_editing()
 		self.cur_tf = None
 		self.hide_kb_button.enabled = False
+	
+	# callbacks
 	
 	@ui.in_background
 	def switch_changed(self, switch, name):
@@ -445,7 +452,7 @@ class ConfigGui(object):
 		rgb = picker.get_color()
 		self.subview_open = False
 		_stash.config.set(section, option, str(rgb))
-		self.view.reload_data()
+		self.table.reload_data()
 		self.save()
 	
 	@ui.in_background
@@ -456,20 +463,6 @@ class ConfigGui(object):
 		_stash.config.set(section, option, text)
 		self.save()
 	
-	# not used
-	'''
-	@ui.in_background
-	def choose_file(self, b, name, fp):
-		"""called when the user wants to change a color."""
-		section, option = name
-		picker = FilePicker(fp)
-		self.subview_open = True
-		rgb = picker.get_file()
-		self.subview_open = False
-		_stash.config.set(section, option, str(rgb))
-		self.view.reload_data()
-		self.save()
-	'''
 
 if __name__ == "__main__":
 	ConfigGui().show()
