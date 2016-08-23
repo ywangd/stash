@@ -14,16 +14,29 @@ ORIENTATIONS = ("landscape", "landscape_left", "landscape_right")
 TYPE_BOOL = 1
 TYPE_INT = 2
 TYPE_STR = 3
-TYPE_FILE = 4
+TYPE_FILE = 4  # NotImplemented
 TYPE_COLOR = 5
 TYPE_CHOICE = 6
 TYPE_LABEL = 7
+TYPE_COMMAND = 9
 
 CONFIG_PATH = os.path.join(
 	os.getenv("STASH_ROOT"),  # not using shcommons._STASH_ROOT here
 	_STASH_CONFIG_FILES[0],
 	)
 
+# define functions for commands
+
+@ui.in_background
+def visit_homepage():
+	"""opens the StaSh homepage."""
+	mv = cfg_view  # [global] the main view
+	mv.subview_open = True
+	v = ui.WebView()
+	v.present()
+	v.load_url("https://www.github.com/ywangd/stash/")
+	v.wait_modal()
+	mv.subview_open = False
 
 # define all options as a dict of:
 #	section -> list of dicts of
@@ -118,19 +131,31 @@ OPTIONS = {
 			"type": TYPE_STR,
 		},
 		],
-	"info": [
+	"StaSh": [
 		{
-			"display_name": "StaSh",
+			"display_name": "Version",
 			"option_name": None,
 			"type": TYPE_LABEL,
 			"value": _stash.__version__,
+		},
+		{
+			"display_name": "Update",
+			"option_name": None,
+			"type": TYPE_COMMAND,
+			"command": "selfupdate",
+		},
+		{
+			"display_name": "Visit Homepage",
+			"option_name": None,
+			"type": TYPE_COMMAND,
+			"command": visit_homepage,
 		},
 		],
 }
 
 # section order
 SECTIONS = [
-	"info",
+	"StaSh",
 	"system",
 	"display",
 	]
@@ -230,11 +255,9 @@ class ColorPicker(object):
 		return self.rgb
 
 
-class ConfigGui(ui.View):
+class ConfigView(ui.View):
 	"""
 	The main GUI.
-	This class was originaly designed to use dialogs.
-	Todo: rewrite as ui.View subclass.
 	"""
 	def __init__(self):
 		ui.View.__init__(self)
@@ -243,6 +266,16 @@ class ConfigGui(ui.View):
 		self.table.delegate = self.table.data_source = self
 		self.table.flex = "WH"
 		self.add_subview(self.table)
+		self.ai = ui.ActivityIndicator()
+		self.ai.style = ui.ACTIVITY_INDICATOR_STYLE_WHITE_LARGE
+		self.ai.hides_when_stopped = True
+		self.ai.x = self.width / 2.0 - (self.ai.width / 2.0)
+		self.ai.y = self.height / 2.0 - (self.ai.height / 2.0)
+		self.ai.flex = "LRTB"
+		self.ai.background_color = "#000000"
+		self.ai.alpha = 0.7
+		self.ai.corner_radius = 5
+		self.add_subview(self.ai)
 		self.subview_open = False
 		self.cur_tf = None
 		self.hide_kb_button = ui.ButtonItem(
@@ -383,7 +416,25 @@ class ConfigGui(ui.View):
 			b.y = (cell.height / 2.0) - (b.height / 2.0)
 			b.x = (cell.width - b.width) - (cell.width / 20)
 			b.flex = "LWH"
-		title = info["display_name"]
+		elif otype == TYPE_COMMAND:
+			b = ui.Button()
+			b.title = info["display_name"]
+			cmd = info["command"]
+			if isinstance(cmd, (str, unicode)):
+				f = lambda c=cmd: _stash(c, add_to_history=None)
+			else:
+				f = lambda c=cmd: cmd()
+			callback = lambda s, self=self, f=f: self.run_func(f)
+			b.action = callback
+			cell.content_view.add_subview(b)
+			b.flex = "WH"
+			b.frame = cell.frame
+			cell.remove_subview(cell.text_label)
+		
+		if otype != TYPE_COMMAND:
+			title = info["display_name"]
+		else:
+			title = ""
 		cell.text_label.text = title
 		return cell
 	
@@ -463,6 +514,16 @@ class ConfigGui(ui.View):
 		_stash.config.set(section, option, text)
 		self.save()
 	
+	@ui.in_background
+	def run_func(self, f):
+		"""run a function while showing an ActivityIndicator()"""
+		self.ai.start()
+		try:
+			f()
+		finally:
+			self.ai.stop()
+	
 
 if __name__ == "__main__":
-	ConfigGui().show()
+	cfg_view = ConfigView()
+	cfg_view.show()
