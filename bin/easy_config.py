@@ -27,6 +27,7 @@ CONFIG_PATH = os.path.join(
 
 # define functions for commands
 
+
 @ui.in_background
 def visit_homepage():
 	"""opens the StaSh homepage."""
@@ -165,6 +166,7 @@ class ColorPicker(object):
 	"""
 	This object will prompt the user for a color.
 	Parts of this are copied from the pythonista examples.
+	TODO: rewrite as a subclass of ui.View()
 	"""
 	def __init__(self, default=(0.0, 0.0, 0.0)):
 		self.r, self.g, self.b, = default
@@ -241,12 +243,15 @@ class ColorPicker(object):
 	@property
 	def rgb_255(self):
 		"""
-		returns the selected color as a rgb tuple like (255, 255, 255) """
+		returns the selected color as a rgb tuple like (255, 255, 255)
+		"""
 		r, g, b = self.rgb
 		return (r * 255, g * 255, b * 255)
 	
 	def get_color(self):
-		"""lets the user pick a color."""
+		"""
+		shows the view, wait until it is closed and the. return the selected color.
+		"""
 		self.view.present(
 			"sheet",
 			orientations=ORIENTATIONS,
@@ -286,7 +291,7 @@ class ConfigView(ui.View):
 		self.right_button_items = (self.hide_kb_button,)
 	
 	def show(self):
-		"""shows the gui"""
+		"""shows the view and starts a thread."""
 		self.present(orientations=ORIENTATIONS)
 		# launch a background thread
 		# we can not use ui.in_background here
@@ -525,5 +530,6 @@ class ConfigView(ui.View):
 	
 
 if __name__ == "__main__":
+	# main code
 	cfg_view = ConfigView()
 	cfg_view.show()
