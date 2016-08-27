@@ -2,13 +2,19 @@
 import os
 import ast
 import threading
+import imp
 import console
 import ui
-from stash.system.shcommon import _STASH_CONFIG_FILES
+from stash.system.shcommon import _STASH_CONFIG_FILES, _STASH_ROOT
+
 
 _stash = globals()["_stash"]
 
 ORIENTATIONS = ("landscape", "landscape_left", "landscape_right")
+PAA_PATH= os.path.join(
+		_STASH_ROOT,
+		"lib/pythonista_add_action.py"
+		)
 
 # define option types
 TYPE_BOOL = 1
@@ -38,6 +44,35 @@ def visit_homepage():
 	v.load_url("https://www.github.com/ywangd/stash/")
 	v.wait_modal()
 	mv.subview_open = False
+
+
+@ui.in_background
+def add_editor_action():
+	"""
+	adds an editor action to the 'wrench' menu in the editor which
+	launches launch_stash.py
+	"""
+	mv = cfg_view  # [global] the main view
+	mv.ai.start()
+	try:
+		try:
+			paa = imp.load_source("paa", PAA_PATH)
+		except IOError:
+			# install paa
+			# we should not do this on module-level to improve
+			# offline capatibility
+			install_paa()
+			paa = imp.load_source("paa", PAA_PATH)
+		lsp = "/launch_stash.py"  # TODO: auto-detect
+		paa.add_action(
+			lsp,
+			"monitor",
+			"000000",
+			"StaSh",
+			)
+		paa.save_defaults()
+	finally:
+		mv.ai.stop()
 
 # define all options as a dict of:
 #	section -> list of dicts of
@@ -146,6 +181,12 @@ OPTIONS = {
 			"command": "selfupdate",
 		},
 		{
+			"display_name": "Create Editor Shortcut",
+			"option_name": None,
+			"type": TYPE_COMMAND,
+			"command": add_editor_action,
+		},
+		{
 			"display_name": "Visit Homepage",
 			"option_name": None,
 			"type": TYPE_COMMAND,
@@ -161,6 +202,17 @@ SECTIONS = [
 	"display",
 	]
 
+
+def install_paa():
+	"""
+	installs https://gist.github.com/jsbain/c9f42c81c53b276b6560.
+	The name is changed to reduce a chance of a naming-conflict.
+	"""
+	url = "https://gist.github.com/jsbain/c9f42c81c53b276b6560/raw/"
+	env = os.environ
+	cmd = "wget -o {p} {url}".format(url=url, p=PAA_PATH)
+	_stash(cmd, add_to_history=False)
+	
 
 class ColorPicker(object):
 	"""
@@ -426,7 +478,7 @@ class ConfigView(ui.View):
 			b.title = info["display_name"]
 			cmd = info["command"]
 			if isinstance(cmd, (str, unicode)):
-				f = lambda c=cmd: _stash(c, add_to_history=None)
+				f = lambda c=cmd: _stash(c, add_to_history=False)
 			else:
 				f = lambda c=cmd: cmd()
 			callback = lambda s, self=self, f=f: self.run_func(f)
