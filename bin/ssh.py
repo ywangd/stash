@@ -38,13 +38,13 @@ _stash = globals()['_stash']
 try:
     import pyte
 except ImportError:
-    _stash('pip install pyte 0.4.10')
+    _stash('pip install pyte==0.4.10')
 
 import paramiko
 
 if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
-    _stash('pip install paramiko 1.16.0')
+    _stash('pip install paramiko==1.16.0')
     print 'Please restart Pythonista for changes to take full effect'
     sys.exit(0)
 
