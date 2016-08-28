@@ -18,6 +18,7 @@ def main(args):
     ns = ap.parse_args(args)
 
     _stash = globals()['_stash']
+    exitcode = 0
     sizeof_fmt = _stash.libcore.sizeof_fmt
 
     joiner = '\n' if ns.one_line or ns.long else ' '
@@ -74,6 +75,7 @@ def main(args):
         for f in ns.files:
             if not os.path.exists(f):
                 out_miss.append('ls: %s: No such file or directory' % f)
+                exitcode = 1
             elif os.path.isdir(f):
                 out_dir.append('%s/:\n%s\n' %
                                (f,
@@ -88,6 +90,7 @@ def main(args):
             print
         for o in out_dir:
             print o
+    sys.exit(exitcode)
 
 
 if __name__ == '__main__':
