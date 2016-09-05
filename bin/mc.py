@@ -6,17 +6,14 @@ import os
 import shutil
 import cmd
 import sys
-import ftplib
 import tempfile
-import base64
-import pickle
 import shlex
-import argparse
 
-import clipboard
-import keychain
-
-from dropbox import client, session, rest
+from stashutils.fsi.errors import OperationFailure, IsDir, IsFile
+from stashutils.fsi.errors import AlreadyExists
+from stashutils.fsi.local import LocalFSI
+from stashutils.fsi.FTP import FTPFSI
+from stashutils.fsi.DropBox import DropboxFSI
 
 _stash = globals()["_stash"]
 Text = _stash.text_color  # alias for cleaner code
@@ -26,8 +23,6 @@ TODO:
 		-fix mv command still deletes source directoy when file-mv failed (mid prio)
 		-fix spelling mistakes in help (low prio)
 		-improve documentation (low prio)
-		-add ability to logout in dropbox (?)
-		-add multiuser functionality to dropbox (?)
 		-fix infinite loop when copying a directory into itself
 			=> I initialy solved this by  doing a walk before a copy,
 				but this was removed as it lead to ugly code
@@ -36,7 +31,6 @@ TODO:
 		-make run command transferring file deletions in "w"-mode (low prio)
 		-make run command more efficient (only cp file changes) (low prio)
 		-cleanup code (low prio)
-		-fix dropbox-fsi freezing randomly (dropbox ddos-protection?)
 """
 
 # =====================
@@ -45,204 +39,9 @@ TODO:
 INTERN_FS_ID = "_<intern>"  # the id used for internal commands
 assert " " not in INTERN_FS_ID, "Invalid configuration!"
 
-# ======================
-# Errors
-
-
-class OperationFailure(IOError):
-	"""raise this if a operation (e.g. cd) fails.
-	The FSI is responsible for undoing errors."""
-	pass
-
-
-class IsDir(OperationFailure):
-	"""raise this if a command only works on a file but a dirname is passed."""
-	pass
-
-
-class IsFile(OperationFailure):
-	"""raise this if a command only works on a dir but a filename is passed."""
-	pass
-
-
-class AlreadyExists(OperationFailure):
-	"""raise this if something already exists."""
-	pass
-
 
 # ===================
 # FSIs
-
-class BaseFSI(object):
-	"""
-Baseclass for all FSIs.
-Other FSIs should subclass this.
-This class currently only serves as a documentation, but this may change.
-"""
-	def __init__(self, master):
-		"""called on __init__"""
-		self.master = master
-	
-	def connect(self, command):
-		"""
-Called to 'connect' to a filesystem.
-This should be no-op on if no connection nor setup is required.
-'command' is a string the user passed to the connect-command.
-This should return True on success, otherwise a string describing the error.
-"""
-		return "Not Implemented"
-
-	def repr(self):
-		"""
-this should return a string identifying the instance of this interface.
-"""
-		return "Unknown Interface"
-
-	def listdir(self):
-		"""
-called for listing a dir.
-The FSI is responsible for keeping track of the cwd.
-This should return a list of strings.
-'..' doesnt need to be added.
-"""
-		return []
-
-	def cd(self, name):
-		"""this should change the cwd to name."""
-		raise OperationFailure("NotImplemented")
-
-	def get_path(self):
-		"""this should return the current path as a string."""
-		return "/"
-
-	def remove(self, name):
-		"""this should remove name. name may refer either to a dir or a file."""
-		raise OperationFailure("NotImplemented")
-
-	def open(self, name, mode):
-		"""
-		this should return a file-like object opened in mode mode.
-		"""
-		raise OperationFailure("NotImplemented")
-
-	def mkdir(self, name):
-		"""this should create a dir."""
-		raise OperationFailure("NotImplemented")
-
-	def close(self):
-		"""this should close the interface.
-		There is a chance that this may not be called."""
-		pass
-
-	def isdir(self, name):
-		"""this should return True if name is an existing directory and
-		False if not."""
-		raise OperationFailure("NotImplemented")
-
-	def isfile(self, name):
-		"""this should return wether name is an existing file."""
-		# default: not isdir(). problem: no exist check
-		return not self.isdir(name)
-
-
-class LocalFSI(BaseFSI):
-	"""A FSI for the local filesystem."""
-	def __init__(self, master):
-		self.master = master
-		self.path = os.getcwd()
-
-	def connect(self, args):
-		return True  # no setup required; connect is allways successful
-
-	def repr(self):
-		return "Local Filesystem [CWD: {p}]".format(p=self.path)
-
-	def listdir(self):
-		try:
-			return os.listdir(self.path)
-		except Exception as e:
-			raise OperationFailure(str(e))
-
-	def cd(self, name):
-		if name == "..":
-			self.path = os.path.dirname(self.path)
-			return
-		if os.path.isabs(name):
-			ap = name
-		else:
-			ap = os.path.join(self.path, name)
-		if not os.path.exists(ap):
-			raise OperationFailure("Not found")
-		elif not os.path.isdir(ap):
-			raise IsFile()
-		else:
-			self.path = ap
-
-	def get_path(self):
-		return self.path
-
-	def remove(self, name):
-		if os.path.isabs(name):
-			ap = name
-		else:
-			ap = os.path.join(self.path, name)
-		if not os.path.exists(ap):
-			raise OperationFailure("Not found")
-		elif os.path.isdir(ap):
-			try:
-				shutil.rmtree(ap)
-			except Exception as e:
-				raise OperationFailure(str(e))
-		elif os.path.isfile(ap):
-			try:
-				os.remove(ap)
-			except Exception as e:
-				raise OperationFailure(str(e))
-		else:
-			raise OperationFailure("Unknown type")
-
-	def open(self, name, mode):
-		if os.path.isabs(name):
-			ap = name
-		else:
-			ap = os.path.join(self.path, name)
-		if os.path.isdir(ap):
-			raise IsDir()
-		else:
-			try:
-				return open(ap, mode)
-			except Exception as e:
-				raise OperationFailure(str(e))
-
-	def mkdir(self, name):
-		if os.path.isabs(name):
-			ap = name
-		else:
-			ap = os.path.join(self.path, name)
-		if os.path.exists(ap):
-			raise AlreadyExists("Already exists")
-		else:
-			try:
-				os.makedirs(ap)
-			except Exception as e:
-				raise OperationFailure(str(e))
-
-	def close(self):
-		pass
-
-	def isdir(self, name):
-		if os.path.isabs(name):
-			ap = name
-		else:
-			ap = os.path.join(self.path, name)
-		return os.path.isdir(ap)
-
-	def isfile(self, name):
-		if os.path.isabs(name):
-			ap = name
-		else:
-			ap = os.path.join(self.path, name)
-		return os.path.isfile(ap)
 
 
 class InternalFSI(LocalFSI):
@@ -251,502 +50,8 @@ class InternalFSI(LocalFSI):
 		return "<Internal FSI>"
 
 
-class FTPFSI(BaseFSI):
-	"""a FSI for FTP-server.
-Unfortunally, FTP was designed as a human-readable protocol.
-Due to this, the protocol is not completly unified.
-This means, that this FSI lad not work on all FTP-servers."""
-	def __init__(self, master):
-		self.master = master
-		self.path = "/"
-		self.ftp = None
-		self.host = None
-
-	def connect(self, cmd):
-		if self.ftp is not None:
-			return "Interface already connected"
-		args = shlex.split(cmd)
-		if len(args) < 1 or len(args) > 5:
-			return "Invalid argument count"
-		user, pswd = None, None
-		debug = 0
-		# TODO: make the following code less ugly
-		if len(args) == 1:
-			host = args[0]
-			port = 21
-			secure = False
-		elif len(args) == 2:
-			host, port = args
-			secure = False
-		elif len(args) == 5 or len(args) == 4:
-			user = args[2]
-			pswd = args[3]
-			secure = False
-			host = args[0]
-			port = args[1]
-		if len(args) not in (3, 5):
-			# this prevents the elifs from beeing execeuted
-			pass
-		elif args[-1] == "-s":
-			host, port = args[:2]
-			secure = True
-		elif args[-1] == "-n":
-			host, port = args[:2]
-			secure = False
-		elif args[-1] == "-d":
-			host, port = args[:2]
-			secure = True
-			debug = 2
-		else:
-			return "Unknown argument(s)"
-		self.host = host
-		self.port = port
-		self.user = user
-		try:
-			port = int(port)
-		except:
-			return "Invalid port-argument"
-		if secure:
-			self.ftp = ftplib.FTP_TLS()
-		else:
-			self.ftp = ftplib.FTP()
-		self.ftp.set_debuglevel(debug)
-		try:
-			self.ftp.connect(host, port)
-		except Exception as e:
-			self.close()
-			if isinstance(e, EOFError):
-				return "EOF"
-			return e.message
-		else:
-			if secure:
-				self.master.stdout.write(Text("Done", "green"))
-				self.master.stdout.write(".\nSecuring Connection... ")
-				try:
-					self.ftp.prot_p()
-				except Exception as e:
-					self.close()
-					return e.message
-			self.master.stdout.write(Text("Done", "green"))
-			self.master.stdout.write(".\nLogging in... ")
-			try:
-				self.ftp.login(user, pswd)
-			except Exception as e:
-				self.close()
-				return e.message
-			else:
-				self.path = self.ftp.pwd()
-				return True
-
-	def close(self):
-		if self.ftp is not None:
-			try:
-				self.ftp.quit()
-			except:
-				try:
-					self.ftp.close()
-				except:
-					pass
-
-	def repr(self):
-		raw = "FTP-Session for {u} on {h}:{p}"
-		fo = raw.format(u=self.user, h=self.host, p=self.port)
-		return fo
-
-	def cd(self, name):
-		ap = os.path.join(self.path, name)
-		try:
-			self.ftp.cwd(ap)
-		except Exception as e:
-			raise OperationFailure(str(e))
-		else:
-			self.path = ap
-
-	def mkdir(self, name):
-		ap = os.path.join(self.path, name)
-		try:
-			self.ftp.mkd(ap)
-		except Exception as e:
-			# test wether the dir exists
-			self.get_path()
-			try:
-				self.cd(ap)
-			except Exception:
-				raise e
-			else:
-				raise AlreadyExists("Already exists!")
-			raise OperationFailure(str(e))
-
-	def listdir(self):
-		try:
-			content = self.ftp.nlst(self.path)
-			ret = [e.split("/")[-1] for e in content]
-			return ret
-		except Exception as e:
-			raise OperationFailure(str(e))
-
-	def remove(self, name):
-		ap = os.path.join(self.path, name)
-		# we dont know wether target is a server or a file, so try both
-		try:
-			self.ftp.delete(ap)
-		except Exception as e:
-			try:
-				self.ftp.rmd(ap)
-			except Exception as e2:
-				text = Text(
-					"Error trying to delete file: {e}!\n".format(e=e.message), "red"
-					)
-				self.master.stdout.write(text)
-				text = Text(
-					"Error trying to delete dir (after file-deletion failed)!\n", "red"
-					)
-				self.master.stdout.write(text)
-				raise OperationFailure(e2.message)
-
-	def open(self, name, mode="rb"):
-		ap = os.path.join(self.path, name)
-		if mode in ("r", "rb"):
-			try:
-				tf = tempfile.TemporaryFile()
-				self.ftp.retrbinary("RETR " + ap, tf.write, 4096)
-				tf.seek(0)
-			except Exception as e:
-				raise OperationFailure(e.message)
-			return tf
-		elif "w" in mode:
-			return FTP_Upload(self.ftp, ap, mode)
-
-	def get_path(self):
-		return self.ftp.pwd()
-
-	def isdir(self, name):
-		ap = os.path.join(self.path, name)
-		op = self.get_path()
-		try:
-			self.ftp.cwd(ap)
-			return True
-		except:
-			return False
-		finally:
-			self.ftp.cwd(op)
-
-
-class DropboxFSI(BaseFSI):
-	"""A FSI for accessing dropbox."""
-	def __init__(self, master):
-		self.master = master
-		self.path = "/"
-		self.client = None
-
-	def connect(self, cmd):
-		try:
-			self.client = get_dropbox_client(self.master.stdin, self.master.stdout)
-		except Exception as e:
-			return e.message
-		else:
-			return True
-
-	def get_path(self):
-		return self.path
-
-	def repr(self):
-		info = self.client.account_info()
-		name = info["display_name"]
-		return "{name}'s Dropbox [CWD: {p}]".format(name=name, p=self.path)
-
-	def close(self):
-		pass
-
-	def cd(self, name):
-		if name.startswith("/"):
-			path = name
-		else:
-			path = os.path.join(self.path, name)
-		if name == "..":
-			self.path = "/".join(self.path.split("/")[:-1])
-			if self.path == "":
-				self.path = "/"
-			return
-		self.path = path
-		try:
-			meta = self.client.metadata(path)
-			if not meta["is_dir"]:
-				raise IsDir()
-		except rest.ErrorResponse:
-			raise OperationFailure("Not found!")
-		else:
-			self.path = path
-
-	def listdir(self):
-		try:
-			meta = self.client.metadata(self.path)
-		except rest.ErrorResponse as e:
-			raise OperationFailure(e.error_msg)
-		return [el["path"].split("/")[-1] for el in meta["contents"]]
-
-	def mkdir(self, name):
-		if name.startswith("/"):
-			path = name
-		else:
-			path = os.path.join(self.path, name)
-		try:
-			self.client.file_create_folder(path)
-		except rest.ErrorResponse as e:
-			if e.status == 403:
-				raise AlreadyExists("Already exists!")
-			raise OperationFailure("Can not create dir!")
-
-	def remove(self, name):
-		if name.startswith("/"):
-			path = name
-		else:
-			path = os.path.join(self.path, name)
-		try:
-			self.client.file_delete(path)
-		except rest.ErrorResponse:
-			raise OperationFailure("Can not delete target!")
-
-	def isdir(self, name):
-		if name.startswith("/"):
-			path = name
-		else:
-			path = os.path.join(self.path, name)
-		try:
-			meta = self.client.metadata(path)
-			return meta["is_dir"]
-		except rest.ErrorResponse:
-			return False
-
-	def isfile(self, name):
-		if name.startswith("/"):
-			path = name
-		else:
-			path = os.path.join(self.path, name)
-		try:
-			meta = self.client.metadata(path)
-			return not meta["is_dir"]
-		except rest.ErrorResponse:
-			return False
-
-	def open(self, name, mode="rb"):
-		ap = os.path.join(self.path, name)
-		if mode in ("r", "rb"):
-			try:
-				tf = tempfile.TemporaryFile()
-				conn = self.client.get_file(ap)
-				while True:
-					data = conn.read(4096)
-					if data == "":
-						break
-					tf.write(data)
-				tf.seek(0)
-			except Exception as e:
-				raise OperationFailure(e.message)
-			return tf
-		elif "w" in mode:
-			return Dropbox_Upload(self.client, ap, mode)
-
-
 # =============================
 # utility classes and functions
-
-class FTP_Upload(object):
-	"""utility class used for FTP-uploads.
-this class creates a tempfile, which is uploaded to the server when closed."""
-	def __init__(self, ftp, path, mode):
-		self.ftp = ftp
-		self.path = path
-		self.mode = mode
-		self.tf = tempfile.TemporaryFile()
-
-	def write(self, data):
-		self.tf.write(data)
-
-	def close(self):
-		self.tf.seek(0)
-		try:
-			self.ftp.storbinary("STOR "+self.path, self.tf, 4096)
-		except Exception as e:
-			raise OperationFailure(e.message)
-		finally:
-			self.tf.close()
-
-
-class Dropbox_Upload(object):
-	"""utility class used for Dropbox-uploads.
-this class creates a tempfile, which is uploaded to the server when closed."""
-	def __init__(self, client, path, mode):
-		self.client = client
-		self.path = path
-		self.mode = mode
-		self.tf = tempfile.TemporaryFile()
-
-	def write(self, data):
-		self.tf.write(data)
-
-	def close(self):
-		self.tf.seek(0)
-		try:
-			self.client.put_file(self.path, self.tf, overwrite=True)
-		except Exception as e:
-			raise OperationFailure(e.message)
-		finally:
-			self.tf.close()
-
-
-def open_url(url):
-	"""opens a url in the webbrowser."""
-	cmd = "webviewer {u}".format(u=url)
-	_stash(cmd)
-
-
-def dropbox_setup(stdin, stdout):
-	"""helper-interface to setup dropbox."""
-	stdout.write(Text("="*40+"\nDropbox-setup\n"+"="*25+"\n", "blue"))
-	header = "This interface will help you setup your dropbox access."
-	abort = Text("abort", "yellow")
-	choices = (
-		"I already have an appkey+secret",
-		"I dont have a appkey+secret", abort
-		)
-	choice = menu(header, choices, stdin, stdout)
-	if choice == 2:
-		raise OperationFailure("Setup aborted.")
-	elif choice == 0:
-		pass
-	elif choice == 1:
-		stdout.write("Please read this. After reading, press enter to continue.\n")
-		text1 = "To allow mc access to your dropbox, "
-		text2 = "you will have to perform the following steps:\n"
-		stdout.write(text1 + text2)
-		stdout.write("  1) Create a dropbox account (if you dont have one yet)\n")
-		stdout.write("  2) Upgrade your Account to a dropbox-developer account.\n")
-		stdout.write("  3) Create a dropbox-app.\n")
-		stdout.write("  4) Enter your app-key,app-secret and access-type in mc.\n")
-		stdout.write(Text("Continue?", "yellow"))
-		stdin.readline()
-		while True:
-			header = "Select action"
-			choices = (
-				"Register to dropbox",
-				"Go to the developer-page",
-				"proceed",
-				abort)
-			choice = menu(header, choices, stdin, stdout)
-			if choice == 0:
-				open_url("https://www.dropbox.com/register")
-			elif choice == 1:
-				open_url("https://developer.dropbox.com")
-			elif choice == 2:
-				break
-			elif choice == 3:
-				raise OperationFailure("Setup aborted.")
-	stdout.write("Enter app-key (leave empty to use clipboard):\n>")
-	appkey = stdin.readline().strip()
-	if len(appkey) == 0:
-		appkey = clipboard.get()
-		stdout.write("Using clipboard (length={l}).\n".format(l=len(appkey)))
-	stdout.write("Enter app-secret (leave empty to use clipboard):\n>")
-	appsecret = stdin.readline().strip()
-	if len(appsecret) == 0:
-		appsecret = clipboard.get()
-		stdout.write("Using clipboard (length={l}).\n".format(l=len(appsecret)))
-	while True:
-		stdout.write("Enter access type (dropbox/app_folder):\n")
-		accesstype = stdin.readline().strip()
-		if accesstype not in ("dropbox", "app_folder"):
-			text = Text(
-				"Invalid access type! Valid values: 'dropbox' and 'app_folder'.\n", "red"
-				)
-			stdout.write(text)
-		else:
-			break
-	stdout.write("Creating session... ")
-	sess = session.DropboxSession(appkey, appsecret, accesstype)
-	stdout.write(Text("Done", "green"))
-	stdout.write(".\nObtaining request token... ")
-	request_token = sess.obtain_request_token()
-	stdout.write(Text("Done", "green"))
-	stdout.write(".\nBuilding authorization-URL... ")
-	url = sess.build_authorize_url(request_token)
-	stdout.write(Text("Done", "green"))
-	stdout.write(".\nPlease press enter after you allowed access.")
-	open_url(url)
-	stdin.readline()
-	stdout.write("Obtaining Access token... ")
-	access_token = sess.obtain_access_token(request_token)
-	stdout.write(Text("Done", "green"))
-	stdout.write(".\nSaving... ")
-	save_dropbox_data(appkey, appsecret, accesstype, access_token)
-	stdout.write(Text("Done", "green"))
-	stdout.write(".\n")
-	return True
-
-
-def save_dropbox_data(key, sec, access_type, access_token):
-	"""saves dropbox access information."""
-	data = {
-		"app_key": key,
-		"app_sec": sec,
-		"access_type": access_type,
-		"access_token_key": access_token.key,
-		"access_token_sec": access_token.secret
-	}
-	dumped = pickle.dumps(data)
-	encoded = base64.b64encode(dumped)
-	keychain.set_password("stash:mc", "dropbox", encoded)
-
-
-def load_dropbox_data():
-	"""load dropbox access information."""
-	encoded = keychain.get_password("stash:mc", "dropbox")
-	if encoded is None:
-		return None
-	dumped = base64.b64decode(encoded)
-	raw = pickle.loads(dumped)
-	return raw
-
-
-def get_dropbox_client(stdin, stdout):
-	"""checks wether an access_token in abiable, creating one if not.
-	returns a dropbox.DropboxClient"""
-	data = load_dropbox_data()
-	if data is None:
-		stdout.write("\n")
-		dropbox_setup(stdin, stdout)
-		data = load_dropbox_data()
-	appkey = data["app_key"]
-	appsec = data["app_sec"]
-	act = data["access_type"]
-	sess = session.DropboxSession(appkey, appsec, act)
-	atk = data["access_token_key"]
-	ats = data["access_token_sec"]
-	# token=session.OAuthToken(atk,ats)
-	sess.set_token(atk, ats)
-	dbclient = client.DropboxClient(sess)
-	return dbclient
-
-		
-def menu(header, choices, stdin=None, stdout=None):
-	"""a command-line menu."""
-	if stdin is None:
-		stdin = sys.stdin
-	if stdout is None:
-		stdout = sys.stdout
-	assert len(choices) > 0, ValueError("No choices!")
-	while True:
-		stdout.write(header + "\n")
-		for i, n in enumerate(choices):
-			stdout.write("   {i: >3}: {n}\n".format(i=i, n=n))
-		stdout.write("n?>")
-		answer = stdin.readline().strip()
-		try:
-			answer = int(answer)
-			return answer
-		except (KeyError, ValueError, IndexError):
-			stdout.write("\n"*20)
-
 
 def modified(path, prev=None):
 	"""if prev is None, calculates a state to be later passed to modified().
@@ -831,9 +136,9 @@ class McCmd(cmd.Cmd):
 			return
 		ID, name = args[0], args[1]
 		if len(args) > 2:
-			args = " ".join(args[2:])
+			args_to_pass = tuple(args[2:])
 		else:
-			args = ""
+			args_to_pass = ()
 		if ID in self.FSIs:
 			self.stdout.write(Text("Error: ID already registered!\n", "red"))
 			return
@@ -846,7 +151,7 @@ class McCmd(cmd.Cmd):
 		self.stdout.write(Text("Done", "green"))
 		self.stdout.write(".\nConnecting... ")
 		try:
-			state = fsi.connect(args)
+			state = fsi.connect(*args_to_pass)
 		except OperationFailure as e:
 			self.stdout.write(Text("Error: {e}!\n".format(e=e.message), "red"))
 			return
@@ -1482,6 +787,8 @@ dropbox: a Dropbox-client (slow!)
 	Use Dropbox as a filesystem.
 	INFO:
 		The Dropbox-FSI may be very slow.
+		To setup dropbox support, use 'dropbox_setup' in StaSh
+		or '!dropbox_setup' in mc.
 	NOTE:
 		The Dropbox-FSI doesnt work on the dropbox-files.
 		Instead, it uses a workaround:
@@ -1491,16 +798,11 @@ dropbox: a Dropbox-client (slow!)
 				uploaded when it is closed.
 			This leads to some 'weird' operation times.
 		The Dropbox-FSI requires a one-time setup and a dropbox developer account.
-		The Dropbox-FSI does not support loging in with a username other
-			than the one used in the setup.
-		If you want to logout, call mc with the '--reset_dropbox'-option
+		To start the setup, use 'dropbox_setup' in StaSh.
 	USAGE:
 		connect <ID> dropbox
 		
 		'ID': see 'help connect'
-		
-		The first time you connect to your dropbox, a one-time setup will be started.
-		The setup will help you configuring your dropbox.
 		
 """
 		self.stdout.write(av + "\n")
@@ -1549,12 +851,4 @@ dropbox: a Dropbox-client (slow!)
 		self.stdout.write(av+"\n")
 
 if __name__ == "__main__":
-	parser = argparse.ArgumentParser(description=__doc__)
-	parser.add_argument(
-		"--reset_dropbox", action="store_true",
-		help="resets the dropbox configuration", dest="db_reset")
-	ns = parser.parse_args()
-	if ns.db_reset:
-		keychain.delete_password("stash:mc", "dropbox")
-		sys.stdout.write(Text("Dropbox configuration deleted.\n", "red"))
 	McCmd().cmdloop()
