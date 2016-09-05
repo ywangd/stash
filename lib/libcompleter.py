@@ -69,15 +69,6 @@ _subcmd_cfg = {
             'with_normal_completion': False,
         },
     },
-    "mc": {
-        "-": {
-            'candidate_groups': [
-                [None, ['--reset_dropbox', '-h', '--help']],
-            ],
-            'blank_completion': True,
-            'with_normal_completion': False,
-        },
-    },
     "monkeylord": {
         "1": {
             "candidates": ["list", "enable", "disable"],
