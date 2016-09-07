@@ -3,8 +3,10 @@ import sys
 import imp
 import os
 
+from stashutils.core import get_stash
 
-_stash = None  # set this before importing other modules from mlpatches
+
+_stash = get_stash()
 
 
 class IncompatiblePatch(Exception):

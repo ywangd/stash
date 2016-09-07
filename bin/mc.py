@@ -147,7 +147,7 @@ class McCmd(cmd.Cmd):
 			return
 		self.stdout.write("Creating Interface... ")
 		fsic = INTERFACES[name]
-		fsi = fsic(self)
+		fsi = fsic(self.stdout.write)
 		self.stdout.write(Text("Done", "green"))
 		self.stdout.write(".\nConnecting... ")
 		try:
