@@ -7,6 +7,9 @@ from stashutils.fsi.base import BaseFSI
 from stashutils.fsi.errors import OperationFailure, IsDir, IsFile
 from stashutils.fsi.errors import AlreadyExists
 
+from mlpatches.mount_base import _org_stat, _org_listdir, _org_mkdir
+from mlpatches.mount_base import _org_open, _org_remove
+
 _stash = get_stash()
 
 
@@ -15,6 +18,10 @@ class LocalFSI(BaseFSI):
 	def __init__(self, logger=None):
 		self.logger = logger
 		self.path = os.getcwd()
+	
+	def _getabs(self, name):
+		"""returns the path for name."""
+		return os.path.abspath(os.path.join(self.path, name))
 
 	def connect(self, *args):
 		return True  # no setup required; connect is allways successful
@@ -22,20 +29,18 @@ class LocalFSI(BaseFSI):
 	def repr(self):
 		return "Local Filesystem [CWD: {p}]".format(p=self.path)
 
-	def listdir(self):
+	def listdir(self, path="."):
+		ap = self._getabs(path)
 		try:
-			return os.listdir(self.path)
+			return _org_listdir(ap)
 		except Exception as e:
 			raise OperationFailure(str(e))
 
 	def cd(self, name):
 		if name == "..":
-			self.path = os.path.dirname(self.path)
+			self.path = os.path.abspath(os.path.dirname(self.path))
 			return
-		if os.path.isabs(name):
-			ap = name
-		else:
-			ap = os.path.join(self.path, name)
+		ap = self._getabs(name)
 		if not os.path.exists(ap):
 			raise OperationFailure("Not found")
 		elif not os.path.isdir(ap):
@@ -47,10 +52,7 @@ class LocalFSI(BaseFSI):
 		return self.path
 
 	def remove(self, name):
-		if os.path.isabs(name):
-			ap = name
-		else:
-			ap = os.path.join(self.path, name)
+		ap = self._getabs(name)
 		if not os.path.exists(ap):
 			raise OperationFailure("Not found")
 		elif os.path.isdir(ap):
@@ -60,35 +62,29 @@ class LocalFSI(BaseFSI):
 				raise OperationFailure(str(e))
 		elif os.path.isfile(ap):
 			try:
-				os.remove(ap)
+				_org_remove(ap)
 			except Exception as e:
 				raise OperationFailure(str(e))
 		else:
 			raise OperationFailure("Unknown type")
 
-	def open(self, name, mode):
-		if os.path.isabs(name):
-			ap = name
-		else:
-			ap = os.path.join(self.path, name)
+	def open(self, name, mode, buffering=0):
+		ap = self._getabs(name)
 		if os.path.isdir(ap):
 			raise IsDir()
 		else:
 			try:
-				return open(ap, mode)
+				return _org_open(ap, mode, buffering)
 			except Exception as e:
 				raise OperationFailure(str(e))
 
 	def mkdir(self, name):
-		if os.path.isabs(name):
-			ap = name
-		else:
-			ap = os.path.join(self.path, name)
+		ap = self._getabs(name)
 		if os.path.exists(ap):
 			raise AlreadyExists("Already exists")
 		else:
 			try:
-				os.makedirs(ap)
+				_org_mkdir(ap)
 			except Exception as e:
 				raise OperationFailure(str(e))
 
@@ -96,15 +92,13 @@ class LocalFSI(BaseFSI):
 		pass
 
 	def isdir(self, name):
-		if os.path.isabs(name):
-			ap = name
-		else:
-			ap = os.path.join(self.path, name)
+		ap = self._getabs(name)
 		return os.path.isdir(ap)
 
 	def isfile(self, name):
-		if os.path.isabs(name):
-			ap = name
-		else:
-			ap = os.path.join(self.path, name)
-		return os.path.isfile(ap)
+		ap = self._getabs(name)
+		return os.path.isdir(ap)
+	
+	def stat(self, name):
+		ap = self._getabs(name)
+		return _org_stat(ap)

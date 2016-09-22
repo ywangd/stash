@@ -5,6 +5,7 @@ import logging
 import threading
 import functools
 from StringIO import StringIO
+import runpy
 
 import pyparsing as pp
 
@@ -36,6 +37,7 @@ alias la='ls -a'
 alias ll='ls -la'
 alias copy='pbcopy'
 alias paste='pbpaste'
+alias unmount='umount'
 """
 
 
@@ -129,7 +131,7 @@ class ShRuntime(object):
         # Match for commands in current dir and BIN_PATH
         # Effectively, current dir is always the first in BIN_PATH
         for path in ['.'] + current_state.environ_get('BIN_PATH').split(':'):
-            path = os.path.expanduser(path)
+            path = os.path.abspath(os.path.expanduser(path))
             if os.path.exists(path):
                 for f in os.listdir(path):
                     if f == filename or f == filename + '.py' or f == filename + '.sh':
@@ -487,7 +489,7 @@ class ShRuntime(object):
         self.handle_PYTHONPATH()  # Make sure PYTHONPATH is honored
 
         try:
-            execfile(file_path, namespace, namespace)
+            runpy.run_path(file_path, namespace, "__main__")
             current_state.return_value = 0
 
         except SystemExit as e:

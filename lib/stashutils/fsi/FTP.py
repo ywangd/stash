@@ -2,10 +2,11 @@
 import ftplib
 import tempfile
 import os
+import stat
 
 from stashutils.core import get_stash
 
-from stashutils.fsi.base import BaseFSI
+from stashutils.fsi.base import BaseFSI, make_stat, calc_mode
 from stashutils.fsi.errors import OperationFailure, IsDir, IsFile
 from stashutils.fsi.errors import AlreadyExists
 
@@ -13,10 +14,12 @@ _stash = get_stash()
 
 
 class FTPFSI(BaseFSI):
-	"""a FSI for FTP-server.
+	"""
+	a FSI for FTP-server.
 Unfortunally, FTP was designed as a human-readable protocol.
 Due to this, the protocol is not completly unified.
-This means, that this FSI lad not work on all FTP-servers."""
+This means, that this FSI may not work on all FTP-servers.
+"""
 	def __init__(self, logger=None):
 		self.logger = logger
 		self.path = "/"
@@ -137,9 +140,10 @@ This means, that this FSI lad not work on all FTP-servers."""
 				raise AlreadyExists("Already exists!")
 			raise OperationFailure(str(e))
 
-	def listdir(self):
+	def listdir(self, path="."):
+		ap = os.path.join(self.path, path)
 		try:
-			content = self.ftp.nlst(self.path)
+			content = self.ftp.nlst(ap)
 			ret = [e.split("/")[-1] for e in content]
 			return ret
 		except Exception as e:
@@ -164,7 +168,8 @@ This means, that this FSI lad not work on all FTP-servers."""
 				self.log(text)
 				raise OperationFailure(e2.message)
 
-	def open(self, name, mode="rb"):
+	def open(self, name, mode="rb", buffering=0):
+		mode = mode.replace("+", "")
 		ap = os.path.join(self.path, name)
 		if mode in ("r", "rb"):
 			try:
@@ -176,6 +181,8 @@ This means, that this FSI lad not work on all FTP-servers."""
 			return tf
 		elif "w" in mode:
 			return FTP_Upload(self.ftp, ap, mode)
+		else:
+			raise OperationFailure("Mode not supported!")
 
 	def get_path(self):
 		return self.ftp.pwd()
@@ -190,6 +197,39 @@ This means, that this FSI lad not work on all FTP-servers."""
 			return False
 		finally:
 			self.ftp.cwd(op)
+	
+	def _get_total_size_and_type(self, path):
+		"""
+		returns the file/dir size and the type. Copied from:
+		http://stackoverflow.com/questions/22090001/get-folder-size-using-ftplib
+		This is a modified version.
+		"""
+		size = 0
+		try:
+			content = self.ftp.nlst(path)
+		except:
+			size = self.ftp.size(path)
+			return (size, stat.S_IFREG)
+		for filename in content:
+			try:
+				self.ftp.cwd(filename)
+				size += self._get_total_size_and_type(filename)[0]
+			except:
+				self.ftp.voidcmd('TYPE I')
+				size += self.ftp.size(filename)
+		return (size, stat.S_IFDIR)
+	
+	def stat(self, name):
+		ap = os.path.join(self.path, name)
+		op = self.path
+		try:
+			size, type = self._get_total_size_and_type(ap)
+			self.ftp.cwd(op)
+		except Exception as e:
+			raise OperationFailure(e.message)
+		# todo: check permissions
+		m = calc_mode(type=type)
+		return make_stat(size=size, mode=m)
 
 
 class FTP_Upload(object):

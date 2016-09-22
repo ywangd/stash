@@ -2,13 +2,19 @@
 # this module is named 'DropBox' instead of 'dropbox' to avoid a naming conflict.
 import os
 import tempfile
+import logging
+import stat
 
 from dropbox import rest
 
 from stashutils.fsi.errors import OperationFailure, IsDir, IsFile
 from stashutils.fsi.errors import AlreadyExists
-from stashutils.fsi.base import BaseFSI
+from stashutils.fsi.base import BaseFSI, make_stat, calc_mode
 from stashutils.dbutils import get_dropbox_client
+
+
+# turn down requests log verbosity
+logging.getLogger('requests').setLevel(logging.CRITICAL)
 
 
 class DropboxFSI(BaseFSI):
@@ -37,7 +43,10 @@ class DropboxFSI(BaseFSI):
 		return self.path
 
 	def repr(self):
-		info = self.client.account_info()
+		try:
+			info = self.client.account_info()
+		except Exception as e:
+			raise OperationFailure(e.message)
 		name = info["display_name"]
 		return "{name}'s Dropbox [CWD: {p}]".format(name=name, p=self.path)
 
@@ -64,9 +73,10 @@ class DropboxFSI(BaseFSI):
 		else:
 			self.path = path
 
-	def listdir(self):
+	def listdir(self, path="."):
+		p = os.path.join(self.path, path)
 		try:
-			meta = self.client.metadata(self.path)
+			meta = self.client.metadata(p)
 		except rest.ErrorResponse as e:
 			raise OperationFailure(e.error_msg)
 		return [el["path"].split("/")[-1] for el in meta["contents"]]
@@ -115,7 +125,8 @@ class DropboxFSI(BaseFSI):
 		except rest.ErrorResponse:
 			return False
 
-	def open(self, name, mode="rb"):
+	def open(self, name, mode="rb", buffering=0):
+		mode = mode.replace("+", "")
 		ap = os.path.join(self.path, name)
 		if mode in ("r", "rb"):
 			try:
@@ -132,7 +143,22 @@ class DropboxFSI(BaseFSI):
 			return tf
 		elif "w" in mode:
 			return Dropbox_Upload(self.client, ap, mode)
-
+		else:
+			raise OperationFailure("Mode not supported!")
+	
+	def stat(self, name):
+		ap = os.path.join(self.path, name)
+		try:
+			meta = self.client.metadata(ap)
+		except rest.ErrorResponse as e:
+			raise OperationFailure(e.message)
+		bytes = meta["bytes"]
+		isdir = meta["is_dir"]
+		type_ = (stat.S_IFDIR if isdir else stat.S_IFREG)
+		m = calc_mode(type=type_)
+		s = make_stat(size=bytes, mode=m)
+		return s
+		
 
 class Dropbox_Upload(object):
 	"""utility class used for Dropbox-uploads.
