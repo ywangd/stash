@@ -32,6 +32,15 @@ import sys,os,posix
 import editor #for reloading current file
 # temporary -- install required modules
 
+#needed for dulwich: subprocess needs to have Popen
+import subprocess
+if not hasattr(subprocess,'call'):
+	def Popen(*args,**kwargs):
+		pass
+	def call(*args,**kwargs):
+		return 0
+	subprocess.Popen=Popen
+	subprocess.call=call
 GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
 FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
 DULWICH_URL='https://github.com/jsbain/dulwich/archive/ForStaSH_0.12.2.zip'
