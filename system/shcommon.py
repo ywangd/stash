@@ -24,10 +24,15 @@ if IN_PYTHONISTA:
     else:
         # The default pythonapi always points to Python 3 in Pythonista 3
         # So we need to load the Python 2 API manually
-        python_capi = ctypes.PyDLL(
+        try:
+            python_capi = ctypes.PyDLL(
             os.path.join(os.path.dirname(sys.executable),
-                         'Frameworks/PythonistaKit.framework/PythonistaKit')
-        )
+                         'Frameworks/Py2Kit.framework/Py2Kit'))
+        except OSError:
+            python_capi = ctypes.PyDLL(
+            os.path.join(os.path.dirname(sys.executable),
+                         'Frameworks/PythonistaKit.framework/PythonistaKit'))
+        
 else:
     PYTHONISTA_VERSION = '0.0'
     PYTHONISTA_VERSION_LONG = '000000'
@@ -51,8 +56,16 @@ _STASH_HISTORY_FILE = '.stash_history'
 if IN_PYTHONISTA:
     # The stdio catchers recreation is copied from code written by @dgelessus
     # https://forum.omz-software.com/topic/1946/pythonista-1-6-beta/167
-    import _outputcapture
-
+    # In pythonista beta 301006, _outputcapture was replaced with pykit_io
+    try:
+        import _outputcapture
+    except ImportError:
+        import pykit_io
+        class _outputcapture(object):
+            ReadStdin=pykit_io.read_stdin
+            CaptureStdout=pykit_io.write_stdout
+            CaptureStderr=pykit_io.write_stderr
+        				
     if sys.stdin.__class__.__name__ == 'StdinCatcher':
         _SYS_STDIN = sys.__stdin__ = sys.stdin
     elif sys.__stdin__.__class__.__name__ == 'StdinCatcher':
