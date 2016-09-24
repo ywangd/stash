@@ -5,7 +5,6 @@ import logging
 import threading
 import functools
 from StringIO import StringIO
-import runpy
 
 import pyparsing as pp
 
@@ -489,7 +488,13 @@ class ShRuntime(object):
         self.handle_PYTHONPATH()  # Make sure PYTHONPATH is honored
 
         try:
-            runpy.run_path(file_path, namespace, "__main__")
+            with open(file_path, "rU") as f:
+                content = f.read()
+                code = compile(
+                    content, file_path, "exec", dont_inherit=True
+                    )
+                exec code in namespace, namespace
+            
             current_state.return_value = 0
 
         except SystemExit as e:
