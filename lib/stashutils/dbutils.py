@@ -3,7 +3,7 @@ import sys
 import base64
 import pickle
 
-from dropbox import client, session
+import dropbox
 
 import keychain
 import clipboard
@@ -23,8 +23,8 @@ def dropbox_setup(username, stdin, stdout):
 	header += " for '{n}'.".format(n=Text(username, "blue"))
 	abort = Text("abort", "yellow")
 	choices = (
-		"I already have an appkey+secret",
-		"I dont have a appkey+secret", abort
+		"I already have an authorization-code",
+		"I dont have an authorizaion-code", abort
 		)
 	choice = _menu(header, choices, stdin, stdout)
 	if choice == 2:
@@ -39,7 +39,8 @@ def dropbox_setup(username, stdin, stdout):
 		stdout.write("  1) Create a dropbox account (if you dont have one yet)\n")
 		stdout.write("  2) Upgrade your Account to a dropbox-developer account.\n")
 		stdout.write("  3) Create a dropbox-app.\n")
-		stdout.write("  4) Enter your app-key,app-secret and access-type here.\n")
+		stdout.write("  4) Generate an access token.\n")
+		stdout.write("  5) Enter the access token.\n")
 		stdout.write(Text("Continue?", "yellow"))
 		stdin.readline()
 		while True:
@@ -58,58 +59,36 @@ def dropbox_setup(username, stdin, stdout):
 				break
 			elif choice == 3:
 				raise KeyboardInterrupt("Setup aborted.")
-	stdout.write("Enter app-key (leave empty to use clipboard):\n>")
-	appkey = stdin.readline().strip()
-	if len(appkey) == 0:
-		appkey = clipboard.get()
-		stdout.write("Using clipboard (length={l}).\n".format(l=len(appkey)))
-	stdout.write("Enter app-secret (leave empty to use clipboard):\n>")
-	appsecret = stdin.readline().strip()
-	if len(appsecret) == 0:
-		appsecret = clipboard.get()
-		stdout.write("Using clipboard (length={l}).\n".format(l=len(appsecret)))
-	while True:
-		stdout.write("Enter access type (dropbox/app_folder):\n")
-		accesstype = stdin.readline().strip()
-		if accesstype not in ("dropbox", "app_folder"):
-			text = Text(
-				"Invalid access type! Valid values: 'dropbox' and 'app_folder'.\n", "red"
-				)
-			stdout.write(text)
-		else:
-			break
-	stdout.write("Creating session... ")
-	sess = session.DropboxSession(appkey, appsecret, accesstype)
-	stdout.write(Text("Done", "green"))
-	stdout.write(".\nObtaining request token... ")
-	request_token = sess.obtain_request_token()
-	stdout.write(Text("Done", "green"))
-	stdout.write(".\nBuilding authorization-URL... ")
-	url = sess.build_authorize_url(request_token)
-	stdout.write(Text("Done", "green"))
-	stdout.write(".\nPlease press enter after you allowed access.")
-	_open_url(url)
-	stdin.readline()
-	stdout.write("Obtaining Access token... ")
-	access_token = sess.obtain_access_token(request_token)
+	stdout.write(
+		"Enter the access token (leave empty to use clipboard):\n>"
+		)
+	access_token = stdin.readline().strip()
+	if len(access_token) == 0:
+		access_token = clipboard.get()
+		stdout.write("Using clipboard (length={l}).\n".format(l=len(access_token)))
+	stdout.write("Testing token... ")
+	try:
+		db = dropbox.Dropbox(access_token)
+		db.files_list_folder("")
+	except (dropbox.exceptions.ApiError, dropbox.exceptions.BadInputError):
+		sys.stdout.write(Text("Error", "red"))
+		sys.stdout.write(".\nAuthorization failed! Please try again.\n")
+		raise KeyboardInterrupt("Setup failed!")
 	stdout.write(Text("Done", "green"))
 	stdout.write(".\nSaving... ")
 	save_dropbox_data(
-		username, appkey, appsecret, accesstype, access_token
+		username, access_token
 		)
 	stdout.write(Text("Done", "green"))
 	stdout.write(".\n")
 	return True
 
 
-def save_dropbox_data(username, key, sec, access_type, access_token):
+def save_dropbox_data(username, access_token):
 	"""saves dropbox access information for username."""
 	data = {
-		"app_key": key,
-		"app_sec": sec,
-		"access_type": access_type,
-		"access_token_key": access_token.key,
-		"access_token_sec": access_token.secret
+		"api_version": 2,
+		"access_token": access_token,
 	}
 	dumped = pickle.dumps(data)
 	encoded = base64.b64encode(dumped)
@@ -128,11 +107,11 @@ def load_dropbox_data(username):
 
 def get_dropbox_client(username, setup=True, stdin=None, stdout=None):
 	"""
-	checks wether a dropbox.DropboxClient is available for username.
+	checks wether a dropbox.dropbox.Dropbox is available for username.
 	If it is, it is returned.
 	Otherwise, if setup is True, a command-line setup is shown.
 	The setup uses stdin and stout, both defaulting to the sys.std*.
-	If no client was found and setup is False, none will be returned.
+	If no client was found and setup is False, None will be returned.
 	"""
 	if stdout is None:
 		stdout = sys.stdout
@@ -145,20 +124,22 @@ def get_dropbox_client(username, setup=True, stdin=None, stdout=None):
 			return None
 		dropbox_setup(username, stdin, stdout)
 		data = load_dropbox_data(username)
-	appkey = data["app_key"]
-	appsec = data["app_sec"]
-	act = data["access_type"]
-	sess = session.DropboxSession(appkey, appsec, act)
-	atk = data["access_token_key"]
-	ats = data["access_token_sec"]
-	# token=session.OAuthToken(atk,ats)
-	sess.set_token(atk, ats)
-	dbclient = client.DropboxClient(sess)
+	token = data["access_token"]
+	dbclient = dropbox.dropbox.Dropbox(token)
 	return dbclient
 
 
 def reset_dropbox(username):
 	"""resets the dropbox configuration for the user username"""
+	try:
+		db = get_dropbox_client(username, setup=False)
+	except:
+		db = None
+	if hasattr(db, "auth_token_revoke"):
+		try:
+			db.auth_token_revoke()
+		except:
+			pass
 	keychain.delete_password(DB_SERVICE, username)
 	
 		

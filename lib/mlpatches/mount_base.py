@@ -1,5 +1,6 @@
 """base patches for mount."""
 import os
+import stat as _stat
 import __builtin__
 
 from mlpatches import base
@@ -20,6 +21,8 @@ _org_lstat = os.lstat
 _org_mkdir = os.mkdir
 _org_remove = os.remove
 _org_rmdir = os.rmdir
+_org_access = os.access
+_org_chmod = os.chmod
 
 
 def listdir(patch, path):
@@ -260,7 +263,68 @@ def rmdir(patch, path):
 			return fsi.remove(relpath)
 		except OperationFailure as e:
 			raise os.error(e.message)
-	
+
+
+def access(patch, path, mode):
+	"""
+	Use the real uid/gid to test for access to path.
+	Note that most operations will use the effective uid/gid,
+	therefore this routine can be used in a suid/sgid environment to test
+	if the invoking user has the specified access to path.
+	mode should be F_OK to test the existence of path,
+	or it can be the inclusive OR of one or more of R_OK, W_OK, and X_OK to
+	test permissions. Return True if access is allowed, False if not.
+	See the Unix man page access(2) for more information.
+	"""
+	ap = os.path.abspath(os.path.join(CWD, path))
+	manager = get_manager()
+	fsi, relpath = manager.get_fsi(ap)
+	if fsi is None:
+		return _org_access(relpath, mode)
+	else:
+		try:
+			s = fsi.stat(relpath)
+		except OperationFailure:
+			return False
+		if mode == os.F_OK:
+			return True
+		fa_mode = s.st_mode #  & 0777
+		should_read = mode & os.R_OK
+		should_write = mode & os.W_OK
+		should_exec = mode & os.X_OK
+		acc = True
+		if should_read:
+			acc = acc and any((
+				_stat.S_IRUSR & fa_mode,
+				_stat.S_IRGRP & fa_mode,
+				_stat.S_IROTH & fa_mode,
+				))
+		if should_write:
+			acc = acc and any((
+				_stat.S_IWUSR & fa_mode,
+				_stat.S_IWGRP & fa_mode,
+				_stat.S_IWOTH & fa_mode,
+				))
+		if should_exec:
+			acc = acc and any((
+				_stat.S_IXUSR & fa_mode,
+				_stat.S_IXGRP & fa_mode,
+				_stat.S_IXOTH & fa_mode,
+				))
+		return acc
+
+
+def chmod(patch, path, mode):
+	"""Change the mode of path to the numeric mode."""
+	ap = os.path.abspath(os.path.join(CWD, path))
+	manager = get_manager()
+	fsi, relpath = manager.get_fsi(ap)
+	if fsi is None:
+		return _org_chmod(relpath, mode)
+	else:
+		# we cant do this
+		pass
+		
 
 # define patches
 
@@ -341,6 +405,20 @@ class RmdirPatch(base.FunctionPatch):
 	replacement = rmdir
 
 
+class AccessPatch(base.FunctionPatch):
+	"""patch for os.access"""
+	module = "os"
+	function = "access"
+	replacement = access
+
+
+class ChmodPatch(base.FunctionPatch):
+	"""patch for os.chmod"""
+	module = "os"
+	function = "chmod"
+	replacement = chmod
+
+
 # create patch instances
 
 LISTDIR_PATCH = ListdirPatch()
@@ -354,3 +432,5 @@ LSTAT_PATCH = LstatPatch()
 MKDIR_PATCH = MkdirPatch()
 REMOVE_PATCH = RemovePatch()
 RMDIR_PATCH = RmdirPatch()
+ACCESS_PATCH = AccessPatch()
+CHMOD_PATCH = ChmodPatch()

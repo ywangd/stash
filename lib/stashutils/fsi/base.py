@@ -117,30 +117,30 @@ def calc_mode(
 	"""helper function to calculate the mode bits of a file."""
 	mode = 0
 	if owner_read:
-		mode += stat.S_IRUSR
+		mode |= stat.S_IRUSR
 	if owner_write:
-		mode += stat.S_IWUSR
+		mode |= stat.S_IWUSR
 	if owner_exec:
-		mode += stat.S_IXUSR
+		mode |= stat.S_IXUSR
 	if group_read:
-		mode += stat.S_IRGRP
+		mode |= stat.S_IRGRP
 	if group_write:
-		mode += stat.S_IWGRP
+		mode |= stat.S_IWGRP
 	if group_exec:
-		mode += stat.S_IXGRP
+		mode |= stat.S_IXGRP
 	if other_read:
-		mode += stat.S_IROTH
+		mode |= stat.S_IROTH
 	if other_write:
-		mode += stat.S_IWOTH
+		mode |= stat.S_IWOTH
 	if other_exec:
-		mode += stat.S_IXOTH
+		mode |= stat.S_IXOTH
 	if sticky:
-		mode += stat.S_ISVTX
+		mode |= stat.S_ISVTX
 	if isuid:
-		mode += stat.ST_UID
+		mode |= stat.ST_UID
 	if isgid:
-		mode += stat.ST_GID
-	mode += type
+		mode |= stat.ST_GID
+	mode |= type
 	return mode
 
 

@@ -8,6 +8,20 @@ import imghdr
 from argparse import ArgumentParser
 
 
+def is_archive(path):
+	arch = False
+	try:
+		arch = tarfile.is_tarfile(path)
+	except:
+		# not found
+		pass
+	try:
+		arch = (arch or zipfile.is_zipfile(path))
+	except:
+		pass
+	return arch
+
+
 def main(args):
 
     ap = ArgumentParser()
@@ -39,7 +53,7 @@ def main(args):
                 filename = _stash.text_color(filename, 'blue')
             elif filename.endswith('.py'):
                 filename = _stash.text_color(filename, 'green')
-            elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
+            elif is_archive(fullpath):
                 filename = _stash.text_color(filename, 'red')
             elif imghdr.what(fullpath) is not None:
                 filename = _stash.text_color(filename, 'brown')
@@ -57,7 +71,7 @@ def main(args):
                 return _stash.text_color(filename, 'blue')
             elif filename.endswith('.py'):
                 return _stash.text_color(filename, 'green')
-            elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
+            elif is_archive(fullpath):
                 return _stash.text_color(filename, 'red')
             elif imghdr.what(fullpath) is not None:
                 return _stash.text_color(filename, 'brown')
