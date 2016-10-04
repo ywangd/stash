@@ -6,6 +6,7 @@ from stashutils.fsi.base import BaseFSI
 from stashutils.fsi.local import LocalFSI
 from stashutils.fsi.FTP import FTPFSI
 from stashutils.fsi.DropBox import DropboxFSI
+from stashutils.fsi.zip import ZipfileFSI
 
 from mlpatches.mount_patches import MOUNT_PATCHES
 from mlpatches.mount_ctrl import get_manager, set_manager
@@ -20,6 +21,10 @@ FILESYSTEM_TYPES = {
 	"dropbox": DropboxFSI,
 	"DropBox": DropboxFSI,
 	"Dropbox": DropboxFSI,
+	"zip": ZipfileFSI,
+	"Zip": ZipfileFSI,
+	"ZIP": ZipfileFSI,
+	"zipfile": ZipfileFSI,
 }
 
 
