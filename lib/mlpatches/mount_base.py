@@ -34,7 +34,7 @@ def listdir(patch, path):
 	"""
 	ap = os.path.abspath(os.path.join(os.getcwd(), path))
 	manager = get_manager()
-	fsi, relpath = manager.get_fsi(ap)
+	fsi, relpath, readonly = manager.get_fsi(ap)
 	if fsi is None:
 		return _org_listdir(ap)
 	else:
@@ -58,9 +58,15 @@ def open(patch, name, mode="r", buffering=0):
 	"""
 	path = os.path.abspath(os.path.join(os.getcwd(), name))
 	manager = get_manager()
-	fsi, relpath = manager.get_fsi(path)
+	fsi, relpath, readonly = manager.get_fsi(path)
 	if fsi is None:
 		return _org_open(relpath, mode, buffering)
+	elif (("w" in mode) or ("a" in mode) or ("+" in mode)) and readonly:
+		raise IOError(
+			"[Errno 1] Operation not permitted: '{p}'".format(
+				p=path
+				)
+			)
 	else:
 		try:
 			return fsi.open(relpath, mode, buffering)
@@ -90,7 +96,7 @@ def chdir(patch, path):
 	global CWD
 	ap = os.path.abspath(os.path.join(CWD, path))
 	manager = get_manager()
-	fsi, relpath = manager.get_fsi(ap)
+	fsi, relpath, readonly = manager.get_fsi(ap)
 	if fsi is None:
 		if not os.path.exists(ap):
 			raise os.error(
@@ -108,7 +114,7 @@ def chdir(patch, path):
 			CWD = ap
 			_org_chdir(ap)
 			# reset paths
-			for p, fs in manager.get_mounts():
+			for p, fs, readonly in manager.get_mounts():
 				try:
 					fs.cd("/")
 				except:
@@ -142,7 +148,7 @@ def ismount(patch, path):
 	# ^^^ orginal docstring. we can simply ask the manager :)
 	ap = os.path.abspath(os.path.join(CWD, path))
 	manager = get_manager()
-	fsi, relpath = manager.get_fsi(ap)
+	fsi, relpath, readonly = manager.get_fsi(ap)
 	if fsi is None:
 		return _org_ismount(ap)
 	else:
@@ -156,7 +162,7 @@ def stat(patch, path):
 	"""
 	ap = os.path.abspath(os.path.join(CWD, path))
 	manager = get_manager()
-	fsi, relpath = manager.get_fsi(ap)
+	fsi, relpath, readonly = manager.get_fsi(ap)
 	if fsi is None:
 		return _org_stat(relpath)
 	else:
@@ -178,7 +184,7 @@ def lstat(patch, path):
 	"""
 	ap = os.path.abspath(os.path.join(CWD, path))
 	manager = get_manager()
-	fsi, relpath = manager.get_fsi(ap)
+	fsi, relpath, readonly = manager.get_fsi(ap)
 	if fsi is None:
 		return _org_lstat(relpath)
 	else:
@@ -202,9 +208,15 @@ def mkdir(patch, path, mode=0777):
 	"""
 	ap = os.path.abspath(os.path.join(CWD, path))
 	manager = get_manager()
-	fsi, relpath = manager.get_fsi(ap)
+	fsi, relpath, readonly = manager.get_fsi(ap)
 	if fsi is None:
 		return _org_mkdir(relpath, mode)
+	elif readonly:
+		raise IOError(
+			"[Errno 1] Operation not permitted: '{p}'".format(
+				p=ap
+				)
+			)
 	else:
 		# FSI.mkdir() doesnt have a 'mode' argument, we need to ignore this
 		try:
@@ -226,9 +238,15 @@ def remove(patch, path):
 	"""
 	ap = os.path.abspath(os.path.join(CWD, path))
 	manager = get_manager()
-	fsi, relpath = manager.get_fsi(ap)
+	fsi, relpath, readonly = manager.get_fsi(ap)
 	if fsi is None:
 		return _org_remove(relpath)
+	elif readonly:
+		raise IOError(
+			"[Errno 1] Operation not permitted: '{p}'".format(
+				p=ap
+				)
+			)
 	else:
 		# FSI.remove() works on both files and dirs, we need to check
 		# this before and raise an Exception if required
@@ -250,9 +268,15 @@ def rmdir(patch, path):
 	"""
 	ap = os.path.abspath(os.path.join(CWD, path))
 	manager = get_manager()
-	fsi, relpath = manager.get_fsi(ap)
+	fsi, relpath, readonly = manager.get_fsi(ap)
 	if fsi is None:
 		return _org_rmdir(relpath)
+	elif readonly:
+		raise IOError(
+			"[Errno 1] Operation not permitted: '{p}'".format(
+				p=ap
+				)
+			)
 	else:
 		# FSI.remove() works on both files and dirs.
 		if os.path.isfile(relpath):
@@ -278,7 +302,7 @@ def access(patch, path, mode):
 	"""
 	ap = os.path.abspath(os.path.join(CWD, path))
 	manager = get_manager()
-	fsi, relpath = manager.get_fsi(ap)
+	fsi, relpath, readonly = manager.get_fsi(ap)
 	if fsi is None:
 		return _org_access(relpath, mode)
 	else:
@@ -305,6 +329,7 @@ def access(patch, path, mode):
 				_stat.S_IWGRP & fa_mode,
 				_stat.S_IWOTH & fa_mode,
 				))
+			acc = (acc and (not readonly))
 		if should_exec:
 			acc = acc and any((
 				_stat.S_IXUSR & fa_mode,
@@ -318,9 +343,15 @@ def chmod(patch, path, mode):
 	"""Change the mode of path to the numeric mode."""
 	ap = os.path.abspath(os.path.join(CWD, path))
 	manager = get_manager()
-	fsi, relpath = manager.get_fsi(ap)
+	fsi, relpath, readonly = manager.get_fsi(ap)
 	if fsi is None:
 		return _org_chmod(relpath, mode)
+	elif readonly:
+		raise IOError(
+			"[Errno 1] Operation not permitted: '{p}'".format(
+				p=ap
+				)
+			)
 	else:
 		# we cant do this
 		pass

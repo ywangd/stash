@@ -3,29 +3,10 @@ import os
 
 from stashutils.core import get_stash
 from stashutils.fsi.base import BaseFSI
-from stashutils.fsi.local import LocalFSI
-from stashutils.fsi.FTP import FTPFSI
-from stashutils.fsi.DropBox import DropboxFSI
-from stashutils.fsi.zip import ZipfileFSI
+from stashutils.fsi.errors import OperationFailure
 
 from mlpatches.mount_patches import MOUNT_PATCHES
-from mlpatches.mount_ctrl import get_manager, set_manager
-
-
-# map type -> FSI_class
-FILESYSTEM_TYPES = {
-	"local": LocalFSI,
-	"Local": LocalFSI,
-	"FTP": FTPFSI,
-	"ftp": FTPFSI,
-	"dropbox": DropboxFSI,
-	"DropBox": DropboxFSI,
-	"Dropbox": DropboxFSI,
-	"zip": ZipfileFSI,
-	"Zip": ZipfileFSI,
-	"ZIP": ZipfileFSI,
-	"zipfile": ZipfileFSI,
-}
+from mlpatches.mount_ctrl import set_manager
 
 
 _stash = get_stash()
@@ -72,14 +53,14 @@ class MountManager(object):
 		i = None
 		for p in self.path2fs:
 			if path.startswith(p):
-				i = self.path2fs[p]
+				i, readonly = self.path2fs[p]
 				relpath = path.replace(p, "", 1)
 				if not relpath.startswith("/"):
 					relpath = "/" + relpath
-				return (i, relpath)
-		return (None, path)
+				return (i, relpath, readonly)
+		return (None, path, False)
 	
-	def mount_fsi(self, path, fsi):
+	def mount_fsi(self, path, fsi, readonly=False):
 		"""mounts a fsi to a path."""
 		if not isinstance(fsi, BaseFSI):
 			raise ValueError("Expected a FSI!")
@@ -90,14 +71,14 @@ class MountManager(object):
 			raise MountError("A Filesystem is already mounted on '{p}'!".format(p=path))
 		elif not (os.path.exists(path) and os.path.isdir(path)):
 			raise MountError("Path does not exists.")
-		self.path2fs[path] = fsi
+		self.path2fs[path] = (fsi, readonly)
 	
 	def unmount_fsi(self, path, force=False):
 		"""unmounts a fsi."""
 		path = os.path.abspath(path)
 		if not path in self.path2fs:
 			raise MountError("Nothing mounted there.")
-		fsi = self.path2fs[path]
+		fsi, readonly = self.path2fs[path]
 		if not force:
 			try:
 				fsi.close()
@@ -107,12 +88,13 @@ class MountManager(object):
 	
 	def get_mounts(self):
 		"""
-		returns a list of (path, fsi) containing all currently mounted filesystems.
+		returns a list of (path, fsi, readonly) containing all currently
+		mounted filesystems.
 		"""
 		ret = []
 		for p in self.path2fs:
-			fs = self.path2fs[p]
-			ret.append((p,fs))
+			fs, readonly = self.path2fs[p]
+			ret.append((p,fs, readonly))
 		return ret
 
 # install manager

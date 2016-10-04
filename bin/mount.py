@@ -3,6 +3,7 @@ import argparse
 import sys
 
 from stashutils import mount_manager
+from stashutils.fsi.interfaces import FILESYSTEM_TYPES
 from mlpatches import mount_ctrl
 
 
@@ -17,7 +18,7 @@ def list_mounts():
 		mount_ctrl.set_manager(manager)
 	
 	mounts = manager.get_mounts()
-	for p, fsi in mounts:
+	for p, fsi, readonly in mounts:
 		print "{f} on {p}".format(f=fsi.repr(), p=p)
 
 
@@ -40,6 +41,10 @@ if __name__ == "__main__":
 	parser.add_argument(
 		"-f", "--fake", action="store_false", dest="do_mount",
 		help="dry run; do not mount fs"
+		)
+	parser.add_argument(
+		"-r", "--read-only", action="store_true", dest="readonly",
+		help="mount the filesystem read-only"
 		)
 	parser.add_argument(
 		"-t", "--type", action="store", dest="type", default=None,
@@ -89,13 +94,13 @@ if __name__ == "__main__":
 		else:
 			manager.enable_patches()
 	
-	if not ns.type in mount_manager.FILESYSTEM_TYPES:
+	if not ns.type in FILESYSTEM_TYPES:
 		print _stash.text_color(
 			"Error: Unknown Filesystem-Type!", "red"
 			)
 		sys.exit(1)
 	
-	fsic = mount_manager.FILESYSTEM_TYPES[ns.type]
+	fsic = FILESYSTEM_TYPES[ns.type]
 	if ns.v:
 		logger = sys.stdout.write
 		print "Creating FSI..."
@@ -112,7 +117,7 @@ if __name__ == "__main__":
 		sys.exit(1)
 	if ns.do_mount:
 		try:
-			manager.mount_fsi(ns.dir, fsi)
+			manager.mount_fsi(ns.dir, fsi, readonly=ns.readonly)
 		except mount_manager.MountError as e:
 			print _stash.text_color("Error: {e}".format(e=e.message), "red")
 			try:

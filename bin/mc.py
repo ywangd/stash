@@ -11,9 +11,8 @@ import shlex
 
 from stashutils.fsi.errors import OperationFailure, IsDir, IsFile
 from stashutils.fsi.errors import AlreadyExists
+from stashutils.fsi.interfaces import INTERFACES
 from stashutils.fsi.local import LocalFSI
-from stashutils.fsi.FTP import FTPFSI
-from stashutils.fsi.DropBox import DropboxFSI
 
 _stash = globals()["_stash"]
 Text = _stash.text_color  # alias for cleaner code
@@ -74,16 +73,6 @@ modified() will return wether the path has been modified or not."""
 		return (dirs, files)
 	else:
 		return prev != (dirs, files)
-
-
-# =============================
-# Register FSIs here
-
-INTERFACES = {
-	"local": LocalFSI,
-	"ftp": FTPFSI,
-	"dropbox": DropboxFSI,
-}
 
 
 # =============================
