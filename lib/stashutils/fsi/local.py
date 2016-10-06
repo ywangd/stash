@@ -21,13 +21,27 @@ class LocalFSI(BaseFSI):
 	
 	def _getabs(self, name):
 		"""returns the path for name."""
-		return os.path.abspath(os.path.join(self.path, name))
+		path = os.path.join(self.path, name)
+		while path.startswith("/"):
+			path = path[1:]
+		return os.path.abspath(
+			os.path.join(self.basepath, path)
+			)
 
 	def connect(self, *args):
-		return True  # no setup required; connect is allways successful
+		if len(args) == 0:
+			self.basepath = "/"
+			return True  # no setup required; connect is allways successful
+		else:
+			self.basepath = args[0]
+			if not os.path.isdir(self.basepath):
+				return "No such directory: {p}".format(p=self.basepath)
+			return True
 
 	def repr(self):
-		return "Local Filesystem [CWD: {p}]".format(p=self.path)
+		return "Local Directory '{bp}' [CWD: {p}]".format(
+			p=self.path, bp=self.basepath
+			)
 
 	def listdir(self, path="."):
 		ap = self._getabs(path)
