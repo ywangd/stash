@@ -1,0 +1,50 @@
+MOUNTING(5) --- FSIs
+=====================
+
+An FSI is a class which defines an API to access the target filesystem.
+This page describes the usage of them.
+
+local, Local:
+	Description:
+		FSI for the local filesystem. Usefull for debugging.
+	Arguments:
+		0:
+			The rootpath. All other paths are seen as childs of this path.
+			Example:
+				FSI mounted on 'local' with arg0 '$STASH_ROOT'.
+				'local/bin/mount.py' points to '$STASH_ROOT/bin/mount.py'.
+			Defaults to '/'.
+
+dropbox, Dropbox, DropBox:
+	Description:
+		FSI for the Dropbox. May be slow.
+	Arguments:
+		0:
+			Required. Name of the Dropbox-config as set in the 'dropbox_setup'-command.
+
+ftp, FTP:
+	Description:
+		FSI for FTP-Servers. May not work on all FTP-Servers.
+	Arguments:
+		0:
+			Required. The IP-address of the host.
+		1:
+			The port. Defaults to 21.
+		2:
+			The username to use for login. Default: anonymous login.
+		3:
+			Required if username was passed. The password the use for login.
+		4.
+			Mode. One of:
+				-n: default. Insecure connection.
+				-s: secure connection. Not supported by all servers.
+				-d: debug mode and secure connection.
+
+zip, ZIP, zipfile, Zip:
+	Description:
+		FSI which can be used to mount a '.zip'-file as a filesystem.
+	Arguments:
+		0:
+			Required. Zipfile to open (creating one if none was found.)
+		1:
+			Password for zip. Only usable when reading an existing zip. Password-protection may be removed when changing the zip.

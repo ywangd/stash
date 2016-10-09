@@ -86,6 +86,7 @@ class McCmd(cmd.Cmd):
 		)
 	ruler = Text("=", "yellow")
 	use_rawinput = True
+	misc_header = "Miscellaneous help topics (unmaintained; see 'man mounting'):"
 
 	def __init__(self):
 		cmd.Cmd.__init__(self)

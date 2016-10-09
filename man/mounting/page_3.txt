@@ -1,0 +1,28 @@
+MOUNTING(3) --- INFORMATIONS
+============================
+
+Currently, the mounting-system contains two commands: 'mount' and 'umount'/'unmount'.
+
+The mount-system depends on 'monkeylord' to manage its monkeypatches.
+All the monkeypatches used by the mount-system are only accessible using the 'MOUNT'-PatchGroup.
+The 'MOUNT'-PatchGroup itself is part of the 'INSTABLE'-PatchGroup, which is part of the 'ALL'-PatchGroup.
+Due to this, the required monkeypatches will only be enabled when the 'monkeylord'-command is explicitly told to enable these.
+For Example:
+	'monkeylord enable' will not enable the patches.
+	'monkeylord enable ALL' will enable the patches.
+	'monkeylord enable INSTABLE' will enable the patches.
+	'monkeylord enable MOUNT' will enable the patches.
+	'monkeylord enable STABLE' will not enable the patches.
+	'monkeylord enable POPEN' will not enable the patches.
+	'monkeylord disable' will disable the patches.
+	'monkeylord disable POPEN' will not disable the patches.
+All required patches will automatically be enabled whenever the 'mount'-command is executed.
+The monkeypatches are defined in '$STASH_ROOT/lib/mlpatches/mount_base.py' and registered in '$STASH_ROOT/lib/mlpatches/mount_patches.py'.
+
+The 'mount'-system uses Filesystem-Interfaces (short: FSIs) to handle the filesystems.
+Most of the FSIs were first implemented in the 'mc'-command's sourcecode and have been extracted.
+Because of this, the FSI-API was initially not designed for the 'mount'-system, but has been extended for the 'mount'-command.
+Also, the FSI-API is designed to uses at least methods as possible, which may lead to performance-issues, but is required in order to easily support many different filesystem-types.
+All FSIs are defined in '$STASH_ROOT/lib/stashutils/fsi/' and are registered in '$STASH_ROOT/lib/stashutils/fsi/interfaces.py'.
+
+If you want to access another filesystem, but dont want to use monkeypatches, use the 'mc'-command. They use the same FSIs, but 'mc' defines its own commands while mount allows the use of StaSh's commands.

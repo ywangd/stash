@@ -1,0 +1,26 @@
+MOUNTING(4) --- USAGE
+=====================
+
+This page only contains a few explanations. Some arguments will be not be explained.
+To see the detailed usage of a command, pass '--help' as argument.
+
+mount:
+	-v, --verbose:
+		this does not only show more informations, it also sets the FSI in debug mode.
+	-r, --read-only:
+		This option disables the use of some I/O-operations.
+	-f  --fake:
+		This does not mount the FSI, but disconnects it directly after it was connected.
+	-y, --yes:
+		By default, mount asks the user if he really wants to enable the monkeypatches. When this argument is passed, it wont ask.
+	-t TYPE, --type TYPE:
+		Required. The name of the FSI to use.
+	options:
+		options to pass to the FSI's connect()-method. These are often used for hostnames or usernames.
+	dir:
+		Required. A dir to mount the FS on. The content of the dir will appear to be the contentd of the FS. The dir needs to exists.
+
+
+umount/unmount:
+	-f, --force:
+		Usefull when the FSI is not responding. This does remove the FS from the dir it was mounted on, but wont call the FSI's close()-method. This may result in data-loss, but will ensure that the dir is accessible again.
