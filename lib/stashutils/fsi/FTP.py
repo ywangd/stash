@@ -25,6 +25,10 @@ This means, that this FSI may not work on all FTP-servers.
 		self.path = "/"
 		self.ftp = None
 		self.host = None
+	
+	def abspath(self, name):
+		"""returns the absolute path of name"""
+		return os.path.join(self.path, name)
 
 	def connect(self, *args):
 		if self.ftp is not None:
@@ -117,7 +121,7 @@ This means, that this FSI may not work on all FTP-servers.
 		return fo
 
 	def cd(self, name):
-		ap = os.path.join(self.path, name)
+		ap = self.abspath(name)
 		try:
 			self.ftp.cwd(ap)
 		except Exception as e:
@@ -126,7 +130,7 @@ This means, that this FSI may not work on all FTP-servers.
 			self.path = ap
 
 	def mkdir(self, name):
-		ap = os.path.join(self.path, name)
+		ap = self.abspath(name)
 		try:
 			self.ftp.mkd(ap)
 		except Exception as e:
@@ -141,7 +145,7 @@ This means, that this FSI may not work on all FTP-servers.
 			raise OperationFailure(str(e))
 
 	def listdir(self, path="."):
-		ap = os.path.join(self.path, path)
+		ap = self.abspath(path)
 		try:
 			content = self.ftp.nlst(ap)
 			ret = [e.split("/")[-1] for e in content]
@@ -150,7 +154,7 @@ This means, that this FSI may not work on all FTP-servers.
 			raise OperationFailure(str(e))
 
 	def remove(self, name):
-		ap = os.path.join(self.path, name)
+		ap = self.abspath(name)
 		# we dont know wether target is a server or a file, so try both
 		try:
 			self.ftp.delete(ap)
@@ -169,18 +173,20 @@ This means, that this FSI may not work on all FTP-servers.
 				raise OperationFailure(e2.message)
 
 	def open(self, name, mode="rb", buffering=0):
-		mode = mode.replace("+", "")
-		ap = os.path.join(self.path, name)
+		mode = mode.replace("+", "").replace("U", "")
+		ap = self.abspath(name)
+		self.log("Opening '{p}' with mode '{m}'...\n".format(p=ap, m=mode))
 		if mode in ("r", "rb"):
 			try:
 				tf = tempfile.TemporaryFile()
 				self.ftp.retrbinary("RETR " + ap, tf.write, 4096)
 				tf.seek(0)
 			except Exception as e:
+				self.log('Error during open("{p}","r"): {e}\n'.format(p=ap, e=e.message))
 				raise OperationFailure(e.message)
 			return tf
 		elif "w" in mode:
-			return FTP_Upload(self.ftp, ap, mode)
+			return FTP_Upload(self.ftp, ap, mode, ap)
 		else:
 			raise OperationFailure("Mode not supported!")
 
@@ -188,7 +194,7 @@ This means, that this FSI may not work on all FTP-servers.
 		return self.ftp.pwd()
 
 	def isdir(self, name):
-		ap = os.path.join(self.path, name)
+		ap = self.abspath(name)
 		op = self.get_path()
 		try:
 			self.ftp.cwd(ap)
@@ -205,28 +211,37 @@ This means, that this FSI may not work on all FTP-servers.
 		This is a modified version.
 		"""
 		size = 0
+		op = self.ftp.pwd()
 		try:
-			content = self.ftp.nlst(path)
+			self.ftp.cwd(path)
+			self.log("stat: cwd worked (->IsDir)\n")
 		except:
-			size = self.ftp.size(path)
-			return (size, stat.S_IFREG)
-		for filename in content:
+			# TODO: raise Exception if file does not exists
+			self.log("stat: cwd failed (->IsFile or NotFound)\n")
 			try:
-				self.ftp.cwd(filename)
-				size += self._get_total_size_and_type(filename)[0]
+				size = self.ftp.size(path)
 			except:
-				self.ftp.voidcmd('TYPE I')
-				size += self.ftp.size(filename)
-		return (size, stat.S_IFDIR)
+				size = None
+			if size is None:
+				self.log("stat: size failed (->NotFound)\n")
+				raise OperationFailure("NotFound!")
+			self.log("stat: size worked (->IsFile)\n")
+			return (size, stat.S_IFREG)
+		finally:
+			self.ftp.cwd(op)
+		return (1, stat.S_IFDIR)
 	
 	def stat(self, name):
-		ap = os.path.join(self.path, name)
+		ap = self.abspath(name)
+		self.log("stat: {p}\n".format(p=ap))
 		op = self.path
 		try:
 			size, type = self._get_total_size_and_type(ap)
-			self.ftp.cwd(op)
 		except Exception as e:
+			self.log("Error during stat: {e}\n".format(e=e.message))
 			raise OperationFailure(e.message)
+		finally:
+			self.ftp.cwd(op)
 		# todo: check permissions
 		m = calc_mode(type=type)
 		return make_stat(size=size, mode=m)
@@ -235,16 +250,30 @@ This means, that this FSI may not work on all FTP-servers.
 class FTP_Upload(object):
 	"""utility class used for FTP-uploads.
 this class creates a tempfile, which is uploaded to the server when closed."""
-	def __init__(self, ftp, path, mode):
+	def __init__(self, ftp, path, mode, name):
 		self.ftp = ftp
 		self.path = path
 		self.mode = mode
+		self.closed = False
+		self.name = name
 		self.tf = tempfile.TemporaryFile()
 
 	def write(self, data):
 		self.tf.write(data)
+	
+	def flush(self):
+		pass
+	
+	def tell(self):
+		return self.tf.tell()
+	
+	def seek(self, offset, whence=os.SEEK_SET):
+		self.tf.seek(offset, whence)
 
 	def close(self):
+		if self.closed:
+			return
+		self.closed = True
 		self.tf.seek(0)
 		try:
 			self.ftp.storbinary("STOR "+self.path, self.tf, 4096)
@@ -252,3 +281,12 @@ this class creates a tempfile, which is uploaded to the server when closed."""
 			raise OperationFailure(e.message)
 		finally:
 			self.tf.close()
+	
+	def __enter__(self):
+		return self
+	
+	def __exit__(self, exc_type, exc_value, exc_tb):
+		self.close()
+	
+	def __del__(self):
+		self.close()
