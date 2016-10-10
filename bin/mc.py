@@ -29,7 +29,6 @@ TODO:
 				this bug only occurs when using the same fs.
 		-make run command transferring file deletions in "w"-mode (low prio)
 		-make run command more efficient (only cp file changes) (low prio)
-		-cleanup code (low prio)
 """
 
 # =====================
@@ -689,7 +688,7 @@ My files arent updated in "w" mode:
 		If you want to update other files, download the whole dir with '*' as path.
 	-mc does not transfer file deletions (at the moment)
 I dont know how to use FSI XXX:
-	-see 'help fsi_XXX'
+	-see '!man mounting(5)'
 I dont know how to use mc:
 	-see 'help usage'
 I dont know how to use command XXX:
@@ -715,87 +714,7 @@ I cant copy/move a directory on the same interface:
 
 	def help_fsis(self, *args):
 		"""shows a list of aviable FSIs"""
-		av = """Aviable FSIs:
-local: the local filesystem
-ftp: a FTP-client
-dropbox: a Dropbox-client (slow!)
-"""
-		self.stdout.write(av + "\n")
-
-	def help_fsi_local(self, *args):
-		"""shows help on the local FSI"""
-		av = """Help on FSI local:
-	The local filesystem.
-	USAGE:
-		'connect' does not require any additional arguments (except ID).
-"""
-		self.stdout.write(av + "\n")
-
-	def help_fsi_ftp(self, *args):
-		"""shows help on the FTP-FSI"""
-		av = """Help on FSI ftp::
-	Use a FTP-server as a filesystem.
-	WARNING:
-		Unless explicitly told, this uses a non-secure connection.
-	INFO:
-		FTP is designed as a human-readable protocol.
-		Different servers may use different commands and different responses.
-		This means that the 'ftp'-FSI may not work with all FTP-servers.
-	NOTE:
-		The FTP-FSI doesnt work on the server-files.
-		Instead, it uses a workaround:
-			When reading a FTP-file, the file is instead downloaded into
-				a tempfile, which is read after the download.
-			When writing to a FTP-server, instead a tempfile is created and
-				uploaded when it is closed.
-			This leads to some 'weird' operation times.
-	USAGE:
-		connect <ID> ftp <host> [port] [mode or user] [pswd] [mode]
-		
-		'ID': see 'help connect'
-		'host': the IP of the FTP-server
-		'port': port of the FTP-server. 21 if not specified.
-		'mode or user':
-			if len(args)==5:
-				the type of the connection. see mode
-			else:
-				the username to use for login.
-				defaults to 'anonymous'
-		'pswd': the password to use for login. Defaults to 'anonymous@'
-		'mode':
-			one of:
-				'-s': use a secure connection.
-				'-n': dont use a secure connection (default)
-				'-d': use a secure connection and set debug to max.
-		
-"""
-		self.stdout.write(av + " \n")
-
-	def help_fsi_dropbox(self, *args):
-		"""shows help on the dropbox-FSI"""
-		av = """Help on FSI dropbox:
-	Use Dropbox as a filesystem.
-	INFO:
-		The Dropbox-FSI may be very slow.
-		To setup dropbox support, use 'dropbox_setup' in StaSh
-		or '!dropbox_setup' in mc.
-	NOTE:
-		The Dropbox-FSI doesnt work on the dropbox-files.
-		Instead, it uses a workaround:
-			When reading a Dropbox-file, the file is instead downloaded into
-				a tempfile, which is read after the download.
-			When writing to a Dropbox, instead a tempfile is created and
-				uploaded when it is closed.
-			This leads to some 'weird' operation times.
-		The Dropbox-FSI requires a one-time setup and a dropbox developer account.
-		To start the setup, use 'dropbox_setup' in StaSh.
-	USAGE:
-		connect <ID> dropbox
-		
-		'ID': see 'help connect'
-		
-"""
-		self.stdout.write(av + "\n")
+		self.do_shell("man mounting(5)")
 
 	def help_remote_run(self, *args):
 		"""shows help on running commands on remote"""

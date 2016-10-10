@@ -41,7 +41,10 @@ _subcmd_cfg = {
     },
     "gci": {
         "1": {
-            'candidates': ['enable', 'disable', 'status', 'collect', 'threshold', 'debug', 'break'],
+            'candidates': [
+            	'enable', 'disable', 'status', 'collect', 'threshold',
+            	'debug', 'break',
+            	],
             'blank_completion': True,
             'with_normal_completion': False,
         },
@@ -76,10 +79,33 @@ _subcmd_cfg = {
             "with_normal_completion": False,
         },
         "-": {
-            "candidates": ["-h", "--help"],
-            "blank_completion": False,
+            "candidate_groups": [
+            	[None, ["-h", "--help"]],
+            	],
+            "blank_completion": True,
             "with_normal_completion": False,
         },
+    },
+    "mount": {
+    	"-": {
+    		"candidate_groups": [[None, [
+    			"-h", "--help", "-l", "--show-labels", "-v", "--verbose",
+    			"-y", "--yes", "-f", "--fake", "-r", "--read-only",
+    			"-t", "--type",
+    			]]],
+    		"blank_completion": True,
+    		"with_normal_completion": False,
+    	},
+    },
+    "umount": {
+    	"-": {
+    		"candidate_groups": [[None, [
+    			"-h", "--help", "-a", "--all", "-v", "--verbose",
+    			"-f", "--force",
+    			]]],
+    		"with_normal_completion": False,
+    		"blank_completion": True,
+    	},
     },
 
 }
