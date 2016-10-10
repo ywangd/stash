@@ -248,8 +248,8 @@ def fake_setuptools_modules():
         'setuptools.utils',
         'setuptools.version',
         'setuptools.windows_support',
-        'pkg_resources',
-        'pkg_resources.extern',
+        # 'pkg_resources',
+        # 'pkg_resources.extern',
     ]
 
     for m in setuptools_modules:
@@ -279,6 +279,17 @@ def fake_setuptools_modules():
     sys.modules['setuptools.command.build_ext'].sub_commands = []
 
 
+def ensure_pkg_resources():
+    try:
+        import pkg_resources
+    except ImportError:
+        try:
+            print('Approximating pkg_resources ...')
+            GitHubRepository().install('ywangd/pkg_resources', None)
+        except:  # silently fail as it may not be important or necessary
+            pass
+
+
 @contextlib.contextmanager
 def save_current_sys_modules():
     """
@@ -287,19 +298,59 @@ def save_current_sys_modules():
     saved_sys_modules = dict(sys.modules)
     save_setuptools = {}
     for name in sorted(sys.modules.keys()):
-        if name == 'setuptools' or name.startswith('setuptools.') or \
-                        name == 'pkg_resources' or name.startswith('pkg_resources.'):
+        if name == 'setuptools' or name.startswith('setuptools.'):
             save_setuptools[name] = sys.modules.pop(name)
 
     yield
 
     # sys.modules = saved_sys_modules
     for name in sorted(sys.modules.keys()):
-        if name == 'setuptools' or name.startswith('setuptools.') or \
-                        name == 'pkg_resources' or name.startswith('pkg_resources.'):
+        if name == 'setuptools' or name.startswith('setuptools.'):
             sys.modules.pop(name)
     for k, v in save_setuptools.items():
         sys.modules[k] = v
+
+
+# noinspection PyUnresolvedReferences
+from six.moves.configparser import SafeConfigParser, NoSectionError
+
+
+class CIConfigParer(SafeConfigParser):
+    """
+    This config parser is case insensitive for section names so that
+    the behaviour matches pypi queries.
+    """
+
+    def _get_section_name(self, name):
+        for section_name in self.sections():
+            if section_name.lower() == name.lower():
+                return section_name
+        else:
+            raise NoSectionError(name)
+
+    def has_section(self, name):
+        names = [n.lower() for n in self.sections()]
+        return name.lower() in names
+
+    def has_option(self, name, option_name):
+        section_name = self._get_section_name(name)
+        return SafeConfigParser.has_option(self, section_name, option_name)
+
+    def items(self, name):
+        section_name = self._get_section_name(name)
+        return SafeConfigParser.items(self, section_name)
+
+    def get(self, name, option_name):
+        section_name = self._get_section_name(name)
+        return SafeConfigParser.get(self, section_name, option_name)
+
+    def set(self, name, option_name, value):
+        section_name = self._get_section_name(name)
+        return SafeConfigParser.set(self, section_name, option_name, value)
+
+    def remove_section(self, name):
+        section_name = self._get_section_name(name)
+        return SafeConfigParser.remove_section(self, section_name)
 
 
 class PackageConfigHandler(object):
@@ -308,14 +359,12 @@ class PackageConfigHandler(object):
     """
 
     def __init__(self):
-        # noinspection PyUnresolvedReferences
-        from six.moves.configparser import SafeConfigParser
         self.package_cfg = os.path.expanduser('~/Documents/site-packages/.pypi_packages')
         if not os.path.isfile(self.package_cfg):
             print('Creating package file')
             with open(self.package_cfg, 'w') as outs:
                 outs.close()
-        self.parser = SafeConfigParser()
+        self.parser = CIConfigParer()
         self.parser.read(self.package_cfg)
 
     def save(self):
@@ -779,8 +828,20 @@ class PyPIRepository(PackageRepository):
         super(PyPIRepository, self).__init__()
         import xmlrpclib
         self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
+        self.standard_package_names = {}
+
+    def get_standard_package_name(self, pkg_name):
+        if pkg_name not in self.standard_package_names:
+            try:
+                r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
+                self.standard_package_names[pkg_name] = r.json()['info']['name']
+            except:
+                return pkg_name
+
+        return self.standard_package_names[pkg_name]
 
     def search(self, pkg_name):
+        pkg_name = self.get_standard_package_name(pkg_name)
         hits = self.pypi.search({'name': pkg_name}, 'and')
         if not hits:
             raise PipError('No matches found: {}'.format(pkg_name))
@@ -789,6 +850,7 @@ class PyPIRepository(PackageRepository):
         return hits
 
     def versions(self, pkg_name):
+        pkg_name = self.get_standard_package_name(pkg_name)
         hits = self.pypi.package_releases(pkg_name, True)  # True to show all versions
 
         if not hits:
@@ -798,6 +860,7 @@ class PyPIRepository(PackageRepository):
 
     def download(self, pkg_name, ver_spec):
         print('Querying PyPI ... ')
+        pkg_name = self.get_standard_package_name(pkg_name)
         hit = self._determin_hit(pkg_name, ver_spec)
 
         downloads = self.pypi.release_urls(pkg_name, hit)
@@ -827,6 +890,7 @@ class PyPIRepository(PackageRepository):
         return os.path.join(os.getenv('TMPDIR'), source['filename']), pkg_info
 
     def install(self, pkg_name, ver_spec):
+        pkg_name = self.get_standard_package_name(pkg_name)
         if not self.config.module_exists(pkg_name):
             archive_filename, pkg_info = self.download(pkg_name, ver_spec)
             self._install(pkg_name, pkg_info, archive_filename)
@@ -834,6 +898,7 @@ class PyPIRepository(PackageRepository):
             raise PipError('Package already installed')
 
     def update(self, pkg_name):
+        pkg_name = self.get_standard_package_name(pkg_name)
         if self.config.module_exists(pkg_name):
             current = self.config.get_info(pkg_name)
             hit = self.pypi.package_releases(pkg_name)[0]
@@ -848,7 +913,7 @@ class PyPIRepository(PackageRepository):
             raise PipError('package not installed: {}'.format(pkg_name))
 
     def _determin_hit(self, pkg_name, ver_spec):
-
+        pkg_name = self.get_standard_package_name(pkg_name)
         hits = self.versions(pkg_name)
         if ver_spec is None:  # latest version
             return hits[0]
@@ -858,8 +923,6 @@ class PyPIRepository(PackageRepository):
                     return hit
             else:
                 raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec))
-
-            return hits[idx_max]
 
 
 class GitHubRepository(PackageRepository):
@@ -1094,6 +1157,7 @@ if __name__ == '__main__':
 
             with save_current_sys_modules():
                 fake_setuptools_modules()
+                ensure_pkg_resources()  # install pkg_resources if needed
                 # start with what we have installed (i.e. in the config file)
                 sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
                 repository.install(pkg_name, ver_spec)

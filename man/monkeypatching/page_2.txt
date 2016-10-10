@@ -1,0 +1,14 @@
+monkeypatching(2) --- WARNINGS
+==============================
+
+Monkeypatching is dangerous and may cause one or several of the following problems:
+   - break commands or scripts
+   - freeze or crash StaSh
+   - freeze or crash Pythonista
+
+The monkeypatches are only temporary enabled. All monkeypatches are disabled by default.
+In case anything goes wrong, double tap the home button and remove Pythonista from the RAM.
+Restarting Pythonista afterwards resets all modules.
+
+I recommend only enabling required monkeypatches.
+I also recommend to not enable any of the INSTABLE patches unless you know what you are doing.

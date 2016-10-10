@@ -198,7 +198,7 @@ class ShBaseThread(threading.Thread):
     STARTED = 2
     STOPPED = 3
 
-    def __init__(self, registry, parent, command, target=None, is_background=False):
+    def __init__(self, registry, parent, command, target=None, is_background=False, environ={}, cwd=None):
         super(ShBaseThread, self).__init__(group=None,
                                            target=target,
                                            name='_shthread',
@@ -220,8 +220,13 @@ class ShBaseThread(threading.Thread):
 
         # Set up the state based on parent's state
         self.state = ShState.new_from_parent(parent.state)
+        self.state.environ.update(environ)
+        if cwd is not None:
+            self.state.enclosed_cwd = cwd
+            os.chdir(cwd)
 
         self.killed = False
+        self.killer = 0
         self.child_thread = None
 
         self.set_background(is_background)
@@ -270,14 +275,25 @@ class ShBaseThread(threading.Thread):
             assert self.parent.child_thread is self
             self.parent.child_thread = None
 
+    def on_kill(self):
+        """
+        This should be called when a thread was killed.
+        Calling this method will set self.killer to the job_id of the current Thread.
+        """
+        ct = threading.current_thread()
+        if not isinstance(ct, ShBaseThread):
+            self.killer = 0
+        else:
+            self.killer = ct.job_id
+
 
 # noinspection PyAttributeOutsideInit
 class ShTracedThread(ShBaseThread):
     """ Killable thread implementation with trace """
 
-    def __init__(self, registry, parent, command, target=None, is_background=False):
+    def __init__(self, registry, parent, command, target=None, is_background=False, environ={}, cwd=None):
         super(ShTracedThread, self).__init__(
-            registry, parent, command, target=target, is_background=is_background)
+            registry, parent, command, target=target, is_background=is_background, environ=environ, cwd=cwd)
 
     def start(self):
         """Start the thread."""
@@ -303,7 +319,9 @@ class ShTracedThread(ShBaseThread):
         return self.localtrace
 
     def kill(self):
-        self.killed = True
+        if not self.killed:
+            self.killed = True
+            self.on_kill()
 
 
 class ShCtypesThread(ShBaseThread):
@@ -312,9 +330,9 @@ class ShCtypesThread(ShBaseThread):
     another thread (with ctypes).
     """
 
-    def __init__(self, registry, parent, command, target=None, is_background=False):
+    def __init__(self, registry, parent, command, target=None, is_background=False, environ={}, cwd=None):
         super(ShCtypesThread, self).__init__(
-            registry, parent, command, target=target, is_background=is_background)
+            registry, parent, command, target=target, is_background=is_background, environ=environ, cwd=cwd)
 
     def _async_raise(self):
         tid = self.ident
@@ -339,3 +357,5 @@ class ShCtypesThread(ShBaseThread):
                 res = self._async_raise()
             except (ValueError, SystemError):
                 self.killed = False
+            else:
+                self.on_kill()

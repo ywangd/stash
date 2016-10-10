@@ -81,10 +81,13 @@ class ShIO(object):
         while True:
             try:
                 ret.append(self._buffer.pop())
-                if ret[-1] == '\n':
+                if ret[-1] in ['\n', '\0']:
                     break
             except IndexError:
                 time.sleep(self.holdback)
+
+        if ret[-1] == '\0':
+            del ret[-1]
 
         line = ''.join(ret)
         # localized history for running scripts
@@ -111,7 +114,7 @@ class ShIO(object):
         for line in ret.splitlines():
             self.stash.runtime.add_history(line)
 
-        return ret
+        return ret.splitlines(True)
 
     def read1(self):
         """
