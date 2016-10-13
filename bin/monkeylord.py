@@ -5,7 +5,6 @@ import json
 from mlpatches import base
 
 _stash = globals()["_stash"]
-base._stash = _stash  # set before any other mlpatches import
 
 from mlpatches import patches
 

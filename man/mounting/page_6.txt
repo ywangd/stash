@@ -1,0 +1,24 @@
+MOUNTING(6) --- DEVELOPER INFORMATIONS
+======================================
+
+This page explains how you can help expanding the mount-system.
+IMPORTANT: many changes to the mount-system requires a restart of pythonista.
+
+If you want to add support for another filesystem/service:
+	1. Create a '.py' file in '$STASH_ROOT/lib/stashutils/fsi/'.
+	2. In this file, define a class which implements the API defined in '$STASH_ROOT/lib/stashutils/fsi/base.py/BaseFSI'. You mad also want to take a look at the utility functions zhis module provide. Your class should be a subclass of the BaseFSI class.
+	3. modify '$STASH_ROOT/lib/stashutils/fsi/interfaces.py' to implort the class, then register the class in the 'FILESYSTEM_TYPES'-dictionary.
+	4. Test it and fix it if required.
+	5. Done. You may want to create a pull-request.
+
+If you want to define more patches:
+	1. read the 'monkeypatching' documentation using 'man'.
+	2. take a look at the functions and classes in '$STASH_ROOT/lib/mlpatches/mount_base.py'. Add your own function, define a patch and create an instance of it. IMPORTANT: follow the naming-convention of 'mount_base.py'. The '$STASH_ROOT/lib/mlpatches/mount_patches.py'-module scans the namespace and automatically registers the patches.
+	3. Test it, fixing it if required.
+	4. Done. You may want to create a pull-request.
+
+TODO:
+	- add FSI for samba (windows filesystem access). See 'pysamba'.
+	- add FSI for '.iso'-files. see the github repo of 'pyiso'.
+
+Thanks for your interest.

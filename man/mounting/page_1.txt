@@ -1,0 +1,13 @@
+mounting(1) --- INDEX
+=====================
+
+Content
+   Index........................1
+   Warnings.....................2
+   Informations.................3
+   Usage........................4
+   FSIs.........................5
+   Developer Informations.......6
+
+
+To view a page, type "man mounting(n)" where "n" is the pagenumber.

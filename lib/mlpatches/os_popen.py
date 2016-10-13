@@ -133,7 +133,7 @@ class _PopenCmd(object):
 			input_=self.cmd,
 			persistent_level=2,
 			is_background=False,
-			add_to_history=None,
+			add_to_history=False,
 			final_ins=self.chinr,
 			final_outs=self.choutw,
 			final_errs=self.cherrw
@@ -210,7 +210,7 @@ The subprocess module provides more powerful facilities for spawning new process
 		input_=command,
 		persistent_level=2,
 		is_background=False,
-		add_to_history=None,
+		add_to_history=False,
 		final_ins=io,
 		final_outs=io,
 		final_errs=io,
@@ -218,4 +218,3 @@ The subprocess module provides more powerful facilities for spawning new process
 	worker.join()  # wait for completion
 	es = worker.state.return_value
 	return _get_status(es, worker.killer)
-

@@ -8,6 +8,20 @@ import imghdr
 from argparse import ArgumentParser
 
 
+def is_archive(path):
+	arch = False
+	try:
+		arch = tarfile.is_tarfile(path)
+	except:
+		# not found
+		pass
+	try:
+		arch = (arch or zipfile.is_zipfile(path))
+	except:
+		pass
+	return arch
+
+
 def main(args):
 
     ap = ArgumentParser()
@@ -18,6 +32,7 @@ def main(args):
     ns = ap.parse_args(args)
 
     _stash = globals()['_stash']
+    exitcode = 0
     sizeof_fmt = _stash.libcore.sizeof_fmt
 
     joiner = '\n' if ns.one_line or ns.long else ' '
@@ -38,7 +53,7 @@ def main(args):
                 filename = _stash.text_color(filename, 'blue')
             elif filename.endswith('.py'):
                 filename = _stash.text_color(filename, 'green')
-            elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
+            elif is_archive(fullpath):
                 filename = _stash.text_color(filename, 'red')
             elif imghdr.what(fullpath) is not None:
                 filename = _stash.text_color(filename, 'brown')
@@ -56,7 +71,7 @@ def main(args):
                 return _stash.text_color(filename, 'blue')
             elif filename.endswith('.py'):
                 return _stash.text_color(filename, 'green')
-            elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
+            elif is_archive(fullpath):
                 return _stash.text_color(filename, 'red')
             elif imghdr.what(fullpath) is not None:
                 return _stash.text_color(filename, 'brown')
@@ -74,6 +89,7 @@ def main(args):
         for f in ns.files:
             if not os.path.exists(f):
                 out_miss.append('ls: %s: No such file or directory' % f)
+                exitcode = 1
             elif os.path.isdir(f):
                 out_dir.append('%s/:\n%s\n' %
                                (f,
@@ -88,6 +104,7 @@ def main(args):
             print
         for o in out_dir:
             print o
+    sys.exit(exitcode)
 
 
 if __name__ == '__main__':
