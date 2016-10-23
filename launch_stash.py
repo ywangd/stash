@@ -43,6 +43,10 @@ ap.add_argument('--log-file',
 ap.add_argument('--debug-switch',
                 default='',
                 help='a comma separate list to turn on debug switch for components')
+ap.add_argument('command',
+                default=None,
+                nargs='?',
+                help='command to run')
 ns = ap.parse_args()
 
 log_setting = {
@@ -72,9 +76,20 @@ else:
         if ds is not None:
             debug.append(ds)
 
+if ns.command:
+    # tell StaSh not to run any command if command is passed
+    # (we will call the command manually later)
+    ctp = False
+else:
+    # tell StaSh to run the default command (totd.py)
+    ctp = None
+
 
 _stash = stash.StaSh(debug=debug, log_setting=log_setting,
                      no_cfgfile=ns.no_cfgfile, no_rcfile=ns.no_rcfile,
-                     no_historyfile=ns.no_historyfile)
+                     no_historyfile=ns.no_historyfile, command=ctp)
 
 _stash.launch()
+
+if ns.command:
+    _stash(ns.command, add_to_history=False, persistent_level=0)
