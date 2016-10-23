@@ -2,8 +2,7 @@
 import argparse
 import sys
 
-from stashutils import mount_manager
-from mlpatches import mount_ctrl
+from stashutils import mount_manager, mount_ctrl
 
 
 _stash = globals()["_stash"]
