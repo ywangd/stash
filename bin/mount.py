@@ -4,7 +4,7 @@ import sys
 
 from stashutils import mount_manager
 from stashutils.fsi.interfaces import FILESYSTEM_TYPES
-from mlpatches import mount_ctrl
+from stashutils import mount_ctrl
 
 
 _stash = globals()["_stash"]

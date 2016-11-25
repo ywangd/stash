@@ -4,8 +4,8 @@ import stat as _stat
 import __builtin__
 
 from mlpatches import base
-from mlpatches.mount_ctrl import get_manager
 
+from stashutils.mount_ctrl import get_manager
 from stashutils.fsi.errors import IsFile, OperationFailure
 
 

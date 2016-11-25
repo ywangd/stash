@@ -78,7 +78,8 @@ class StaSh(object):
     """
 
     def __init__(self, debug=(), log_setting=None,
-                 no_cfgfile=False, no_rcfile=False, no_historyfile=False):
+                 no_cfgfile=False, no_rcfile=False, no_historyfile=False,
+                 command=None):
         self.__version__ = __version__
 
         # Intercept IO
@@ -128,8 +129,13 @@ class StaSh(object):
         # Load shared libraries
         self._load_lib()
 
-        # Show tip of the day (this calls script_will_end)
-        self('$STASH_ROOT/bin/totd.py', add_to_history=False, persistent_level=0)
+        # run command (this calls script_will_end)
+        if command is None:
+            # show tip of the day
+            command = '$STASH_ROOT/bin/totd.py'
+        if command:
+        	# do not run command if command is False (but not None)
+            self(command, add_to_history=False, persistent_level=0)
 
     def __call__(self, input_, persistent_level=2, *args, **kwargs):
         """ This function is to be called by external script for
@@ -280,4 +286,3 @@ class StaSh(object):
 
     def text_strikethrough(self, s, **kwargs):
         return self.text_style(s, {'traits': ['strikethrough']}, **kwargs)
-

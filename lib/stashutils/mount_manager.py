@@ -4,9 +4,9 @@ import os
 from stashutils.core import get_stash
 from stashutils.fsi.base import BaseFSI
 from stashutils.fsi.errors import OperationFailure
+from stashutils.mount_ctrl import set_manager
 
 from mlpatches.mount_patches import MOUNT_PATCHES
-from mlpatches.mount_ctrl import set_manager
 
 
 _stash = get_stash()
