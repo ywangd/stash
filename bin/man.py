@@ -8,6 +8,8 @@ import ast
 import os
 import sys
 
+from stash.system.shcommon import _STASH_EXTENSION_BIN_PATH, _STASH_EXTENSION_MAN_PATH
+
 if sys.version_info[0] > 2:
 	# py3 compatibility
 	raw_input = input
@@ -18,22 +20,29 @@ TYPE_CMD = "command"
 TYPE_PAGE = "page"
 TYPE_NOTFOUND = "not found"
 
-BINPATH = os.path.join(os.environ["STASH_ROOT"], "bin")
-PAGEPATH = os.path.join(os.environ["STASH_ROOT"], "man")
+MAIN_BINPATH = os.path.join(os.environ["STASH_ROOT"], "bin")
+MAIN_PAGEPATH = os.path.join(os.environ["STASH_ROOT"], "man")
 
-if not os.path.exists(PAGEPATH):
-	os.mkdir(PAGEPATH)
+BINPATHS = [MAIN_BINPATH, _STASH_EXTENSION_BIN_PATH]
+PAGEPATHS = [MAIN_PAGEPATH, _STASH_EXTENSION_MAN_PATH]
+
+for p in BINPATHS + PAGEPATHS:
+	if not os.path.exists(p):
+		os.mkdir(p)
 
 		
 def all_commands():
-	cmds = [
-	fn[:-3] for fn in os.listdir(BINPATH)
-	if fn.endswith(".py")
-	and not fn.startswith(".")
-	and os.path.isfile(os.path.join(BINPATH, fn))
-	]
-	cmds.sort()
-	return cmds
+	all_cmds = []
+	for bp in BINPATHS:
+		cmds = [
+		fn[:-3] for fn in os.listdir(bp)
+		if fn.endswith(".py")
+		and not fn.startswith(".")
+		and os.path.isfile(os.path.join(bp, fn))
+		]
+		all_cmds += cmds
+	all_cmds.sort()
+	return all_cmds
 
 		
 def get_type(search):
@@ -58,35 +67,44 @@ def get_type(search):
 			)
 		sys.exit(1)
 		to_search = search
-		found = os.listdir(PAGEPATH)
+		found = []
+		for pp in PAGEPATHS:
+			found += os.listdir(pp)
 	else:
 		to_search = search
-		found = [(fn[:fn.index(".")] if "." in fn else fn) for fn in os.listdir(PAGEPATH)]
+		found = []
+		for p in PAGEPATHS:
+			found += [(fn[:fn.index(".")] if "." in fn else fn) for fn in os.listdir(p)]
 	if to_search in found:
-		ffns= [fn if fn.startswith(to_search+".") else None for fn in os.listdir(PAGEPATH)]
+		ppc = []
+		for pp in PAGEPATHS:
+			ppc += [(fn, pp) for fn in os.listdir(pp)]
+		ffns= [(fn, pp) if fn.startswith(to_search+".") else None for fn, pp in ppc]
 		ffn = filter(None, ffns)
 		if len(ffn) == 0:
 			# isdir
 			pname = "page_" + str(pn)
-			dirpath = os.path.join(PAGEPATH, to_search)
-			for fn in os.listdir(dirpath):
-				if fn.startswith(pname):
-					fp = os.path.join(dirpath, fn)
-					if not os.path.exists(fp):
-						print(
-							_stash.text_color("Page not found!", "red")
-						)
-					return (TYPE_PAGE, fp)
+			for pp in PAGEPATHS:
+				dirpath = os.path.join(pp, to_search)
+				for fn in os.listdir(dirpath):
+					if fn.startswith(pname):
+						fp = os.path.join(dirpath, fn)
+						if not os.path.exists(fp):
+							print(
+								_stash.text_color("Page not found!", "red")
+							)
+						return (TYPE_PAGE, fp)
 			return (TYPE_NOTFOUND, None)
-		path = os.path.join(PAGEPATH, ffn[0])
+		path = os.path.join(ffn[0][1], ffn[0][0])
 		return (TYPE_PAGE, path)
 	else:
 		return (TYPE_NOTFOUND, None)
 		
 		
 def find_command(cmd):
-	if os.path.exists(BINPATH) and cmd + ".py" in os.listdir(BINPATH):
-		return os.path.join(BINPATH, cmd + ".py")
+	for bp in BINPATHS:
+		if os.path.exists(bp) and cmd + ".py" in os.listdir(bp):
+			return os.path.join(bp, cmd + ".py")
 	return None
 
 		
@@ -197,4 +215,3 @@ def main(args):
 			
 if __name__ == "__main__":
 	main(sys.argv[1:])
-

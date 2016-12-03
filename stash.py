@@ -20,6 +20,7 @@ import logging.handlers
 from .system.shcommon import IN_PYTHONISTA, ON_IPAD
 from .system.shcommon import _STASH_ROOT, _STASH_CONFIG_FILES, _SYS_STDOUT
 from .system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
+from .system.shcommon import _EXTERNAL_DIRS
 from .system.shuseractionproxy import ShUserActionProxy
 from .system.shiowrapper import enable as enable_io_wrapper, disable as disable_io_wrapper
 from .system.shparsers import ShParser, ShExpander, ShCompleter
@@ -69,6 +70,14 @@ BUFFER_MAX=150
 AUTO_COMPLETION_MAX=50
 VK_SYMBOLS=~/.-*|>$'=!&_"\?`
 """.format(text_size=14 if ON_IPAD else 12)
+
+
+# create directories outside STASH_ROOT
+# we should do this each time StaSh because some commands may require
+# this directories
+for p in _EXTERNAL_DIRS:
+	if not os.path.exists(p):
+		os.mkdir(p)
 
 
 class StaSh(object):
