@@ -1,4 +1,7 @@
 """This module contains a dictionary containing all patches and their name."""
+from stash.system.shcommon import _STASH_EXTENSION_PATCH_PATH
+
+from stashutils.core import load_from_dir
 
 from mlpatches import base, os_patches, modulepatches, tl_patches
 from mlpatches import mount_patches
@@ -22,7 +25,26 @@ INSTABLE_PATCHES = {  # name -> Patch()
 	"MOUNT": mount_patches.MOUNT_PATCHES,
 }
 
-# create a empty dict and update it
+# update with extensions
+extensions = load_from_dir(
+	dirpath=_STASH_EXTENSION_PATCH_PATH, varname="STABLE_PATCHES",
+	)
+for ext in extensions:
+	if not isinstance(ext, dict):
+		continue
+	else:
+		STABLE_PATCHES.update(ext)
+
+extensions = load_from_dir(
+	dirpath=_STASH_EXTENSION_PATCH_PATH, varname="INSTABLE_PATCHES",
+	)
+for ext in extensions:
+	if not isinstance(ext, dict):
+		continue
+	else:
+		INSTABLE_PATCHES.update(ext)
+
+# create an empty dict and update it
 
 PATCHES = {}
 

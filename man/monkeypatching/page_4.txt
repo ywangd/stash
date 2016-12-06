@@ -34,8 +34,8 @@ OS_POPEN: The patches for "os.popen*".
 OS_PROCESSING: patches to emulate process-like behavior
 
 
-Available Patches:
-------------------
+Some of the Available Patches:
+------------------------------
 
 os_popen: make "os.popen" use StaSh.
 os_popen2: make "os.popen2" use StaSh.

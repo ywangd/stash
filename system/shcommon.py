@@ -61,12 +61,15 @@ _STASH_EXTENSION_BIN_PATH = os.path.join(_STASH_EXTENSION_PATH, "bin")
 _STASH_EXTENSION_MAN_PATH = os.path.join(_STASH_EXTENSION_PATH, "man")
 # directory for stash FSI extensions
 _STASH_EXTENSION_FSI_PATH = os.path.join(_STASH_EXTENSION_PATH, "fsi")
+# directory for stash patch extensions
+_STASH_EXTENSION_PATCH_PATH = os.path.join(_STASH_EXTENSION_PATH, "patches")
 # list of directories outside of _STASH_ROOT, used for simple mkdir
 _EXTERNAL_DIRS = [
 	_STASH_EXTENSION_PATH,
 	_STASH_EXTENSION_BIN_PATH,
 	_STASH_EXTENSION_MAN_PATH,
 	_STASH_EXTENSION_FSI_PATH,
+	_STASH_EXTENSION_PATCH_PATH,
 	]
 
 # Save the true IOs
