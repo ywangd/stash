@@ -43,9 +43,9 @@ ap.add_argument('--log-file',
 ap.add_argument('--debug-switch',
                 default='',
                 help='a comma separate list to turn on debug switch for components')
-ap.add_argument('command',
+ap.add_argument('-c', '--command',
                 default=None,
-                nargs='?',
+                dest='command',
                 help='command to run')
 ns = ap.parse_args()
 
