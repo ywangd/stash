@@ -47,6 +47,9 @@ ap.add_argument('-c', '--command',
                 default=None,
                 dest='command',
                 help='command to run')
+ap.add_argument('args',  # the editor shortcuts may pass additional arguments
+                nargs='*',
+                help='additional arguments (ignored)')
 ns = ap.parse_args()
 
 log_setting = {
