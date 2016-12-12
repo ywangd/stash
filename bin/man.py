@@ -19,6 +19,7 @@ _stash = globals()["_stash"]
 TYPE_CMD = "command"
 TYPE_PAGE = "page"
 TYPE_NOTFOUND = "not found"
+TYPE_LISTTOPICS = "list topics"
 
 MAIN_BINPATH = os.path.join(os.environ["STASH_ROOT"], "bin")
 MAIN_PAGEPATH = os.path.join(os.environ["STASH_ROOT"], "man")
@@ -47,6 +48,8 @@ def all_commands():
 		
 def get_type(search):
 	"""returns (type, path) for a given topic/command."""
+	if search == "topics":
+		return (TYPE_LISTTOPICS, None)
 	cmdpath = find_command(search)
 	if cmdpath is not None:
 		return (TYPE_CMD, cmdpath)
@@ -86,6 +89,8 @@ def get_type(search):
 			pname = "page_" + str(pn)
 			for pp in PAGEPATHS:
 				dirpath = os.path.join(pp, to_search)
+				if not os.path.exists(dirpath):
+					continue
 				for fn in os.listdir(dirpath):
 					if fn.startswith(pname):
 						fp = os.path.join(dirpath, fn)
@@ -167,6 +172,21 @@ def show_text(text):
 	print("\n")
 
 
+def show_topics():
+	"""prints all available miscellaneous help topics."""
+	print(_stash.text_color("Miscellaneous Topics:", "yellow"))
+	for pp in PAGEPATHS:
+		if not os.path.isdir(pp):
+			continue
+		content = os.listdir(pp)
+		for pn in content:
+			if "." in pn:
+				name = pn[:pn.index(".")]
+			else:
+				name = pn
+			print(name)
+
+
 def main(args):
 	ap = argparse.ArgumentParser(description=__doc__)
 	ap.add_argument("topic", nargs="?", help="the command/topic to get help for")
@@ -181,16 +201,19 @@ def main(args):
 			print(
 				_stash.text_bold('{:>11}: '.format(cmd)) + get_summary(find_command(cmd))
 				)
+		print("Type 'man topics' to see miscellaneous help topics")
 		sys.exit(0)
 	else:
 		ft, path = get_type(ns.topic)
-		
 		if ft == TYPE_NOTFOUND:
 			print(
 				_stash.text_color("man: no help for '{}'".format(ns.topic), "red")
 			)
 			sys.exit(1)
-		if ft == TYPE_CMD:
+		if ft == TYPE_LISTTOPICS:
+			show_topics()
+			sys.exit(0)
+		elif ft == TYPE_CMD:
 			try:
 				docstring = get_docstring(path)
 			except Exception as err:
