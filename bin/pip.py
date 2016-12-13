@@ -33,6 +33,9 @@ from fnmatch import fnmatchcase
 # noinspection PyUnresolvedReferences
 from six.moves import filterfalse
 
+from stashutils.extensions import create_command
+
+
 PYTHONISTA_BUNDLED_MODULES = [
     'bottle', 'beautifulsoup4', 'pycrypto', 'py-dateutil',
     'dropbox', 'ecdsa', 'evernote', 'Faker', 'feedparser', 'flask', 'html2text',
@@ -586,6 +589,22 @@ class ArchiveFileInstaller(object):
         use_2to3 = kwargs.get('use_2to3', False) and six.PY3
 
         files_installed = []
+
+        # handle scripts
+        # we handle them before the packages because they may be moved
+        # while handling the packages
+        scripts = kwargs.get("scripts", [])
+        for script in scripts:
+            print("Handling script: {s}".format(s=script))
+            cmdname = script.replace(os.path.dirname(script), "").replace("/", "")
+            if not "." in cmdname:
+                cmdname += ".py"
+            scriptpath = os.path.join(source_folder, script)
+            with open(scriptpath, "r") as fin:
+                content = fin.read()
+            cmdpath = create_command(cmdname, content)
+            files_installed.append(cmdpath)
+
         packages = ArchiveFileInstaller._consolidated_packages(packages)
         for p in sorted(packages):  # folders or files under source root
 
@@ -649,8 +668,6 @@ class ArchiveFileInstaller(object):
                 files_installed.append(target_file)
                 if use_2to3:
                     _stash('2to3 -w {} > /dev/null'.format(target_file))
-
-        # TODO: SCRIPTS?
 
         # Recursively Handle dependencies
         dependencies = kwargs.get('install_requires', [])

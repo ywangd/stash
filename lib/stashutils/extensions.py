@@ -24,6 +24,7 @@ def create_file(dest, content):
 		content = content.read()
 	with open(dest, "wb") as f:
 		f.write(content)
+	return dest
 
 
 def create_page(name, content):
@@ -43,23 +44,24 @@ def create_page(name, content):
 			ending, elementcontent = element
 			pagename = "{b}/page_{n}.{e}".format(n=n, e=ending, b=path)
 			create_page(pagename, elementcontent)
+		return path
 	else:
-		create_file(path, content)
+		return create_file(path, content)
 
 
 def create_command(name, content):
 	"""creates a script named name filled with content"""
 	path = os.path.join(EBP, name)
-	create_file(path, content)
+	return create_file(path, content)
 
 
 def create_fsi_file(name, content):
 	"""creates a fsi extension named name filled with content"""
 	path = os.path.join(EFP, name)
-	create_file(path, content)
+	return create_file(path, content)
 
 
 def create_patch_file(name, content):
 	"""creates a patch extension named name filled with content"""
 	path = os.path.join(EPP, name)
-	create_file(path, content)
+	return create_file(path, content)
