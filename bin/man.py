@@ -114,9 +114,12 @@ def find_command(cmd):
 
 		
 def get_docstring(filename):
-	with open(filename) as f:
-		tree = ast.parse(f.read(), os.path.basename(filename))
-	return ast.get_docstring(tree)
+	try:
+		with open(filename) as f:
+			tree = ast.parse(f.read(), os.path.basename(filename))
+		return ast.get_docstring(tree)
+	except:
+		return "UNKNOWN"
 
 		
 def get_summary(filename):

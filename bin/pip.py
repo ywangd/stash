@@ -595,7 +595,7 @@ class ArchiveFileInstaller(object):
         # while handling the packages
         scripts = kwargs.get("scripts", [])
         for script in scripts:
-            print("Handling script: {s}".format(s=script))
+            print("Handling commandline script: {s}".format(s=script))
             cmdname = script.replace(os.path.dirname(script), "").replace("/", "")
             if not "." in cmdname:
                 cmdname += ".py"
@@ -668,6 +668,34 @@ class ArchiveFileInstaller(object):
                 files_installed.append(target_file)
                 if use_2to3:
                     _stash('2to3 -w {} > /dev/null'.format(target_file))
+
+        # handle entry points
+        entry_points = kwargs.get("entry_points", {})
+        for epn in entry_points:
+            ep = entry_points[epn]
+            if epn == "console_scripts":
+                for dec in ep:
+                    name, loc = dec.replace(" ", "").split("=")
+                    modname, funcname = loc.split(":")
+                    if not name.endswith(".py"):
+                        name += ".py"
+                    desc = kwargs.get("description", "")
+                    path = create_command(
+                        name,
+                        """'''{d}'''
+from {m} import {n}
+
+if __name__ == "__main__":
+    {n}()
+""".format(
+    m=modname,
+    n=funcname,
+    d=desc,
+    ),
+                        )
+                    files_installed.append(path)
+            else:
+                print("Warning: passing entry points for '{n}'.".format(n=epn))
 
         # Recursively Handle dependencies
         dependencies = kwargs.get('install_requires', [])
