@@ -77,7 +77,10 @@ VK_SYMBOLS=~/.-*|>$'=!&_"\?`
 # this directories
 for p in _EXTERNAL_DIRS:
 	if not os.path.exists(p):
-		os.mkdir(p)
+		try:
+			os.mkdir(p)
+		except:
+			pass
 
 
 class StaSh(object):
