@@ -51,6 +51,26 @@ _STASH_ROOT = os.path.realpath(os.path.abspath(
     os.path.dirname(os.path.dirname(__file__))))
 _STASH_CONFIG_FILES = ('.stash_config', 'stash.cfg')
 _STASH_HISTORY_FILE = '.stash_history'
+# directory for stash extensions
+_STASH_EXTENSION_PATH = os.path.abspath(
+	os.path.join(os.getenv("HOME"), "Documents", "stash_extensions"),
+	)
+# directory for stash bin extensions
+_STASH_EXTENSION_BIN_PATH = os.path.join(_STASH_EXTENSION_PATH, "bin")
+# directory for stash man extensions
+_STASH_EXTENSION_MAN_PATH = os.path.join(_STASH_EXTENSION_PATH, "man")
+# directory for stash FSI extensions
+_STASH_EXTENSION_FSI_PATH = os.path.join(_STASH_EXTENSION_PATH, "fsi")
+# directory for stash patch extensions
+_STASH_EXTENSION_PATCH_PATH = os.path.join(_STASH_EXTENSION_PATH, "patches")
+# list of directories outside of _STASH_ROOT, used for simple mkdir
+_EXTERNAL_DIRS = [
+	_STASH_EXTENSION_PATH,
+	_STASH_EXTENSION_BIN_PATH,
+	_STASH_EXTENSION_MAN_PATH,
+	_STASH_EXTENSION_FSI_PATH,
+	_STASH_EXTENSION_PATCH_PATH,
+	]
 
 # Save the true IOs
 if IN_PYTHONISTA:

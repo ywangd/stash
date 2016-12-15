@@ -33,6 +33,9 @@ from fnmatch import fnmatchcase
 # noinspection PyUnresolvedReferences
 from six.moves import filterfalse
 
+from stashutils.extensions import create_command
+
+
 PYTHONISTA_BUNDLED_MODULES = [
     'bottle', 'beautifulsoup4', 'pycrypto', 'py-dateutil',
     'dropbox', 'ecdsa', 'evernote', 'Faker', 'feedparser', 'flask', 'html2text',
@@ -586,6 +589,22 @@ class ArchiveFileInstaller(object):
         use_2to3 = kwargs.get('use_2to3', False) and six.PY3
 
         files_installed = []
+
+        # handle scripts
+        # we handle them before the packages because they may be moved
+        # while handling the packages
+        scripts = kwargs.get("scripts", [])
+        for script in scripts:
+            print("Handling commandline script: {s}".format(s=script))
+            cmdname = script.replace(os.path.dirname(script), "").replace("/", "")
+            if not "." in cmdname:
+                cmdname += ".py"
+            scriptpath = os.path.join(source_folder, script)
+            with open(scriptpath, "r") as fin:
+                content = fin.read()
+            cmdpath = create_command(cmdname, content)
+            files_installed.append(cmdpath)
+
         packages = ArchiveFileInstaller._consolidated_packages(packages)
         for p in sorted(packages):  # folders or files under source root
 
@@ -650,7 +669,33 @@ class ArchiveFileInstaller(object):
                 if use_2to3:
                     _stash('2to3 -w {} > /dev/null'.format(target_file))
 
-        # TODO: SCRIPTS?
+        # handle entry points
+        entry_points = kwargs.get("entry_points", {})
+        for epn in entry_points:
+            ep = entry_points[epn]
+            if epn == "console_scripts":
+                for dec in ep:
+                    name, loc = dec.replace(" ", "").split("=")
+                    modname, funcname = loc.split(":")
+                    if not name.endswith(".py"):
+                        name += ".py"
+                    desc = kwargs.get("description", "")
+                    path = create_command(
+                        name,
+                        """'''{d}'''
+from {m} import {n}
+
+if __name__ == "__main__":
+    {n}()
+""".format(
+    m=modname,
+    n=funcname,
+    d=desc,
+    ),
+                        )
+                    files_installed.append(path)
+            else:
+                print("Warning: passing entry points for '{n}'.".format(n=epn))
 
         # Recursively Handle dependencies
         dependencies = kwargs.get('install_requires', [])
