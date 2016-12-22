@@ -4,7 +4,7 @@ import os
 from stashutils.core import get_stash
 from stashutils.fsi.base import BaseFSI
 from stashutils.fsi.errors import OperationFailure
-from stashutils.mount_ctrl import set_manager
+from stashutils.mount_ctrl import set_manager, get_manager
 
 from mlpatches.mount_patches import MOUNT_PATCHES
 
@@ -99,4 +99,5 @@ class MountManager(object):
 
 # install manager
 
-set_manager(MountManager())
+if get_manager() is None:
+	set_manager(MountManager())
