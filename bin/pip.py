@@ -349,7 +349,7 @@ class CIConfigParer(SafeConfigParser):
 
     def set(self, name, option_name, value):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.set(self, section_name, option_name, value)
+        return SafeConfigParser.set(self, section_name, option_name, value.replace('%', '%%'))
 
     def remove_section(self, name):
         section_name = self._get_section_name(name)
@@ -829,10 +829,10 @@ class PackageRepository(object):
                     else:
                         print('Package may have been removed externally without using pip. Deleting from registry ...')
             else:
-                if os.path.isdir(os.path.expanduser('~/Documents/site-packages/%s' % pkg_name.lower())):
-                    shutil.rmtree(os.path.expanduser('~/Documents/site-packages/%s' % pkg_name.lower()))
-                elif os.path.isfile(os.path.expanduser('~/Documents/site-packages/%s.py' % pkg_name.lower())):
-                    os.remove(os.path.expanduser('~/Documents/site-packages/%s.py' % pkg_name.lower()))
+                if os.path.isdir(os.path.expanduser('~/Documents/site-packages/{}'.format(pkg_name.lower()))):
+                    shutil.rmtree(os.path.expanduser('~/Documents/site-packages/{}'.format(pkg_name.lower())))
+                elif os.path.isfile(os.path.expanduser('~/Documents/site-packages/{}.py'.format(pkg_name.lower()))):
+                    os.remove(os.path.expanduser('~/Documents/site-packages/{}.py'.format(pkg_name.lower())))
                 else:
                     print('Package may have been removed externally without using pip. Deleting from registry ...')
 
@@ -948,7 +948,7 @@ class PyPIRepository(PackageRepository):
             current = self.config.get_info(pkg_name)
             hit = self.pypi.package_releases(pkg_name)[0]
             if not current['version'] == hit:
-                print('Updating %s' % pkg_name)
+                print('Updating {}'.format(pkg_name))
                 self.remove(pkg_name)
                 self.install(pkg_name, VersionSpecifier(hit))
             else:
