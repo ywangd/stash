@@ -137,9 +137,35 @@ else:
     from dulwich import porcelain
     from dulwich.index import index_entry_from_stat
     from gittle import Gittle
-
-dulwich.client.get_ssh_vendor = dulwich.client.ParamikoSSHVendor
-#  end temporary
+    
+# create wrapper class to pass ssh_keyfile to ParamikoSSH client
+try:#... 
+    def find_ssh_keys():# "borrowed" from ssh.py, where it worked
+        ssh_dir = os.path.join(os.environ['STASH_ROOT'], '.ssh')
+        return [os.path.join(ssh_dir, filename) for filename
+                    in os.listdir(ssh_dir) if '.' not in filename]
+    
+    from dulwich.contrib.paramiko_vendor import ParamikoSSHVendor
+  
+    class ParamikoSSHwithKeyFile(ParamikoSSHVendor):
+        "wrapper class that adds a key-value pair to ParamikoSSHwithKeyFile().ssh_kwargs"
+        key_filename = None
+        def __init__(self):
+            ParamikoSSHVendor.__init__(self)
+            self.ssh_kwargs['key_filename']=ParamikoSSHwithKeyFile.key_filename
+    #
+    #set the class variable 'key_filename' from outside the class:
+    ParamikoSSHwithKeyFile.key_filename = find_ssh_keys()
+    #make sure everything works by creating a test ssh client object,
+    #and by checking, that a 'key_filename' has been set:
+    if ParamikoSSHwithKeyFile().ssh_kwargs['key_filename']==[]:
+        #if no key filename is returned, raise an exception
+        raise Exception
+    #everything seems to be working, let's use the wrapped class:
+    dulwich.client.get_ssh_vendor = ParamikoSSHwithKeyFile
+except: 
+    #if anything went wrong, we use the unwrapped ssh client class:
+    dulwich.client.get_ssh_vendor = dulwich.client.ParamikoSSHVendor
 
 
 
