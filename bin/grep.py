@@ -21,24 +21,20 @@ def main(args):
     flags = 0
     if ns.ignore_case:
         flags |= re.IGNORECASE
-    
+
     pattern = re.compile(ns.pattern, flags=flags)
-    
-    if ns.invert:
-        def fn_predicate(line, newline):
-            return line == newline
-    else:
-        def fn_predicate(line, newline):
-            return line != newline
-    
+
     # Do not try to grep directories
     files = [f for f in ns.files if not os.path.isdir(f)]
-    
+
     fileinput.close()  # in case it is not closed
     try:
         for line in fileinput.input(files):
-            newline = re.sub(pattern, lambda m: _stash.text_color(m.group(), 'red'), line)
-            if fn_predicate(line, newline):
+            if bool(pattern.search(line)) != ns.invert:
+                if ns.invert: # optimize: if ns.invert, then no match, so no highlight color needed
+                    newline = line
+                else:
+                    newline = re.sub(pattern, lambda m: _stash.text_color(m.group(), 'red'), line)
                 if fileinput.isstdin():
                     fmt = u'{lineno}: {line}'
                 else:
