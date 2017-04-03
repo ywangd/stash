@@ -7,67 +7,9 @@ import zipfile
 import imghdr
 from argparse import ArgumentParser
 
-from stashutils.mount_ctrl import get_manager
-
-
-def is_mounted(path):
-	"""checks if path is on a mounted path."""
-	manager = get_manager()
-	if not manager:
-		return False
-	fsi = manager.get_fsi(path)[0]
-	return (fsi is not None)
-
-
-def get_file_extension(path):
-	"""returns the file extension of path"""
-	if "." not in path:
-		return ""
-	else:
-		return path.split(".")[-1].lower()
-
-
-def is_archive(path):
-	"""checks if path points to an archive"""
-	if not is_mounted(path):
-		arch = False
-		try:
-			arch = tarfile.is_tarfile(path)
-		except:
-			# not found
-			pass
-		try:
-			arch = (arch or zipfile.is_zipfile(path))
-		except:
-			pass
-		return arch
-	else:
-		fe = get_file_extension(path)
-		if fe in ("zip", "rar", "tar", "bz2", "gz"):
-			return True
-		else:
-			return False
-
-
-def is_image(path):
-	"""checks wether path points to an image."""
-	if not is_mounted(path):
-		try:
-			return (imghdr.what(path) is not None)
-		except:
-			# continue execution outside of the if-statement
-			pass
-	fe = get_file_extension(path)
-	if fe in (
-		"rgb", "gif", "pbm", "pgm", "ppm", "tiff", "rast", "xbm",
-		"jpeg", "jpg", "bmp", "png",
-		):
-		return True
-	else:
-		return False
-
 
 def main(args):
+
     ap = ArgumentParser()
     ap.add_argument('-1', '--one-line', action='store_true', help='List one file per line')
     ap.add_argument('-a', '--all', action='store_true', help='do not ignore entries starting with .')
@@ -76,7 +18,6 @@ def main(args):
     ns = ap.parse_args(args)
 
     _stash = globals()['_stash']
-    exitcode = 0
     sizeof_fmt = _stash.libcore.sizeof_fmt
 
     joiner = '\n' if ns.one_line or ns.long else ' '
@@ -90,34 +31,43 @@ def main(args):
 
     if ns.long:
         def _fmt(filename, dirname=''):
+            suffix = ''
+            
             _stat = os.stat(os.path.join(dirname, filename))
-
+            
+            home = os.environ['HOME']
             fullpath = os.path.join(dirname, filename)
-            if os.path.isdir(fullpath):
+            filename = '{:30}'.format(filename)
+
+            if os.path.islink(fullpath):
+                filename = _stash.text_color(filename, 'yellow')
+                suffix = ' -> %s'%os.path.realpath(fullpath).replace(home,'~') 
+            elif os.path.isdir(fullpath):
                 filename = _stash.text_color(filename, 'blue')
             elif filename.endswith('.py'):
                 filename = _stash.text_color(filename, 'green')
-            elif is_archive(fullpath):
+            elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
                 filename = _stash.text_color(filename, 'red')
-            elif is_image(fullpath):
+            elif imghdr.what(fullpath) is not None:
                 filename = _stash.text_color(filename, 'brown')
 
             ret = filename + _stash.text_color(
-                ' (%s) %s' % (sizeof_fmt(_stat.st_size),
-                              time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(_stat.st_mtime))),
-                'gray')
+                ' ({:8}) {}'.format(sizeof_fmt(_stat.st_size),
+              time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(_stat.st_mtime))), 'gray') + suffix
 
             return ret
     else:
         def _fmt(filename, dirname=''):
             fullpath = os.path.join(dirname, filename)
-            if os.path.isdir(fullpath):
+            if os.path.islink(fullpath):
+                return _stash.text_color(filename, 'yellow')
+            elif os.path.isdir(fullpath):
                 return _stash.text_color(filename, 'blue')
             elif filename.endswith('.py'):
                 return _stash.text_color(filename, 'green')
-            elif is_archive(fullpath):
+            elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
                 return _stash.text_color(filename, 'red')
-            elif is_image(fullpath):
+            elif imghdr.what(fullpath) is not None:
                 return _stash.text_color(filename, 'brown')
             else:
                 return filename
@@ -133,7 +83,6 @@ def main(args):
         for f in ns.files:
             if not os.path.exists(f):
                 out_miss.append('ls: %s: No such file or directory' % f)
-                exitcode = 1
             elif os.path.isdir(f):
                 out_dir.append('%s/:\n%s\n' %
                                (f,
@@ -148,7 +97,6 @@ def main(args):
             print
         for o in out_dir:
             print o
-    sys.exit(exitcode)
 
 
 if __name__ == '__main__':
