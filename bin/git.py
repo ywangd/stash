@@ -608,11 +608,47 @@ def git_log(args):
                         dest='max_entries',
                         default=None)
 
+    parser.add_argument('--oneline',
+                        action='store_true',
+                        dest='oneline',
+                        default=False)
+                        
     results = parser.parse_args(args)
 
     try:
         repo = _get_repo()
-        porcelain.log(repo.repo.path, max_entries=results.max_entries,outstream=results.output)
+        outstream = StringIO()
+        porcelain.log(repo.repo.path, max_entries=results.max_entries,outstream=outstream)
+        
+        if not results.oneline:
+            print outstream.getvalue()
+        else:
+
+            last_commit = ''
+            last_printed = ''
+            start_message = False
+            for line in outstream.getvalue().split('\n'):
+                if line.startswith('commit:'):
+                    tokens = line.split(' ')
+                    last_commit = tokens[-1][:7]
+        
+                elif line.startswith('-------------'):
+                    last_commit = ''
+                    start_message = False
+                        
+                elif line == '' and start_message is False:
+                    start_message = True
+                
+                elif last_commit == last_printed and start_message is True:
+                    continue 
+                    
+                elif start_message is True and not line.startswith('---------'):
+                    print('{} {}'.format(last_commit, line))
+                    last_printed = last_commit
+                    start_message = False
+                                      
+                    
+                    
     except ValueError:
         print command_help['log']
 
