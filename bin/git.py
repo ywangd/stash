@@ -444,7 +444,7 @@ def git_commit(args):
 def git_clone(args):
     if len(args) > 0:
            url = args[0]
-           repo = Gittle.clone(args[0], args[1] if len(args)>1 else '.', bare=False)
+           repo = Gittle.clone(args[0], args[1] if len(args)>1 else os.path.split(args[0])[-1].rstrip('.git'), bare=False)
 
            #Set the origin
            config = repo.repo.get_config()
