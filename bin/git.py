@@ -26,7 +26,6 @@ Commands:
 SAVE_PASSWORDS = True
 
 import argparse
-import getpass
 import urlparse,urllib2,keychain
 import sys,os,posix
 import editor #for reloading current file
@@ -574,7 +573,6 @@ def git_push(args):
         #Check again, did we retrieve a password?
         if not pw:
             user, pw = console.login_alert('Enter credentials for {0}'.format(netloc), login=user)
-            #pw = getpass.getpass('Enter password for {0}: '.format(user))
         host_with_auth='{}:{}@{}'.format(user,pw,netloc)
         url=urlparse.urlunparse(
             urlparse.urlparse(result.url)._replace(
@@ -586,7 +584,7 @@ def git_push(args):
         porcelain.push(repo.repo.path, result.url, branch_name, errstream=outstream)
  
     for line in outstream.getvalue().split('\n'):
-            print line.replace(pw, '*******')
+            print(line.replace(pw, '*******'))
     
     print 'success!'
 
