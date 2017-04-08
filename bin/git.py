@@ -566,6 +566,7 @@ def git_push(args):
             pw = raw_input('Enter password: ')
             #user, pw = console.login_alert('Enter credentials for {0}'.format(netloc))
 
+    outstream = StringIO()
     if user:
         if not pw and SAVE_PASSWORDS:
             pw = keychain.get_password(keychainservice, user)
@@ -578,11 +579,15 @@ def git_push(args):
         url=urlparse.urlunparse(
             urlparse.urlparse(result.url)._replace(
                 netloc=host_with_auth))
-        porcelain.push(repo.repo.path, url, branch_name)
+        porcelain.push(repo.repo.path, url, branch_name, errstream=outstream)
         keychain.set_password(keychainservice, user, pw)
 
     else:
-        porcelain.push(repo.repo.path, result.url, branch_name)
+        porcelain.push(repo.repo.path, result.url, branch_name, errstream=outstream)
+ 
+    for line in outstream.getvalue().split('\n'):
+            print line.replace(pw, '*******')
+    
     print 'success!'
 
 def git_modified(args):
