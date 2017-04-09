@@ -285,8 +285,10 @@ def git_add(args):
 
         args = [os.path.join(os.path.relpath(cwd, repo.path), x)
                     if not os.path.samefile(cwd, repo.path) else x for x in args]
+       
         for file in args:
-            if os.path.exists(file):
+            
+            if os.path.exists(os.path.join(repo.repo.path, file)):
                 print 'Adding {0}'.format(file)
                 porcelain.add(repo.repo.path, [file])
             else:
