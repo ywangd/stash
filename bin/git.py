@@ -9,7 +9,7 @@ Commands:
     merge:  git merge [--abort] [--msg <msg>] [<commit>]  merge another commit into HEAD
     clone: git clone <url> [path] - clone a remote repository
     modified: git modified - show what files have been modified
-    log: git log - Options:\n\t[-l|--length  numner_of _results]\n\t[-f|--format format string can use {message}{author}{author_email}{committer}{committer_email}{merge}{commit}]\n\t[-o|--output]  file_name
+    log: git log - Options:\n\t[-l|--length  numner_of _results]\n\t[--oneline Print commits in a concise {commit} {message} form]\n\t[-f|--format format string can use {message}{author}{author_email}{committer}{committer_email}{merge}{commit}]\n\t[-o|--output]  file_name
     push: git push [http(s)://<remote repo>] [-u username[:password]] - push changes back to remote
     pull: git pull [http(s)://<remote repo> or remote] - pull changes from a remote repository
     merge: git merge <merge_commit> - merge another branch or commit and head into current working tree.   see git merge -h
@@ -26,7 +26,6 @@ Commands:
 SAVE_PASSWORDS = True
 
 import argparse
-import getpass
 import urlparse,urllib2,keychain
 import sys,os,posix
 import editor #for reloading current file
@@ -271,7 +270,7 @@ def git_remote(args):
     if len(args) == 0:
         repo = _get_repo()
         for key, value in repo.remotes.items():
-            print key, value
+            print '{} {}'.format(key, value)
     elif len(args)==2:
         repo=_get_repo()
         repo.add_remote(args[0],args[1])
@@ -312,7 +311,7 @@ def launch_subcmd(cmd,args):
     cmdpath=os.path.join(os.environ['STASH_ROOT'],'lib','git',cmd)
 
     _stash(cmdpath + ' ' + ' '.join(args))
-    
+            
 def git_branch(args):
     launch_subcmd('git-branch.py',args)
     
@@ -566,6 +565,7 @@ def git_push(args):
             pw = raw_input('Enter password: ')
             #user, pw = console.login_alert('Enter credentials for {0}'.format(netloc))
 
+    outstream = StringIO()
     if user:
         if not pw and SAVE_PASSWORDS:
             pw = keychain.get_password(keychainservice, user)
@@ -573,16 +573,19 @@ def git_push(args):
         #Check again, did we retrieve a password?
         if not pw:
             user, pw = console.login_alert('Enter credentials for {0}'.format(netloc), login=user)
-            #pw = getpass.getpass('Enter password for {0}: '.format(user))
         host_with_auth='{}:{}@{}'.format(user,pw,netloc)
         url=urlparse.urlunparse(
             urlparse.urlparse(result.url)._replace(
                 netloc=host_with_auth))
-        porcelain.push(repo.repo.path, url, branch_name)
+        porcelain.push(repo.repo.path, url, branch_name, errstream=outstream)
         keychain.set_password(keychainservice, user, pw)
 
     else:
-        porcelain.push(repo.repo.path, result.url, branch_name)
+        porcelain.push(repo.repo.path, result.url, branch_name, errstream=outstream)
+ 
+    for line in outstream.getvalue().split('\n'):
+            print(line.replace(pw, '*******'))
+    
     print 'success!'
 
 def git_modified(args):
