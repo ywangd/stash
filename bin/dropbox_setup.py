@@ -1,5 +1,10 @@
+#! python2
+# StaSh utility
+
 """manage your dropbox configuration."""
+
 import cmd
+import keychain
 import sys
 
 from stashutils import dbutils
@@ -20,9 +25,17 @@ class DropboxSetupCmd(cmd.Cmd):
 		"""exit: quits the setup."""
 		sys.exit(0)
 	do_quit = do_EOF = do_exit
-	
+
+	def do_list(self, cmd):
+		"""list: lists the dropbox usernames."""
+		print
+		for service, account in keychain.get_services():
+			if service == dbutils.DB_SERVICE:
+				print account
+		print
+
 	def do_del(self, cmd):
-		"""del USERNAME: resets the dropbox for USERNAME"""
+		"""del USERNAME: resets the dropbox for USERNAME."""
 		dbutils.reset_dropbox(cmd)
 	do_reset = do_del
 	
