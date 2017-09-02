@@ -872,7 +872,7 @@ class PyPIRepository(PackageRepository):
     def __init__(self):
         super(PyPIRepository, self).__init__()
         import xmlrpclib
-        # DO NOT USE self.pypi, it's there just for search
+        # DO NOT USE self.pypi, it's there just for search, it's obsolete/legacy
         self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
         self.standard_package_names = {}
 
