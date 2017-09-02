@@ -903,6 +903,7 @@ class PyPIRepository(PackageRepository):
         if not r.status_code == requests.codes.ok:
             raise PipError('Failed to fetch package releases')
 
+        # _determin_hit expects latest first, sort them by versions
         tuples = [release.split('.') for release in r.json()['releases'].keys()]
         tuples = sorted(tuples, reverse=True)
         return ['.'.join(release) for release in tuples]
