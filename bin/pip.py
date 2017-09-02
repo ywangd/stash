@@ -872,6 +872,7 @@ class PyPIRepository(PackageRepository):
     def __init__(self):
         super(PyPIRepository, self).__init__()
         import xmlrpclib
+        # DO NOT USE self.pypi, it's there just for search
         self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
         self.standard_package_names = {}
 
@@ -887,6 +888,9 @@ class PyPIRepository(PackageRepository):
 
     def search(self, pkg_name):
         pkg_name = self.get_standard_package_name(pkg_name)
+        # XML-RPC replacement would be tricky, because we probably
+        # have to use simplified / cached index to search in, can't
+        # find JSON API to search for packages
         hits = self.pypi.search({'name': pkg_name}, 'and')
         if not hits:
             raise PipError('No matches found: {}'.format(pkg_name))
@@ -894,9 +898,32 @@ class PyPIRepository(PackageRepository):
         hits = sorted(hits, key=lambda pkg: pkg['_pypi_ordering'], reverse=True)
         return hits
 
+    def _package_releases(self, pkg_name):
+        r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
+        if not r.status_code == requests.codes.ok:
+            raise PipError('Failed to fetch package releases')
+
+        tuples = [release.split('.') for release in r.json()['releases'].keys()]
+        tuples = sorted(tuples, reverse=True)
+        return ['.'.join(release) for release in tuples]
+
+    def _package_release_urls(self, pkg_name, hit):
+        r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
+        if not r.status_code == requests.codes.ok:
+            raise PipError('Failed to fetch package release urls')
+
+        return r.json()['releases'][hit]
+
+    def _package_release_data(self, pkg_name):
+        r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
+        if not r.status_code == requests.codes.ok:
+            raise PipError('Failed to fetch package release urls')
+
+        return r.json()['info']
+
     def versions(self, pkg_name):
         pkg_name = self.get_standard_package_name(pkg_name)
-        hits = self.pypi.package_releases(pkg_name, True)  # True to show all versions
+        hits = self._package_releases(pkg_name)
 
         if not hits:
             raise PipError('No matches found: {}'.format(pkg_name))
@@ -908,7 +935,7 @@ class PyPIRepository(PackageRepository):
         pkg_name = self.get_standard_package_name(pkg_name)
         hit = self._determin_hit(pkg_name, ver_spec)
 
-        downloads = self.pypi.release_urls(pkg_name, hit)
+        downloads = self._package_release_urls(pkg_name, hit)
 
         if not downloads:
             raise PipError('No download available for {}: {}'.format(pkg_name, hit))
@@ -922,7 +949,7 @@ class PyPIRepository(PackageRepository):
         if not source:
             raise PipError('Source distribution not available for {}: {}'.format(pkg_name, hit))
 
-        pkg_info = self.pypi.release_data(pkg_name, hit)
+        pkg_info = self._package_release_data(pkg_name)
         pkg_info['url'] = 'pypi'
 
         print('Downloading package ...')
@@ -946,7 +973,7 @@ class PyPIRepository(PackageRepository):
         pkg_name = self.get_standard_package_name(pkg_name)
         if self.config.module_exists(pkg_name):
             current = self.config.get_info(pkg_name)
-            hit = self.pypi.package_releases(pkg_name)[0]
+            hit = self._package_releases(pkg_name)[0]
             if not current['version'] == hit:
                 print('Updating {}'.format(pkg_name))
                 self.remove(pkg_name)
