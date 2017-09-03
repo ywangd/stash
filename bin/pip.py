@@ -298,7 +298,7 @@ def save_current_sys_modules():
     """
     Save the current sys modules and restore them when processing is over
     """
-    saved_sys_modules = dict(sys.modules)
+    # saved_sys_modules = dict(sys.modules)
     save_setuptools = {}
     for name in sorted(sys.modules.keys()):
         if name == 'setuptools' or name.startswith('setuptools.'):
@@ -858,7 +858,6 @@ class PackageRepository(object):
 
     def update(self, pkg_name):
         if self.config.module_exists(pkg_name):
-            info = self.config.get_info(pkg_name)
             raise PipError('update only available for packages installed from PyPI')
         else:
             PipError('package not installed: {}'.format(pkg_name))
@@ -898,45 +897,42 @@ class PyPIRepository(PackageRepository):
         hits = sorted(hits, key=lambda pkg: pkg['_pypi_ordering'], reverse=True)
         return hits
 
-    def _package_releases(self, pkg_name):
-        r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
-        if not r.status_code == requests.codes.ok:
-            raise PipError('Failed to fetch package releases')
-
-        # _determin_hit expects latest first, sort them by versions
-        tuples = [release.split('.') for release in r.json()['releases'].keys()]
-        tuples = sorted(tuples, reverse=True)
-        return ['.'.join(release) for release in tuples]
-
-    def _package_release_urls(self, pkg_name, hit):
+    def _package_data(self, pkg_name):
         r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
         if not r.status_code == requests.codes.ok:
             raise PipError('Failed to fetch package release urls')
 
-        return r.json()['releases'][hit]
+        return r.json()
 
-    def _package_release_data(self, pkg_name):
-        r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
-        if not r.status_code == requests.codes.ok:
-            raise PipError('Failed to fetch package release urls')
+    def _package_releases(self, pkg_data):
+        return pkg_data['releases'].keys()
 
-        return r.json()['info']
+    def _package_latest_release(self, pkg_data):
+        return pkg_data['info']['version']
 
-    def versions(self, pkg_name):
+    def _package_downloads(self, pkg_data, hit):
+        return pkg_data['releases'][hit]
+
+    def _package_info(self, pkg_data):
+        return pkg_data['info']
+
+    def versions(self, pkg_name):                
         pkg_name = self.get_standard_package_name(pkg_name)
-        hits = self._package_releases(pkg_name)
+        pkg_data = self._package_data(pkg_name)
+        releases = self._package_releases(pkg_data)
 
-        if not hits:
+        if not releases:
             raise PipError('No matches found: {}'.format(pkg_name))
 
-        return hits
+        return releases
 
     def download(self, pkg_name, ver_spec):
         print('Querying PyPI ... ')
         pkg_name = self.get_standard_package_name(pkg_name)
-        hit = self._determin_hit(pkg_name, ver_spec)
+        pkg_data = self._package_data(pkg_name)
+        hit = self._determin_hit(pkg_data, ver_spec)
 
-        downloads = self._package_release_urls(pkg_name, hit)
+        downloads = self._package_downloads(pkg_data, hit)
 
         if not downloads:
             raise PipError('No download available for {}: {}'.format(pkg_name, hit))
@@ -950,7 +946,7 @@ class PyPIRepository(PackageRepository):
         if not source:
             raise PipError('Source distribution not available for {}: {}'.format(pkg_name, hit))
 
-        pkg_info = self._package_release_data(pkg_name)
+        pkg_info = self._package_info(pkg_data)
         pkg_info['url'] = 'pypi'
 
         print('Downloading package ...')
@@ -973,25 +969,24 @@ class PyPIRepository(PackageRepository):
     def update(self, pkg_name):
         pkg_name = self.get_standard_package_name(pkg_name)
         if self.config.module_exists(pkg_name):
+            pkg_data = self._package_data(pkg_name)
+            hit = self._package_latest_release(pkg_data)
             current = self.config.get_info(pkg_name)
-            hit = self._package_releases(pkg_name)[0]
             if not current['version'] == hit:
                 print('Updating {}'.format(pkg_name))
                 self.remove(pkg_name)
-                self.install(pkg_name, VersionSpecifier(hit))
+                self.install(pkg_name, VersionSpecifier((('==', hit),)))
             else:
                 print('Package already up-to-date.')
-
         else:
             raise PipError('package not installed: {}'.format(pkg_name))
 
-    def _determin_hit(self, pkg_name, ver_spec):
-        pkg_name = self.get_standard_package_name(pkg_name)
-        hits = self.versions(pkg_name)
-        if ver_spec is None:  # latest version
-            return hits[0]
+    def _determin_hit(self, pkg_data, ver_spec):
+        pkg_name = pkg_data['info']['name']
+        if ver_spec is None:
+            return self._package_latest_release(pkg_data)
         else:
-            for hit in hits:
+            for hit in self._package_releases(pkg_data):
                 if all([op(hit, ver) for op, ver in ver_spec.specs]):
                     return hit
             else:
@@ -1261,8 +1256,13 @@ if __name__ == '__main__':
 
         elif ns.sub_command == 'update':
             repository = get_repository(ns.package_name)
-            repository.update(ns.package_name)
-
+            
+            with save_current_sys_modules():
+                fake_setuptools_modules()
+                ensure_pkg_resources()  # install pkg_resources if needed
+                # start with what we have installed (i.e. in the config file)
+                sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
+                repository.update(ns.package_name)
         else:
             raise PipError('unknown command: {}'.format(ns.sub_command))
 
