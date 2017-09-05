@@ -586,7 +586,7 @@ def git_push(args):
         porcelain.push(repo.repo.path, result.url, branch_name, errstream=outstream)
  
     for line in outstream.getvalue().split('\n'):
-            print(line.replace(pw, '*******'))
+        print(line.replace(pw, '*******') if pw else line)
     
     print 'success!'
 
