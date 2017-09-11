@@ -852,6 +852,7 @@ class PackageRepository(object):
                                 and self.config.get_dependencies(dependency) is not None:
                             print('Removing dependency: {}'.format(dependency))
                             self.remove(dependency)
+
         else:
             raise PipError('package not installed: {}'.format(pkg_name))
 
