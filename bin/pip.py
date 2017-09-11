@@ -277,7 +277,7 @@ def fake_setuptools_modules():
     for m in distutils_command_modules:
         fake_module(m)
     sys.modules['distutils.util'].get_platform = OmniClass()
-    # fix for new problem in issue 169 
+    # fix for new problem in issue 169
     sys.modules['distutils.command.build_ext'].sub_commands = []
     sys.modules['setuptools.command.build_ext'].sub_commands = []
 
@@ -852,7 +852,6 @@ class PackageRepository(object):
                                 and self.config.get_dependencies(dependency) is not None:
                             print('Removing dependency: {}'.format(dependency))
                             self.remove(dependency)
-
         else:
             raise PipError('package not installed: {}'.format(pkg_name))
 
@@ -916,7 +915,7 @@ class PyPIRepository(PackageRepository):
     def _package_info(self, pkg_data):
         return pkg_data['info']
 
-    def versions(self, pkg_name):                
+    def versions(self, pkg_name):
         pkg_name = self.get_standard_package_name(pkg_name)
         pkg_data = self._package_data(pkg_name)
         releases = self._package_releases(pkg_data)
@@ -967,6 +966,8 @@ class PyPIRepository(PackageRepository):
             raise PipError('Package already installed')
 
     def update(self, pkg_name):
+        global SITE_PACKAGES_FOLDER
+
         pkg_name = self.get_standard_package_name(pkg_name)
         if self.config.module_exists(pkg_name):
             pkg_data = self._package_data(pkg_name)
@@ -974,6 +975,11 @@ class PyPIRepository(PackageRepository):
             current = self.config.get_info(pkg_name)
             if not current['version'] == hit:
                 print('Updating {}'.format(pkg_name))
+
+                files_installed = self.config.get_files_installed(pkg_name)
+                if files_installed:
+                    SITE_PACKAGES_FOLDER = os.path.dirname(files_installed[0])
+
                 self.remove(pkg_name)
                 self.install(pkg_name, VersionSpecifier((('==', hit),)))
             else:
@@ -1256,7 +1262,7 @@ if __name__ == '__main__':
 
         elif ns.sub_command == 'update':
             repository = get_repository(ns.package_name)
-            
+
             with save_current_sys_modules():
                 fake_setuptools_modules()
                 ensure_pkg_resources()  # install pkg_resources if needed
