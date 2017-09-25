@@ -1,7 +1,7 @@
 monkeypatching(5) --- CREATING NEW PATCHES
 ==========================================
 
-All Patches are contained in modules in "$STASH_ROOT/lib/mlpatches".
+All builtin Patches are contained in modules in "$STASH_ROOT/lib/mlpatches".
 
 The following Patchtypes are available:
    BasePatch():
@@ -43,9 +43,15 @@ class MyPatch(base.FunctionPatch):
 MY_PATCH = MyPatch()
 '''
 
-ModulePatches should be defined in the "modulepatches"-submodule of mlpatches.
+Builtin ModulePatches should be defined in the "modulepatches"-submodule of mlpatches.
 They need to be registered in "modulepatches.MODULE_PATCHES" dictionary.
 This should be done in a hardcoded way.
 
-All other Patches should be defined and instanciated in their own module.
+All other builtin Patches should be defined and instanciated in their own module.
 They should then be imported in the "patches" submodule and registered in the "patches.(IN)STABLE_PATCHES" dictionary.
+
+You can also add your own patches in "$HOME2/stash_extension/patches/" if you dont want to modify StaSh.
+In this case you can define a dictionary named "STABLE_PATCHES" and/or a dictionary named "INSTABLE_PATCHES".
+They should map a name to a patch instance.
+Extensions are only loaded the first time the "monkeylord"-command is executed.
+If you want to reload the extensions, force-quit Pythonista  and restart StaSh.

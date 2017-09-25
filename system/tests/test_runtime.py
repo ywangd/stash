@@ -1,3 +1,4 @@
+ 
 # coding=utf-8
 import os
 import unittest
@@ -69,6 +70,7 @@ la=ls -a
 ll=ls -la
 logout=echo "Use the close button in the upper right corner to exit StaSh."
 paste=pbpaste
+unmount=umount
 
 AA is{0}
 copy=pbcopy
@@ -78,6 +80,7 @@ la=ls -a
 ll=ls -la
 logout=echo "Use the close button in the upper right corner to exit StaSh."
 paste=pbpaste
+unmount=umount
 
 
 --- source the file ---
@@ -90,6 +93,7 @@ la=ls -a
 ll=ls -la
 logout=echo "Use the close button in the upper right corner to exit StaSh."
 paste=pbpaste
+unmount=umount
 
 AA is sourced
 copy=pbcopy
@@ -100,6 +104,7 @@ la=ls -a
 ll=ls -la
 logout=echo "Use the close button in the upper right corner to exit StaSh."
 paste=pbpaste
+unmount=umount
 
 [stash]$ """.format(' ')
         self.do_test('test06.sh', cmp_str, ensure_undefined=('A',))

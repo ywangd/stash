@@ -5,7 +5,7 @@ StaSh - Pythonista Shell
 https://github.com/ywangd/stash
 """
 
-__version__ = '0.6.17'
+__version__ = '0.6.19'
 
 import os
 import sys
@@ -20,6 +20,7 @@ import logging.handlers
 from .system.shcommon import IN_PYTHONISTA, ON_IPAD
 from .system.shcommon import _STASH_ROOT, _STASH_CONFIG_FILES, _SYS_STDOUT
 from .system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
+from .system.shcommon import _EXTERNAL_DIRS
 from .system.shuseractionproxy import ShUserActionProxy
 from .system.shiowrapper import enable as enable_io_wrapper, disable as disable_io_wrapper
 from .system.shparsers import ShParser, ShExpander, ShCompleter
@@ -71,6 +72,17 @@ VK_SYMBOLS=~/.-*|>$'=!&_"\?`
 """.format(text_size=14 if ON_IPAD else 12)
 
 
+# create directories outside STASH_ROOT
+# we should do this each time StaSh because some commands may require
+# this directories
+for p in _EXTERNAL_DIRS:
+	if not os.path.exists(p):
+		try:
+			os.mkdir(p)
+		except:
+			pass
+
+
 class StaSh(object):
     """
     Main application class. It initialize and wires the components and provide
@@ -78,7 +90,8 @@ class StaSh(object):
     """
 
     def __init__(self, debug=(), log_setting=None,
-                 no_cfgfile=False, no_rcfile=False, no_historyfile=False):
+                 no_cfgfile=False, no_rcfile=False, no_historyfile=False,
+                 command=None):
         self.__version__ = __version__
 
         # Intercept IO
@@ -128,8 +141,13 @@ class StaSh(object):
         # Load shared libraries
         self._load_lib()
 
-        # Show tip of the day (this calls script_will_end)
-        self('$STASH_ROOT/bin/totd.py', add_to_history=False, persistent_level=0)
+        # run command (this calls script_will_end)
+        if command is None:
+            # show tip of the day
+            command = '$STASH_ROOT/bin/totd.py'
+        if command:
+        	# do not run command if command is False (but not None)
+            self(command, add_to_history=False, persistent_level=0)
 
     def __call__(self, input_, persistent_level=2, *args, **kwargs):
         """ This function is to be called by external script for
@@ -280,4 +298,3 @@ class StaSh(object):
 
     def text_strikethrough(self, s, **kwargs):
         return self.text_style(s, {'traits': ['strikethrough']}, **kwargs)
-

@@ -96,7 +96,7 @@ class Popen(object):
 		else:
 			if args[0] == sys.executable:
 				# common use case
-				args = ["python"] + list(args)
+				args = ["python"] + list(args)[1:]
 			self.cmd = l2c.list2cmdline(args)
 
 		# === setup std* ===
@@ -146,15 +146,15 @@ class Popen(object):
 		
 		# setup stdin
 		if stdin is None:
-			# use own stdout
+			# use own stdin
 			self.stdin = None
 			self._sp_stdin = None
 		elif stdin == PIPE:
 			# create new pipe
 			rfd, wfd = os.pipe()
 			self._fds += [rfd, wfd]
-			self.stdin = os.fdopen(rfd, "wb")
-			self._sp_stdin = os.fdopen(wfd, "rb")
+			self.stdin = os.fdopen(wfd, "wb")
+			self._sp_stdin = os.fdopen(rfd, "rb")
 		elif isinstance(stdin, (int, long)):
 			# use fd
 			self.stdin = None

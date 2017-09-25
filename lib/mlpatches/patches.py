@@ -1,6 +1,10 @@
 """This module contains a dictionary containing all patches and their name."""
+from stash.system.shcommon import _STASH_EXTENSION_PATCH_PATH
+
+from stashutils.core import load_from_dir
 
 from mlpatches import base, os_patches, modulepatches, tl_patches
+from mlpatches import mount_patches
 
 STABLE_PATCHES = {  # name -> Patch()
 	"os_popen": os_patches.POPEN_PATCH,
@@ -18,16 +22,35 @@ STABLE_PATCHES = {  # name -> Patch()
 
 INSTABLE_PATCHES = {  # name -> Patch()
 	# "tl_argv": tl_patches.TL_ARGV_PATCH,
+	"MOUNT": mount_patches.MOUNT_PATCHES,
 }
 
-# create a empty dict and update it
+# update with extensions
+extensions = load_from_dir(
+	dirpath=_STASH_EXTENSION_PATCH_PATH, varname="STABLE_PATCHES",
+	)
+for ext in extensions:
+	if not isinstance(ext, dict):
+		continue
+	else:
+		STABLE_PATCHES.update(ext)
+
+extensions = load_from_dir(
+	dirpath=_STASH_EXTENSION_PATCH_PATH, varname="INSTABLE_PATCHES",
+	)
+for ext in extensions:
+	if not isinstance(ext, dict):
+		continue
+	else:
+		INSTABLE_PATCHES.update(ext)
+
+# create an empty dict and update it
 
 PATCHES = {}
 
 STABLE_PATCHES.update(modulepatches.MODULE_PATCHES)  # modulepatches should be available in STABLE
 PATCHES.update(INSTABLE_PATCHES)  # update with INSTABLE first
 PATCHES.update(STABLE_PATCHES)  # update with STABLE patches (overwriting INSTABLE patches if required)
-# PATCHES.update(modulepatches.MODULE_PATCHES)
 
 
 # define a PatchGroup with all patches

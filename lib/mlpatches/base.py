@@ -3,8 +3,10 @@ import sys
 import imp
 import os
 
+from stashutils.core import get_stash
 
-_stash = None  # set this before importing other modules from mlpatches
+
+_stash = get_stash()
 
 
 class IncompatiblePatch(Exception):
@@ -37,6 +39,7 @@ class BasePatch(object):
 				raise IncompatiblePatch("Python 2 not supported!")
 			if pyv == 3 and not self.PY3:
 				raise IncompatiblePatch("Python 3 not supported!")
+			self.pre_enable()
 			self.do_enable()
 			self.enabled = True
 	
@@ -52,6 +55,10 @@ class BasePatch(object):
 	
 	def do_disable(self):
 		"""This should be overwritten in subclasses and remove the patch."""
+		pass
+	
+	def pre_enable(self):
+		"""this will be called between enable() and do_enable()."""
 		pass
 
 
@@ -143,6 +150,7 @@ class PatchGroup(BasePatch):
 	def enable(self):
 		# we need to overwrite enable() because
 		# the patches should check wether they are already enabled
+		self.pre_enable()
 		self.do_enable()
 	
 	def disable(self):

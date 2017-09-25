@@ -30,5 +30,6 @@
     "Show a random tip with command totd",
     "Edit files with unconventional names using edit, e.g. edit .stash_config",
     "Use mc to access files in your Dropbox or on a FTP-Server",
-    "Improve script-compatibility with the monkeylord command"
+    "Improve script-compatibility with the monkeylord command",
+    "Access remote filesystems using the mount and umount commands"
 ]

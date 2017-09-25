@@ -1,0 +1,14 @@
+MOUNTING(2) --- WARNINGS
+========================
+
+This documentation was written by a non-native english-spreaker and may contain terrible spelling mistakes and/or grammatical bugs. I do not take any responsibility for any braindamage caused by such.
+
+The 'mount' and 'unmount'-commands use monkeypatches.
+This may cause bugs.
+For more detailed warnings about monkeypatching, see 'monkeypatching(2)'.
+
+Some scripts may not work correctly when used on a mounted FS.
+
+Sometimes FilesystemInterfaces may become useless while in use.
+In this case, you may need to restart StaSh.
+For example, the FTP-FSI may get a connection-timeout and break, preventing you from executing any commands.

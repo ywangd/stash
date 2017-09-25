@@ -20,13 +20,13 @@ from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
     ShFileNotFound, ShEventNotFound, ShNotExecutable
 # noinspection PyProtectedMember
 from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE, _SYS_STDOUT, _SYS_STDERR
-from .shcommon import is_binary_file
+from .shcommon import is_binary_file, _STASH_EXTENSION_BIN_PATH
 from .shparsers import ShPipeSequence
 from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
 
 
 # Default .stashrc file
-_DEFAULT_RC = r"""BIN_PATH=~/Documents/bin:$BIN_PATH
+_DEFAULT_RC = r"""BIN_PATH=~/Documents/bin:{bin_ext}:$BIN_PATH
 SELFUPDATE_BRANCH=master
 PYTHONPATH=$STASH_ROOT/lib:$PYTHONPATH
 alias env='printenv'
@@ -36,7 +36,10 @@ alias la='ls -a'
 alias ll='ls -la'
 alias copy='pbcopy'
 alias paste='pbpaste'
-"""
+alias unmount='umount'
+""".format(
+	bin_ext=_STASH_EXTENSION_BIN_PATH,
+	)
 
 
 class ShRuntime(object):
@@ -129,7 +132,7 @@ class ShRuntime(object):
         # Match for commands in current dir and BIN_PATH
         # Effectively, current dir is always the first in BIN_PATH
         for path in ['.'] + current_state.environ_get('BIN_PATH').split(':'):
-            path = os.path.expanduser(path)
+            path = os.path.abspath(os.path.expanduser(path))
             if os.path.exists(path):
                 for f in os.listdir(path):
                     if f == filename or f == filename + '.py' or f == filename + '.sh':
@@ -487,7 +490,13 @@ class ShRuntime(object):
         self.handle_PYTHONPATH()  # Make sure PYTHONPATH is honored
 
         try:
-            execfile(file_path, namespace, namespace)
+            with open(file_path, "rU") as f:
+                content = f.read()
+                code = compile(
+                    content, file_path, "exec", dont_inherit=True
+                    )
+                exec code in namespace, namespace
+            
             current_state.return_value = 0
 
         except SystemExit as e:

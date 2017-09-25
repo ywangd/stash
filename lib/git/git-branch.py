@@ -130,12 +130,12 @@ def branch_list(result):
                     ahead,behind= count_commits_between(repo,value,trackingsha)
                     diffmsg='+{}/-{} compare to'.format(ahead,behind) if result.verbose else ''
                     trackmsg='[{} {} {}]'.format(diffmsg,tracking,trackingsha[0:N])
-                print ('* ' if repo.active_branch == key else '') + key, dispval, trackmsg, commitmsg
+                print (' '.join([('* ' if repo.active_branch == key else '') + key,  dispval, commitmsg]))
         if result.remotes or result.all:
             for key, value in repo.remote_branches.iteritems():
                 dispval=value[0:N]  #todo, --abbrev=n
                 commitmsg=(repo[value].message if result.verbose else '').strip()
-                print ('* ' if repo.active_branch == key else '') + key,  dispval, commitmsg
+                print (' '.join([('* ' if repo.active_branch == key else '') + key,  dispval, commitmsg]))
 
 def delete_branch(delete_branchname,force=False,remote=None, verbose=0):
     '''delete a branch.  

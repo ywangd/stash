@@ -33,6 +33,9 @@ from fnmatch import fnmatchcase
 # noinspection PyUnresolvedReferences
 from six.moves import filterfalse
 
+from stashutils.extensions import create_command
+
+
 PYTHONISTA_BUNDLED_MODULES = [
     'bottle', 'beautifulsoup4', 'pycrypto', 'py-dateutil',
     'dropbox', 'ecdsa', 'evernote', 'Faker', 'feedparser', 'flask', 'html2text',
@@ -295,7 +298,7 @@ def save_current_sys_modules():
     """
     Save the current sys modules and restore them when processing is over
     """
-    saved_sys_modules = dict(sys.modules)
+    # saved_sys_modules = dict(sys.modules)
     save_setuptools = {}
     for name in sorted(sys.modules.keys()):
         if name == 'setuptools' or name.startswith('setuptools.'):
@@ -346,7 +349,7 @@ class CIConfigParer(SafeConfigParser):
 
     def set(self, name, option_name, value):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.set(self, section_name, option_name, value)
+        return SafeConfigParser.set(self, section_name, option_name, value.replace('%', '%%'))
 
     def remove_section(self, name):
         section_name = self._get_section_name(name)
@@ -586,6 +589,22 @@ class ArchiveFileInstaller(object):
         use_2to3 = kwargs.get('use_2to3', False) and six.PY3
 
         files_installed = []
+
+        # handle scripts
+        # we handle them before the packages because they may be moved
+        # while handling the packages
+        scripts = kwargs.get("scripts", [])
+        for script in scripts:
+            print("Handling commandline script: {s}".format(s=script))
+            cmdname = script.replace(os.path.dirname(script), "").replace("/", "")
+            if not "." in cmdname:
+                cmdname += ".py"
+            scriptpath = os.path.join(source_folder, script)
+            with open(scriptpath, "r") as fin:
+                content = fin.read()
+            cmdpath = create_command(cmdname, content)
+            files_installed.append(cmdpath)
+
         packages = ArchiveFileInstaller._consolidated_packages(packages)
         for p in sorted(packages):  # folders or files under source root
 
@@ -650,7 +669,33 @@ class ArchiveFileInstaller(object):
                 if use_2to3:
                     _stash('2to3 -w {} > /dev/null'.format(target_file))
 
-        # TODO: SCRIPTS?
+        # handle entry points
+        entry_points = kwargs.get("entry_points", {})
+        for epn in entry_points:
+            ep = entry_points[epn]
+            if epn == "console_scripts":
+                for dec in ep:
+                    name, loc = dec.replace(" ", "").split("=")
+                    modname, funcname = loc.split(":")
+                    if not name.endswith(".py"):
+                        name += ".py"
+                    desc = kwargs.get("description", "")
+                    path = create_command(
+                        name,
+                        """'''{d}'''
+from {m} import {n}
+
+if __name__ == "__main__":
+    {n}()
+""".format(
+    m=modname,
+    n=funcname,
+    d=desc,
+    ),
+                        )
+                    files_installed.append(path)
+            else:
+                print("Warning: passing entry points for '{n}'.".format(n=epn))
 
         # Recursively Handle dependencies
         dependencies = kwargs.get('install_requires', [])
@@ -784,10 +829,10 @@ class PackageRepository(object):
                     else:
                         print('Package may have been removed externally without using pip. Deleting from registry ...')
             else:
-                if os.path.isdir(os.path.expanduser('~/Documents/site-packages/%s' % pkg_name.lower())):
-                    shutil.rmtree(os.path.expanduser('~/Documents/site-packages/%s' % pkg_name.lower()))
-                elif os.path.isfile(os.path.expanduser('~/Documents/site-packages/%s.py' % pkg_name.lower())):
-                    os.remove(os.path.expanduser('~/Documents/site-packages/%s.py' % pkg_name.lower()))
+                if os.path.isdir(os.path.expanduser('~/Documents/site-packages/{}'.format(pkg_name.lower()))):
+                    shutil.rmtree(os.path.expanduser('~/Documents/site-packages/{}'.format(pkg_name.lower())))
+                elif os.path.isfile(os.path.expanduser('~/Documents/site-packages/{}.py'.format(pkg_name.lower()))):
+                    os.remove(os.path.expanduser('~/Documents/site-packages/{}.py'.format(pkg_name.lower())))
                 else:
                     print('Package may have been removed externally without using pip. Deleting from registry ...')
 
@@ -813,7 +858,6 @@ class PackageRepository(object):
 
     def update(self, pkg_name):
         if self.config.module_exists(pkg_name):
-            info = self.config.get_info(pkg_name)
             raise PipError('update only available for packages installed from PyPI')
         else:
             PipError('package not installed: {}'.format(pkg_name))
@@ -827,6 +871,7 @@ class PyPIRepository(PackageRepository):
     def __init__(self):
         super(PyPIRepository, self).__init__()
         import xmlrpclib
+        # DO NOT USE self.pypi, it's there just for search, it's obsolete/legacy
         self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
         self.standard_package_names = {}
 
@@ -842,6 +887,9 @@ class PyPIRepository(PackageRepository):
 
     def search(self, pkg_name):
         pkg_name = self.get_standard_package_name(pkg_name)
+        # XML-RPC replacement would be tricky, because we probably
+        # have to use simplified / cached index to search in, can't
+        # find JSON API to search for packages
         hits = self.pypi.search({'name': pkg_name}, 'and')
         if not hits:
             raise PipError('No matches found: {}'.format(pkg_name))
@@ -849,21 +897,42 @@ class PyPIRepository(PackageRepository):
         hits = sorted(hits, key=lambda pkg: pkg['_pypi_ordering'], reverse=True)
         return hits
 
-    def versions(self, pkg_name):
-        pkg_name = self.get_standard_package_name(pkg_name)
-        hits = self.pypi.package_releases(pkg_name, True)  # True to show all versions
+    def _package_data(self, pkg_name):
+        r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
+        if not r.status_code == requests.codes.ok:
+            raise PipError('Failed to fetch package release urls')
 
-        if not hits:
+        return r.json()
+
+    def _package_releases(self, pkg_data):
+        return pkg_data['releases'].keys()
+
+    def _package_latest_release(self, pkg_data):
+        return pkg_data['info']['version']
+
+    def _package_downloads(self, pkg_data, hit):
+        return pkg_data['releases'][hit]
+
+    def _package_info(self, pkg_data):
+        return pkg_data['info']
+
+    def versions(self, pkg_name):                
+        pkg_name = self.get_standard_package_name(pkg_name)
+        pkg_data = self._package_data(pkg_name)
+        releases = self._package_releases(pkg_data)
+
+        if not releases:
             raise PipError('No matches found: {}'.format(pkg_name))
 
-        return hits
+        return releases
 
     def download(self, pkg_name, ver_spec):
         print('Querying PyPI ... ')
         pkg_name = self.get_standard_package_name(pkg_name)
-        hit = self._determin_hit(pkg_name, ver_spec)
+        pkg_data = self._package_data(pkg_name)
+        hit = self._determin_hit(pkg_data, ver_spec)
 
-        downloads = self.pypi.release_urls(pkg_name, hit)
+        downloads = self._package_downloads(pkg_data, hit)
 
         if not downloads:
             raise PipError('No download available for {}: {}'.format(pkg_name, hit))
@@ -877,7 +946,7 @@ class PyPIRepository(PackageRepository):
         if not source:
             raise PipError('Source distribution not available for {}: {}'.format(pkg_name, hit))
 
-        pkg_info = self.pypi.release_data(pkg_name, hit)
+        pkg_info = self._package_info(pkg_data)
         pkg_info['url'] = 'pypi'
 
         print('Downloading package ...')
@@ -900,25 +969,24 @@ class PyPIRepository(PackageRepository):
     def update(self, pkg_name):
         pkg_name = self.get_standard_package_name(pkg_name)
         if self.config.module_exists(pkg_name):
+            pkg_data = self._package_data(pkg_name)
+            hit = self._package_latest_release(pkg_data)
             current = self.config.get_info(pkg_name)
-            hit = self.pypi.package_releases(pkg_name)[0]
             if not current['version'] == hit:
-                print('Updating %s' % pkg_name)
+                print('Updating {}'.format(pkg_name))
                 self.remove(pkg_name)
-                self.install(pkg_name, VersionSpecifier(hit))
+                self.install(pkg_name, VersionSpecifier((('==', hit),)))
             else:
                 print('Package already up-to-date.')
-
         else:
             raise PipError('package not installed: {}'.format(pkg_name))
 
-    def _determin_hit(self, pkg_name, ver_spec):
-        pkg_name = self.get_standard_package_name(pkg_name)
-        hits = self.versions(pkg_name)
-        if ver_spec is None:  # latest version
-            return hits[0]
+    def _determin_hit(self, pkg_data, ver_spec):
+        pkg_name = pkg_data['info']['name']
+        if ver_spec is None:
+            return self._package_latest_release(pkg_data)
         else:
-            for hit in hits:
+            for hit in self._package_releases(pkg_data):
                 if all([op(hit, ver) for op, ver in ver_spec.specs]):
                     return hit
             else:
@@ -1188,8 +1256,13 @@ if __name__ == '__main__':
 
         elif ns.sub_command == 'update':
             repository = get_repository(ns.package_name)
-            repository.update(ns.package_name)
-
+            
+            with save_current_sys_modules():
+                fake_setuptools_modules()
+                ensure_pkg_resources()  # install pkg_resources if needed
+                # start with what we have installed (i.e. in the config file)
+                sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
+                repository.update(ns.package_name)
         else:
             raise PipError('unknown command: {}'.format(ns.sub_command))
 
