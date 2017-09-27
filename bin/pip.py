@@ -547,6 +547,12 @@ class ArchiveFileInstaller(object):
         """
         Transform and Run AST of the setup file
         """
+        
+        try:
+            import pkg_resources
+        except ImportError:
+            # pkg_resources install may be in progress
+            pkg_resources = None
 
         namespace = {
             '_setup_stub_': _setup_stub_,
@@ -671,8 +677,16 @@ class ArchiveFileInstaller(object):
 
         # handle entry points
         entry_points = kwargs.get("entry_points", {})
+        if isinstance(entry_points, (str, unicode)):
+            if pkg_resources is not None:
+                entry_points = {s: c for s, c in pkg_resources.split_sections(entry_points)}
+            else:
+                print("Warning: pkg_resources not available, skipping entry_points definitions.")
+                entry_points = {}
         for epn in entry_points:
             ep = entry_points[epn]
+            if isinstance(ep, (str, unicode)):
+                ep = [ep]
             if epn == "console_scripts":
                 for dec in ep:
                     name, loc = dec.replace(" ", "").split("=")
