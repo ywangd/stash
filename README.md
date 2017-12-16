@@ -21,7 +21,7 @@ Remarkable contributions are also made by
 
 StaSh stands for Pythoni**sta** **Sh**ell. While **Sta** may not be the best
 abbreviation for Pythonista, it forms a concise and meaningful word with the
-following **Sh** part. So the name StaSh was chose to indicate it is a confined
+following **Sh** part. So the name StaSh was chosen to indicate it is a confined
 environment and great treasures may be found within.
 
 
