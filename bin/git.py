@@ -388,7 +388,7 @@ def git_reset(args):
                 f.write(file_contents)
 
 def get_config_or_prompt(repo, section, name, prompt, save=None):
-    config = repo.repo.get_config()
+    config = repo.repo.get_config_stack()
     try:
         value = config.get(section, name)
     except KeyError:
