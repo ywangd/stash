@@ -201,11 +201,13 @@ def sh_background(name=None):
 
 
 class ShFileNotFound(Exception):
-    pass
+    def __init__(self, message=""):
+    	self.message = message
 
 
 class ShIsDirectory(Exception):
-    pass
+    def __init__(self, message=""):
+    	self.message = message
 
 
 class ShNotExecutable(Exception):

@@ -152,7 +152,7 @@ class StaSh(object):
         self.runtime.load_rcfile(no_rcfile=no_rcfile)
         self.io.write(
         	self.text_style(
-        		'StaSh v%s on python %s' % (
+        		'StaSh v%s on python %s\n' % (
         			self.__version__,
         			platform.python_version(),
         			), 
