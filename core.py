@@ -9,6 +9,7 @@ __version__ = '0.6.20'
 
 import os
 import sys
+import platform
 
 try:
 	# try to import py2 modules
@@ -149,9 +150,16 @@ class StaSh(object):
         if IN_PYTHONISTA:
             os.chdir(self.runtime.state.environ_get('HOME2'))
         self.runtime.load_rcfile(no_rcfile=no_rcfile)
-        self.io.write(self.text_style('StaSh v%s\n' % self.__version__,
-                                      {'color': 'blue', 'traits': ['bold']},
-                                      always=True))
+        self.io.write(
+        	self.text_style(
+        		'StaSh v%s on python %s' % (
+        			self.__version__,
+        			platform.python_version(),
+        			), 
+        		{'color': 'blue', 'traits': ['bold']},
+        		always=True,
+        		),
+        	)
         # Load shared libraries
         self._load_lib()
 

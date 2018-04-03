@@ -1,6 +1,7 @@
 # coding: utf-8
 import os
 import sys
+import platform
 import logging
 import threading
 import functools
@@ -24,10 +25,14 @@ from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
     ShFileNotFound, ShEventNotFound, ShNotExecutable
 # noinspection PyProtectedMember
 from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE, _SYS_STDOUT, _SYS_STDERR
-from .shcommon import is_binary_file, _STASH_EXTENSION_BIN_PATH
+from .shcommon import is_binary_file, _STASH_EXTENSION_BIN_PATH, PY3
 from .shparsers import ShPipeSequence
 from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
 
+if PY3:
+	# rename unicode, str
+	unicode = str
+	str = bytes
 
 # Default .stashrc file
 _DEFAULT_RC = r"""BIN_PATH=~/Documents/bin:{bin_ext}:$BIN_PATH
@@ -63,10 +68,12 @@ class ShRuntime(object):
             environ=dict(os.environ,
                          HOME2=os.path.join(os.environ['HOME'], 'Documents'),
                          STASH_ROOT=_STASH_ROOT,
+                         STASH_PY_VERSION=platform.python_version(),
                          BIN_PATH=os.path.join(_STASH_ROOT, 'bin'),
                          # Must have a placeholder because it is needed before _DEFAULT_RC is loaded
                          PROMPT='[\W]$ ',
-                         PYTHONISTA_ROOT=os.path.dirname(sys.executable)),
+                         PYTHONISTA_ROOT=os.path.dirname(sys.executable)
+                         ),
             sys_stdin=self.stash.io,
             sys_stdout=self.stash.io,
             sys_stderr=self.stash.io,
@@ -480,7 +487,13 @@ class ShRuntime(object):
 
         saved_sys_argv = sys.argv[:]
         # First argument is the script name
-        sys.argv = [os.path.basename(filename)] + (args or [])
+        argv = [os.path.basename(filename)] + (args or [])
+        
+        # convert sys.argv to unicode if on python3
+        if PY3:
+        	# todo: this is only a temporary solution and needs to be redone. This may be buggy.
+        	argv = [c if isinstance(c, unicode) else c.decode("latin-1") for c in argv]
+        sys.argv = argv
 
         # Set current os environ to the threading environ
         saved_os_environ = os.environ
