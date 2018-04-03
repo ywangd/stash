@@ -21,7 +21,8 @@ URL_BASE = 'https://raw.githubusercontent.com/{owner}/stash'
 
 
 class UpdateError(Exception):
-    pass
+    def __init__(self, message=""):
+    	self.message = message
 
 
 def get_remote_version(owner, branch):
@@ -32,7 +33,7 @@ def get_remote_version(owner, branch):
     """
     import ast
 
-    url = '%s/%s/stash.py?q=%s' % (URL_BASE.format(owner=owner), branch, randint(1, 999999))
+    url = '%s/%s/core.py?q=%s' % (URL_BASE.format(owner=owner), branch, randint(1, 999999))
 
     try:
         req = requests.get(url)
@@ -108,9 +109,12 @@ def main(args):
                            _stash.text_style(url, {'color': 'blue', 'traits': ['underline']})))
 
         try:
-            exec requests.get(
+            exec(
+            	requests.get(
                 '{}?q={}'.format(url, randint(1, 999999))
-            ).text in {'_IS_UPDATE': True, '_br': branch, '_owner': owner}
+                ).text,
+                {'_IS_UPDATE': True, '_br': branch, '_owner': owner},
+                )
             print(_stash.text_color('Update completed.', 'green'))
             print(_stash.text_color(
                 'Please restart Pythonista to ensure changes becoming effective.', 'green'))
