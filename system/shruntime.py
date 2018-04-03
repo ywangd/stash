@@ -4,7 +4,11 @@ import sys
 import logging
 import threading
 import functools
-from StringIO import StringIO
+
+try:
+	from StringIO import StringIO
+except ImportError:
+	from io import StringIO, IOBase as file
 
 import pyparsing as pp
 
@@ -224,7 +228,7 @@ class ShRuntime(object):
                         # Parse and expand the line (note this function returns a generator object)
                         expanded = self.expander.expand(line)
                         # The first member is the history expanded form and number of pipe_sequence
-                        newline, n_pipe_sequences = expanded.next()
+                        newline, n_pipe_sequences = next(expanded)
                         # Only add history entry if:
                         #   1. It is explicitly required
                         #   2. It is the first layer thread directly spawned by the main thread
@@ -238,7 +242,7 @@ class ShRuntime(object):
                         try:
                             # Subsequent members are actual commands
                             for _ in range(n_pipe_sequences):
-                                pipe_sequence = expanded.next()
+                                pipe_sequence = next(expanded)
                                 if pipe_sequence.in_background:
                                     # For background command, separate worker is created
                                     self.run(pipe_sequence,
@@ -448,7 +452,7 @@ class ShRuntime(object):
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
             finally:
-                if type(outs) is file:
+                if isinstance(outs, file):
                     outs.close()
                 if isinstance(ins, StringIO):  # release the string buffer
                     ins.close()
@@ -495,7 +499,7 @@ class ShRuntime(object):
                 code = compile(
                     content, file_path, "exec", dont_inherit=True
                     )
-                exec code in namespace, namespace
+                exec(code, namespace, namespace)
             
             current_state.return_value = 0
 

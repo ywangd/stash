@@ -9,8 +9,18 @@ __version__ = '0.6.20'
 
 import os
 import sys
-from ConfigParser import ConfigParser
-from StringIO import StringIO
+
+try:
+	# try to import py2 modules
+	from ConfigParser import ConfigParser
+	from StringIO import StringIO
+	PY3 = False
+except ImportError:
+	# py 3
+	from configparser import ConfigParser
+	from io import StringIO, IOBase as file
+	PY3 = True
+
 import imp as pyimp  # rename to avoid name conflict with objc_util
 import logging
 import logging.handlers
@@ -52,14 +62,14 @@ _DEBUG_COMPLETER = 403
 # Default configuration (can be overridden by external configuration file)
 _DEFAULT_CONFIG = """[system]
 rcfile=.stashrc
-py_traceback=0
+py_traceback=1
 py_pdb=0
 input_encoding_utf8=1
 ipython_style_history_search=1
 thread_type=ctypes
 
 [display]
-TEXT_FONT_SIZE={text_size}
+TEXT_FONT_SIZE={font_size}
 BUTTON_FONT_SIZE=14
 BACKGROUND_COLOR=(0.0, 0.0, 0.0)
 TEXT_COLOR=(1.0, 1.0, 1.0)
@@ -69,7 +79,9 @@ HISTORY_MAX=50
 BUFFER_MAX=150
 AUTO_COMPLETION_MAX=50
 VK_SYMBOLS=~/.-*|>$'=!&_"\?`
-""".format(text_size=14 if ON_IPAD else 12)
+""".format(
+	font_size=(14 if ON_IPAD else 12),
+	)
 
 
 # create directories outside STASH_ROOT
@@ -88,6 +100,8 @@ class StaSh(object):
     Main application class. It initialize and wires the components and provide
     utility interfaces to running scripts.
     """
+    
+    PY3 = PY3
 
     def __init__(self, debug=(), log_setting=None,
                  no_cfgfile=False, no_rcfile=False, no_historyfile=False,
@@ -161,8 +175,12 @@ class StaSh(object):
     def _load_config(no_cfgfile=False):
         config = ConfigParser()
         config.optionxform = str  # make it preserve case
+        
         # defaults
-        config.readfp(StringIO(_DEFAULT_CONFIG))
+        if not PY3:
+        	config.readfp(StringIO(_DEFAULT_CONFIG))
+        else:
+        	config.read_file(StringIO(_DEFAULT_CONFIG))
 
         # update from config file
         if not no_cfgfile:
@@ -249,9 +267,12 @@ class StaSh(object):
         :return:
         """
         # No color for pipes, files and Pythonista console
-        if not always and (isinstance(sys.stdout, StringIO)
-                           or isinstance(sys.stdout, file)
-                           or sys.stdout.write.im_self is _SYS_STDOUT):
+        if not always and (
+        	isinstance(sys.stdout, StringIO)
+        	or isinstance(sys.stdout, file)
+        	# or sys.stdout.write.im_self is _SYS_STDOUT
+        	or sys.stdout is _SYS_STDOUT
+        	):
             return s
 
         fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)

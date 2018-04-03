@@ -1,4 +1,3 @@
-#!python2
 # coding: utf-8
 """
 Launch StaSh in a more flexible and reliable way.

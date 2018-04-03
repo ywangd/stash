@@ -15,9 +15,14 @@ try:
 except ImportError:
     from dummyobjc_util import *
 
-from .shcommon import IN_PYTHONISTA, ON_IOS_8
+from .shcommon import IN_PYTHONISTA, ON_IOS_8, PY3
 # noinspection PyPep8Naming
 from .shcommon import sh_delay, Graphics as graphics
+
+
+if PY3:
+	# set xrange as alias for range
+	xrange = range
 
 NSMutableAttributedString = ObjCClass('NSMutableAttributedString')
 UIFont = ObjCClass('UIFont')

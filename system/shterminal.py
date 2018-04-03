@@ -12,7 +12,13 @@ except ImportError:
     import dummyui as ui
     from .dummyobjc_util import *
 
-from .shcommon import CTRL_KEY_FLAG
+from .shcommon import CTRL_KEY_FLAG, PY3
+
+
+if PY3:
+	# rename string types
+	unicode = str
+	str = bytes
 
 # ObjC related stuff
 UIFont = ObjCClass('UIFont')
