@@ -28,11 +28,11 @@ class DropboxSetupCmd(cmd.Cmd):
 
 	def do_list(self, cmd):
 		"""list: lists the dropbox usernames."""
-		print
+		self.stdout.write("\n")
 		for service, account in keychain.get_services():
 			if service == dbutils.DB_SERVICE:
-				print account
-		print
+				self.stdout.write(account + "\n")
+		self.stdout.write("\n")
 
 	def do_del(self, cmd):
 		"""del USERNAME: resets the dropbox for USERNAME."""
