@@ -60,7 +60,7 @@ if passing_h:
 if ns.module:
     sys.argv = [ns.module] + ns.args_to_pass
     try:
-        runpy.run_module(str(ns.module), run_name='__main__')
+        runpy.run_module(ns.module, run_name='__main__')
     except ImportError as e:
         print('ImportError: ' + str(e))
         sys.exit(1)
@@ -83,7 +83,7 @@ else:
             '__doc__': None,
             '__package__': None,
             '__debug__': True,
-            '__builtins__': builtins,  # yes, __builtins__
+            '__builtins__': builtins,
             '_stash': _stash,
         }
         code.interact(local=locals)
