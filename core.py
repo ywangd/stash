@@ -63,7 +63,7 @@ _DEBUG_COMPLETER = 403
 # Default configuration (can be overridden by external configuration file)
 _DEFAULT_CONFIG = """[system]
 rcfile=.stashrc
-py_traceback=1
+py_traceback=0
 py_pdb=0
 input_encoding_utf8=1
 ipython_style_history_search=1
