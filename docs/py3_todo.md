@@ -20,6 +20,12 @@ List of known issues, bugs and todos for stash py3 (and py2) compatibility.
 
 #`easy_config.py`
 - while syntax is py3 compatible, there are some errors
+- untested
+
+#`pip.py`
+- many bugs
+- installation using `setupy.py` fails most of the time, always falls back to package detection
+- maybe `pip3` for py3 instead of a single `pip` command.
 
 #Non py3-issues
 - `cp.py` has no `-r` argument

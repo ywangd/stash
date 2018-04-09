@@ -1,6 +1,13 @@
 import os
 import fileinput
 
+from stash.system.shcommon import PY3
+
+
+if PY3:
+	# py3 compatibility
+	unicode = str
+
 
 def collapseuser(path):
     """Reverse of os.path.expanduser: return path relative to ~, if
