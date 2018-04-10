@@ -16,7 +16,7 @@ def main(args):
 
     for worker in _stash.get_workers():
         if worker.job_id != current_worker.job_id:
-            print worker
+            print(worker)
 
 
 if __name__ == '__main__':

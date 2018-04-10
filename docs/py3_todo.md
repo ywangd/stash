@@ -2,7 +2,7 @@
 List of known issues, bugs and todos for stash py3 (and py2) compatibility.
 
 #General
-- 'cc'-key crashes pythonista
+- ctype threads in py3 bugged (crash on cc and kill)
 - more commands need to be ported
 - sys.argv needs to be bytestr in py2 and unistt in py3. There is only a quick fix in place (somewhere in `shruntime.py`), which should be replaced as it only works for common usage situations
 - unittests for py3
