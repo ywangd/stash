@@ -13,10 +13,11 @@ optional arguments:
   -k KEY, --key KEY  Encrypt/Decrypt Key.
   -d, --decrypt      Flag to decrypt.
 '''
-import os
 import argparse
 import base64
+import os
 
+_stash = globals()['_stash']
 try:
 	import pyaes
 except:

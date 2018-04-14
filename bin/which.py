@@ -3,6 +3,8 @@
 
 import argparse
 
+_stash = globals()['_stash']
+
 
 def main(command, fullname=False):
     rt = globals()['_stash'].runtime
@@ -13,6 +15,7 @@ def main(command, fullname=False):
         print filename
     except Exception:
         pass
+
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
