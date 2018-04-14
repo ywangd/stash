@@ -19,22 +19,22 @@ try:
     from simplecrypto.key import AesKey
 except:
     print 'Installing Required packages.'
-    _stash('pip install simplecrypto')
+    _stash('pip install simplecrypto')  # noqa: F821 undefined name
     sys.exit(0)
 
 class Crypt(object):
     def __init__(self,in_filename,out_filename=None):
         self.in_filename = in_filename
         self.out_filename = out_filename
-        
+
     def aes_encrypt(self,key=None, chunksize=64*1024):
         self.out_filename = self.out_filename or self.in_filename+'.enc'
         aes = AesKey(key)
         with open(self.in_filename, 'rb') as infile:
             with open(self.out_filename, 'wb') as outfile:
                 outfile.write(aes.encrypt_raw(infile.read()))
-            
-        
+
+
     def aes_decrypt(self,key, chunksize=64*1024):
         self.out_filename = self.out_filename or os.path.splitext(self.in_filename)[0]
         aes = AesKey(key)
@@ -43,8 +43,9 @@ class Crypt(object):
             with open(self.out_filename, 'wb') as outfile:
                 outfile.write(aes.decrypt_raw(infile.read()))
 
-            
+
 if __name__=='__main__':
+    import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument('-k','--key',action='store',default='',help='Encrypt/Decrypt Key.')
     ap.add_argument('-d','--decrypt',action='store_true',default=False,help='Flag to decrypt.')
@@ -57,4 +58,3 @@ if __name__=='__main__':
         crypt.aes_decrypt(args.key)
     else:
         crypt.aes_encrypt(args.key)
-

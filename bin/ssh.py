@@ -19,15 +19,15 @@ optional arguments:
   --password PASSWORD   Password for rsa/dsa key or password login
   -p PORT, --port PORT  port for ssh default: 22
 '''
-import os
-import sys
 import argparse
+import os
+import re
 import threading
 import time
-import re
-import sys
 
-from paramiko import SSHClient, AutoAddPolicy, SFTPClient
+import console
+from paramiko import AutoAddPolicy, SSHClient
+
 
 def get_pyte():
     import tempfile
@@ -58,7 +58,7 @@ except:
     import pyte
 
 class StashSSH(object):
-    
+
     def __init__(self):
         self.ssh_running = False
         self.screen = pyte.screens.DiffScreen(100,60)
@@ -67,7 +67,7 @@ class StashSSH(object):
         self.stream = pyte.Stream()
         self.stream.attach(self.screen)
         self.pause_output = False
-        
+
     def connect(self,host='', passwd=None, port=22):
         print 'Connecting...'
         self.user, self.host = self.parse_host(host)
@@ -95,20 +95,20 @@ class StashSSH(object):
                 return False
         self.ssh_running = True
         return True
-        
+
     def find_ssh_keys(self):
         files = []
         APP_DIR = os.environ['STASH_ROOT']
         for file in os.listdir(APP_DIR+'/.ssh'):
             if '.' not in file:
                 files.append(APP_DIR+'/.ssh/'+file)
-        return files    
-        
+        return files
+
     def parse_host(self,arg):
         user,host = arg.split('@')
         #host, path = temp.split(':')
         return user, host
-        
+
     def stdout_thread(self):
         while self.ssh_running:
             if self.chan.recv_ready() and not self.pause_output:
@@ -118,7 +118,7 @@ class StashSSH(object):
             if self.screen.dirty:
                 self.screen.dirty.clear()
                 self.update_screen()
-                  
+
     def update_screen(self):
         count = len(self.screen.display)
         for item in reversed(self.screen.display):
@@ -135,7 +135,7 @@ class StashSSH(object):
             line = line.replace('\n','')
         for line in serr.readlines():
             print line.replace('\n','')
-            
+
     def get_remote_path(self):
         self.pause_output = True
         self.chan.send('pwd \n')
@@ -149,27 +149,27 @@ class StashSSH(object):
                 self.pause_output = False
                 break
         return path+'/'
-        
-        
+
+
     def get_file(self,remote, local):
         sftp = self.ssh.open_sftp()
         path = self.get_remote_path()
         sftp.get(path+remote,local)
         sftp.close()
         print 'File transfered.'
-        
+
     def put_file(self,local,remote):
         sftp = self.ssh.open_sftp()
         path = self.get_remote_path()
         sftp.put(local,path+remote)
         sftp.close()
         print 'File transfered.'
-        
+
     def edit_file(self,remote_file):
         import tempfile
         import runpy
         import editor
-    
+
         try:
             temp = tempfile.NamedTemporaryFile(dir=os.path.expanduser('~/Documents'), suffix='.py')
             cur_path = editor.get_path()
@@ -190,12 +190,12 @@ class StashSSH(object):
                     print 'File transfered.'
         except Exception, e:
             print e
-        finally: 
+        finally:
             temp.close()
         #
         #temp.write(file.read())
-        
-        
+
+
     def interactive(self):
         self.transport = self.ssh.get_transport()
         self.chan = self.transport.open_session()
@@ -205,8 +205,8 @@ class StashSSH(object):
         t1 = threading.Thread(target=self.stdout_thread)
         t1.start()
         while True:
-            if self.chan.send_ready():   
-                tmp = raw_input()     
+            if self.chan.send_ready():
+                tmp = raw_input()
                 ssh_args = tmp.split(' ')
                 if ssh_args[0] == 'exit':
                     self.exit()
@@ -220,7 +220,7 @@ class StashSSH(object):
                         tmp.add_argument('file1', action='store',help='put: local file. get: remote file. edit: remote file')
                         tmp.add_argument('file2', action='store',nargs='?', help='get: local file, put: remote file path, edit: blank')
                         ssh_args = tmp.parse_args(ssh_args)
-                        
+
                         if ssh_args.type == 'put':
                             self.put_file(ssh_args.file1,ssh_args.file2)
                         elif ssh_args.type == 'get':
@@ -232,34 +232,32 @@ class StashSSH(object):
                     #pass to avoid invalid arguments from exiting ssh.
                     except:
                         pass
-                            
+
                 else:
                     self.chan.send(tmp+'\n')
-        
-                
-        
+
+
+
     def exit(self):
         self.ssh_running = False
 
-        
+
 if __name__=='__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--password', action='store', default=None, 
+    ap.add_argument('--password', action='store', default=None,
                     help='Password for rsa/dsa key or password login')
-    ap.add_argument('-p', '--port', action='store', default=22,type=int, 
+    ap.add_argument('-p', '--port', action='store', default=22,type=int,
                     help='port for ssh default: 22')
     ap.add_argument('host', help='host ex. user@host.com')
     ap.add_argument('command', nargs='?', default=False, help='Command to send as a quoted string')
     args = ap.parse_args()
-    
+
     ssh = StashSSH()
     if ssh.connect(host=args.host, passwd=args.password, port=args.port):
         if args.command:
             ssh.single_exec(args.command)
             ssh.exit()
         else:
-            ssh.interactive() 
+            ssh.interactive()
     else:
         print 'Connection Failed'
-
-

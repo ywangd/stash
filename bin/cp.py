@@ -7,6 +7,8 @@ from __future__ import print_function
 import argparse
 import os
 import shutil
+import sys
+
 
 def pprint(path):
     if path.startswith(os.environ['HOME']):
@@ -18,7 +20,7 @@ def main(args):
     ap.add_argument('source', nargs='+', help='one or more files or directories to be copied')
     ap.add_argument('dest', help='destination file or folder')
     ns = ap.parse_args(args)
-    
+
     files = ns.source
     dest = ns.dest
 
@@ -30,7 +32,7 @@ def main(args):
                 full_file = os.path.abspath(filef)
                 file_name = os.path.basename(full_file)
                 new_name  = os.path.join(full_dest, file_name)
-                
+
                 try:
                     if os.path.isdir(full_file):
                         shutil.copytree(full_file, new_name)

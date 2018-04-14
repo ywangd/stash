@@ -14,11 +14,10 @@ import argparse
 import paramiko
 #import patchparamiko
 
-
+APP_DIR = os.environ['STASH_ROOT']
 key_mode = {'rsa': 'rsa',
             'dsa': 'dss'}
 
-            
 ap = argparse.ArgumentParser()
 ap.add_argument('-t',choices=('rsa','dsa'), action='store',dest='type', help='Key Type: (rsa,dsa)')
 ap.add_argument('-b', action='store',dest='bits', default=1024, type=int, help='bits for key gen. default: 1024')
@@ -29,7 +28,7 @@ args = ap.parse_args()
 #Keygen for keypair
 if not os.path.isdir(APP_DIR+'/.ssh'):
     os.mkdir(APP_DIR+'/.ssh')
-    
+
 try:
     k = False
     if args.type == 'rsa':

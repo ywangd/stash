@@ -5,7 +5,7 @@ Copies files from local to remote
 usage:
     GET
     scp [user@host:dir/file] [files/dir]
-    
+
     PUT
     scp [file/dir] [file/dir] [user@host:dir]
 '''
@@ -461,16 +461,13 @@ class SCPClient(object):
 class SCPException(Exception):
     """SCP exception class"""
     pass
-    
+
 ############################################
-def find_ssh_keys():
+def find_ssh_keys(base_dir=os.environ['STASH_ROOT']):
     #dir = os.path.expanduser('~/Documents/.ssh/')
-    files = []
-    for file in os.listdir(APP_DIR+'/.ssh'):
-        if '.' not in file:
-            files.append(APP_DIR+'/.ssh/'+file)
-    return files    
-    
+    ssh_path = os.path.join(base_dir, '.ssh')
+    return [ssh_path + file for file in os.listdir(ssh_path)]
+
 def parse_host(arg):
     user,temp = arg.split('@')
     host, path = temp.split(':')
@@ -479,28 +476,28 @@ def parse_host(arg):
 def scp_callback(filename, size, sent):
     if size == sent:
         print filename
-    
+
 
 if __name__ == '__main__':
     from paramiko import SSHClient, AutoAddPolicy
     files = []
-    
+
     ap = argparse.ArgumentParser()
     ap.add_argument('files',nargs='*', help='file or module name')
     args = ap.parse_args()
-    
+
     #scp_mode 0 put 1 get
     if '@' in args.files[0]:
-        scp_mode = 1   
+        scp_mode = 1
     else:
         scp_mode = 0
-        
+
     for file in args.files:
         if '@' in file:
             host,user,host_path = parse_host(file)
         else:
             files.append(file)
-            
+
     ssh = SSHClient()
     #ssh.load_system_host_keys()
     ssh.set_missing_host_key_policy(AutoAddPolicy())
@@ -513,10 +510,7 @@ if __name__ == '__main__':
     if scp_mode:
         print 'Copying from server...'
         scp.get(host_path, local_path=files[0], recursive=True)
-        
+
     else:
         print 'Copying to server...'
         scp.put(files, recursive=True, remote_path=host_path)
-
-
-

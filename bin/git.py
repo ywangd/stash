@@ -16,21 +16,21 @@ commands:
     pull: git pull [http(s)://<remote repo>] - pull changes from a remote repository
     checkout: git checkout <branch> - check out a particular branch in the Git tree
     branch: git branch - show branches
-    remote: git remote - list remote repos 
+    remote: git remote - list remote repos
     status: git status - show status of files (staged unstaged untracked)
     reset: git reset - reset a repo to its pre-change state
     help: git help
 '''
 
-SAVE_PASSWORDS = True
-
 import argparse
-import getpass
+import console
 import urlparse,urllib2,keychain
 import sys,os
 
 # temporary -- install required modules
 
+_stash = globals()['_stash']
+SAVE_PASSWORDS = True
 GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
 FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
 DULWICH_URL='https://github.com/transistor1/dulwich/archive/master.zip'
@@ -39,20 +39,20 @@ if True:
     libpath=os.path.join(_stash.runtime.envars['STASH_ROOT'] ,'lib')
     if not libpath in sys.path:
         sys.path.insert(1,libpath)
-    try:  
+    try:
         from dulwich.client import default_user_agent_string
         from dulwich import porcelain
-    
+
     except ImportError:
         _stash('wget {} -o $TMPDIR/dulwich.zip'.format(DULWICH_URL))
         _stash('unzip $TMPDIR/dulwich.zip -d $TMPDIR/dulwich')
         _stash('mv $TMPDIR/dulwich/dulwich $STASH_ROOT/lib/')
         _stash('rm  $TMPDIR/dulwich.zip')
         _stash('rm -r $TMPDIR/dulwich')
-    
+
         from dulwich import porcelain
         from dulwich.client import default_user_agent_string
-    
+
     try:
         gittle_path=os.path.join(libpath,'gittle')
         funky_path=os.path.join(libpath,'funky')
@@ -99,7 +99,7 @@ command_help={    'init':  'initialize a new Git repository'
           }
 
 
-    
+
     #Find a git repo dir
 def _find_repo(path):
     subdirs = os.walk(path).next()[1]
@@ -195,7 +195,7 @@ def git_commit(args):
         ns.name=raw_input('Author Name:')
     if not ns.email:
         ns.email=raw_input('Author Email')
-     
+
     try:
         repo = _get_repo()
         author = "{0} <{1}>".format(ns.name, ns.email)
@@ -342,7 +342,7 @@ def git_help(args):
     print 'help:'
     for key, value in command_help.items():
         print value
-            
+
 #Urllib2 opener for dulwich
 def auth_urllib2_opener(config, top_level_url, username, password):
     if config is not None:

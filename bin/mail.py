@@ -18,18 +18,18 @@ optional arguments:
   -e                    Edit .mailrc
 '''
 
+import argparse
 import os
 import smtplib
-import argparse
 import sys
 from ConfigParser import RawConfigParser
- 
 from email import Encoders
 from email.MIMEBase import MIMEBase
 from email.MIMEMultipart import MIMEMultipart
-from email.Utils import formatdate
 from email.MIMEText import MIMEText
- 
+from email.Utils import formatdate
+
+
 class Mail(object):
     def __init__(self,cfg_file='',verbose=False):
         #from config
@@ -43,18 +43,18 @@ class Mail(object):
         self.port     = 537
         self.tls      = False
         self.read_cfg()
-        
+
     def _print(self,msg):
         if self.verbose:
             print msg
-            
+
     def read_cfg(self):
         parser = RawConfigParser()
         parser.read(self.cfg_file)
         if not parser.has_section('mail'):
             print 'Creating cfg file.'
             self.make_cfg()
-        
+
         self.auth     = parser.get('mail','auth')
         self.user     = parser.get('mail','username')
         self.passwd   = parser.get('mail','password')
@@ -62,11 +62,12 @@ class Mail(object):
         self.host     = parser.get('mail','host')
         self.port     = parser.get('mail','port')
         self.tls      = parser.get('mail','tls')
-            
+
     def edit_cfg(self):
+        global _stash
         _stash('edit -t %s' %self.cfg_file)
         sys.exit(0)
-        
+
     def make_cfg(self):
         cfg='''[mail]
 host = smtp.mailserver.com
@@ -80,19 +81,19 @@ password = Your user password
         with open(self.cfg_file,'w') as f:
             f.write(cfg)
         self.edit_cfg()
-        
-        
+
+
     def send(self,sendto='',
                  subject='',
                  attach='',
-                 body=' '): 
+                 body=' '):
         print 'Sending email'
         msg = MIMEMultipart()
         msg["From"]    = self.mailfrom
         msg["To"]      = sendto
         msg["Subject"] = subject
         msg['Date']    = formatdate(localtime=True)
-        
+
         #add messagw
         self._print('Attaching msg: %s' %body)
         message = MIMEText('text', "plain")
@@ -106,10 +107,10 @@ password = Your user password
             Encoders.encode_base64(part)
             part.add_header('Content-Disposition', 'attachment; filename="%s"' % attach)
             msg.attach(part)
-        
+
         self._print('Creating SMTP')
         server = smtplib.SMTP(self.host,int(self.port))
-        
+
         if self.tls == 'True' or self.tls == 'true':
             server.starttls()
             self._print('tls started.')
@@ -120,7 +121,7 @@ password = Your user password
             except Exception,e:
                 print 'Failed Login %s'%e
                 sys.exit(0)
-            
+
         else:
             try:
                 self._print('Connecting to SMTP')
@@ -128,7 +129,7 @@ password = Your user password
             except Exception,e:
                 print 'Failed to connect %s'%e
                 sys.exit(0)
-     
+
         try:
             self._print('Sending mail to: %s' %sendto)
             server.sendmail(self.mailfrom, sendto, msg.as_string())
@@ -136,10 +137,10 @@ password = Your user password
             server.close()
         except Exception, e:
             errorMsg = "Unable to send email. Error: %s" % str(e)
-        
 
- 
+
 if __name__ == "__main__":
+    APP_DIR = os.environ['STASH_ROOT']
     CONFIG = APP_DIR+'/.mailrc'
     ap = argparse.ArgumentParser()
     ap.add_argument('-s','--subject',default='',action='store',dest='subject',help='Email Subject.')
@@ -171,5 +172,3 @@ if __name__ == "__main__":
                     subject=subject,
                     attach=file,
                     body=msg)
-        
-

@@ -36,7 +36,7 @@ SITE_PACKAGES = os.path.expanduser('~/Documents/site-packages')
 
 def make_module(new_module, doc="", scope=locals()):
     """
-    modified from 
+    modified from
     http://dietbuddha.blogspot.com.au/2012/11/python-metaprogramming-dynamic-module.html
     make_module('a.b.c.d', doc="", scope=locals()]) -> <module built-in="built-in" d="d">
 
@@ -69,7 +69,7 @@ def make_module(new_module, doc="", scope=locals()):
     return sys.modules['.'.join(module_name)]
 
 def setup(*args, **kwargs):
-    global pypi
+    global _stash, pypi
     path = os.path.dirname(__file__)
     name = kwargs['name']
     version =  getattr(kwargs,'version','No version Listed')
@@ -78,7 +78,7 @@ def setup(*args, **kwargs):
     #print kwargs['license']
     if 'scripts' in kwargs:
         for script in kwargs['scripts']:
-            
+
             _stash('mv {folder}/{script} {site}/{script}'.format(site=SITE_PACKAGES,
                                                                      folder=path,
                                                                      script=script))
@@ -89,7 +89,7 @@ def setup(*args, **kwargs):
                                                                      script=script))
     pypi.pkg_info = {'name':name,'version':version,'license':license,'summary':summary}
     pypi.config.add_module()
-                                                                     
+
     # NOTE: pip installation code here
     # e.g. _stash('mv package_folder ~/Documents/site-packages/package_folder') etc.
 
@@ -103,11 +103,11 @@ class PackageConfigHandler(object):
             f.close()
         self.parser = SafeConfigParser()
         self.parser.read(self.package_cfg)
-            
+
     def save(self):
         with open(self.package_cfg,'w') as f:
             self.parser.write(f)
-            
+
     def add_module(self):
         tbl = self.parent.pkg_info
         if not self.parser.has_section(tbl['name']):
@@ -125,28 +125,28 @@ class PackageConfigHandler(object):
         for module in self.parser.sections():
             lst.append(module)
         return lst
-        
-  
+
+
     def module_exists(self,name):
         if self.parser.has_section(name):
             return True
         else:
             return False
-            
+
     def get_info(self,name):
         if self.parser.has_section(name):
             tbl = {}
             for opt, value in self.parser.items(name):
                 tbl[opt] = value
             return tbl
-            
+
     def remove_module(self,name):
         self.parser.remove_section(name)
         self.save()
 
-        
 
-        
+
+
 class Pypi(object):
     def __init__(self,pkg_name='',url=False,pkg_version='',limit=10):
         self.pypi = xmlrpclib.ServerProxy('http://pypi.python.org/pypi')
@@ -157,44 +157,44 @@ class Pypi(object):
         self.pkg_name = pkg_name
         self.pkg_version = pkg_version
         self.limit = limit
-        
-        
+
+
         self.filename = ''
-        
-        
-        
+
+
+
     def search(self):
         hits = self.pypi.search({'name': self.pkg_name}, 'and')
         if not hits:
             raise PyPiError('No matches found.')
-        
+
         hits = sorted(hits, key=lambda pkg: pkg['_pypi_ordering'], reverse=True)
         if len(hits) > self.limit:
             hits = hits[:self.limit]
         for hit in hits:
             print '%s v%s - %s'%(hit['name'],hit['version'],hit['summary'])
-        
+
     def versions(self,show_hidden=True):
         hits = self.pypi.package_releases(self.pkg_name, show_hidden)
-    
+
         if not hits:
             raise PyPiError('Package not found.')
         if len(hits) > self.limit:
             hits = hits[:self.limit]
         for hit in hits:
             print '%s - %s'%(self.pkg_name,hit)
-            
+
     def download(self):
         if self.url:
             print 'External package'
             print 'Not yet implemented.'
         else:
             self.pypi_download()
-            
+
     def other_download(self):
         #handle non pypi packages
         pass
-        
+
     def pypi_download(self):
         hits = self.pypi.package_releases(self.pkg_name, True)
         if not hits:
@@ -204,12 +204,12 @@ class Pypi(object):
         elif not self.pkg_version in hits:
             raise PyPiError('That package version is not available')
         hits = self.pypi.release_urls(self.pkg_name, self.pkg_version)
-        
+
         if not hits:
             raise PyPiError('No public download links for that version')
-                
+
         #source = ([x for x in hits if x['packagetype'] == 'sdist'][:1] + [None])[0]
-        source = False   
+        source = False
         archive_list = ['.zip','.bz2','.gz']
         for hit in hits:
             if any(word in hit['url'] for word in archive_list):
@@ -217,9 +217,9 @@ class Pypi(object):
                 break
 
         if not source:
-            raise PyPiError('No source-only download links for that version')   
+            raise PyPiError('No source-only download links for that version')
         self.url = source['url']
-        self.filename = source['filename'] 
+        self.filename = source['filename']
         self.pkg_info = self.pypi.release_data(self.pkg_name, self.pkg_version)
         #tbl={}
         #tbl['url'] = source['url']
@@ -229,14 +229,14 @@ class Pypi(object):
         #tbl['version'] = data['version']
         #tbl['summary'] = data['summary']
         #print self.__dict__
-        self._install()     
-        
+        self._install()
+
     def list_modules(self):
         modules = self.config.list_modules()
         for module in modules:
             info = self.config.get_info(module)
             print '%s (%s) - %s' % (module,info['version'],info['summary'])
-        
+
     def _install(self):
         print 'installing module'
         if '.zip' in self.filename:
@@ -248,15 +248,15 @@ class Pypi(object):
         else:
             tmp_folder = self.filename[:-7]
             archive_type = 'gz'
-        
+
         try:
             _stash('echo StaSh pip installing %s'% self.pkg_name)
             _stash('wget %s -o ~/Documents/site-packages/%s' % (self.url,self.filename))
             _stash('cd ~/Documents/site-packages')
-            
+
             #os.chdir(os.path.expanduser('~/Documents/site-packages'))
             dir_contents = os.listdir(SITE_PACKAGES)
-            
+
             #un archive file
             if archive_type == 'zip':
                 _stash('unzip -d ~/Documents/site-packages/%s ~/Documents/site-packages/%s' % (tmp_folder,self.filename))
@@ -266,20 +266,20 @@ class Pypi(object):
                 _stash('tar -xvjf ~/Documents/site-packages/%s' % self.filename)
             else:
                 raise PyPiError('No vaild archives found.')
-            
-            
+
+
             dir_name =  list(set(os.listdir(SITE_PACKAGES))-set(dir_contents))[0]
             os.chdir(SITE_PACKAGES+'/%s'%dir_name)
             global __file__
             backup_file = __file__
-            
-            ##Try to find folders.    
+
+            ##Try to find folders.
             package_name = self.pkg_name.split('.')[0].lower()
             try:
                 if os.path.isdir(SITE_PACKAGES+'/%s/%s' % (dir_name,package_name)):
                     _stash('mv ~/Documents/site-packages/{basename}/{name} ~/Documents/site-packages/{name}'.format(basename=dir_name,name=package_name))
                     self.config.add_module()
-                    
+
                 elif os.path.isfile(SITE_PACKAGES+'/%s/%s.py' % (dir_name,package_name)):
                     _stash('mv ~/Documents/site-packages/{basename}/{name}.py ~/Documents/site-packages/{name}.py'.format(basename=dir_name,name=package_name))
                     self.config.add_module()
@@ -300,15 +300,15 @@ class Pypi(object):
                     # fake    from setuptools.command.test import test
                     test = make_module('setuptools.command.test')
                     test.__dict__['test'] = type('test', (), {})  # dummy class so setup can run
-                    
+
                     dist = make_module('distutils.core')
                     dist.__dict__['setup'] = setup
-                    
-                
+
+
                     #make_module('distutils.core').__dict__['setup'] = setup
                     __file__ = SITE_PACKAGES+'/%s/setup.py'%dir_name
                     execfile('setup.py')
-            
+
             except:
                 print '*Unable to locate package. Please try manual install.*'
             finally:
@@ -318,16 +318,16 @@ class Pypi(object):
                 _stash('echo Removing setup files.')
                 _stash('rm -r -f ~/Documents/site-packages/%s' % dir_name)
                 _stash('rm -r -f ~/Documents/site-packages/%s' % self.filename)
-        
+
             try:
                 __import__(self.pkg_name.lower())
                 _stash('echo Package Installed. Import Successful!')
             except:
                 _stash('echo Failed import test. Check for dependencies')
-            
+
         except Exception,e :
             PyPiError('Unable to install package.')
-            
+
     def remove_module(self,name):
         if self.config.module_exists(name):
             if os.path.isdir(os.path.expanduser('~/Documents/site-packages/%s'%name.lower())):
@@ -340,7 +340,7 @@ class Pypi(object):
             print 'Package removed.'
         else:
             raise PyPiError('No module by that name. Use pip list for list of installed modules.')
-            
+
     def update_module(self,name):
         if self.config.module_exists(name):
             current = self.config.get_info(name)
@@ -351,18 +351,18 @@ class Pypi(object):
                 self.download()
             else:
                 print 'Package upto date.'
-            
+
         else:
             raise PyPiError('Package not installed. Try pip install [package]')
-    
-  
+
+
 
 class PyPiError(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
         return repr(self.value)
-        
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -381,7 +381,7 @@ def main():
                 limit=args.result_count,
                 pkg_version=args.version,
                 url=args.url)
-    
+
     if args.command == 'search':
         pypi.search()
     elif args.command == 'versions':
@@ -393,12 +393,8 @@ def main():
     elif args.command ==  'remove':
         pypi.remove_module(args.package)
     elif args.command == 'update':
-        pypi.update_module(args.package)     
-  
+        pypi.update_module(args.package)
+
 
 if __name__=='__main__':
     main()
-    
-
- 
-
