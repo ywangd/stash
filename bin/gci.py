@@ -41,10 +41,12 @@ def main():
 		sys.stdout.write("Tracked objects:         {n}\n".format(n=n))
 		size = sum([sys.getsizeof(e) for e in tracked])
 		del tracked  # this list may be big, better delete it
-		sys.stdout.write("Size of tracked objects: {s} bytes\n".format(s=size))
+		size = _stash.libcore.sizeof_fmt(size)
+		sys.stdout.write("Size of tracked objects: {s} \n".format(s=size))
 		sys.stdout.write("Garbage:                 {n}\n".format(n=len(gc.garbage)))
 		gsize = sum([sys.getsizeof(e) for e in gc.garbage])
-		sys.stdout.write("Size of garbage:         {s} bytes\n".format(s=gsize))
+		gsize = _stash.libcore.sizeof_fmt(gsize)
+		sys.stdout.write("Size of garbage:         {s} \n".format(s=gsize))
 		sys.stdout.write("Debug:                   {d}\n".format(d=gc.get_debug()))
 	elif ns.command == "threshold":
 		if len(ns.args) == 0:

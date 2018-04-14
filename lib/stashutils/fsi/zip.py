@@ -6,7 +6,11 @@ import time
 import shutil
 import datetime
 import stat
-import StringIO
+
+try:
+	from StringIO import StringIO
+except ImportError:
+	from io import BytesIO as StringIO
 
 from stashutils.fsi import base
 from stashutils.fsi import errors
