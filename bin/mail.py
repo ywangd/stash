@@ -18,18 +18,18 @@ optional arguments:
   -e                    Edit .mailrc
 '''
 
+import argparse
 import os
 import smtplib
-import argparse
 import sys
 from ConfigParser import RawConfigParser
- 
 from email import Encoders
 from email.MIMEBase import MIMEBase
 from email.MIMEMultipart import MIMEMultipart
-from email.Utils import formatdate
 from email.MIMEText import MIMEText
- 
+from email.Utils import formatdate
+
+
 class Mail(object):
     def __init__(self,cfg_file='',verbose=False):
         #from config
@@ -64,6 +64,7 @@ class Mail(object):
         self.tls      = parser.get('mail','tls')
             
     def edit_cfg(self):
+        global _stash
         _stash('edit -t %s' %self.cfg_file)
         sys.exit(0)
         
@@ -136,10 +137,10 @@ password = Your user password
             server.close()
         except Exception, e:
             errorMsg = "Unable to send email. Error: %s" % str(e)
-        
 
- 
+
 if __name__ == "__main__":
+    APP_DIR = os.environ['STASH_ROOT']
     CONFIG = APP_DIR+'/.mailrc'
     ap = argparse.ArgumentParser()
     ap.add_argument('-s','--subject',default='',action='store',dest='subject',help='Email Subject.')
@@ -150,7 +151,7 @@ if __name__ == "__main__":
     ap.add_argument('message',action='store',default='',nargs='?',help='Email Message. Passing \'-\' will pass stdin from pipe.')
     args = ap.parse_args()
     smail = Mail(CONFIG,args.verbose)
-    if args.e == True:
+    if args.e is True:
         smail.edit_cfg()
     elif args.message or args.file and args.sendto:
         if args.message == '-':
@@ -171,5 +172,3 @@ if __name__ == "__main__":
                     subject=subject,
                     attach=file,
                     body=msg)
-        
-

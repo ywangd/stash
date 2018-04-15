@@ -27,6 +27,7 @@ ap.add_argument('-f',dest='filename', default=False, action='store', help='Filen
 args = ap.parse_args()
 
 #Keygen for keypair
+APP_DIR = os.environ['STASH_ROOT']
 if not os.path.isdir(APP_DIR+'/.ssh'):
     os.mkdir(APP_DIR+'/.ssh')
     

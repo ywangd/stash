@@ -13,12 +13,13 @@ optional arguments:
   -k KEY, --key KEY  Encrypt/Decrypt Key.
   -d, --decrypt      Flag to decrypt.
 '''
-import sys
 import os
+import sys
 try:
     from simplecrypto.key import AesKey
-except:
-    print 'Installing Required packages.'
+except Exception:
+    print('Installing Required packages.')
+    _stash = globals()['_stash']
     _stash('pip install simplecrypto')
     sys.exit(0)
 
@@ -45,6 +46,7 @@ class Crypt(object):
 
             
 if __name__=='__main__':
+    import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument('-k','--key',action='store',default='',help='Encrypt/Decrypt Key.')
     ap.add_argument('-d','--decrypt',action='store_true',default=False,help='Flag to decrypt.')
@@ -57,4 +59,3 @@ if __name__=='__main__':
         crypt.aes_decrypt(args.key)
     else:
         crypt.aes_encrypt(args.key)
-

@@ -1,8 +1,19 @@
 language: python
 python:
   - "2.7"
+  - "3.6"
+matrix:
+  allow_failures:
+    - python: "3.6"
 # command to install dependencies
 install:
   - "pip install pyparsing==2.0.1"
+  - "pip install pytest>=3.5.0"
+  - "pip install flake8>=3.5.0"
+before_script:
+  # stop the build if there are Python syntax errors or undefined names
+  - flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics
+  # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
+  - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 # command to run tests
-script: python testing.py -v
+script: py.test system/tests --ignore=system/tests/data

@@ -1,31 +1,29 @@
-'''
+"""
 Secure Copy
 Copies files from local to remote
 
 usage:
     GET
     scp [user@host:dir/file] [files/dir]
-    
+
     PUT
     scp [file/dir] [file/dir] [user@host:dir]
-'''
 
-import argparse
-# scp.py
-# Copyright (C) 2008 James Bardin <j.bardin@gmail.com>
-
-"""
 Created by jbardin
 https://github.com/jbardin/scp.py
 Utilities for sending files over ssh using the scp1 protocol.
 """
 
-__version__ = '0.8.0'
+# scp.py
+# Copyright (C) 2008 James Bardin <j.bardin@gmail.com>
 
+import argparse
 import locale
 import os
 import re
 from socket import timeout as SocketTimeout
+
+__version__ = '0.8.0'
 
 DEBUG = False
 
@@ -464,13 +462,12 @@ class SCPException(Exception):
     
 ############################################
 def find_ssh_keys():
-    #dir = os.path.expanduser('~/Documents/.ssh/')
-    files = []
-    for file in os.listdir(APP_DIR+'/.ssh'):
-        if '.' not in file:
-            files.append(APP_DIR+'/.ssh/'+file)
-    return files    
-    
+    # dir = os.path.expanduser('~/Documents/.ssh/')
+    global APP_DIR
+    ssh_dir = os.path.join(APP_DIR, '.ssh')
+    return [os.path.join(ssh_dir, file) for file in
+            os.listdir(ssh_dir) if '.' not in file]
+
 def parse_host(arg):
     user,temp = arg.split('@')
     host, path = temp.split(':')
@@ -517,6 +514,3 @@ if __name__ == '__main__':
     else:
         print 'Copying to server...'
         scp.put(files, recursive=True, remote_path=host_path)
-
-
-

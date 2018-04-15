@@ -18,17 +18,13 @@ optional arguments:
   -h, --help            show this help message and exit
   -n RESULT_COUNT
 '''
+import argparse
+import os
+import shutil
+import sys
 import xmlrpclib
 from ConfigParser import SafeConfigParser
-import requests
-import argparse
-import tempfile
-import re
-import os
-import sys
-import shutil
 from types import ModuleType
-
 
 saved_modules = sys.modules
 saved_cwd = os.getcwd()
@@ -69,7 +65,7 @@ def make_module(new_module, doc="", scope=locals()):
     return sys.modules['.'.join(module_name)]
 
 def setup(*args, **kwargs):
-    global pypi
+    global _stash, pypi
     path = os.path.dirname(__file__)
     name = kwargs['name']
     version =  getattr(kwargs,'version','No version Listed')
@@ -398,7 +394,3 @@ def main():
 
 if __name__=='__main__':
     main()
-    
-
- 
-

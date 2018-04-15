@@ -1,4 +1,4 @@
-s = _stash
+s = globals()['_stash']
 
 # following statements should be correlated
 s('echo AA is $AA')
@@ -11,7 +11,7 @@ s('cd bin')
 s('pwd -b')
 s('cd ..')
 
-print
+print('')
 # following two scripts should not interfere each other
 s('test05_1.sh')
 

@@ -22,12 +22,17 @@ commands:
     help: git help
 '''
 
-SAVE_PASSWORDS = True
-
 import argparse
-import getpass
-import urlparse,urllib2,keychain
-import sys,os
+import os
+import sys
+import urllib2
+import urlparse
+
+import console
+import keychain
+
+_stash = globals()['_stash']
+SAVE_PASSWORDS = True
 
 # temporary -- install required modules
 
@@ -80,7 +85,6 @@ else:
 #  end temporary
 
 
-
 command_help={    'init':  'initialize a new Git repository'
     ,'add': 'stage one or more files'
     ,'rm': 'git rm <file1> .. [file2] .. - unstage one or more files'
@@ -99,7 +103,6 @@ command_help={    'init':  'initialize a new Git repository'
           }
 
 
-    
     #Find a git repo dir
 def _find_repo(path):
     subdirs = os.walk(path).next()[1]
