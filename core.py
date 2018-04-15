@@ -14,12 +14,12 @@ import platform
 try:
 	# try to import py2 modules
 	from ConfigParser import ConfigParser
-	from StringIO import StringIO
+	from io import IOBase, BytesIO as StringIO  # StringIO must use native strings
 	PY3 = False
 except ImportError:
 	# py 3
 	from configparser import ConfigParser
-	from io import StringIO, IOBase as file
+	from io import IOBase, StringIO
 	PY3 = True
 
 import imp as pyimp  # rename to avoid name conflict with objc_util
@@ -67,7 +67,7 @@ py_traceback=0
 py_pdb=0
 input_encoding_utf8=1
 ipython_style_history_search=1
-thread_type=ctypes
+thread_type=traced
 
 [display]
 TEXT_FONT_SIZE={font_size}
@@ -277,7 +277,7 @@ class StaSh(object):
         # No color for pipes, files and Pythonista console
         if not always and (
         	isinstance(sys.stdout, StringIO)
-        	or isinstance(sys.stdout, file)
+        	or isinstance(sys.stdout, IOBase)
         	# or sys.stdout.write.im_self is _SYS_STDOUT
         	or sys.stdout is _SYS_STDOUT
         	):

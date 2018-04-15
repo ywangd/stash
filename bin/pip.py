@@ -720,11 +720,11 @@ class ArchiveFileInstaller(object):
                     path = create_command(
                     name,
                     """'''{d}'''
-                    from {m} import {n}
+from {m} import {n}
 
-                    if __name__ == "__main__":
-                    {n}()
-                    """.format(
+if __name__ == "__main__":
+    {n}()
+""".format(
                     m=modname,
                     n=funcname,
                     d=desc,

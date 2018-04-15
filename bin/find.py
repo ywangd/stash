@@ -112,7 +112,7 @@ def main(args):
     ap.add_argument('-maxdepth', '--maxdepth',
                     metavar='n',
                     nargs='?',
-                    default=(2 ** 30),
+                    default=sys.maxsize,
                     type=int,
                     help='descend at most n directory levels below command line arguments')
     ns = ap.parse_args(args)

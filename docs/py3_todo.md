@@ -7,10 +7,8 @@ List of known issues, bugs and todos for stash py3 (and py2) compatibility.
 - sys.argv needs to be bytestr in py2 and unistt in py3. There is only a quick fix in place (somewhere in `shruntime.py`), which should be replaced as it only works for common usage situations
 - unittests for py3
 - i/o seems to switch between jobs from time to time
+- 'ValueError: I/O operation on closed file' prevents some pipes from working
 
-
-#`clear.py`
-- prevent linebreak after screen clearing. This was removed and needs to be readded.
 
 #`crypt.py`
 - in py3, the key is shown as `b'<key>'` instead of `<key>`. Also test solution with py2

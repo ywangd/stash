@@ -16,8 +16,11 @@ import argparse
 
 _stash = globals()["_stash"]
 
-if _stash.PY3:
+try:
+	raw_input
+except NameError:
 	raw_input = input
+
 
 def open_temp(file='', new_tab=True):
     try:

@@ -1,5 +1,6 @@
 """ Download a file from a url.
 """
+from __future__ import print_function
 
 import sys
 import argparse
@@ -29,7 +30,7 @@ def main(args):
     console.show_activity()
     try:
 
-        sys.stdout.write('Opening: %s\n' % url)
+        print('Opening: %s\n' % url)
         u = urllib2.urlopen(url)
 
         meta = u.info()
@@ -41,8 +42,8 @@ def main(args):
         except (IndexError, ValueError, TypeError):
             file_size = 0
 
-        sys.stdout.write("Save as: {} ".format(output_file))
-        sys.stdout.write("({} bytes)\n".format(file_size if file_size else "???"))
+        print("Save as: {} ".format(output_file), end="")
+        print("({} bytes)".format(file_size if file_size else "???"))
 
         with open(output_file, 'wb') as f:
             file_size_dl = 0
@@ -57,12 +58,12 @@ def main(args):
                     status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
                 else:
                     status = "%10d" % file_size_dl
-                sys.stdout.write('\r' + status)
-            sys.stdout.write("\n")
+                print('\r' + status, end="")
+            print("")
 
     except Exception as e:
         raise e
-        sys.stdout.write('invalid url: %s\n' % url)
+        print('invalid url: %s' % url)
         sys.exit(1)
 
     finally:
