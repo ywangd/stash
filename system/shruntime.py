@@ -492,7 +492,7 @@ class ShRuntime(object):
         # convert sys.argv to unicode if on python3
         if PY3:
         	# todo: this is only a temporary solution and needs to be redone. This may be buggy.
-        	argv = [c if isinstance(c, unicode) else c.decode("latin-1") for c in argv]
+        	argv = [c if isinstance(c, unicode) else c.decode("utf-8") for c in argv]
         sys.argv = argv
 
         # Set current os environ to the threading environ
