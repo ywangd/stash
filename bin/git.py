@@ -23,16 +23,21 @@ Commands:
     help: git help
 '''
 
-SAVE_PASSWORDS = True
-
 import argparse
-import urlparse,urllib2,keychain
-import sys,os,posix
-import editor #for reloading current file
+import os
+import posix
+import subprocess
+import sys
+import urlparse
+from StringIO import StringIO
+
+import console
+import editor  # for reloading current file
+import keychain
+
 # temporary -- install required modules
 
-#needed for dulwich: subprocess needs to have Popen
-import subprocess
+# needed for dulwich: subprocess needs to have Popen
 if not hasattr(subprocess,'call'):
 	def Popen(*args,**kwargs):
 		pass
@@ -40,6 +45,9 @@ if not hasattr(subprocess,'call'):
 		return 0
 	subprocess.Popen=Popen
 	subprocess.call=call
+
+_stash = globals()['_stash']
+SAVE_PASSWORDS = True
 GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
 FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
 DULWICH_URL='https://github.com/jsbain/dulwich/archive/ForStaSH_0.12.2.zip'

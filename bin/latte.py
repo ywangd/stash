@@ -104,7 +104,7 @@ def main(sargs):
 		try:
 			download_package(repo_to_use, package_name)
 		except:
-			stoutput("ERROR", "Couldn't find package", "error")
+			print("ERROR", "Couldn't find package", "error")
 			sys.exit()
 		# Move to correct locations
 		print("Installing")
