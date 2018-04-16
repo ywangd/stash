@@ -1,10 +1,9 @@
 """ Locate a command script in BIN_PATH. No output if command is not found.
 """
 
-import argparse
-
 
 def main(command, fullname=False):
+    global _stash
     rt = globals()['_stash'].runtime
     try:
         filename = rt.find_script_file(command)
@@ -14,7 +13,9 @@ def main(command, fullname=False):
     except Exception:
         pass
 
+
 if __name__ == '__main__':
+    import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument('command', help='name of the command to be located')
     ap.add_argument('-f', '--fullname', action='store_true',

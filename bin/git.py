@@ -23,28 +23,35 @@ Commands:
     help: git help
 '''
 
+import argparse
+import os
+import posix
+import subprocess
+import sys
+import urlparse
+from io import StringIO
+
+import console
+import editor  # for reloading current file
+import keychain
+
+_stash = globals()['_stash']
 SAVE_PASSWORDS = True
 
-import argparse
-import urlparse,urllib2,keychain
-import sys,os,posix
-import editor #for reloading current file
 # temporary -- install required modules
-
-#needed for dulwich: subprocess needs to have Popen
-import subprocess
+# needed for dulwich: subprocess needs to have Popen
 if not hasattr(subprocess,'call'):
-	def Popen(*args,**kwargs):
-		pass
-	def call(*args,**kwargs):
-		return 0
-	subprocess.Popen=Popen
-	subprocess.call=call
+    def Popen(*args,**kwargs):
+        pass
+    def call(*args,**kwargs):
+        return 0
+    subprocess.Popen=Popen
+    subprocess.call=call
 GITTLE_URL='https://github.com/jsbain/gittle/archive/master.zip'
 FUNKY_URL='https://github.com/FriendCode/funky/archive/master.zip'
 DULWICH_URL='https://github.com/jsbain/dulwich/archive/ForStaSH_0.12.2.zip'
 REQUIRED_DULWICH_VERSION = (0,12,2)
-AUTODOWNLOAD_DEPENDENCIES = True 
+AUTODOWNLOAD_DEPENDENCIES = True
 
 if AUTODOWNLOAD_DEPENDENCIES:
     libpath=os.path.join(os.environ['STASH_ROOT'] ,'lib')
