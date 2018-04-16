@@ -67,6 +67,7 @@ class Mail(object):
         self.tls      = parser.get('mail','tls')
             
     def edit_cfg(self):
+        global _stash
         _stash('edit -t %s' %self.cfg_file)
         sys.exit(0)
         
@@ -175,4 +176,3 @@ if __name__ == "__main__":
                     attach=file,
                     body=msg)
         
-

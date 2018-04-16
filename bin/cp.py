@@ -7,6 +7,8 @@ from __future__ import print_function
 import argparse
 import os
 import shutil
+import sys
+
 
 def pprint(path):
     if path.startswith(os.environ['HOME']):
