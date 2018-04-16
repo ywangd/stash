@@ -279,17 +279,17 @@ class ShRuntime(object):
             except ShEventNotFound as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('%s: event not found\n' % e.message)
+                self.stash.write_message('%s: event not found\n' % e.args[0])
 
             except ShBadSubstitution as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('%s\n' % e.message)
+                self.stash.write_message('%s\n' % e.args[0])
 
             except ShInternalError as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('%s\n' % e.message)
+                self.stash.write_message('%s\n' % e.args[0])
 
             except IOError as e:
                 if self.debug:
@@ -297,7 +297,7 @@ class ShRuntime(object):
                 self.stash.write_message('%s: %s\n' % (e.filename, e.strerror))
 
             except KeyboardInterrupt as e:
-                self.stash.write_message('^C\nKeyboardInterrupt: %s\n' % e.message)
+                self.stash.write_message('^C\nKeyboardInterrupt: %s\n' % e.args[0])
 
             # This catch all exception handler is to handle errors outside of
             # run_pipe_sequence. The traceback print is mainly for debugging
@@ -444,7 +444,7 @@ class ShRuntime(object):
             # outside of the actual command execution, i.e. exec_py_file
             # exec_sh_file, e.g. command not found, not executable etc.
             except ShFileNotFound as e:
-                err_msg = '%s\n' % e.message
+                err_msg = '%s\n' % e.args[0]
                 if self.debug:
                     self.logger.debug(err_msg)
                 self.stash.write_message(err_msg)
@@ -452,7 +452,7 @@ class ShRuntime(object):
                 current_state.return_value = 127
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
             except Exception as e:
-                err_msg = '%s\n' % e.message
+                err_msg = '%s\n' % e.args[0]
                 if self.debug:
                     self.logger.debug(err_msg)
                 self.stash.write_message(err_msg)

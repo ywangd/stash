@@ -5,11 +5,8 @@ import string
 import glob
 import logging
 import threading
-try:
-	from StringIO import StringIO
-except ImportError:
-	# py3
-	from io import StringIO
+
+from six import StringIO
 
 import pyparsing as pp
 

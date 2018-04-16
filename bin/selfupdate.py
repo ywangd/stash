@@ -21,8 +21,7 @@ URL_BASE = 'https://raw.githubusercontent.com/{owner}/stash'
 
 
 class UpdateError(Exception):
-    def __init__(self, message=""):
-    	self.message = message
+    pass
 
 
 def get_remote_version(owner, branch):
@@ -100,7 +99,7 @@ def main(args):
 
         except UpdateError as e:
             has_update = False  # do not update in case of errors
-            print(_stash.text_color('Error: %s' % e.message, 'red'))
+            print(_stash.text_color('Error: %s' % e.args[0], 'red'))
 
     # Perform update if new version is available and not just checking only
     if not ns.check and has_update:
