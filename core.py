@@ -276,8 +276,7 @@ class StaSh(object):
         """
         # No color for pipes, files and Pythonista console
         if not always and (
-        	isinstance(sys.stdout, StringIO)
-        	or isinstance(sys.stdout, IOBase)
+        	isinstance(sys.stdout, (StringIO, IOBase))
         	# or sys.stdout.write.im_self is _SYS_STDOUT
         	or sys.stdout is _SYS_STDOUT
         	):

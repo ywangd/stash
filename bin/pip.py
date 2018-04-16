@@ -37,6 +37,11 @@ from six.moves import filterfalse
 from stashutils.extensions import create_command
 
 
+try:
+	unicode
+except NameError:
+	unicode = str
+
 PYTHONISTA_BUNDLED_MODULES = [
     'bottle', 'beautifulsoup4', 'pycrypto', 'py-dateutil',
     'dropbox', 'ecdsa', 'evernote', 'Faker', 'feedparser', 'flask', 'html2text',
@@ -55,8 +60,6 @@ PACKAGE_NAME_FIXER = {
 _stash = globals()['_stash']
 
 if _stash.PY3:
-    unicode = str
-    str = bytes
     SITE_PACKAGES_DIR_NAME = 'site-packages-3'
 else:
     SITE_PACKAGES_DIR_NAME = 'site-packages-2'
@@ -1203,8 +1206,8 @@ class VersionSpecifier(object):
         if not parsed:
             return requirement, None
         name = parsed[0][0]
-        reqt = zip(*parsed)
-        version_specifiers = zip(*reqt[1:])  # ((op,version),(op,version))
+        reqt = list(zip(*parsed))
+        version_specifiers = list(zip(*reqt[1:]))  # ((op,version),(op,version))
         version = VersionSpecifier(version_specifiers)
 
         return name, version

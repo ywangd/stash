@@ -10,8 +10,10 @@ import sys
 
 from stash.system.shcommon import _STASH_EXTENSION_BIN_PATH, _STASH_EXTENSION_MAN_PATH
 
-if sys.version_info[0] > 2:
-	# py3 compatibility
+try:
+	raw_input
+except NameError:
+	# py3
 	raw_input = input
 
 _stash = globals()["_stash"]
@@ -83,7 +85,7 @@ def get_type(search):
 		for pp in PAGEPATHS:
 			ppc += [(fn, pp) for fn in os.listdir(pp)]
 		ffns= [(fn, pp) if fn.startswith(to_search+".") else None for fn, pp in ppc]
-		ffn = filter(None, ffns)
+		ffn = list(filter(None, ffns))
 		if len(ffn) == 0:
 			# isdir
 			pname = "page_" + str(pn)

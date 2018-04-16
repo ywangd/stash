@@ -1,11 +1,10 @@
 import os
 import fileinput
 
-from stash.system.shcommon import PY3
 
-
-if PY3:
-	# py3 compatibility
+try:
+	unicode
+except NameError:
 	unicode = str
 
 

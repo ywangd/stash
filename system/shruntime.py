@@ -29,10 +29,10 @@ from .shcommon import is_binary_file, _STASH_EXTENSION_BIN_PATH, PY3
 from .shparsers import ShPipeSequence
 from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
 
-if PY3:
-	# rename unicode, str
+try:
+	unicode
+except NameError:
 	unicode = str
-	str = bytes
 
 # Default .stashrc file
 _DEFAULT_RC = r"""BIN_PATH=~/Documents/bin:{bin_ext}:$BIN_PATH

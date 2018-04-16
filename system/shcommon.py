@@ -73,7 +73,7 @@ _EXTERNAL_DIRS = [
 	_STASH_EXTENSION_PATCH_PATH,
 	]
 
-# py3 or not py3
+# Python 3 or not Python 3
 PY3 = (sys.version_info >= (3, 0))
 
 # Save the true IOs

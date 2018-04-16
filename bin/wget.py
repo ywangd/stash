@@ -62,7 +62,6 @@ def main(args):
             print("")
 
     except Exception as e:
-        raise e
         print('invalid url: %s' % url)
         sys.exit(1)
 
