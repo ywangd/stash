@@ -17,6 +17,7 @@ try:
 except:
     import dummyconsole as console
 
+_stash = globals()["_stash"]
 
 def main(args):
     ap = argparse.ArgumentParser()
