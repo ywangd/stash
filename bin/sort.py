@@ -1,4 +1,5 @@
 """Sort standard input or given files to standard output"""
+from __future__ import print_function
 import os
 import sys
 import fileinput
@@ -18,7 +19,7 @@ def main(args):
             lines = sorted(lines)
             if ns.reverse:
                 lines = lines[::-1]
-            print ''.join(lines)
+            print(''.join(lines))
 
     fileinput.close()  # in case it is not closed
     try:

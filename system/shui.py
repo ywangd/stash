@@ -1,4 +1,5 @@
 # coding: utf-8
+from __future__ import absolute_import
 import time
 import logging
 
@@ -6,7 +7,7 @@ import logging
 try:
     import ui
 except ImportError:
-    import dummyui as ui
+    from . import dummyui as ui
 
 from .shcommon import IN_PYTHONISTA, ON_IPAD, PYTHONISTA_VERSION_LONG
 from .shterminal import ShTerminal, StubTerminal

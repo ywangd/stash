@@ -2,13 +2,13 @@
 import os
 import shutil
 
+from six import string_types
+
 from stash.system.shcommon import _STASH_EXTENSION_BIN_PATH as EBP
-from stash.system.shcommon import _STASH_EXTENSION_MAN_PATH as EMP
 from stash.system.shcommon import _STASH_EXTENSION_FSI_PATH as EFP
+from stash.system.shcommon import _STASH_EXTENSION_MAN_PATH as EMP
 from stash.system.shcommon import _STASH_EXTENSION_PATCH_PATH as EPP
-
 from stashutils.core import load_from_dir
-
 
 # alias load_from_dir (so you can access it trough this namespace)
 load_from_dir = load_from_dir
@@ -20,7 +20,7 @@ def create_file(dest, content):
 	If content is a string or unicode, use it as the content.
 	Otherwise, use content.read() as the content.
 	"""
-	if not isinstance(content, (str, unicode)):
+	if not isinstance(content, string_types):
 		content = content.read()
 	with open(dest, "wb") as f:
 		f.write(content)

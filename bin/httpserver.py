@@ -8,26 +8,24 @@ This module builds on BaseHTTPServer by implementing the standard GET
 and HEAD requests in a fairly straightforward manner.
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
+
+import cgi
+import mimetypes
+import os
+import posixpath
+import re
+import shutil
+
+from six import StringIO
+from six.moves import BaseHTTPServer
+from six.moves.urllib.parse import quote, unquote
 
 __version__ = "0.1"
 __all__ = ["SimpleHTTPRequestHandler"]
 __author__ = "bones7456"
 __home_page__ = "http://li2z.cn/"
 
-import os
-import posixpath
-import BaseHTTPServer
-import urllib
-import cgi
-import shutil
-import mimetypes
-import re
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
-    
 
 class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -61,7 +59,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(self):
         """Serve a POST request."""
         r, info = self.deal_post_data()
-        print r, info, "by: ", self.client_address
+        print(r, info, "by: ", self.client_address)
         f = StringIO()
         f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
         f.write("<html>\n<title>Upload Result Page</title>\n")
@@ -185,7 +183,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return None
         list.sort(key=lambda a: a.lower())
         f = StringIO()
-        displaypath = cgi.escape(urllib.unquote(self.path))
+        displaypath = cgi.escape(unquote(self.path))
         f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
         f.write("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
         f.write("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
@@ -205,7 +203,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 displayname = name + "@"
                 # Note: a link to a directory displays with @ and links with /
             f.write('<li><a href="%s">%s</a>\n'
-                    % (urllib.quote(linkname), cgi.escape(displayname)))
+                    % (quote(linkname), cgi.escape(displayname)))
         f.write("</ul>\n<hr>\n</body>\n</html>\n")
         length = f.tell()
         f.seek(0)
@@ -226,7 +224,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # abandon query parameters
         path = path.split('?',1)[0]
         path = path.split('#',1)[0]
-        path = posixpath.normpath(urllib.unquote(path))
+        path = posixpath.normpath(unquote(path))
         words = path.split('/')
         words = filter(None, words)
         path = os.getcwd()
@@ -291,12 +289,12 @@ def main(port=8000):
     server = BaseHTTPServer.HTTPServer(('0.0.0.0', port), SimpleHTTPRequestHandler)
     
     try:
-        print 'Serving HTTP on 0.0.0.0 port %d ...' % port
-        print 'local IP address is %s' % globals()['_stash'].libcore.get_lan_ip()
+        print('Serving HTTP on 0.0.0.0 port %d ...' % port)
+        print('local IP address is %s' % globals()['_stash'].libcore.get_lan_ip())
         server.serve_forever()
 
     except KeyboardInterrupt:
-        print 'Server shutting down ...'
+        print('Server shutting down ...')
         server.server_close()
 
 if __name__ == '__main__':
@@ -305,4 +303,3 @@ if __name__ == '__main__':
     ap.add_argument('port', nargs='?', type=int, default=8000, help='port to server HTTP')
     ns = ap.parse_args()
     main(ns.port)
-

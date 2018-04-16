@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 import argparse
 import os
@@ -100,28 +101,28 @@ def merge_trees(store, base, mine, theirs):
         # if mine == theirs match, use either
         elif m==t: 
             if not b.path:
-                print '  ',m.path, 'was added, but matches already'
+                print('  ',m.path, 'was added, but matches already')
             continue    #leave workng tree alone
         # if base==theirs, but not mine, already deleted (do nothing)
         elif b==t and not m.path:
-            print '   ',b.path, ' already deleted in head'
+            print('   ',b.path, ' already deleted in head')
             continue
         # if base==mine, but not theirs, delete
         elif b==m and not t.path:
-            print '  -',m.path, ' was deleted in theirs.'
+            print('  -',m.path, ' was deleted in theirs.')
             os.remove(m.path)
             removed.append(m.path)
         elif not b.path and m.path and not t.path:  #add in mine
-            print '  ',m.path ,'added in mine'
+            print('  ',m.path ,'added in mine')
             continue 
         elif not b.path and t.path and not m.path: # add theirs to mine
             # add theirs
-            print '  +',t.path, ': adding to head'
+            print('  +',t.path, ': adding to head')
             with open(t.path,'w') as f:
                 f.write(store[t.sha].data)
             added.append(t.path)
         elif not m == t: # conflict
-            print '  ?',m.path, ': merging conflicts'
+            print('  ?',m.path, ': merging conflicts')
             result=diff3.merge(store[m.sha].data.splitlines(True)
                         ,store[b.sha].data.splitlines(True) if b.sha else ['']
                         ,store[t.sha].data.splitlines(True))
@@ -160,7 +161,7 @@ def merge(args):
     --abort will remove the MERGE_HEAD and MERGE_MSG files, and will reset staging area, but wont affect files on disk.  use git reset --hard or git checkout if this is desired.
     '''
     repo=_get_repo()
-    print '_'*30
+    print('_'*30)
 
     parser=argparse.ArgumentParser(prog='merge', usage=helptext)
     parser.add_argument('commit',action='store',nargs='?', help='commit sha, local branch, or remote branch name to merge from')
@@ -169,7 +170,7 @@ def merge(args):
     result=parser.parse_args(args)
     
     if result.abort:
-        print 'attempting to undo merge.  beware, files in working tree are not touched.  \nused git reset --hard to revert particular files'
+        print('attempting to undo merge.  beware, files in working tree are not touched.  \nused git reset --hard to revert particular files')
         git_reset([])
         os.remove(os.path.join(repo.repo.controldir(),'MERGE_HEAD'))
         os.remove(os.path.join(repo.repo.controldir(),'MERGE_MSG'))
@@ -186,14 +187,14 @@ def merge(args):
     base_sha=merge_base(repo,head,merge_head)[0]  #fixme, what if multiple bases
 
     if base_sha==head:
-        print 'Fast forwarding {} to {}'.format(repo.active_branch,merge_head)
+        print('Fast forwarding {} to {}'.format(repo.active_branch,merge_head))
         repo.refs['HEAD']=merge_head
         return 
     if base_sha == merge_head:
-        print 'head is already up to date'
+        print('head is already up to date')
         return  
     
-    print 'merging <{}> into <{}>\n{} commits ahead of merge base <{}> respectively'.format(merge_head[0:7],head[0:7],count_commits_between(repo,merge_head,head),base_sha[0:7])
+    print('merging <{}> into <{}>\n{} commits ahead of merge base <{}> respectively'.format(merge_head[0:7],head[0:7],count_commits_between(repo,merge_head,head),base_sha[0:7]))
     base_tree=repo[base_sha].tree
     merge_head_tree=repo[merge_head].tree
     head_tree=repo[head].tree
@@ -207,15 +208,15 @@ def merge(args):
 
     repo.repo._put_named_file('MERGE_HEAD',merge_head)
     repo.repo._put_named_file('MERGE_MSG','Merged from {}({})'.format(merge_head, result.commit))
-    print 'Merge complete with {} conflicted files'.format(num_conflicts)
-    print '''Merged files were added to the staging area, but have not yet been comitted.   
+    print('Merge complete with {} conflicted files'.format(num_conflicts))
+    print('''Merged files were added to the staging area, but have not yet been comitted.   
     Review changes (e.g.   git diff   or   git diff>changes.txt; edit changes.txt    ), and 
     resolve any conflict markers before comitting.  
     
     Use   git add     on any files updated after resolving conflicts.  
     Run   git commit  to complete the merge process.
     
-    '''
+    ''')
 
         
 if __name__=='__main__':

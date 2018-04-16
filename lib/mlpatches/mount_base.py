@@ -1,18 +1,18 @@
 """base patches for mount."""
 import os
 import stat as _stat
-import __builtin__
+
+from six import text_type
+from six.moves import builtins
 
 from mlpatches import base
-
-from stashutils.mount_ctrl import get_manager
 from stashutils.fsi.errors import IsFile, OperationFailure
-
+from stashutils.mount_ctrl import get_manager
 
 # store default functions
 
 _org_listdir = os.listdir
-_org_open = __builtin__.open
+_org_open = builtins.open
 _org_chdir = os.chdir
 _org_getcwd = os.getcwd
 _org_ismount = os.path.ismount
@@ -88,7 +88,7 @@ def getcwd(patch):
 
 def getcwdu(patch):
 	"""Return a Unicode object representing the current working directory."""
-	return unicode(CWD)
+	return text_type(CWD)
 
 
 def chdir(patch, path):
@@ -199,10 +199,10 @@ def lstat(patch, path):
 				)
 
 
-def mkdir(patch, path, mode=0777):
+def mkdir(patch, path, mode=0o777):
 	"""
 	Create a directory named path with numeric mode mode.
-	The default mode is 0777 (octal). On some systems, mode is ignored.
+	The default mode is 0o777 (octal). On some systems, mode is ignored.
 	Where it is used, the current umask value is first masked out.
 	If the directory already exists, OSError is raised.
 	"""
@@ -312,7 +312,7 @@ def access(patch, path, mode):
 			return False
 		if mode == os.F_OK:
 			return True
-		fa_mode = s.st_mode #  & 0777
+		fa_mode = s.st_mode  #  & 0o777
 		should_read = mode & os.R_OK
 		should_write = mode & os.W_OK
 		should_exec = mode & os.X_OK
@@ -367,8 +367,8 @@ class ListdirPatch(base.FunctionPatch):
 
 
 class OpenPatch(base.FunctionPatch):
-	"""patch for __builtin__.open()"""
-	module = "__builtin__"
+	"""patch for builtins.open()"""
+	module = "builtins"
 	function = "open"
 	replacement = open
 

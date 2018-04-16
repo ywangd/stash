@@ -11,6 +11,7 @@ usage:
     python -c command
     python python_file.py [args]
 """
+from __future__ import print_function
 
 import runpy
 import sys
@@ -57,7 +58,7 @@ if ns.module:
     sys.exit(0)
 
 elif ns.cmd:
-    exec ns.cmd
+    exec(ns.cmd)
     sys.exit(0)
 
 else:

@@ -7,26 +7,30 @@ usage:
 
     PUT
     scp [file/dir] [file/dir] [user@host:dir]
-"""
 
-import argparse
-# scp.py
-# Copyright (C) 2008 James Bardin <j.bardin@gmail.com>
-
-"""
 Created by jbardin
 https://github.com/jbardin/scp.py
 Utilities for sending files over ssh using the scp1 protocol.
 """
 
-__version__ = '0.8.0'
+# scp.py
+# Copyright (C) 2008 James Bardin <j.bardin@gmail.com>
 
+from __future__ import print_function
+
+import argparse
 import locale
 import os
-import sys
 import re
-from socket import timeout as SocketTimeout
+import sys
 from distutils.version import StrictVersion
+from socket import timeout as SocketTimeout
+
+from six.moves import input
+
+import paramiko
+
+__version__ = '0.8.0'
 
 
 def install_module_from_github(username, package_name, version):
@@ -49,11 +53,10 @@ def install_module_from_github(username, package_name, version):
     globals()['_stash'](cmd_string)
 
 
-import paramiko
 if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
     install_module_from_github('paramiko', 'paramiko', 'v1.16.0')
-    print 'Please restart Pythonista for changes to take full effect'
+    print('Please restart Pythonista for changes to take full effect')
     sys.exit(0)
 
 
@@ -513,7 +516,7 @@ def parse_host(arg):
 
 def scp_callback(filename, size, sent):
     if size == sent:
-        print filename
+        print(filename)
     
 
 if __name__ == '__main__':
@@ -548,7 +551,7 @@ if __name__ == '__main__':
 
     else:
         if len(key_filename) == 0:  # no key file found
-            password = raw_input('Enter passsword:')
+            password = input('Enter passsword:')
             ssh.connect(host, username=user, password=password, port=args.port)
         else:
             ssh.connect(host, username=user, key_filename=key_filename, port=args.port)
@@ -558,14 +561,11 @@ if __name__ == '__main__':
 
     #scp.put('stash',remote_path='stash/',recursive=True)
     if scp_mode:
-        print 'Copying from server...'
+        print('Copying from server...')
         scp.get(host_path, local_path=files[0], recursive=True)
         
     else:
-        print 'Copying to server...'
+        print('Copying to server...')
         scp.put(files, recursive=True, remote_path=host_path)
 
     ssh.close()
-
-
-

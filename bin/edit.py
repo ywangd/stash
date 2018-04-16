@@ -7,12 +7,17 @@ usage:
     edit [-t --temp] [-o --old_tab] [file]
     Follow prompt for instructions.
 """
+from __future__ import print_function
+
+import argparse
 import os
 import tempfile
+import time
+
+from six.moves import input
+
 import console
 import editor
-import time
-import argparse
 
 
 def open_temp(file='', new_tab=True):
@@ -30,34 +35,34 @@ def open_temp(file='', new_tab=True):
             temp.flush()
             to_edit.close()
             
-        print '***When you are finished editing the file, you must come back to console to confim changes***'
+        print('***When you are finished editing the file, you must come back to console to confim changes***')
         editor.open_file(temp.name, new_tab)
         time.sleep(1.5)
         console.hide_output()
-        input = raw_input('Save Changes? Y,N: ')
+        user_input = input('Save Changes? Y,N: ')
     
-        if input=='Y' or input=='y':
+        if user_input in 'Yy':
             while True:
                 try:
-                    save_as = raw_input('Save file as [Enter to confirm]: %s' % file_to_edit) or file_to_edit
+                    save_as = input('Save file as [Enter to confirm]: %s' % file_to_edit) or file_to_edit
                 except:
                     save_as = file_to_edit
                 if save_as:
                     break
 
             if not new_tab:
-                editor.open_file(cur_path) # restore previous script in editor
+                editor.open_file(cur_path)  # restore previous script in editor
             with open(save_as,'w') as f:
                 with open(temp.name,'r') as tmp:
                     f.write(tmp.read())
                     
-            print 'File Saved.'
-        elif input=='N' or input=='n':
+            print('File Saved.')
+        elif user_input in 'Nn':
             if not new_tab:
-                editor.open_file(cur_path) # restore previous script in editor
+                editor.open_file(cur_path)  # restore previous script in editor
     
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         
     finally:
         temp.close()

@@ -2,13 +2,15 @@
 """
 The Control, Escape and Graphics are taken from pyte (https://github.com/selectel/pyte)
 """
-import os
-import sys
-import platform
-import functools
-import threading
 import ctypes
+import functools
+import os
+import platform
+import sys
+import threading
 from itertools import chain
+
+from six import text_type
 
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 
@@ -119,7 +121,7 @@ if IN_PYTHONISTA:
             def write(self, s):
                 if isinstance(s, str):
                     _outputcapture.CaptureStdout(s)
-                elif isinstance(s, unicode):
+                elif isinstance(s, text_type):
                     _outputcapture.CaptureStdout(s.encode('utf8'))
 
             def writelines(self, lines):
@@ -143,7 +145,7 @@ if IN_PYTHONISTA:
             def write(self, s):
                 if isinstance(s, str):
                     _outputcapture.CaptureStderr(s)
-                elif isinstance(s, unicode):
+                elif isinstance(s, text_type):
                     _outputcapture.CaptureStderr(s.encode('utf8'))
 
             def writelines(self, lines):

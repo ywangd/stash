@@ -1,4 +1,5 @@
 """The FSI for dropbox."""
+from __future__ import absolute_import
 # this module is named 'DropBox' instead of 'dropbox' to avoid a
 # naming conflict.
 import os
@@ -6,7 +7,7 @@ import logging
 import stat
 import tempfile
 
-import dropbox
+from . import dropbox
 
 from stashutils.fsi.errors import OperationFailure, IsDir, IsFile
 from stashutils.fsi.errors import AlreadyExists
@@ -178,7 +179,7 @@ class DropboxFSI(BaseFSI):
 				raise OperationFailure(e.message)
 			if isinstance(meta, (
 				dropbox.files.FolderMetadata,
-				dropbox.sharing.SharedFolderMetadata,
+				dropbox.sharing.SharedFolderMetadata
 				)):
 				bytes = 0
 				isdir = True
