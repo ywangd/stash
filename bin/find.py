@@ -1,5 +1,6 @@
 """ Find files in specified paths
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -140,7 +141,7 @@ def main(args):
 
     names = file_predicate.run(ns.paths)
 
-    print '\n'.join(names)
+    print('\n'.join(names))
 
 
 if __name__ == "__main__":

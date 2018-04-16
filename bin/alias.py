@@ -18,7 +18,7 @@ def main(args):
     _, current_state = app.runtime.get_current_worker_and_state()
 
     if ns.expr is None:
-        for k, v in current_state.aliases.items():
+        for k, v in list(current_state.aliases.items()):
             print('{}={}'.format(k, v[0]))
     
     else:

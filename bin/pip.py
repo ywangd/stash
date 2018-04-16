@@ -17,6 +17,13 @@ List of sub-commands:
         remove      removed an installed package
         update      update an installed package
 """
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import zip
+from builtins import filter
+from builtins import object
 import sys
 import os
 import ast
@@ -108,7 +115,7 @@ class PackageFinder(object):
         out = cls.require_parents(out)
         includes = cls._build_filter(*include)
         excludes = cls._build_filter('ez_setup', '*__pycache__', *exclude)
-        out = filter(includes, out)
+        out = list(filter(includes, out))
         out = filterfalse(excludes, out)
         return list(out)
 
@@ -310,7 +317,7 @@ def save_current_sys_modules():
     for name in sorted(sys.modules.keys()):
         if name == 'setuptools' or name.startswith('setuptools.'):
             sys.modules.pop(name)
-    for k, v in save_setuptools.items():
+    for k, v in list(save_setuptools.items()):
         sys.modules[k] = v
 
 
@@ -677,7 +684,7 @@ class ArchiveFileInstaller(object):
 
         # handle entry points
         entry_points = kwargs.get("entry_points", {})
-        if isinstance(entry_points, (str, unicode)):
+        if isinstance(entry_points, str):
             if pkg_resources is not None:
                 entry_points = {s: c for s, c in pkg_resources.split_sections(entry_points)}
             else:
@@ -685,7 +692,7 @@ class ArchiveFileInstaller(object):
                 entry_points = {}
         for epn in entry_points:
             ep = entry_points[epn]
-            if isinstance(ep, (str, unicode)):
+            if isinstance(ep, str):
                 ep = [ep]
             if epn == "console_scripts":
                 for dec in ep:
@@ -884,9 +891,9 @@ class PyPIRepository(PackageRepository):
 
     def __init__(self):
         super(PyPIRepository, self).__init__()
-        import xmlrpclib
+        import xmlrpc.client
         # DO NOT USE self.pypi, it's there just for search, it's obsolete/legacy
-        self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
+        self.pypi = xmlrpc.client.ServerProxy('https://pypi.python.org/pypi')
         self.standard_package_names = {}
 
     def get_standard_package_name(self, pkg_name):
@@ -919,7 +926,7 @@ class PyPIRepository(PackageRepository):
         return r.json()
 
     def _package_releases(self, pkg_data):
-        return pkg_data['releases'].keys()
+        return list(pkg_data['releases'].keys())
 
     def _package_latest_release(self, pkg_data):
         return pkg_data['info']['version']
@@ -1173,8 +1180,8 @@ class VersionSpecifier(object):
         if not parsed:
             return requirement, None
         name = parsed[0][0]
-        reqt = zip(*parsed)
-        version_specifiers = zip(*reqt[1:])  # ((op,version),(op,version))
+        reqt = list(zip(*parsed))
+        version_specifiers = list(zip(*reqt[1:]))  # ((op,version),(op,version))
         version = VersionSpecifier(version_specifiers)
 
         return name, version

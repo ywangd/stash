@@ -3,6 +3,7 @@
 """
 Launch StaSh in a more flexible and reliable way.
 """
+from __future__ import absolute_import
 import sys
 import argparse
 
@@ -25,7 +26,7 @@ module_names = (
 if 'stash.stash' in sys.modules:
     for name in module_names:
         sys.modules.pop('stash.' + name)
-from stash import stash
+from .stash import stash
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--no-cfgfile', action='store_true',

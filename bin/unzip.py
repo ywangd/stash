@@ -1,4 +1,5 @@
 """Extract a zip archive into a directory."""
+from __future__ import print_function
 import os
 import sys
 import zipfile
@@ -19,7 +20,7 @@ def main(args):
     ns = ap.parse_args(args)
 
     if not os.path.isfile(ns.zipfile):
-        print "%s: No such file" % ns.zipfile
+        print("%s: No such file" % ns.zipfile)
 
     else:
         # PK magic marker check
@@ -30,7 +31,7 @@ def main(args):
                 pk_check = ''
 
         if pk_check != 'PK':
-            print "%s: does not appear to be a zip file" % ns.zipfile
+            print("%s: does not appear to be a zip file" % ns.zipfile)
             sys.exit(1)
 
         if ns.list:
@@ -43,7 +44,7 @@ def main(args):
             altpath = os.path.join(os.path.dirname(ns.zipfile), altpath)
             location = ns.exdir or altpath
             if (os.path.exists(location)) and not (os.path.isdir(location)):
-                print "%s: destination is not a directory" % location
+                print("%s: destination is not a directory" % location)
                 sys.exit(1)
             elif not os.path.exists(location):
                 os.makedirs(location)
@@ -84,9 +85,9 @@ def main(args):
                             fp.close()
 
                     if ns.verbose or ns.list:
-                        print fn
+                        print(fn)
             except:
-                print "%s: zip file is corrupt" % ns.zipfile
+                print("%s: zip file is corrupt" % ns.zipfile)
 
 
 if __name__ == '__main__':

@@ -8,6 +8,7 @@ usage:
     PUT
     scp [file/dir] [file/dir] [user@host:dir]
 """
+from __future__ import print_function
 
 import argparse
 # scp.py
@@ -53,7 +54,7 @@ import paramiko
 if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
     install_module_from_github('paramiko', 'paramiko', 'v1.16.0')
-    print 'Please restart Pythonista for changes to take full effect'
+    print('Please restart Pythonista for changes to take full effect')
     sys.exit(0)
 
 
@@ -513,7 +514,7 @@ def parse_host(arg):
 
 def scp_callback(filename, size, sent):
     if size == sent:
-        print filename
+        print(filename)
     
 
 if __name__ == '__main__':
@@ -558,11 +559,11 @@ if __name__ == '__main__':
 
     #scp.put('stash',remote_path='stash/',recursive=True)
     if scp_mode:
-        print 'Copying from server...'
+        print('Copying from server...')
         scp.get(host_path, local_path=files[0], recursive=True)
         
     else:
-        print 'Copying to server...'
+        print('Copying to server...')
         scp.put(files, recursive=True, remote_path=host_path)
 
     ssh.close()

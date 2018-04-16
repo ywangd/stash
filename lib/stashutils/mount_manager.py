@@ -1,4 +1,5 @@
 """This module coordinates the mount-system."""
+from builtins import object
 import os
 
 from stashutils.core import get_stash
@@ -64,7 +65,7 @@ class MountManager(object):
 		"""mounts a fsi to a path."""
 		if not isinstance(fsi, BaseFSI):
 			raise ValueError("Expected a FSI!")
-		if not isinstance(path, (str, unicode)):
+		if not isinstance(path, str):
 			raise ValueError("Expected a string or unicode!")
 		path = os.path.abspath(path)
 		if path in self.path2fs:

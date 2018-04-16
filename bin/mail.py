@@ -18,6 +18,7 @@ optional arguments:
   -f FILE, --file FILE  Attachment to send.
   -e                    Edit .mailrc
 '''
+from __future__ import print_function
 
 import os
 import smtplib
@@ -49,13 +50,13 @@ class Mail(object):
         
     def _print(self,msg):
         if self.verbose:
-            print msg
+            print(msg)
             
     def read_cfg(self):
         parser = RawConfigParser()
         parser.read(self.cfg_file)
         if not parser.has_section('mail'):
-            print 'Creating cfg file.'
+            print('Creating cfg file.')
             self.make_cfg()
         
         self.auth     = parser.get('mail','auth')
@@ -90,7 +91,7 @@ password = Your user password
                  subject='',
                  attach='',
                  body=' '): 
-        print 'Sending email'
+        print('Sending email')
         msg = MIMEMultipart()
         msg["From"]    = self.mailfrom
         msg["To"]      = sendto
@@ -122,7 +123,7 @@ password = Your user password
                 self._print('Logging into to SMTP: %s %s'%(self.user,self.passwd))
                 server.login(self.user, self.passwd)  # optional
             except Exception,e:
-                print 'Failed Login %s'%e
+                print('Failed Login %s'%e)
                 sys.exit(0)
             
         else:
@@ -130,13 +131,13 @@ password = Your user password
                 self._print('Connecting to SMTP')
                 server.connect()
             except Exception,e:
-                print 'Failed to connect %s'%e
+                print('Failed to connect %s'%e)
                 sys.exit(0)
      
         try:
             self._print('Sending mail to: %s' %sendto)
             server.sendmail(self.mailfrom, sendto, msg.as_string())
-            print 'mail sent.'
+            print('mail sent.')
             server.close()
         except Exception, e:
             errorMsg = "Unable to send email. Error: %s" % str(e)

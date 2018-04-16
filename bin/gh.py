@@ -12,6 +12,7 @@ For all commands, use gh <command> --help for more detailed help
 
 NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.com', which is also the default from the git module.
 '''
+from __future__ import print_function
 import os
 import sys
 
@@ -42,7 +43,7 @@ try:
         sys.path.insert(1,libpath)
     import github
 except ImportError:
-    print 'no github found in ',libpath
+    print('no github found in ',libpath)
     install_module_from_github('pygithub', 'pygithub', 'github','master')
     import github
 try: 
@@ -69,7 +70,7 @@ def command(func):
        	 args=docopt(func.__doc__,argv=argv)
        	 return func(args)
        except SystemExit as e:
-       	print e
+       	print(e)
 
     return tmp
 

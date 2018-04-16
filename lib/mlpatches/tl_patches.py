@@ -1,4 +1,5 @@
 """patches for making some vars thread-local"""
+from builtins import object
 import threading
 import copy
 from mlpatches import base

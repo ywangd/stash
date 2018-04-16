@@ -1,3 +1,4 @@
+from builtins import str
 import os
 import json
 
@@ -146,14 +147,14 @@ def subcmd_complete(toks):
     try:
         cfg = _subcmd_cfg[cmd_word]
 
-        if pos in cfg.keys() \
+        if pos in list(cfg.keys()) \
                 and (not is_blank_completion
                      or (is_blank_completion and cfg[pos]['blank_completion'])):
             cands = _select_from_candidates(cfg[pos]['candidates'],
                                             '' if is_blank_completion else word_to_complete)
             return cands, cfg[pos]['with_normal_completion']
 
-        elif '-' in cfg.keys() \
+        elif '-' in list(cfg.keys()) \
                 and ((not is_blank_completion and word_to_complete.startswith('-'))
                      or (is_blank_completion and cfg['-']['blank_completion'])):
             subcmd = None

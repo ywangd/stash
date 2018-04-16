@@ -1,4 +1,7 @@
 # coding: utf-8
+from __future__ import division
+from __future__ import absolute_import
+from past.utils import old_div
 import time
 import logging
 
@@ -6,7 +9,7 @@ import logging
 try:
     import ui
 except ImportError:
-    import dummyui as ui
+    from . import dummyui as ui
 
 from .shcommon import IN_PYTHONISTA, ON_IPAD, PYTHONISTA_VERSION_LONG
 from .shterminal import ShTerminal, StubTerminal
@@ -43,7 +46,7 @@ class ShVk(ui.View):
     def scrollview_did_scroll(self, scrollview):
         # integrate small scroll motions, but keep scrollview from actually moving
         if not scrollview.decelerating:
-            self.dx -= scrollview.content_offset[0] / self.SCROLL_PER_CHAR
+            self.dx -= old_div(scrollview.content_offset[0], self.SCROLL_PER_CHAR)
         scrollview.content_offset = (0.0, 0.0)
 
         offset = int(self.dx)

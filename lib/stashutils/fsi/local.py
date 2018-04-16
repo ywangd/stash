@@ -1,4 +1,5 @@
 """The FSI for the local filesystem."""
+from builtins import str
 import os
 import shutil
 

@@ -17,13 +17,13 @@ def main(args):
     ns = p.parse_args(args)
     
     if ns.variables:
-        vardict = {k: v for k, v in os.environ.items() if k in ns.variables}
+        vardict = {k: v for k, v in list(os.environ.items()) if k in ns.variables}
     else:
         vardict = os.environ
     
-    vardict = {k: v for k, v in vardict.items() if k[0] not in "$@?!#*0123456789"}
+    vardict = {k: v for k, v in list(vardict.items()) if k[0] not in "$@?!#*0123456789"}
     
-    for k, v in vardict.items():
+    for k, v in list(vardict.items()):
         print("{}={}".format(k, v))
     
     sys.exit(0)

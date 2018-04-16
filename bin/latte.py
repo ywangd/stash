@@ -1,6 +1,7 @@
 # A package manager meant for Pythonista, built on StaSh.
 from __future__ import print_function
 
+from builtins import object
 import argparse
 import sys
 from os import getcwd, mkdir, remove, rename
@@ -14,7 +15,7 @@ documentsIndex += len("Documents")
 ROOT = cwd[:documentsIndex]
 
 
-class stansi:  # Collection of Stash's ANSI escape codes.
+class stansi(object):  # Collection of Stash's ANSI escape codes.
 	bold = u"\x9b1m"
 	underscore = u"\x9b4m"
 	attr_end = u"\x9b0m"
@@ -58,7 +59,7 @@ class SWConfig (object): # Parser for the config files such as the repository li
 		return self.data[key]
 		
 	def keys(self):
-		return self.data.keys()
+		return list(self.data.keys())
 		
 def download_package(url, package_name): # Handles the installation of packages directories (since they're no longer tarfiles)
 	content_listing = ["bin.py", "meta.latte"]
@@ -160,7 +161,7 @@ def main(sargs):
 			content = opened.read()
 			opened.close()
 			as_config = SWConfig(content)
-			for repo in as_config.keys():
+			for repo in list(as_config.keys()):
 				print(Cyan(repo) + ": " + Green(as_config[repo]))
 	else:
 		print(Red("ERROR") + ": Unknown command '"+args.method+"'!")

@@ -3,6 +3,8 @@
 
 from __future__ import print_function
 
+from builtins import input
+from builtins import str
 import argparse
 import ast
 import os
@@ -83,7 +85,7 @@ def get_type(search):
 		for pp in PAGEPATHS:
 			ppc += [(fn, pp) for fn in os.listdir(pp)]
 		ffns= [(fn, pp) if fn.startswith(to_search+".") else None for fn, pp in ppc]
-		ffn = filter(None, ffns)
+		ffn = [_f for _f in ffns if _f]
 		if len(ffn) == 0:
 			# isdir
 			pname = "page_" + str(pn)
@@ -171,7 +173,7 @@ def show_text(text):
 			print("\n".join(lines[:100]))
 			lines = lines[100:]
 			prompt = _stash.text_color("(Press Return to continue)", "yellow")
-			raw_input(prompt)
+			input(prompt)
 	print("\n")
 
 
@@ -198,7 +200,7 @@ def main(args):
 	if not ns.topic:
 		cmds = all_commands()
 		if len(cmds) > 100:
-			if raw_input("List all {} commands?".format(len(cmds))).strip().lower() not in ("y", "yes"):
+			if input("List all {} commands?".format(len(cmds))).strip().lower() not in ("y", "yes"):
 				sys.exit(0)
 		for cmd in cmds:
 			print(

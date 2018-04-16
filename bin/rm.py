@@ -14,6 +14,7 @@ optional arguments:
                      permission or file existence (override -i)
   -v, --verbose      explain what is being done
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -45,7 +46,7 @@ def main(args):
     #setup print function
     if ns.verbose:
         def printp(text):
-            print text
+            print(text)
     else:
         def printp(text):
             pass
@@ -69,7 +70,7 @@ def main(args):
                     printp('%s has been deleted' % path)
                 except:
                     if not ns.force:
-                        print '%s: unable to remove' % path
+                        print('%s: unable to remove' % path)
 
         elif os.path.isdir(path) and ns.recursive:
             if prompt(path):
@@ -78,13 +79,13 @@ def main(args):
                     printp('%s has been deleted' % path)
                 except:
                     if not ns.force:
-                        print '%s: unable to remove' % path
+                        print('%s: unable to remove' % path)
 
         elif os.path.isdir(path):
-            print '%s: is a directory' % path
+            print('%s: is a directory' % path)
         else:
             if not ns.force:
-                print '%s: does not exist' % path
+                print('%s: does not exist' % path)
 
 
 if __name__ == '__main__':

@@ -1,3 +1,6 @@
+from __future__ import division
+from past.utils import old_div
+from builtins import object
 import os
 import time
 from mlpatches import base
@@ -69,7 +72,7 @@ class _PipeEndpoint(object):
 		except (OSError, IOError):
 			pass
 		ec = self.__root.get_exit_code(wait=True)
-		if ec / 256 == 0:
+		if old_div(ec, 256) == 0:
 			return None  # see os.popen
 		else:
 			return ec
