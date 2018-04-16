@@ -1,12 +1,14 @@
 
-from dulwich.diff_tree import _tree_entries, _NULL_ENTRY, TreeEntry, _is_tree
-from gittle import Gittle
-from dulwich import porcelain
-import stat
-from git import diff3
-from git.gitutils import _get_repo, find_revision_sha, can_ff, merge_base, count_commits_between, is_ancestor, get_remote_tracking_branch, GitError
 import argparse
+import os
+import stat
 
+from dulwich import porcelain
+from dulwich.diff_tree import _NULL_ENTRY, TreeEntry, _is_tree, _tree_entries
+from git import diff3, git_reset
+from git.gitutils import (GitError, _get_repo, count_commits_between,
+                          find_revision_sha, get_remote_tracking_branch,
+                          merge_base)
 
 
 def _merge_entries(path, trees):
@@ -219,4 +221,3 @@ def merge(args):
 if __name__=='__main__':
     import sys
     merge(sys.argv[1:])
-    

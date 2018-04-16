@@ -13,18 +13,19 @@ optional arguments:
   -k KEY, --key KEY  Encrypt/Decrypt Key.
   -d, --decrypt      Flag to decrypt.
 '''
-import os
 import argparse
 import base64
+import os
 
+_stash = globals()['_stash']
 try:
-	import pyaes
-except:
-	print 'Installing Required packages.'
-	_stash('pip install pyaes')
-	import pyaes
+    import pyaes
+except Exception:
+    print 'Installing Required packages.'
+    _stash('pip install pyaes')
+    import pyaes
 
-	
+
 class Crypt(object):
 	def __init__(self, in_filename, out_filename=None):
 		self.in_filename = in_filename

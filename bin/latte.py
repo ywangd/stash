@@ -1,17 +1,20 @@
 # A package manager meant for Pythonista, built on StaSh.
+from __future__ import print_function
+
+import argparse
+import sys
+from os import getcwd, mkdir, remove, rename
+from shutil import rmtree
 
 import requests
-import sys
-import argparse
-from os import remove, mkdir, rename, listdir, getcwd
-from shutil import rmtree
 
 cwd = getcwd()
 documentsIndex = cwd.index("Documents")
 documentsIndex += len("Documents")
 ROOT = cwd[:documentsIndex]
 
-class stansi: # Collection of Stash's ANSI escape codes.
+
+class stansi:  # Collection of Stash's ANSI escape codes.
 	bold = u"\x9b1m"
 	underscore = u"\x9b4m"
 	attr_end = u"\x9b0m"
@@ -104,7 +107,7 @@ def main(sargs):
 		try:
 			download_package(repo_to_use, package_name)
 		except:
-			stoutput("ERROR", "Couldn't find package", "error")
+			print("ERROR", "Couldn't find package", "error")
 			sys.exit()
 		# Move to correct locations
 		print("Installing")

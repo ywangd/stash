@@ -10,9 +10,12 @@ supported commands are:
 	gh create_key <title> [<public_key_path>] add a key to github (or create new key if none exist)
 For all commands, use gh <command> --help for more detailed help
 
-NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.com', which is also the default from the git module.  
-
+NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.com', which is also the default from the git module.
 '''
+import os
+import sys
+
+
 def install_module_from_github(username, package_name, folder, version):
     """
     Install python module from github zip files
