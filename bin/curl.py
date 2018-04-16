@@ -1,6 +1,7 @@
 # coding=utf-8
 """ Transfer a URL
 """
+from __future__ import print_function
 import sys
 import argparse
 import requests
@@ -35,14 +36,14 @@ def main(args):
     elif ns.request_method == 'HEAD':
         r = requests.head(url, headers=headers)
     else:
-        print 'unknown request method: {}'.format(ns.request_method)
+        print('unknown request method: {}'.format(ns.request_method))
         return
 
     if ns.output_file:
         with open(ns.output_file, 'w') as outs:
             outs.write(r.text)
     else:
-        print r.text
+        print(r.text)
 
 
 if __name__ == '__main__':

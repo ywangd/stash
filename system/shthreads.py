@@ -2,6 +2,8 @@
 """
 Killable threads
 """
+from builtins import str
+from builtins import object
 import os
 import sys
 import threading
@@ -141,12 +143,12 @@ class ShWorkerRegistry(object):
 
     def __repr__(self):
         ret = []
-        for job_id, thread in self.registry.items():
+        for job_id, thread in list(self.registry.items()):
             ret.append('{:>5d}  {}'.format(job_id, thread))
         return '\n'.join(ret)
 
     def __iter__(self):
-        return self.registry.values().__iter__()
+        return list(self.registry.values()).__iter__()
 
     def __len__(self):
         return len(self.registry)
@@ -174,7 +176,7 @@ class ShWorkerRegistry(object):
         return self.registry.get(job_id, None)
 
     def get_first_bg_worker(self):
-        for worker in self.registry.values():
+        for worker in list(self.registry.values()):
             if worker.is_background:
                 return worker
         else:
@@ -185,7 +187,7 @@ class ShWorkerRegistry(object):
         Kill all registered thread and clear the entire registry
         :return:
         """
-        for worker in self.registry.values():
+        for worker in list(self.registry.values()):
             worker.kill()
             # The worker removes itself from the registry when killed.
 

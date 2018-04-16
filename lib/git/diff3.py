@@ -26,6 +26,7 @@
     jsb: added newlines for conflict markers
 """
 
+from builtins import range
 from operator import xor
 
 
@@ -204,7 +205,7 @@ def _diff_heckel(text_a, text_b):
         s = text_b[i]
         freq[s] = freq.get(s, 0) + 3;
         bp  [s] = i;
-    for s, x in freq.items():
+    for s, x in list(freq.items()):
         if x == 5: uniq.append((ap[s], bp[s]))
     (freq, ap, bp) = ({}, {}, {})
     uniq.sort(key=lambda x: x[0])

@@ -1,4 +1,5 @@
 """This module contains the base class for patches."""
+from builtins import object
 import sys
 import imp
 import os

@@ -1,12 +1,15 @@
 """The FSI for dropbox."""
+from __future__ import absolute_import
 # this module is named 'DropBox' instead of 'dropbox' to avoid a
 # naming conflict.
+from builtins import str
+from builtins import object
 import os
 import logging
 import stat
 import tempfile
 
-import dropbox
+from . import dropbox
 
 from stashutils.fsi.errors import OperationFailure, IsDir, IsFile
 from stashutils.fsi.errors import AlreadyExists
@@ -178,7 +181,7 @@ class DropboxFSI(BaseFSI):
 				raise OperationFailure(e.message)
 			if isinstance(meta, (
 				dropbox.files.FolderMetadata,
-				dropbox.sharing.SharedFolderMetadata,
+				dropbox.sharing.SharedFolderMetadata
 				)):
 				bytes = 0
 				isdir = True
@@ -382,7 +385,7 @@ class Dropbox_Download(object):
 			raise ValueError("I/O operation on closed file")
 		return self
 	
-	def next(self):
+	def __next__(self):
 		"""returns the next line"""
 		line = self.readline()
 		if line:

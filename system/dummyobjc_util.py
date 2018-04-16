@@ -1,5 +1,6 @@
 
 
+from builtins import object
 class ObjCClass(object):
     def __init__(self, *args, **kwargs):
         pass

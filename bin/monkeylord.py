@@ -1,4 +1,5 @@
 """easiliy manage monkey-patches. See 'man monkeypatching' for more help."""
+from __future__ import print_function
 import argparse
 import sys
 import json
@@ -77,7 +78,7 @@ def main(ns):
 	elif ns.action == "list":
 		# show monkeypatches and their state
 		print(_stash.text_bold("Available Monkeypatches:"))
-		mlength = max([len(e) for e in patches.PATCHES.keys()]) + 2
+		mlength = max([len(e) for e in list(patches.PATCHES.keys())]) + 2
 		for pn in sorted(patches.PATCHES.keys()):
 			patch = patches.PATCHES[pn]
 			if patch.enabled:

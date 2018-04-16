@@ -16,8 +16,8 @@ class ExpanderTests(unittest.TestCase):
 
     def _get_pipe_sequence(self, line):
         expanded = self.expand(line)
-        expanded.next()
-        return expanded.next()
+        next(expanded)
+        return next(expanded)
 
     def test_envars(self):
         pipe_sequence = self._get_pipe_sequence(r'ls $SELFUPDATE_BRANCH')

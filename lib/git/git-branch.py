@@ -4,6 +4,7 @@
     git branch (-m | -M) [<oldbranch>] <newbranch>
     git branch (-d | -D) [-r] <branchname>…
     git branch --edit-description [<branchname>]"""
+from __future__ import print_function
 
 import sys,os
 import dulwich
@@ -89,7 +90,7 @@ def branch(args):
         edit_branch_description(edit_description)
     elif set_upstream:
         add_tracking(set_upstream[0], *( ['origin']+set_upstream[1].split('/'))[-2:])
-        print set_upstream[0], format_tracking_branch_desc(repo,set_upstream[0])
+        print(set_upstream[0], format_tracking_branch_desc(repo,set_upstream[0]))
     elif no_track:
         if len(no_track)==1:
             remove_tracking(no_track[0])
@@ -142,7 +143,7 @@ def delete_branch(delete_branchname,force=False,remote=None, verbose=0):
     if remote=True, then look in refs/remotes, otherwise check refs/heads
     for local, check if it has a remote tracking branch, and only allow delete if upstream has merged
     '''
-    print 'delete',delete_branchname,force,remote
+    print('delete',delete_branchname,force,remote)
     repo=_get_repo()
     if remote:
         qualified_branch=repo._format_ref_remote(delete_branchname)
@@ -164,7 +165,7 @@ def delete_branch(delete_branchname,force=False,remote=None, verbose=0):
             raise GitError('{0} is ahead of {1} by {2} commits.\nuse git branch -D\n'.format(delete_branchname,
                                     remote_tracking_branch,
                                     commits_ahead))
-    print 'removing {} (was {})\n'.format(delete_branchname,repo.refs[qualified_branch])
+    print('removing {} (was {})\n'.format(delete_branchname,repo.refs[qualified_branch]))
     del repo.repo.refs[qualified_branch]
 
     if not remote:
@@ -181,7 +182,7 @@ def move_branch(movebranch,force,verbose):
     if newbranch in repo.branches and not force:
         raise GitError('{} already exists.  use -M to force overwriting'.format(newbranch))
     if newbranch != oldbranch:
-        print 'Renaming {} ({}) to {}\n'.format(oldbranch,repo.branches[oldbranch],newbranch)
+        print('Renaming {} ({}) to {}\n'.format(oldbranch,repo.branches[oldbranch],newbranch))
         repo.add_ref(repo._format_ref_branch(newbranch),repo._format_ref_branch(oldbranch))
         del repo.repo.refs[repo._format_ref_branch(oldbranch)]
         #todo: reflog
@@ -249,17 +250,17 @@ def test():
     import os
     os.chdir('../..')
     def run(cmd):
-        print 'branch ', cmd
+        print('branch ', cmd)
         branch(cmd.split())
-        print ''
+        print('')
     #run('-d test')
     run('')
     run('-f test origin/master')
     run('')
-    print 'delete test: should delete'
+    print('delete test: should delete')
     run('-d test')
 
-    print 'set to remote'
+    print('set to remote')
     run('test origin/master')
     run('-v')
     try:
@@ -267,7 +268,7 @@ def test():
     except GitError:
         pass
     else:
-        print 'did not error!'
+        print('did not error!')
 
     run('-f test dev')
     run('-v')

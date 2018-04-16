@@ -9,6 +9,7 @@ and HEAD requests in a fairly straightforward manner.
 """
 
 from __future__ import absolute_import
+from __future__ import print_function
 
 __version__ = "0.1"
 __all__ = ["SimpleHTTPRequestHandler"]
@@ -61,7 +62,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_POST(self):
         """Serve a POST request."""
         r, info = self.deal_post_data()
-        print r, info, "by: ", self.client_address
+        print(r, info, "by: ", self.client_address)
         f = StringIO()
         f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
         f.write("<html>\n<title>Upload Result Page</title>\n")
@@ -291,12 +292,12 @@ def main(port=8000):
     server = BaseHTTPServer.HTTPServer(('0.0.0.0', port), SimpleHTTPRequestHandler)
     
     try:
-        print 'Serving HTTP on 0.0.0.0 port %d ...' % port
-        print 'local IP address is %s' % globals()['_stash'].libcore.get_lan_ip()
+        print('Serving HTTP on 0.0.0.0 port %d ...' % port)
+        print('local IP address is %s' % globals()['_stash'].libcore.get_lan_ip())
         server.serve_forever()
 
     except KeyboardInterrupt:
-        print 'Server shutting down ...'
+        print('Server shutting down ...')
         server.server_close()
 
 if __name__ == '__main__':

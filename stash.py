@@ -5,12 +5,15 @@ StaSh - Pythonista Shell
 https://github.com/ywangd/stash
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 __version__ = '0.6.20'
 
 import os
 import sys
-from ConfigParser import ConfigParser
-from StringIO import StringIO
+from configparser import ConfigParser
+from io import StringIO
 import imp as pyimp  # rename to avoid name conflict with objc_util
 import logging
 import logging.handlers
@@ -251,11 +254,11 @@ class StaSh(object):
         # No color for pipes, files and Pythonista console
         if not always and (isinstance(sys.stdout, StringIO)
                            or isinstance(sys.stdout, file)
-                           or sys.stdout.write.im_self is _SYS_STDOUT):
+                           or sys.stdout.write.__self__ is _SYS_STDOUT):
             return s
 
         fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)
-        for style_name, style_value in style.items():
+        for style_name, style_value in list(style.items()):
             if style_name == 'color':
                 color_id = graphics._SGR.get(style_value.lower())
                 if color_id is not None:

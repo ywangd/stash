@@ -5,6 +5,9 @@ The wrappers dispatch io requests based on current thread.
 If the thread is an instance of ShBaseThread, the io should be dispatched to ShIO.
 Otherwise, it should be dispatched to regular sys io.
 """
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import sys
 import threading
 

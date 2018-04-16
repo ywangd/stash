@@ -1,4 +1,7 @@
 """The FSI for zipfiles"""
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import zipfile
 import os
 import tempfile
@@ -6,7 +9,7 @@ import time
 import shutil
 import datetime
 import stat
-import StringIO
+import io
 
 from stashutils.fsi import base
 from stashutils.fsi import errors
@@ -197,7 +200,7 @@ class ZipWriter(object):
 		self.name = fp
 		self.buffering = buffering
 		self.mode = mode
-		self.sio = StringIO.StringIO()
+		self.sio = io.StringIO()
 		self.closed = False
 	
 	def close(self):
@@ -230,7 +233,7 @@ class ZipReader(ZipWriter):
 		self.name = fp
 		self.buffering = buffering
 		self.mode = mode
-		self.sio = StringIO.StringIO(self.root.zf.read(fp))
+		self.sio = io.StringIO(self.root.zf.read(fp))
 		self.closed = False
 	
 	def close(self):

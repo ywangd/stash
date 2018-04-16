@@ -1,4 +1,6 @@
 """Interface to FTP-servers."""
+from builtins import str
+from builtins import object
 import ftplib
 import tempfile
 import os

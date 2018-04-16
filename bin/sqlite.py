@@ -5,6 +5,7 @@ Created by: Chris Houser (Briarfox)
 Use sqlite ?file? to open a database in the shell.
 You can pass params to run one command. ex. sqlite test.db .dump > test.sql
 '''
+from __future__ import print_function
 import sqlite3
 import os
 import cmd
@@ -27,14 +28,14 @@ class SqliteCMD(cmd.Cmd):
         self.output = sys.stdout
 
     def preloop(self):
-        print 'sqlite3 version %s' % sqlite3.sqlite_version
-        print '.(dot) is used for all none sql commands.'
-        print 'Use .help for non sqlite command list'
-        print 'All sql commands must end with ;'
+        print('sqlite3 version %s' % sqlite3.sqlite_version)
+        print('.(dot) is used for all none sql commands.')
+        print('Use .help for non sqlite command list')
+        print('All sql commands must end with ;')
         if self.database == ':memory:':
-            print 'Using database :memory:\nuse .open ?file? to open a database'
+            print('Using database :memory:\nuse .open ?file? to open a database')
         else:
-            print 'Using databasse: %s' % self.database
+            print('Using databasse: %s' % self.database)
 
     def do_exit(self,*args):
         '''Exit shell'''
@@ -57,7 +58,7 @@ class SqliteCMD(cmd.Cmd):
 
     def display(self, line):
         if self.output == sys.stdout:
-            print line
+            print(line)
         else:
             with open(self.output, 'a+') as f:
                 f.write(line+'\n')
@@ -99,7 +100,7 @@ If table is specified, dump that table.
                 cu.execute("detach database attached_db")
                 self.display("\n".join(conn.iterdump()))
         except:
-            print 'Invalid table specified'
+            print('Invalid table specified')
 
     def do_backup(self, line):
         '''.backup ?DB? FILE      
@@ -116,11 +117,11 @@ Clone data into NEWDB from the existing database'''
                 conn = sqlite3.connect(line)
                 cur = conn.cursor()
                 cur.executescript('\n'.join(self.conn.iterdump()))
-                print "Switched to database: %s" % line
+                print("Switched to database: %s" % line)
                 self.conn = conn
                 self.cur = cur
             except sqlite3.Error, e:
-                print 'There was an error with the clone %s' % e.args[0]
+                print('There was an error with the clone %s' % e.args[0])
 
     def do_open(self, line):
         ''' .open ?FILENAME?       
@@ -203,8 +204,8 @@ List names of tables
                 if rtn.lstrip().upper().startswith('SELECT') or rtn.lstrip().upper().startswith('PRAGMA'):
                     self.format_print(self.cur.fetchall())
         except sqlite3.Error, e:
-            print e
-            print 'An Error occured:', e.args[0]
+            print(e)
+            print('An Error occured:', e.args[0])
 
     def do_EOF(self, line):
         return True

@@ -94,7 +94,7 @@ class McCmd(cmd.Cmd):
 
 	def do_connected(self, cmd):
 		"""prints a list of connected interfaces and their id."""
-		if len(self.FSIs.keys()) <= 1:
+		if len(list(self.FSIs.keys())) <= 1:
 			self.stdout.write("No Interfaces connected.\n")
 		for k in sorted(self.FSIs.keys()):
 			if k == INTERN_FS_ID:
@@ -106,7 +106,7 @@ class McCmd(cmd.Cmd):
 	def do_exit(self, cmd=""):
 		"""exit: quits the script."""
 		self.stdout.write("closing interfaces... ")
-		for k in self.FSIs.keys():
+		for k in list(self.FSIs.keys()):
 			try:
 				self.FSIs[k].close()
 			except:

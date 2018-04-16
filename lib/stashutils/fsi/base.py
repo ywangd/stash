@@ -1,4 +1,5 @@
 """helper functions and base classes."""
+from builtins import object
 from stashutils.fsi.errors import OperationFailure
 import random
 import os

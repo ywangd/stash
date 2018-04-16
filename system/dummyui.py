@@ -2,6 +2,7 @@
 Stub ui to allow debug on PC
 """
 
+from builtins import object
 AUTOCAPITALIZE_NONE = 0
 
 

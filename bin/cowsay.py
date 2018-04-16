@@ -1,3 +1,4 @@
+from __future__ import print_function
 #by Siddharth Duahantha
 #28 July 2017
 from sys import argv

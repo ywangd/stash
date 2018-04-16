@@ -84,6 +84,7 @@ Options:
     $Rev: $
     $Author: $
 """
+from __future__ import print_function
 
 
 import os, sys, socket, struct, select, time
@@ -250,19 +251,19 @@ def verbose_ping(dest_addr, timeout = 2, count = 4,interval=1.):
     the result.
     """
     for i in xrange(count):
-        print "ping %s..." % dest_addr,
+        print("ping %s..." % dest_addr, end=' ')
         try:
             delay  =  do_one(dest_addr, timeout)
         except socket.gaierror, e:
-            print "failed. (socket error: '%s')" % e[1]
+            print("failed. (socket error: '%s')" % e[1])
             break
 
         if delay  ==  None:
-            print "failed. (timeout within %ssec.)" % timeout
+            print("failed. (timeout within %ssec.)" % timeout)
             
         else:
             time.sleep(min(0,interval-delay))
-            print "got ping in %0.4fms\n" % (delay*1000)
+            print("got ping in %0.4fms\n" % (delay*1000))
 
 
 if __name__ == '__main__':

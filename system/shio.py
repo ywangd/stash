@@ -1,4 +1,5 @@
 # coding: utf-8
+from builtins import object
 import logging
 import time
 from collections import deque

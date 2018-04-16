@@ -1,4 +1,5 @@
 """Subprocesses with accessible I/O streams"""
+from builtins import object
 from mlpatches import os_popen
 from mlpatches.l2c import _get_str
 

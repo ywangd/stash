@@ -20,7 +20,7 @@ def create_file(dest, content):
 	If content is a string or unicode, use it as the content.
 	Otherwise, use content.read() as the content.
 	"""
-	if not isinstance(content, (str, unicode)):
+	if not isinstance(content, str):
 		content = content.read()
 	with open(dest, "wb") as f:
 		f.write(content)

@@ -7,6 +7,7 @@ usage:
     edit [-t --temp] [-o --old_tab] [file]
     Follow prompt for instructions.
 """
+from __future__ import print_function
 import os
 import tempfile
 import console
@@ -30,7 +31,7 @@ def open_temp(file='', new_tab=True):
             temp.flush()
             to_edit.close()
             
-        print '***When you are finished editing the file, you must come back to console to confim changes***'
+        print('***When you are finished editing the file, you must come back to console to confim changes***')
         editor.open_file(temp.name, new_tab)
         time.sleep(1.5)
         console.hide_output()
@@ -51,13 +52,13 @@ def open_temp(file='', new_tab=True):
                 with open(temp.name,'r') as tmp:
                     f.write(tmp.read())
                     
-            print 'File Saved.'
+            print('File Saved.')
         elif input=='N' or input=='n':
             if not new_tab:
                 editor.open_file(cur_path) # restore previous script in editor
     
     except Exception, e:
-        print e
+        print(e)
         
     finally:
         temp.close()

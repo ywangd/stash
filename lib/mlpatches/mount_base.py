@@ -1,7 +1,10 @@
 """base patches for mount."""
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import os
 import stat as _stat
-import __builtin__
+import builtins
 
 from mlpatches import base
 
@@ -12,7 +15,7 @@ from stashutils.fsi.errors import IsFile, OperationFailure
 # store default functions
 
 _org_listdir = os.listdir
-_org_open = __builtin__.open
+_org_open = builtins.open
 _org_chdir = os.chdir
 _org_getcwd = os.getcwd
 _org_ismount = os.path.ismount
@@ -88,7 +91,7 @@ def getcwd(patch):
 
 def getcwdu(patch):
 	"""Return a Unicode object representing the current working directory."""
-	return unicode(CWD)
+	return str(CWD)
 
 
 def chdir(patch, path):
@@ -199,7 +202,7 @@ def lstat(patch, path):
 				)
 
 
-def mkdir(patch, path, mode=0777):
+def mkdir(patch, path, mode=0o777):
 	"""
 	Create a directory named path with numeric mode mode.
 	The default mode is 0777 (octal). On some systems, mode is ignored.

@@ -1,11 +1,17 @@
 # coding: utf-8
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 import os
 import string
 import glob
 import logging
 import threading
-from StringIO import StringIO
+from io import StringIO
 
 import pyparsing as pp
 
@@ -374,7 +380,7 @@ class ShExpander(object):
         # alias substitute
         tokens, parsed = self.alias_subs(tokens, parsed)
 
-        pseq_indices = range(0, len(parsed), 2)
+        pseq_indices = list(range(0, len(parsed), 2))
         n_pipe_sequences = len(pseq_indices)
 
         # First yield here to report a summary about incoming commands
@@ -468,7 +474,7 @@ class ShExpander(object):
 
         alias_found = False
         for t in tokens:
-            if t.ttype == ShToken._CMD and t.tok in current_state.aliases.keys() and t.tok != exclude:
+            if t.ttype == ShToken._CMD and t.tok in list(current_state.aliases.keys()) and t.tok != exclude:
                 t.tok = current_state.aliases[t.tok][1]
                 alias_found = True
         if alias_found:
@@ -771,14 +777,14 @@ class ShCompleter(object):
                 path_names = [p for p in path_names
                               if p.endswith('/') or p.endswith('.py') or p.endswith('.sh')]
                 script_names = self.stash.runtime.get_all_script_names()
-                script_names.extend(current_state.aliases.keys())
+                script_names.extend(list(current_state.aliases.keys()))
                 if word_to_complete != '':
                     script_names = [name for name in script_names if name.startswith(word_to_complete)]
             else:
                 script_names = []
 
             if word_to_complete.startswith('$'):
-                environ_names = ['$' + varname for varname in current_state.environ.keys()
+                environ_names = ['$' + varname for varname in list(current_state.environ.keys())
                                if varname.startswith(word_to_complete[1:])]
             else:
                 environ_names = []

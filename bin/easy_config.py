@@ -1,4 +1,8 @@
 """a graphical config manager for StaSh"""
+from __future__ import division
+from builtins import str
+from builtins import object
+from past.utils import old_div
 import os
 import ast
 import threading
@@ -228,22 +232,22 @@ class ColorPicker(object):
 		self.view.add_subview(self.bslider)
 		self.view.add_subview(self.preview)
 		self.view.add_subview(self.colorlabel)
-		w = self.view.width / 2.0
-		self.preview.width = w - (w / 10.0)
-		self.preview.x = w / 10.0
-		hd = self.view.height / 10.0
-		self.preview.height = (self.view.height / 3.0) * 2.0 - (hd * 2)
+		w = old_div(self.view.width, 2.0)
+		self.preview.width = w - (old_div(w, 10.0))
+		self.preview.x = old_div(w, 10.0)
+		hd = old_div(self.view.height, 10.0)
+		self.preview.height = (old_div(self.view.height, 3.0)) * 2.0 - (hd * 2)
 		self.preview.y = hd
 		self.preview.flex = "BRWH"
 		self.colorlabel.x = self.preview.x
 		self.colorlabel.y = (hd * 2) + self.preview.height
-		self.colorlabel.height = (self.view.height / 3.0) * 2.0 - (hd * 2)
+		self.colorlabel.height = (old_div(self.view.height, 3.0)) * 2.0 - (hd * 2)
 		self.colorlabel.width = self.preview.width
 		self.colorlabel.flex = "BRWH"
 		self.rslider.x = self.gslider.x = self.bslider.x = w * 1.1
 		self.rslider.width = self.gslider.width = self.bslider.width = w * 0.8
 		self.rslider.flex = self.gslider.flex = self.bslider.flex = "LWHTB"
-		h = self.view.height / 9.0
+		h = old_div(self.view.height, 9.0)
 		self.rslider.y = h * 2
 		self.gslider.y = h * 4
 		self.bslider.y = h * 6
@@ -304,8 +308,8 @@ class ConfigView(ui.View):
 		self.ai = ui.ActivityIndicator()
 		self.ai.style = ui.ACTIVITY_INDICATOR_STYLE_WHITE_LARGE
 		self.ai.hides_when_stopped = True
-		self.ai.x = self.width / 2.0 - (self.ai.width / 2.0)
-		self.ai.y = self.height / 2.0 - (self.ai.height / 2.0)
+		self.ai.x = old_div(self.width, 2.0) - (old_div(self.ai.width, 2.0))
+		self.ai.y = old_div(self.height, 2.0) - (old_div(self.ai.height, 2.0))
 		self.ai.flex = "LRTB"
 		self.ai.background_color = "#000000"
 		self.ai.alpha = 0.7
@@ -377,8 +381,8 @@ class ConfigView(ui.View):
 			callback = lambda s, self=self, i=i: self.switch_changed(s, i)
 			switch.action = callback
 			cell.content_view.add_subview(switch)
-			switch.y = (cell.height / 2.0) - (switch.height / 2.0)
-			switch.x = (cell.width - switch.width) - (cell.width / 20)
+			switch.y = (old_div(cell.height, 2.0)) - (old_div(switch.height, 2.0))
+			switch.x = (cell.width - switch.width) - (old_div(cell.width, 20))
 			switch.flex = "L"
 		elif otype == TYPE_CHOICE:
 			seg = ui.SegmentedControl()
@@ -393,8 +397,8 @@ class ConfigView(ui.View):
 			callback = lambda s, self=self, i=i: self.choice_changed(s, i)
 			seg.action = callback
 			cell.content_view.add_subview(seg)
-			seg.y = (cell.height / 2.0) - (seg.height / 2.0)
-			seg.x = (cell.width - seg.width) - (cell.width / 20)
+			seg.y = (old_div(cell.height, 2.0)) - (old_div(seg.height, 2.0))
+			seg.x = (cell.width - seg.width) - (old_div(cell.width, 20))
 			seg.flex = "LW"
 		elif otype == TYPE_COLOR:
 			b = ui.Button()
@@ -408,10 +412,10 @@ class ConfigView(ui.View):
 			callback = lambda s, self=self, i=i: self.choose_color(s, i)
 			b.action = callback
 			cell.content_view.add_subview(b)
-			b.width = (cell.width / 6.0)
-			b.height = ((cell.height / 4.0) * 3.0)
-			b.y = (cell.height / 2.0) - (b.height / 2.0)
-			b.x = (cell.width - b.width) - (cell.width / 20)
+			b.width = (old_div(cell.width, 6.0))
+			b.height = ((old_div(cell.height, 4.0)) * 3.0)
+			b.y = (old_div(cell.height, 2.0)) - (old_div(b.height, 2.0))
+			b.x = (cell.width - b.width) - (old_div(cell.width, 20))
 			b.flex = "LW"
 			b.border_color = "#000000"
 			b.border_width = 1
@@ -432,10 +436,10 @@ class ConfigView(ui.View):
 				tf.keyboard_type = ui.KEYBOARD_NUMBER_PAD
 			tf.flex = "LW"
 			cell.add_subview(tf)
-			tf.width = (cell.width / 6.0)
-			tf.height = ((cell.height / 4.0) * 3.0)
-			tf.y = (cell.height / 2.0) - (tf.height / 2.0)
-			tf.x = (cell.width - tf.width) - (cell.width / 20)
+			tf.width = (old_div(cell.width, 6.0))
+			tf.height = ((old_div(cell.height, 4.0)) * 3.0)
+			tf.y = (old_div(cell.height, 2.0)) - (old_div(tf.height, 2.0))
+			tf.x = (cell.width - tf.width) - (old_div(cell.width, 20))
 		elif otype == TYPE_FILE:
 			# incomplete!
 			b = ui.Button()
@@ -446,16 +450,16 @@ class ConfigView(ui.View):
 			callback = lambda s, self=self, i=i, f=fp: self.choose_file(s, i, f)
 			b.action = callback
 			cell.content_view.add_subview(b)
-			b.width = (cell.width / 6.0)
-			b.height = ((cell.height / 4.0) * 3.0)
-			b.y = (cell.height / 2.0) - (b.height / 2.0)
-			b.x = (cell.width - b.width) - (cell.width / 20)
+			b.width = (old_div(cell.width, 6.0))
+			b.height = ((old_div(cell.height, 4.0)) * 3.0)
+			b.y = (old_div(cell.height, 2.0)) - (old_div(b.height, 2.0))
+			b.x = (cell.width - b.width) - (old_div(cell.width, 20))
 			b.flex = "LWH"
 		elif otype == TYPE_COMMAND:
 			b = ui.Button()
 			b.title = info["display_name"]
 			cmd = info["command"]
-			if isinstance(cmd, (str, unicode)):
+			if isinstance(cmd, str):
 				f = lambda c=cmd: _stash(c, add_to_history=False)
 			else:
 				f = lambda c=cmd: cmd()

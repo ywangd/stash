@@ -22,6 +22,7 @@ Commands:
     diff: git diff - show changes in staging area
     help: git help
 '''
+from __future__ import print_function
 
 import argparse
 import os
@@ -66,7 +67,7 @@ if AUTODOWNLOAD_DEPENDENCIES:
         from dulwich import porcelain
         from dulwich.index import index_entry_from_stat
         if not dulwich.__version__ ==  REQUIRED_DULWICH_VERSION:
-            print 'Dulwich version was {}.  Required is {}.  Attempting to reload'.format(dulwich.__version__,REQUIRED_DULWICH_VERSION)
+            print('Dulwich version was {}.  Required is {}.  Attempting to reload'.format(dulwich.__version__,REQUIRED_DULWICH_VERSION))
             for m in [m for m in sys.modules if m.startswith('dulwich')]:
                 del sys.modules[m]
             import dulwich
@@ -74,12 +75,12 @@ if AUTODOWNLOAD_DEPENDENCIES:
             from dulwich import porcelain
             from dulwich.index import index_entry_from_stat
             if not dulwich.__version__ ==  REQUIRED_DULWICH_VERSION:
-                print 'Could not find correct version. Will download proper fork now'
+                print('Could not find correct version. Will download proper fork now')
                 download_dulwich = True
             else:
-                print 'Correct version loaded.'
+                print('Correct version loaded.')
     except ImportError as e:
-        print 'dulwich was not found.  Will attempt to download. '
+        print('dulwich was not found.  Will attempt to download. ')
         download_dulwich = True 
     try:
         if download_dulwich:
@@ -109,9 +110,9 @@ if AUTODOWNLOAD_DEPENDENCIES:
             from dulwich import porcelain
             from dulwich.index import index_entry_from_stat
     except Exception:
-        print '''Still could not import dulwich.
+        print('''Still could not import dulwich.
             Perhaps your network connection was unavailable.
-            You might also try deleting any existing dulwich versions in site-packages or elsewhere, then restarting pythonista.'''
+            You might also try deleting any existing dulwich versions in site-packages or elsewhere, then restarting pythonista.''')
 
     #gittle, funky
     # todo... check gittle version
@@ -219,7 +220,7 @@ def unstage(commit='HEAD',paths=[]):
                 del(index[path])
                 index.write()
             except KeyError:
-                print 'file not in index.',path
+                print('file not in index.',path)
             return
             
         try:
@@ -256,33 +257,33 @@ def git_init(args):
     if len(args) == 1:
         Gittle.init(args[0])
     else:
-        print command_help['init']
+        print(command_help['init'])
 
 def git_status(args):
     if len(args) == 0:
         repo = _get_repo()
         status = porcelain.status(repo.repo.path)
-        print 'STAGED'
+        print('STAGED')
         for k,v in status.staged.iteritems():
             if v:
-                print k,v
-        print 'UNSTAGED LOCAL MODS'
-        print status.unstaged
+                print(k,v)
+        print('UNSTAGED LOCAL MODS')
+        print(status.unstaged)
         
     else:
-        print command_help['status']
+        print(command_help['status'])
 
 def git_remote(args):
     '''List remote repos'''
     if len(args) == 0:
         repo = _get_repo()
         for key, value in repo.remotes.items():
-            print '{} {}'.format(key, value)
+            print('{} {}'.format(key, value))
     elif len(args)==2:
         repo=_get_repo()
         repo.add_remote(args[0],args[1])
     else:
-        print command_help['remote']
+        print(command_help['remote'])
 
 def git_add(args):
     if len(args) > 0:
@@ -295,13 +296,13 @@ def git_add(args):
         for file in args:
             
             if os.path.exists(os.path.join(repo.repo.path, file)):
-                print 'Adding {0}'.format(file)
+                print('Adding {0}'.format(file))
                 porcelain.add(repo.repo.path, [file])
             else:
-                print '{} does not exist. skipping'.format(file)
+                print('{} does not exist. skipping'.format(file))
 
     else:
-        print command_help['add']
+        print(command_help['add'])
 
 def git_rm(args):
     if len(args) > 0:
@@ -310,12 +311,12 @@ def git_rm(args):
         args = [os.path.join(os.path.relpath(cwd, repo.path), x)
                     if not os.path.samefile(cwd, repo.path) else x for x in args]
         for file in args:
-            print 'Removing {0}'.format(file)
+            print('Removing {0}'.format(file))
             #repo.rm(args)
             porcelain.rm(repo.repo.path, args)
 
     else:
-        print command_help['rm']
+        print(command_help['rm'])
 def launch_subcmd(cmd,args):
     cmdpath=os.path.join(os.environ['STASH_ROOT'],'lib','git',cmd)
 
@@ -367,10 +368,10 @@ def git_reset(args):
         if commit == 'HEAD':
             commit = repo.head
         elif commit in repo.branches:
-            print 'updating HEAD to ', commit
+            print('updating HEAD to ', commit)
             repo.repo.refs.set_symbolic_ref('HEAD',repo._format_ref_branch(commit))
         else:
-            print commit, 'is not a valid branchname.  head was not updated'
+            print(commit, 'is not a valid branchname.  head was not updated')
     if ns.hard:
         _confirm_dangerous()
  
@@ -379,16 +380,16 @@ def git_reset(args):
         if paths:
             unstage(commit,paths)
         else:
-            print 'resetting index. please wait'
+            print('resetting index. please wait')
             unstage_all(commit)
-            print 'complete'
+            print('complete')
  
     # next, rebuild files
     if ns.hard:
         treeobj=repo[repo[commit].tree]
         
         for path in paths:
-            print 'resetting '+path
+            print('resetting '+path)
             relpath=repo.relpath(path)
             file_contents=repo[treeobj.lookup_path(repo.__getitem__,relpath)[1]].as_raw_string()
             with open(str(path),'w') as f:
@@ -419,10 +420,10 @@ def git_commit(args):
     merging = repo.repo.get_named_file('MERGE_HEAD')
     merge_head=None
     if merging:
-        print 'merging in process:' 
+        print('merging in process:') 
         merge_head= merging.read() or ''
         merge_msg= repo.repo.get_named_file('MERGE_MSG').read() or ''
-        print merge_msg
+        print(merge_msg)
         ns.message = ns.message or '' + merge_msg
     if not ns.message:
         ns.message=raw_input('Commit Message: ')
@@ -434,10 +435,10 @@ def git_commit(args):
     
         author = "{0} <{1}>".format(ns.name, ns.email)
 
-        print repo.repo.do_commit(message=ns.message
+        print(repo.repo.do_commit(message=ns.message
                                   , author=author
                                   , committer=author 
-                                  , merge_heads=[merge_head] if merge_head else None)
+                                  , merge_heads=[merge_head] if merge_head else None))
         if merging:
             try:
                 os.remove(os.path.join(repo.repo.controldir(),'MERGE_HEAD'))
@@ -445,7 +446,7 @@ def git_commit(args):
             except OSError:
                 pass  #todo, just no such file
     except:
-        print 'commit Error: {0}'.format(sys.exc_value)
+        print('commit Error: {0}'.format(sys.exc_value))
 
     
 
@@ -460,7 +461,7 @@ def git_clone(args):
            config.write_to_path()
           
     else:
-        print command_help['clone']
+        print(command_help['clone'])
 
 def git_pull(args):
     if len(args) <= 1:
@@ -475,9 +476,9 @@ def git_pull(args):
         if url:
             repo.pull(origin_uri=url)
         else:
-            print 'No pull URL.'
+            print('No pull URL.')
     else:
-        print command_help['git pull']
+        print(command_help['git pull'])
 
 def git_fetch(args): 
     parser = argparse.ArgumentParser(prog='git fetch'
@@ -497,9 +498,9 @@ def git_fetch(args):
         result.url=repo.remotes.get(origin)
     if not urlparse.urlparse(result.url).scheme:
         raise Exception('url must match a remote name, or must start with http:// or https://')
-    print 'Starting fetch, this could take a while'
+    print('Starting fetch, this could take a while')
     remote_refs=porcelain.fetch(repo.repo.path,result.url)
-    print 'Fetch successful.  Importing refs'
+    print('Fetch successful.  Importing refs')
     remote_tags = gittle.utils.git.subrefs(remote_refs, 'refs/tags')
     remote_heads = gittle.utils.git.subrefs(remote_refs, 'refs/heads')
         
@@ -516,21 +517,21 @@ def git_fetch(args):
         clean_remote_heads
     )
     for k,v in clean_remote_heads.items():
-        print 'imported {}/{} {}'.format(heads_base,k,v) 
+        print('imported {}/{} {}'.format(heads_base,k,v)) 
     # Import tags
     repo.import_refs(
         'refs/tags',
         clean_remote_tags
     )
     for k,v in clean_remote_tags.items():
-        print 'imported {}/{} {}'.format('refs/tags',k,v) 
-    print 'Checking for deleted remote refs'
+        print('imported {}/{} {}'.format('refs/tags',k,v)) 
+    print('Checking for deleted remote refs')
     #delete unused remote refs
     for k in gittle.utils.git.subrefs(repo.refs,heads_base):
         if k not in clean_remote_heads:
-            print 'Deleting {}'.format('/'.join([heads_base,k]))
+            print('Deleting {}'.format('/'.join([heads_base,k])))
             del repo.refs['/'.join([heads_base,k])]
-    print 'Fetch complete'
+    print('Fetch complete')
 
 def git_push(args):
     parser = argparse.ArgumentParser(prog='git push'
@@ -553,7 +554,7 @@ def git_push(args):
 
     branch_name = os.path.join('refs','heads', repo.active_branch)  #'refs/heads/%s' % repo.active_branch
 
-    print "Attempting to push to: {0}, branch: {1}".format(result.url, branch_name)
+    print("Attempting to push to: {0}, branch: {1}".format(result.url, branch_name))
 
     netloc = urlparse.urlparse(result.url).netloc
 
@@ -593,14 +594,14 @@ def git_push(args):
         porcelain.push(repo.repo.path, result.url, branch_name, errstream=outstream)
  
     for line in outstream.getvalue().split('\n'):
-        print(line.replace(pw, '*******') if pw else line)
+        print((line.replace(pw, '*******') if pw else line))
     
-    print 'success!'
+    print('success!')
 
 def git_modified(args):
     repo = _get_repo()
     for mod_file in repo.modified_files:
-        print mod_file
+        print(mod_file)
 
 def git_log(args):
     parser = argparse.ArgumentParser(description='git log arg parser')
@@ -633,7 +634,7 @@ def git_log(args):
         porcelain.log(repo.repo.path, max_entries=results.max_entries,outstream=outstream)
         
         if not results.oneline:
-            print outstream.getvalue()
+            print(outstream.getvalue())
         else:
 
             last_commit = ''
@@ -662,7 +663,7 @@ def git_log(args):
                     
                     
     except ValueError:
-        print command_help['log']
+        print(command_help['log'])
 
 def git_diff(args):
     '''prints diff of currently staged files to console.. '''
@@ -697,14 +698,14 @@ def git_checkout(args):
         if len(args) == 2:
             if args[0] == '-b':
                 #TODO: Add tracking as a parameter
-                print "Creating branch {0}".format(args[1])
+                print("Creating branch {0}".format(args[1]))
                 repo.create_branch(repo.active_branch, args[1], tracking=None)
                 #Recursive call to checkout the branch we just created
                 git_checkout([args[1]])
         else:
             refresh_editor()
     else:
-        print command_help['checkout']
+        print(command_help['checkout'])
         
 def refresh_editor():
     #reload current file in editor
@@ -717,12 +718,12 @@ def refresh_editor():
         editor.replace_text(sel[0],sel[0],'') #force scroll
         editor.set_selection(sel[0],sel[1])
     except:
-        print 'Could not refresh editor.  continuing anyway'
+        print('Could not refresh editor.  continuing anyway')
     
 def git_help(args):
-    print 'help:'
+    print('help:')
     for key, value in command_help.items():
-        print value
+        print(value)
             
            
 

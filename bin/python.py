@@ -11,12 +11,16 @@ usage:
     python -c command
     python python_file.py [args]
 """
+from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import runpy
 import sys
 import argparse
 import code
-import __builtin__
+import builtins
 
 _stash = globals()["_stash"]
 
@@ -57,7 +61,7 @@ if ns.module:
     sys.exit(0)
 
 elif ns.cmd:
-    exec ns.cmd
+    exec(ns.cmd)
     sys.exit(0)
 
 else:

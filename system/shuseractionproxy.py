@@ -3,6 +3,7 @@
 The proxy is to centralize handler dispatching for user actions
 such as type, touch, swipe, key press.
 """
+from builtins import object
 from contextlib import contextmanager
 
 

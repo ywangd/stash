@@ -14,6 +14,7 @@ optional arguments:
                sha256_hash filename
                etc.
 '''
+from __future__ import print_function
 import argparse
 from Crypto.Hash import SHA256
 import re
@@ -37,11 +38,11 @@ def check_list(fileobj):
         try:
             with open(match.group(2),'rb') as f1:
                 if match.group(1) == get_hash(f1):
-                    print match.group(2)+': Pass'
+                    print(match.group(2)+': Pass')
                 else:
-                    print match.group(2)+': Fail'
+                    print(match.group(2)+': Fail')
         except:
-            print 'Invalid format.'
+            print('Invalid format.')
                 
 def make_file(txt):
     f = cStringIO.StringIO()
@@ -67,10 +68,10 @@ else:
         for arg in args.file:
             if os.path.isfile(arg):
                 with open(arg,'rb') as f:
-                    print get_hash(f)+' '+arg
+                    print(get_hash(f)+' '+arg)
             else:
-                print get_hash(make_file(arg))
+                print(get_hash(make_file(arg)))
     else:
-        print get_hash(make_file(sys.stdin.read()))
+        print(get_hash(make_file(sys.stdin.read())))
         
     
