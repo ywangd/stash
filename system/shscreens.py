@@ -19,11 +19,7 @@ from .shcommon import IN_PYTHONISTA, ON_IOS_8
 # noinspection PyPep8Naming
 from .shcommon import sh_delay, Graphics as graphics
 
-
-try:
-	xrange
-except NameError:
-	xrange = range
+from six.moves import xrange
 
 NSMutableAttributedString = ObjCClass('NSMutableAttributedString')
 UIFont = ObjCClass('UIFont')

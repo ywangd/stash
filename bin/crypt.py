@@ -20,7 +20,7 @@ import os
 _stash = globals()['_stash']
 try:
 	import pyaes
-except:
+except ImportError:
 	print('Installing Required packages...')
 	_stash('pip install pyaes')
 	import pyaes

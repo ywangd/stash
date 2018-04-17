@@ -722,7 +722,7 @@ class ArchiveFileInstaller(object):
                     desc = kwargs.get("description", "")
                     path = create_command(
                     name,
-                    """'''{d}'''
+                    b"""'''{d}'''
 from {m} import {n}
 
 if __name__ == "__main__":

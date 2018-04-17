@@ -10,6 +10,9 @@ import threading
 import ctypes
 from itertools import chain
 
+import six
+
+
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 
 if IN_PYTHONISTA:
@@ -74,7 +77,7 @@ _EXTERNAL_DIRS = [
 	]
 
 # Python 3 or not Python 3
-PY3 = (sys.version_info >= (3, 0))
+PY3 = six.PY3
 
 # Save the true IOs
 if IN_PYTHONISTA:

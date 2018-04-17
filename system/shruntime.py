@@ -6,10 +6,11 @@ import logging
 import threading
 import functools
 
+from six import StringIO, text_type, PY3
 try:
-	from StringIO import StringIO
-except ImportError:
-	from io import StringIO, IOBase as file
+	file
+except NameError:
+	from io import IOBase as file
 
 import pyparsing as pp
 
@@ -25,14 +26,10 @@ from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
     ShFileNotFound, ShEventNotFound, ShNotExecutable
 # noinspection PyProtectedMember
 from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE, _SYS_STDOUT, _SYS_STDERR
-from .shcommon import is_binary_file, _STASH_EXTENSION_BIN_PATH, PY3
+from .shcommon import is_binary_file, _STASH_EXTENSION_BIN_PATH
 from .shparsers import ShPipeSequence
 from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
 
-try:
-	unicode
-except NameError:
-	unicode = str
 
 # Default .stashrc file
 _DEFAULT_RC = r"""BIN_PATH=~/Documents/bin:{bin_ext}:$BIN_PATH
@@ -492,7 +489,7 @@ class ShRuntime(object):
         # convert sys.argv to unicode if on python3
         if PY3:
         	# todo: this is only a temporary solution and needs to be redone. This may be buggy.
-        	argv = [c if isinstance(c, unicode) else c.decode("utf-8") for c in argv]
+        	argv = [c if isinstance(c, text_type) else c.decode("utf-8") for c in argv]
         sys.argv = argv
 
         # Set current os environ to the threading environ
