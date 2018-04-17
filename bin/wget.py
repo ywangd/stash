@@ -5,19 +5,16 @@ from __future__ import print_function
 import sys
 import argparse
 
-try:
-	import urllib2
-except ImportError:
-	# py3
-	import urllib.request as urllib2
+from six.moves.urllib.request import urlopen
 
 try:
     import clipboard
     import console
-except:
-    import dummyconsole as console
+except ImportError:
+    from . import dummyconsole as console
 
 _stash = globals()["_stash"]
+
 
 def main(args):
     ap = argparse.ArgumentParser()
@@ -32,7 +29,7 @@ def main(args):
     try:
 
         print('Opening: %s\n' % url)
-        u = urllib2.urlopen(url)
+        u = urlopen(url)
 
         meta = u.info()
         try:
@@ -62,7 +59,7 @@ def main(args):
                 print('\r' + status, end="")
             print("")
 
-    except Exception as e:
+    except Exception:
         print('invalid url: %s' % url)
         sys.exit(1)
 

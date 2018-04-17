@@ -178,7 +178,7 @@ class DropboxFSI(BaseFSI):
 				raise OperationFailure(e.message)
 			if isinstance(meta, (
 				dropbox.files.FolderMetadata,
-				dropbox.sharing.SharedFolderMetadata,
+				dropbox.sharing.SharedFolderMetadata
 				)):
 				bytes = 0
 				isdir = True

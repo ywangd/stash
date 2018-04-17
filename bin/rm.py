@@ -14,11 +14,15 @@ optional arguments:
                      permission or file existence (override -i)
   -v, --verbose      explain what is being done
 """
+from __future__ import print_function
 
 import os
 import sys
 import shutil
 from argparse import ArgumentParser
+
+from six.moves import input
+
 
 def main(args):
     ap = ArgumentParser()
@@ -52,7 +56,7 @@ def main(args):
 
     if ns.interactive and not ns.force:
         def prompt(file):
-            result = raw_input('Delete %s? [Y,n]: ' % file)
+            result = input('Delete %s? [Y,n]: ' % file)
             if result == 'Y' or result == 'y':
                 return True
             else:

@@ -1,5 +1,6 @@
 """ Show information about this StaSh installation.
 """
+from __future__ import print_function
 
 import os
 import sys

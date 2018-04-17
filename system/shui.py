@@ -6,7 +6,7 @@ import logging
 try:
     import ui
 except ImportError:
-    import dummyui as ui
+    from . import dummyui as ui
 
 from .shcommon import IN_PYTHONISTA, ON_IPAD, PYTHONISTA_VERSION_LONG
 from .shterminal import ShTerminal, StubTerminal

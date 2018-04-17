@@ -1,4 +1,5 @@
 """Extract a zip archive into a directory."""
+from __future__ import print_function
 import os
 import sys
 import zipfile

@@ -4,6 +4,7 @@ Simple telent client.
 
 usage: telnet host [-p port] [--timeout N]
 """
+from __future__ import print_function
 import sys
 import select
 import argparse
@@ -15,7 +16,7 @@ _SYS_STDOUT = sys.__stdout__
 try:
     import ui
 except ImportError:
-    import dummyui as ui
+    from . import dummyui as ui
 
 _stash = globals()['_stash']
 """:type : StaSh"""
@@ -47,7 +48,7 @@ class StashTelnet(object):
         self.client = None
 
     def connect(self, host, port=23, timeout=2):
-        print 'Connecting...'
+        print('Connecting...')
         try:
             self.client = telnetlib.Telnet(host, port, timeout)
             return True
@@ -83,7 +84,7 @@ class StashTelnet(object):
         t1.start()
         t1.join()
         self.client.close()
-        print '\nconnection closed\n'
+        print('\nconnection closed\n')
 
 
 CTRL_KEY_FLAG = (1 << 18)
@@ -97,7 +98,7 @@ class SshUserActionDelegate(object):
         self.telnet = telnet
 
     def send(self, s):
-        self.telnet.stream.feed(s if isinstance(s, unicode) else s.decode('utf-8'))
+        self.telnet.stream.feed(s.decode('utf-8') if hasattr(s, "decode") else s)
         self.telnet.client.write(s.encode('utf-8'))
 
 
@@ -212,7 +213,7 @@ if __name__ == '__main__':
     sv_delegate = SshSVDelegate(telnet)
 
     if telnet.connect(host=args.host, port=args.port, timeout=args.timeout):
-        print 'Connected. Press Ctrl-C to quit.'
+        print('Connected. Press Ctrl-C to quit.')
         _stash.stream.feed(u'\u009bc', render_it=False)
         with _stash.user_action_proxy.config(tv_responder=tv_vk_kc_delegate,
                                              kc_responder=tv_vk_kc_delegate.kc_pressed,
@@ -220,4 +221,4 @@ if __name__ == '__main__':
                                              sv_responder=sv_delegate):
             telnet.interactive()
     else:
-        print 'Unable to connect'
+        print('Unable to connect')

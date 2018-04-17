@@ -14,12 +14,17 @@ optional arguments:
                sha1_hash filename
                etc.
 '''
+from __future__ import print_function
+
 import argparse
-from Crypto.Hash import SHA
+import os
 import re
 import sys
-import os
-import cStringIO
+
+from six import StringIO
+
+from Crypto.Hash import SHA
+
 
 def get_hash(fileobj):
     h = SHA.new()
@@ -30,25 +35,28 @@ def get_hash(fileobj):
             break
         h.update(chunk)
     return h.hexdigest()
-    
+
+
 def check_list(fileobj):
     for line in fileobj:
         match = re.match(r'(\w+)[ \t]+(.+)',line)
         try:
             with open(match.group(2),'rb') as f1:
                 if match.group(1) == get_hash(f1):
-                    print match.group(2)+': Pass'
+                    print(match.group(2)+': Pass')
                 else:
-                    print match.group(2)+': Fail'
-        except:
-            print 'Invalid format.'
-                
+                    print(match.group(2)+': Fail')
+        except Exception:
+            print('Invalid format.')
+
+
 def make_file(txt):
-    f = cStringIO.StringIO()
+    f = StringIO()
     f.write(txt)
     f.seek(0)
     return f
-    
+
+
 ap = argparse.ArgumentParser()
 ap.add_argument('-c','--check',action='store_true',default=False,
                 help='''Check a file with sha1 hashes and file names for a match. format: hash filename''')
@@ -66,11 +74,9 @@ else:
     if args.file:
         for arg in args.file:
             if os.path.isfile(arg):
-                with open(arg,'rb') as f:
-                    print get_hash(f)+' '+arg
+                with open(arg, 'rb') as f:
+                    print(get_hash(f)+' '+arg)
             else:
-                print get_hash(make_file(arg))
+                print(get_hash(make_file(arg)))
     else:
-        print get_hash(make_file(sys.stdin.read()))
-        
-    
+        print(get_hash(make_file(sys.stdin.read())))
