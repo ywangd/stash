@@ -10,6 +10,7 @@ positional arguments:
 optional arguments:
   -h, --help  show this help message and exit
 """
+from __future__ import print_function
 
 import sys
 from argparse import ArgumentParser
@@ -32,9 +33,9 @@ def main(args):
             _stash(ins.readlines(), persistent_level=1)
 
     except IOError as e:
-        print '%s: %s' % (e.filename, e.strerror)
+        print('%s: %s' % (e.filename, e.strerror))
     except Exception as e:
-        print 'error: %s' % str(e)
+        print('error: %s' % str(e))
     finally:
         pass
 

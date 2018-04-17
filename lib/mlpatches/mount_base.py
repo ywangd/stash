@@ -1,11 +1,9 @@
 """base patches for mount."""
 import os
 import stat as _stat
-try:
-	import __builtin__
-except ImportError:
-	# py3
-	import builtins as __builtin__
+
+from six import text_type
+from six.moves import builtins
 
 from mlpatches import base
 
@@ -16,7 +14,7 @@ from stashutils.fsi.errors import IsFile, OperationFailure
 # store default functions
 
 _org_listdir = os.listdir
-_org_open = __builtin__.open
+_org_open = builtins.open
 _org_chdir = os.chdir
 _org_getcwd = os.getcwd
 _org_ismount = os.path.ismount
@@ -92,7 +90,7 @@ def getcwd(patch):
 
 def getcwdu(patch):
 	"""Return a Unicode object representing the current working directory."""
-	return unicode(CWD)
+	return text_type(CWD)
 
 
 def chdir(patch, path):
@@ -371,8 +369,8 @@ class ListdirPatch(base.FunctionPatch):
 
 
 class OpenPatch(base.FunctionPatch):
-	"""patch for __builtin__.open()"""
-	module = "__builtin__"
+	"""patch for builtins.open()"""
+	module = "six.moves.builtins"
 	function = "open"
 	replacement = open
 

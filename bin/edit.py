@@ -7,6 +7,7 @@ usage:
     edit [-t --temp] [-o --old_tab] [file]
     Follow prompt for instructions.
 """
+from __future__ import print_function
 import os
 import tempfile
 import console

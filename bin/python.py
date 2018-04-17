@@ -11,6 +11,7 @@ usage:
     python -c command
     python python_file.py [args]
 """
+from __future__ import print_function
 # check for py2/3
 _stash = globals()["_stash"]
 if _stash.PY3:

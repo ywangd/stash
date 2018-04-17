@@ -126,7 +126,7 @@ if IN_PYTHONISTA:
             def write(self, s):
                 if isinstance(s, str):
                     _outputcapture.CaptureStdout(s)
-                elif isinstance(s, unicode):
+                elif isinstance(s, six.text_type):
                     _outputcapture.CaptureStdout(s.encode('utf8'))
 
             def writelines(self, lines):
@@ -150,15 +150,13 @@ if IN_PYTHONISTA:
             def write(self, s):
                 if isinstance(s, str):
                     _outputcapture.CaptureStderr(s)
-                elif isinstance(s, unicode):
+                elif isinstance(s, six.text_type):
                     _outputcapture.CaptureStderr(s.encode('utf8'))
 
             def writelines(self, lines):
                 self.write(''.join(lines))
 
-
         _SYS_STDERR = StderrCatcher()
-
 else:
     _SYS_STDOUT = sys.stdout
     _SYS_STDERR = sys.stderr

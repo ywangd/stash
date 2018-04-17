@@ -17,6 +17,7 @@ List of sub-commands:
         remove      removed an installed package
         update      update an installed package
 """
+from __future__ import print_function
 import sys
 import os
 import ast

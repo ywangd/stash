@@ -9,6 +9,7 @@ Usage: selfupdate.py [-n] [-f] [target]
        -n, --check    check for update only
        -f, --force    update without checking for new version
 """
+from __future__ import print_function
 import os
 import sys
 import requests
