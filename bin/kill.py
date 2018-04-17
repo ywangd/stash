@@ -16,16 +16,15 @@ def main(args):
 
     for job_id in ns.job_ids:
         if job_id in _stash.runtime.worker_registry:
-            print 'killing job {} ...'.format(job_id)
+            print('killing job {} ...'.format(job_id))
             worker = _stash.runtime.worker_registry.get_worker(job_id)
             worker.kill()
             time.sleep(1)
 
         else:
-            print 'error: no such job with id: {}'.format(job_id)
+            print('error: no such job with id: {}'.format(job_id))
             break
 
 
 if __name__ == '__main__':
     main(sys.argv[1:])
-

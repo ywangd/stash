@@ -71,9 +71,9 @@ def main(args):
                 if ns.summarize and root != path:
                     continue
 
-                print '%-8s %s' % (sizeof_fmt(my_size), root)
+                print('%-8s %s' % (sizeof_fmt(my_size), root))
         else:
-            print '%-8s %s' % (sizeof_fmt(os.path.getsize(path)), path)
+            print('%-8s %s' % (sizeof_fmt(os.path.getsize(path)), path))
 
 
 if __name__ == '__main__':

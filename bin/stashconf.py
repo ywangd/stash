@@ -22,19 +22,19 @@ def main(args):
 
     if ns.list:
         for name in sorted(config.keys()):
-            print '%s=%s' % (name, config[name].__dict__[name])
+            print('%s=%s' % (name, config[name].__dict__[name]))
 
     else:
         try:
             if ns.name is not None and ns.value is not None:
                 config[ns.name].__dict__[ns.name] = ns.value
             elif ns.name is not None:
-                print '%s=%s' % (ns.name, config[ns.name].__dict__[ns.name])
+                print('%s=%s' % (ns.name, config[ns.name].__dict__[ns.name]))
             else:
                 ap.print_help()
 
         except KeyError:
-            print '%s: invalid config option name' % ns.name
+            print('%s: invalid config option name' % ns.name)
             sys.exit(1)
 
 

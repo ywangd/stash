@@ -1,22 +1,22 @@
 """
-Simulates a console call to python [-m module][-c cmd] [file] [args]
+Simulates a console call to python3 [-m module][-c cmd] [file] [args]
 
-Used for running standard library python modules such as:
-SimpleHTTPServer, unittest and .py files.
+Used for running standard library python3 modules such as:
+unittest and .py files.
 
 Can also be used to run a script in the background, such as a server, with the bash character & at the end.
 usage:
-    python
-    python -m module_name [args]
-    python -c command
-    python python_file.py [args]
+    python3
+    python3 -m module_name [args]
+    python3 -c command
+    python3 python_file.py [args]
 """
 # check for py2/3
 _stash = globals()["_stash"]
-if _stash.PY3:
+if not _stash.PY3:
 	print(
 		_stash.text_color(
-			"You are running StaSh in python3.\nRunning python 2 from python 3 is not (yet) supported.\nPlease use the 'python3' command instead.",
+			"You are running StaSh in python 2.\nRunning python3 from python 2 is not (yet) supported.\nPlease use the 'python' command instead.",
 			"red",
 			)
 		)
@@ -27,7 +27,7 @@ import runpy
 import sys
 import argparse
 import code
-import __builtin__
+import builtins
 
 
 args = sys.argv[1:]
@@ -60,7 +60,7 @@ if passing_h:
 if ns.module:
     sys.argv = [ns.module] + ns.args_to_pass
     try:
-        runpy.run_module(str(ns.module), run_name='__main__')
+        runpy.run_module(ns.module, run_name='__main__')
     except ImportError as e:
         print('ImportError: ' + str(e))
         sys.exit(1)
@@ -83,7 +83,7 @@ else:
             '__doc__': None,
             '__package__': None,
             '__debug__': True,
-            '__builtins__': __builtin__,  # yes, __builtins__
+            '__builtins__': builtins,
             '_stash': _stash,
         }
         code.interact(local=locals)

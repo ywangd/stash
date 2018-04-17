@@ -53,7 +53,7 @@ class CompleterTests(unittest.TestCase):
         assert newline == 'git branch '
 
     def test_completion_09(self):
-        newline, possibilities = self.complete('$STASH_')
+        newline, possibilities = self.complete('$STASH_R')
         assert newline == '$STASH_ROOT '
 
     def test_completion_10(self):

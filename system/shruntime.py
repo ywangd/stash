@@ -1,10 +1,16 @@
 # coding: utf-8
 import os
 import sys
+import platform
 import logging
 import threading
 import functools
-from StringIO import StringIO
+
+from six import StringIO, text_type, PY3
+try:
+	file
+except NameError:
+	from io import IOBase as file
 
 import pyparsing as pp
 
@@ -59,10 +65,12 @@ class ShRuntime(object):
             environ=dict(os.environ,
                          HOME2=os.path.join(os.environ['HOME'], 'Documents'),
                          STASH_ROOT=_STASH_ROOT,
+                         STASH_PY_VERSION=platform.python_version(),
                          BIN_PATH=os.path.join(_STASH_ROOT, 'bin'),
                          # Must have a placeholder because it is needed before _DEFAULT_RC is loaded
                          PROMPT='[\W]$ ',
-                         PYTHONISTA_ROOT=os.path.dirname(sys.executable)),
+                         PYTHONISTA_ROOT=os.path.dirname(sys.executable)
+                         ),
             sys_stdin=self.stash.io,
             sys_stdout=self.stash.io,
             sys_stderr=self.stash.io,
@@ -224,7 +232,7 @@ class ShRuntime(object):
                         # Parse and expand the line (note this function returns a generator object)
                         expanded = self.expander.expand(line)
                         # The first member is the history expanded form and number of pipe_sequence
-                        newline, n_pipe_sequences = expanded.next()
+                        newline, n_pipe_sequences = next(expanded)
                         # Only add history entry if:
                         #   1. It is explicitly required
                         #   2. It is the first layer thread directly spawned by the main thread
@@ -238,7 +246,7 @@ class ShRuntime(object):
                         try:
                             # Subsequent members are actual commands
                             for _ in range(n_pipe_sequences):
-                                pipe_sequence = expanded.next()
+                                pipe_sequence = next(expanded)
                                 if pipe_sequence.in_background:
                                     # For background command, separate worker is created
                                     self.run(pipe_sequence,
@@ -268,17 +276,17 @@ class ShRuntime(object):
             except ShEventNotFound as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('%s: event not found\n' % e.message)
+                self.stash.write_message('%s: event not found\n' % e.args[0])
 
             except ShBadSubstitution as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('%s\n' % e.message)
+                self.stash.write_message('%s\n' % e.args[0])
 
             except ShInternalError as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('%s\n' % e.message)
+                self.stash.write_message('%s\n' % e.args[0])
 
             except IOError as e:
                 if self.debug:
@@ -286,7 +294,7 @@ class ShRuntime(object):
                 self.stash.write_message('%s: %s\n' % (e.filename, e.strerror))
 
             except KeyboardInterrupt as e:
-                self.stash.write_message('^C\nKeyboardInterrupt: %s\n' % e.message)
+                self.stash.write_message('^C\nKeyboardInterrupt: %s\n' % e.args[0])
 
             # This catch all exception handler is to handle errors outside of
             # run_pipe_sequence. The traceback print is mainly for debugging
@@ -433,7 +441,7 @@ class ShRuntime(object):
             # outside of the actual command execution, i.e. exec_py_file
             # exec_sh_file, e.g. command not found, not executable etc.
             except ShFileNotFound as e:
-                err_msg = '%s\n' % e.message
+                err_msg = '%s\n' % e.args[0]
                 if self.debug:
                     self.logger.debug(err_msg)
                 self.stash.write_message(err_msg)
@@ -441,14 +449,14 @@ class ShRuntime(object):
                 current_state.return_value = 127
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
             except Exception as e:
-                err_msg = '%s\n' % e.message
+                err_msg = '%s\n' % e.args[0]
                 if self.debug:
                     self.logger.debug(err_msg)
                 self.stash.write_message(err_msg)
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
             finally:
-                if type(outs) is file:
+                if isinstance(outs, file):
                     outs.close()
                 if isinstance(ins, StringIO):  # release the string buffer
                     ins.close()
@@ -476,7 +484,13 @@ class ShRuntime(object):
 
         saved_sys_argv = sys.argv[:]
         # First argument is the script name
-        sys.argv = [os.path.basename(filename)] + (args or [])
+        argv = [os.path.basename(filename)] + (args or [])
+        
+        # convert sys.argv to unicode if on python3
+        if PY3:
+        	# todo: this is only a temporary solution and needs to be redone. This may be buggy.
+        	argv = [c if isinstance(c, text_type) else c.decode("utf-8") for c in argv]
+        sys.argv = argv
 
         # Set current os environ to the threading environ
         saved_os_environ = os.environ
@@ -495,7 +509,7 @@ class ShRuntime(object):
                 code = compile(
                     content, file_path, "exec", dont_inherit=True
                     )
-                exec code in namespace, namespace
+                exec(code, namespace, namespace)
             
             current_state.return_value = 0
 

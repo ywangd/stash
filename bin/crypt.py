@@ -19,12 +19,11 @@ import os
 
 _stash = globals()['_stash']
 try:
-    import pyaes
-except Exception:
-    print 'Installing Required packages.'
-    _stash('pip install pyaes')
-    import pyaes
-
+	import pyaes
+except ImportError:
+	print('Installing Required packages...')
+	_stash('pip install pyaes')
+	import pyaes
 
 class Crypt(object):
 	def __init__(self, in_filename, out_filename=None):
@@ -70,4 +69,4 @@ if __name__ == '__main__':
 	else:
 		nk = crypt.aes_encrypt(args.key)
 		if args.key is None:
-			print "Key: ", nk
+			print("Key: %s" % nk)

@@ -6,7 +6,8 @@ import time
 import shutil
 import datetime
 import stat
-import StringIO
+
+from io import BytesIO
 
 from stashutils.fsi import base
 from stashutils.fsi import errors
@@ -197,7 +198,7 @@ class ZipWriter(object):
 		self.name = fp
 		self.buffering = buffering
 		self.mode = mode
-		self.sio = StringIO.StringIO()
+		self.sio = BytesIO()
 		self.closed = False
 	
 	def close(self):
@@ -230,7 +231,7 @@ class ZipReader(ZipWriter):
 		self.name = fp
 		self.buffering = buffering
 		self.mode = mode
-		self.sio = StringIO.StringIO(self.root.zf.read(fp))
+		self.sio = BytesIO(self.root.zf.read(fp))
 		self.closed = False
 	
 	def close(self):

@@ -1,7 +1,11 @@
 """base patches for mount."""
 import os
 import stat as _stat
-import __builtin__
+try:
+	import __builtin__
+except ImportError:
+	# py3
+	import builtins as __builtin__
 
 from mlpatches import base
 
@@ -199,7 +203,7 @@ def lstat(patch, path):
 				)
 
 
-def mkdir(patch, path, mode=0777):
+def mkdir(patch, path, mode=0o777):
 	"""
 	Create a directory named path with numeric mode mode.
 	The default mode is 0777 (octal). On some systems, mode is ignored.

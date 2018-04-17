@@ -1,2 +1,4 @@
 """Clear the stash console output window"""
-print u'\u009bc',
+from __future__ import print_function
+
+print(u'\u009bc', end="")

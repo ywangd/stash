@@ -20,17 +20,16 @@ def main(args):
         worker = worker_registry.get_worker(ns.job_id)
 
     if worker is None:
-        print 'no background job running' \
-              + (' with id {}'.format(ns.job_id) if ns.job_id else '')
+        print('no background job running' \
+              + (' with id {}'.format(ns.job_id) if ns.job_id else ''))
         return
 
     def f():
         _stash.runtime.push_to_foreground(worker)
 
     t = threading.Timer(1.0, f)
-    print 'pushing job {} to foreground ...'.format(worker.job_id)
+    print('pushing job {} to foreground ...'.format(worker.job_id))
     t.start()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
-

@@ -10,6 +10,9 @@ import threading
 import ctypes
 from itertools import chain
 
+import six
+
+
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 
 if IN_PYTHONISTA:
@@ -51,6 +54,7 @@ _STASH_ROOT = os.path.realpath(os.path.abspath(
     os.path.dirname(os.path.dirname(__file__))))
 _STASH_CONFIG_FILES = ('.stash_config', 'stash.cfg')
 _STASH_HISTORY_FILE = '.stash_history'
+
 # directory for stash extensions
 _STASH_EXTENSION_PATH = os.path.abspath(
 	os.path.join(os.getenv("HOME"), "Documents", "stash_extensions"),
@@ -71,6 +75,9 @@ _EXTERNAL_DIRS = [
 	_STASH_EXTENSION_FSI_PATH,
 	_STASH_EXTENSION_PATCH_PATH,
 	]
+
+# Python 3 or not Python 3
+PY3 = six.PY3
 
 # Save the true IOs
 if IN_PYTHONISTA:

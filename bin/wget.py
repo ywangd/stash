@@ -1,9 +1,15 @@
 """ Download a file from a url.
 """
+from __future__ import print_function
 
 import sys
-import urllib2
 import argparse
+
+try:
+	import urllib2
+except ImportError:
+	# py3
+	import urllib.request as urllib2
 
 try:
     import clipboard
@@ -11,6 +17,7 @@ try:
 except:
     import dummyconsole as console
 
+_stash = globals()["_stash"]
 
 def main(args):
     ap = argparse.ArgumentParser()
@@ -24,17 +31,20 @@ def main(args):
     console.show_activity()
     try:
 
-        print 'Opening: %s' % url
+        print('Opening: %s\n' % url)
         u = urllib2.urlopen(url)
 
         meta = u.info()
         try:
-            file_size = int(meta.getheaders("Content-Length")[0])
-        except IndexError:
+            if _stash.PY3:
+                file_size = int(meta["Content-Length"])
+            else:
+                file_size = int(meta.getheaders("Content-Length")[0])
+        except (IndexError, ValueError, TypeError):
             file_size = 0
 
-        print "Save as: %s " % output_file,
-        print "(%s bytes)" % file_size if file_size else ""
+        print("Save as: {} ".format(output_file), end="")
+        print("({} bytes)".format(file_size if file_size else "???"))
 
         with open(output_file, 'wb') as f:
             file_size_dl = 0
@@ -49,11 +59,11 @@ def main(args):
                     status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
                 else:
                     status = "%10d" % file_size_dl
-                print '\r' + status,
-            print
+                print('\r' + status, end="")
+            print("")
 
-    except:
-        print 'invalid url: %s' % url
+    except Exception as e:
+        print('invalid url: %s' % url)
         sys.exit(1)
 
     finally:

@@ -9,7 +9,13 @@ import logging
 import re
 
 # noinspection PyPep8Naming
-from .shcommon import Control as ctrl, Escape as esc
+from .shcommon import Control as ctrl, Escape as esc, PY3
+
+
+if PY3:
+	# rename str, unicode and bytes
+	unicode = str
+	str = bytes
 
 
 class ShMiniBuffer(object):

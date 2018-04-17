@@ -14,6 +14,12 @@ except ImportError:
 
 from .shcommon import CTRL_KEY_FLAG
 
+
+try:
+	unicode
+except NameError:
+	unicode = str
+
 # ObjC related stuff
 UIFont = ObjCClass('UIFont')
 

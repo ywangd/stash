@@ -5,7 +5,8 @@ import string
 import glob
 import logging
 import threading
-from StringIO import StringIO
+
+from six import StringIO
 
 import pyparsing as pp
 
