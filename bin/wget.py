@@ -1,14 +1,16 @@
 """ Download a file from a url.
 """
+from __future__ import print_function
 
-import sys
-import urllib2
 import argparse
+import sys
+
+from six.moves.urllib.request import urlopen
 
 try:
     import clipboard
     import console
-except:
+except ImportError:
     import dummyconsole as console
 
 
@@ -24,8 +26,8 @@ def main(args):
     console.show_activity()
     try:
 
-        print 'Opening: %s' % url
-        u = urllib2.urlopen(url)
+        print('Opening: %s' % url)
+        u = urlopen(url)
 
         meta = u.info()
         try:
@@ -33,8 +35,8 @@ def main(args):
         except IndexError:
             file_size = 0
 
-        print "Save as: %s " % output_file,
-        print "(%s bytes)" % file_size if file_size else ""
+        print("Save as: %s " % output_file, end=' ')
+        print("(%s bytes)" % file_size if file_size else "")
 
         with open(output_file, 'wb') as f:
             file_size_dl = 0
@@ -49,11 +51,11 @@ def main(args):
                     status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
                 else:
                     status = "%10d" % file_size_dl
-                print '\r' + status,
-            print
+                print('\r' + status, end=' ')
+            print()
 
     except:
-        print 'invalid url: %s' % url
+        print('invalid url: %s' % url)
         sys.exit(1)
 
     finally:

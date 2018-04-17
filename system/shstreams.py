@@ -8,7 +8,8 @@ for accepting outputs from running scripts.
 import logging
 import re
 
-# noinspection PyPep8Naming
+from six import text_type
+
 from .shcommon import Control as ctrl, Escape as esc
 
 
@@ -364,7 +365,7 @@ class ShStream(object):
         :param str chars: a string to feed from.
         """
         # To avoid the \xc2 deadlock from bytes string
-        if not isinstance(chars, unicode):
+        if not isinstance(chars, text_type):
             chars = chars.decode('utf-8', errors='ignore')
 
         with self.main_screen.acquire_lock():

@@ -7,29 +7,33 @@ https://github.com/ywangd/stash
 
 __version__ = '0.6.20'
 
-import os
-import sys
-from ConfigParser import ConfigParser
-from StringIO import StringIO
 import imp as pyimp  # rename to avoid name conflict with objc_util
 import logging
 import logging.handlers
+import os
+import sys
 
+from six import StringIO
+from six.moves.configparser import ConfigParser
 
 # noinspection PyPep8Naming
-from .system.shcommon import IN_PYTHONISTA, ON_IPAD
-from .system.shcommon import _STASH_ROOT, _STASH_CONFIG_FILES, _SYS_STDOUT
-from .system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
-from .system.shcommon import _EXTERNAL_DIRS
-from .system.shuseractionproxy import ShUserActionProxy
-from .system.shiowrapper import enable as enable_io_wrapper, disable as disable_io_wrapper
-from .system.shparsers import ShParser, ShExpander, ShCompleter
-from .system.shruntime import ShRuntime
-from .system.shstreams import ShMiniBuffer, ShStream
-from .system.shscreens import ShSequentialScreen, ShSequentialRenderer
-from .system.shui import ShUI
+from .system.shcommon import (_EXTERNAL_DIRS, _STASH_CONFIG_FILES, _STASH_ROOT,
+                              _SYS_STDOUT, IN_PYTHONISTA, ON_IPAD)
+from .system.shcommon import Control as ctrl, Escape as esc, Graphics as graphics
 from .system.shio import ShIO
+from .system.shiowrapper import disable as disable_io_wrapper
+from .system.shiowrapper import enable as enable_io_wrapper
+from .system.shparsers import ShCompleter, ShExpander, ShParser
+from .system.shruntime import ShRuntime
+from .system.shscreens import ShSequentialRenderer, ShSequentialScreen
+from .system.shstreams import ShMiniBuffer, ShStream
+from .system.shui import ShUI
+from .system.shuseractionproxy import ShUserActionProxy
 
+try:
+    file           # Python 2
+except NameError:  # Python 3
+    from io import IOBase as file
 
 # Setup logging
 LOGGER = logging.getLogger('StaSh')
@@ -249,9 +253,8 @@ class StaSh(object):
         :return:
         """
         # No color for pipes, files and Pythonista console
-        if not always and (isinstance(sys.stdout, StringIO)
-                           or isinstance(sys.stdout, file)
-                           or sys.stdout.write.im_self is _SYS_STDOUT):
+        if not always and (isinstance(sys.stdout, (file, StringIO)) or
+                           sys.stdout.write.__self__ is _SYS_STDOUT):
             return s
 
         fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)

@@ -1,12 +1,22 @@
 # coding: utf-8
+import functools
+import logging
 import os
 import sys
-import logging
 import threading
-import functools
-from StringIO import StringIO
 
 import pyparsing as pp
+from six import StringIO
+
+# noinspection PyProtectedMember
+from .shcommon import (_STASH_EXTENSION_BIN_PATH, _STASH_HISTORY_FILE,
+                       _STASH_ROOT, _SYS_STDERR, _SYS_STDOUT,
+                       ShBadSubstitution, ShEventNotFound, ShFileNotFound,
+                       ShInternalError, ShIsDirectory, ShNotExecutable,
+                       is_binary_file)
+from .shparsers import ShPipeSequence
+from .shthreads import (ShBaseThread, ShCtypesThread, ShState, ShTracedThread,
+                        ShWorkerRegistry)
 
 # Detecting environments
 try:
@@ -16,13 +26,11 @@ except ImportError:
     from . import dummyui as ui
     from .dummyobjc_util import on_main_thread
 
-from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
-    ShFileNotFound, ShEventNotFound, ShNotExecutable
-# noinspection PyProtectedMember
-from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE, _SYS_STDOUT, _SYS_STDERR
-from .shcommon import is_binary_file, _STASH_EXTENSION_BIN_PATH
-from .shparsers import ShPipeSequence
-from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
+
+try:
+    file           # Python 2
+except NameError:  # Python 3
+    from io import IOBase as file
 
 
 # Default .stashrc file
@@ -224,7 +232,7 @@ class ShRuntime(object):
                         # Parse and expand the line (note this function returns a generator object)
                         expanded = self.expander.expand(line)
                         # The first member is the history expanded form and number of pipe_sequence
-                        newline, n_pipe_sequences = expanded.next()
+                        newline, n_pipe_sequences = next(expanded)
                         # Only add history entry if:
                         #   1. It is explicitly required
                         #   2. It is the first layer thread directly spawned by the main thread
@@ -238,7 +246,7 @@ class ShRuntime(object):
                         try:
                             # Subsequent members are actual commands
                             for _ in range(n_pipe_sequences):
-                                pipe_sequence = expanded.next()
+                                pipe_sequence = next(expanded)
                                 if pipe_sequence.in_background:
                                     # For background command, separate worker is created
                                     self.run(pipe_sequence,
@@ -268,17 +276,17 @@ class ShRuntime(object):
             except ShEventNotFound as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('%s: event not found\n' % e.message)
+                self.stash.write_message('%s: event not found\n' % e.args[0])
 
             except ShBadSubstitution as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('%s\n' % e.message)
+                self.stash.write_message('%s\n' % e.args[0])
 
             except ShInternalError as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
-                self.stash.write_message('%s\n' % e.message)
+                self.stash.write_message('%s\n' % e.args[0])
 
             except IOError as e:
                 if self.debug:
@@ -286,7 +294,7 @@ class ShRuntime(object):
                 self.stash.write_message('%s: %s\n' % (e.filename, e.strerror))
 
             except KeyboardInterrupt as e:
-                self.stash.write_message('^C\nKeyboardInterrupt: %s\n' % e.message)
+                self.stash.write_message('^C\nKeyboardInterrupt: %s\n' % e)
 
             # This catch all exception handler is to handle errors outside of
             # run_pipe_sequence. The traceback print is mainly for debugging
@@ -364,7 +372,7 @@ class ShRuntime(object):
 
             if prev_outs:
                 # If previous output has gone to a file, we use a dummy empty string as ins
-                ins = StringIO() if type(prev_outs) == file else prev_outs
+                ins = StringIO() if isinstance(prev_outs, file) else prev_outs
             else:
                 ins = final_ins or current_state.sys_stdin__
 
@@ -433,7 +441,7 @@ class ShRuntime(object):
             # outside of the actual command execution, i.e. exec_py_file
             # exec_sh_file, e.g. command not found, not executable etc.
             except ShFileNotFound as e:
-                err_msg = '%s\n' % e.message
+                err_msg = '%s\n' % e.args[0]
                 if self.debug:
                     self.logger.debug(err_msg)
                 self.stash.write_message(err_msg)
@@ -441,14 +449,14 @@ class ShRuntime(object):
                 current_state.return_value = 127
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
             except Exception as e:
-                err_msg = '%s\n' % e.message
+                err_msg = '%s(%s)\n' % (type(e).__name__, e.args[0])
                 if self.debug:
                     self.logger.debug(err_msg)
                 self.stash.write_message(err_msg)
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
             finally:
-                if type(outs) is file:
+                if isinstance(outs, file):
                     outs.close()
                 if isinstance(ins, StringIO):  # release the string buffer
                     ins.close()
@@ -495,7 +503,7 @@ class ShRuntime(object):
                 code = compile(
                     content, file_path, "exec", dont_inherit=True
                     )
-                exec code in namespace, namespace
+                exec(code, namespace, namespace)
             
             current_state.return_value = 0
 

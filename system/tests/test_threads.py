@@ -1,10 +1,10 @@
 # coding=utf-8
-import os
 import time
 import unittest
-from StringIO import StringIO
 
+from six import StringIO
 from stash import stash
+
 
 class ThreadsTests(unittest.TestCase):
 

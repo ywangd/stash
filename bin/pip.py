@@ -17,24 +17,24 @@ List of sub-commands:
         remove      removed an installed package
         update      update an installed package
 """
-import sys
-import os
-import ast
-import shutil
-import types
-import contextlib
-import requests
-import re
-import operator
+from __future__ import print_function
 
-import six
+import ast
+import contextlib
+import operator
+import os
+import re
+import shutil
+import sys
+import types
 from distutils.util import convert_path
 from fnmatch import fnmatchcase
-# noinspection PyUnresolvedReferences
-from six.moves import filterfalse
+
+import requests
+import six
+from six.moves.configparser import NoSectionError, SafeConfigParser
 
 from stashutils.extensions import create_command
-
 
 PYTHONISTA_BUNDLED_MODULES = [
     'bottle', 'beautifulsoup4', 'pycrypto', 'py-dateutil',
@@ -109,7 +109,7 @@ class PackageFinder(object):
         includes = cls._build_filter(*include)
         excludes = cls._build_filter('ez_setup', '*__pycache__', *exclude)
         out = filter(includes, out)
-        out = filterfalse(excludes, out)
+        out = six.moves.filterfalse(excludes, out)
         return list(out)
 
     @staticmethod
@@ -137,7 +137,7 @@ class PackageFinder(object):
         for root, dirs, files in os.walk(base_path, followlinks=True):
             # Exclude directories that contain a period, as they cannot be
             #  packages. Mutate the list to avoid traversal.
-            dirs[:] = filterfalse(has_dot, dirs)
+            dirs[:] = six.moves.filterfalse(has_dot, dirs)
             for dir in dirs:
                 yield os.path.relpath(os.path.join(root, dir), base_path)
 
@@ -314,8 +314,6 @@ def save_current_sys_modules():
         sys.modules[k] = v
 
 
-# noinspection PyUnresolvedReferences
-from six.moves.configparser import SafeConfigParser, NoSectionError
 
 
 class CIConfigParer(SafeConfigParser):
@@ -677,7 +675,7 @@ class ArchiveFileInstaller(object):
 
         # handle entry points
         entry_points = kwargs.get("entry_points", {})
-        if isinstance(entry_points, (str, unicode)):
+        if isinstance(entry_points, six.string_types):
             if pkg_resources is not None:
                 entry_points = {s: c for s, c in pkg_resources.split_sections(entry_points)}
             else:
@@ -685,7 +683,7 @@ class ArchiveFileInstaller(object):
                 entry_points = {}
         for epn in entry_points:
             ep = entry_points[epn]
-            if isinstance(ep, (str, unicode)):
+            if isinstance(ep, six.string_types):
                 ep = [ep]
             if epn == "console_scripts":
                 for dec in ep:

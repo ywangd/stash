@@ -1,6 +1,7 @@
 """ Print newline, word, and byte counts for each FILE, and a total line if
 more than one FILE is specified.
 """
+from __future__ import print_function
 import os
 import sys
 import argparse
@@ -19,10 +20,10 @@ def main(args):
 
     if ns.lines:
         def _print_res(res):
-            print '%6d %s' % (res[0], res[-1])
+            print('%6d %s' % (res[0], res[-1]))
     else:
         def _print_res(res):
-            print '%6d %8d %8d %s' % res
+            print('%6d %8d %8d %s' % res)
 
     results = []
     nl_count = 0
@@ -35,7 +36,7 @@ def main(args):
 
         if infields[0] is None:
             _, filename, e = infields
-            print '%s: %s' % (filename, repr(e))
+            print('%s: %s' % (filename, repr(e)))
             filename_old = None
         else:
             line, filename, lineno = infields

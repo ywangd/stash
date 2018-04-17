@@ -30,13 +30,14 @@ optional arguments:
   -x, --extract         Extract an archive.
   -f FILE, --file FILE  Archive filename.
 '''
+from __future__ import print_function
 import argparse
 import os
 import tarfile
 
 def output_print(msg):
     if args.verbose:
-        print msg
+        print(msg)
         
 class MyFileObject(tarfile.ExFileObject):
     def read(self, size, *args):
@@ -70,7 +71,7 @@ def extract_all(filename,members=None, directory=''):
     else:
         tar.extractall(path=directory)
     tar.close()
-    print 'Archive extracted.'
+    print('Archive extracted.')
     
     
 def create_tar(filename,files):
@@ -93,7 +94,7 @@ def create_tar(filename,files):
         output_print('Adding %s' % name)
         tar.add(name, filter=tar_filter)
     tar.close()
-    print 'Archive Created.' 
+    print('Archive Created.') 
     
 def list_tar(filename):
     if args.gzip:

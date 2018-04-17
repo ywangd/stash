@@ -13,6 +13,7 @@ optional arguments:
   -k KEY, --key KEY  Encrypt/Decrypt Key.
   -d, --decrypt      Flag to decrypt.
 '''
+from __future__ import print_function
 import argparse
 import base64
 import os
@@ -21,7 +22,7 @@ _stash = globals()['_stash']
 try:
     import pyaes
 except Exception:
-    print 'Installing Required packages.'
+    print('Installing Required packages.')
     _stash('pip install pyaes')
     import pyaes
 
@@ -70,4 +71,4 @@ if __name__ == '__main__':
 	else:
 		nk = crypt.aes_encrypt(args.key)
 		if args.key is None:
-			print "Key: ", nk
+			print("Key: ", nk)

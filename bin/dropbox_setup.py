@@ -2,6 +2,7 @@
 # StaSh utility
 
 """manage your dropbox configuration."""
+from __future__ import print_function
 
 import cmd
 import keychain
@@ -28,11 +29,11 @@ class DropboxSetupCmd(cmd.Cmd):
 
 	def do_list(self, cmd):
 		"""list: lists the dropbox usernames."""
-		print
+		print()
 		for service, account in keychain.get_services():
 			if service == dbutils.DB_SERVICE:
-				print account
-		print
+				print(account)
+		print()
 
 	def do_del(self, cmd):
 		"""del USERNAME: resets the dropbox for USERNAME."""

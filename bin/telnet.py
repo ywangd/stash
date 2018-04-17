@@ -4,20 +4,24 @@ Simple telent client.
 
 usage: telnet host [-p port] [--timeout N]
 """
-import sys
-import select
+from __future__ import print_function
+
 import argparse
+import select
+import sys
 import telnetlib
 import threading
 
-_SYS_STDOUT = sys.__stdout__
+from six import text_type
 
 try:
     import ui
 except ImportError:
     import dummyui as ui
 
+_SYS_STDOUT = sys.__stdout__
 _stash = globals()['_stash']
+
 """:type : StaSh"""
 
 try:
@@ -33,9 +37,8 @@ class StashTelnet(object):
 
     def __init__(self):
         # Initialize the pyte screen based on the current screen size
-        font_width, font_height = ui.measure_string(
-            'a',
-            font=('Menlo-Regular', _stash.config.getint('display', 'TEXT_FONT_SIZE')))
+        font = ('Menlo-Regular', _stash.config.getint('display', 'TEXT_FONT_SIZE'))
+        font_width, font_height = ui.measure_string('a', font=font)
         # noinspection PyUnresolvedReferences
         self.screen = pyte.screens.DiffScreen(
             int(_stash.ui.width / font_width),
@@ -47,7 +50,7 @@ class StashTelnet(object):
         self.client = None
 
     def connect(self, host, port=23, timeout=2):
-        print 'Connecting...'
+        print('Connecting...')
         try:
             self.client = telnetlib.Telnet(host, port, timeout)
             return True
@@ -83,7 +86,7 @@ class StashTelnet(object):
         t1.start()
         t1.join()
         self.client.close()
-        print '\nconnection closed\n'
+        print('\nconnection closed\n')
 
 
 CTRL_KEY_FLAG = (1 << 18)
@@ -97,7 +100,7 @@ class SshUserActionDelegate(object):
         self.telnet = telnet
 
     def send(self, s):
-        self.telnet.stream.feed(s if isinstance(s, unicode) else s.decode('utf-8'))
+        self.telnet.stream.feed(s if isinstance(s, text_type) else s.decode('utf-8'))
         self.telnet.client.write(s.encode('utf-8'))
 
 
@@ -212,7 +215,7 @@ if __name__ == '__main__':
     sv_delegate = SshSVDelegate(telnet)
 
     if telnet.connect(host=args.host, port=args.port, timeout=args.timeout):
-        print 'Connected. Press Ctrl-C to quit.'
+        print('Connected. Press Ctrl-C to quit.')
         _stash.stream.feed(u'\u009bc', render_it=False)
         with _stash.user_action_proxy.config(tv_responder=tv_vk_kc_delegate,
                                              kc_responder=tv_vk_kc_delegate.kc_pressed,
@@ -220,4 +223,4 @@ if __name__ == '__main__':
                                              sv_responder=sv_delegate):
             telnet.interactive()
     else:
-        print 'Unable to connect'
+        print('Unable to connect')

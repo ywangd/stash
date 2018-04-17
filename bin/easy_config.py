@@ -1,13 +1,14 @@
 """a graphical config manager for StaSh"""
-import os
 import ast
+import os
 import threading
+
+from six import string_types
+
 import console
-import ui
-
-from stash.system.shcommon import _STASH_CONFIG_FILES
 import pythonista_add_action as paa
-
+import ui
+from stash.system.shcommon import _STASH_CONFIG_FILES
 
 _stash = globals()["_stash"]
 
@@ -455,7 +456,7 @@ class ConfigView(ui.View):
 			b = ui.Button()
 			b.title = info["display_name"]
 			cmd = info["command"]
-			if isinstance(cmd, (str, unicode)):
+			if isinstance(cmd, string_types):
 				f = lambda c=cmd: _stash(c, add_to_history=False)
 			else:
 				f = lambda c=cmd: cmd()

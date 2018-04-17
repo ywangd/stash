@@ -1,16 +1,16 @@
 # coding: utf-8
 
-import os
-import string
 import glob
 import logging
+import os
+import string
 import threading
-from StringIO import StringIO
 
 import pyparsing as pp
+from six import StringIO
 
-from .shcommon import ShSingleExpansionRequired, ShBadSubstitution, ShInternalError
-
+from .shcommon import (ShBadSubstitution, ShInternalError,
+                       ShSingleExpansionRequired)
 
 _GRAMMAR = r"""
 -----------------------------------------------------------------------------

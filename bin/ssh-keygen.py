@@ -9,6 +9,7 @@ usage:
     [-N] - password default:None
     [-f] - output file name. default: id_ssh_key
 """
+from __future__ import print_function
 import os
 import sys
 import argparse
@@ -54,11 +55,11 @@ def main(args):
                 k.write_private_key_file(filepath, password=ns.password)
                 with open(filepath + '.pub', 'w') as outs:
                     outs.write('ssh-' + key_mode[ns.type] + ' ' + k.get_base64())
-            print 'ssh keys generated with %s encryption' % ns.type
+            print('ssh keys generated with %s encryption' % ns.type)
         else:
-            print 'Keys not generated'
-    except Exception, e:
-        print e
+            print('Keys not generated')
+    except Exception as e:
+        print(e)
 
 
 if __name__ == '__main__':

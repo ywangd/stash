@@ -1,4 +1,5 @@
 """easiliy manage monkey-patches. See 'man monkeypatching' for more help."""
+from __future__ import print_function
 import argparse
 import sys
 import json
