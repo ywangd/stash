@@ -70,7 +70,7 @@ def main(args):
     else:
         target = os.environ.get('SELFUPDATE_TARGET', 'ywangd:master')
 
-    fields = target.replace('/', ':').split(':')
+    fields = target.replace('/', ':').split(':', 1)
 
     if len(fields) == 2:
         owner, branch = fields
