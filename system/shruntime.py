@@ -456,7 +456,8 @@ class ShRuntime(object):
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
             finally:
-                if isinstance(outs, file):
+                if isinstance(outs, file) and not isinstance(outs, StringIO):
+                	# StringIO is subclass of IOBase in py3 but not in py2
                     outs.close()
                 if isinstance(ins, StringIO):  # release the string buffer
                     ins.close()
