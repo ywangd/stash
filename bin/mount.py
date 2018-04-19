@@ -1,11 +1,14 @@
 """mount a filesystem."""
+from __future__ import print_function
+
 import argparse
 import sys
 
-from stashutils import mount_manager
-from stashutils.fsi.interfaces import FILESYSTEM_TYPES
-from stashutils import mount_ctrl
+from six import string_types
+from six.moves import input
 
+from stashutils import mount_ctrl, mount_manager
+from stashutils.fsi.interfaces import FILESYSTEM_TYPES
 
 _stash = globals()["_stash"]
 
@@ -19,7 +22,7 @@ def list_mounts():
 	
 	mounts = manager.get_mounts()
 	for p, fsi, readonly in mounts:
-		print "{f} on {p}".format(f=fsi.repr(), p=p)
+		print("{f} on {p}".format(f=fsi.repr(), p=p))
 
 
 if __name__ == "__main__":
@@ -61,7 +64,7 @@ if __name__ == "__main__":
 	ns = parser.parse_args()
 	
 	if ns.type is None:
-		print _stash.text_color("Error: no FS-Type specified!", "red")
+		print(_stash.text_color("Error: no FS-Type specified!", "red"))
 		sys.exit(1)
 	
 	manager = mount_ctrl.get_manager()
@@ -71,72 +74,72 @@ if __name__ == "__main__":
 	
 	if not manager.check_patches_enabled():
 		if not ns.yes:
-			print _stash.text_color("WARNING: ", "red")
-			print _stash.text_color(
+			print(_stash.text_color("WARNING: ", "red"))
+			print(_stash.text_color(
 				"The 'mount'-command needs to enable a few monkeypatches.",
 				"yellow"
-				)
-			print _stash.text_color(
+				))
+			print(_stash.text_color(
 				"Monkeypatches may make the system unstable.", "yellow"
-				)
-			y = raw_input(
+				))
+			y = input(
 				_stash.text_color(
 					"Do you want to enable these patches? (y/n)", "yellow"
 					)
 				).upper() == "Y"
 			
 			if not y:
-				print _stash.text_color(
+				print(_stash.text_color(
 					"Error: Monkeypatches not enabled!", "red"
-					)
+					))
 				sys.exit(1)
 			manager.enable_patches()
 		else:
 			manager.enable_patches()
 	
 	if not ns.type in FILESYSTEM_TYPES:
-		print _stash.text_color(
+		print(_stash.text_color(
 			"Error: Unknown Filesystem-Type!", "red"
-			)
+			))
 		sys.exit(1)
 	
 	fsic = FILESYSTEM_TYPES[ns.type]
 	if ns.v:
 		logger = sys.stdout.write
-		print "Creating FSI..."
+		print("Creating FSI...")
 	else:
 		logger = None
 	fsi = fsic(logger=logger)
 	if ns.v:
-		print "Connecting FSI..."
+		print("Connecting FSI...")
 	msg = fsi.connect(*tuple(ns.options))
-	if isinstance(msg, (str, unicode)):
-		print _stash.text_color(
+	if isinstance(msg, string_types):
+		print(_stash.text_color(
 			"Error: {m}".format(m=msg), "red"
-			)
+			))
 		sys.exit(1)
 	if ns.do_mount:
 		try:
 			manager.mount_fsi(ns.dir, fsi, readonly=ns.readonly)
 		except mount_manager.MountError as e:
-			print _stash.text_color("Error: {e}".format(e=e.message), "red")
+			print(_stash.text_color("Error: {e}".format(e=e.message), "red"))
 			try:
 				if ns.v:
-					print "unmounting FSI..."
+					print("unmounting FSI...")
 				fsi.close()
 			except Exception as e:
-				print _stash.text_color(
+				print(_stash.text_color(
 					"Error unmounting FSI: {e}".format(e=e.message), "red"
-					)
+					))
 			else:
 				if ns.v:
-					print "Finished cleanup."
+					print("Finished cleanup.")
 			sys.exit(1)
 	else:
 		# close fs
 		fsi.close()
 	if ns.v:
-		print "Done."
+		print("Done.")
 	
 	if ns.list:
 		list_mounts()

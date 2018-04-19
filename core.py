@@ -7,40 +7,33 @@ https://github.com/ywangd/stash
 
 __version__ = '0.6.20'
 
-import os
-import sys
-import platform
-
-try:
-	# try to import py2 modules
-	from ConfigParser import ConfigParser
-	from io import IOBase, BytesIO as StringIO  # StringIO must use native strings
-	PY3 = False
-except ImportError:
-	# py 3
-	from configparser import ConfigParser
-	from io import IOBase, StringIO
-	PY3 = True
-
 import imp as pyimp  # rename to avoid name conflict with objc_util
 import logging
 import logging.handlers
+import os
+import platform
+import sys
+from io import IOBase
 
+import six
+from six import BytesIO, StringIO
+from six.moves.configparser import ConfigParser
 
 # noinspection PyPep8Naming
-from .system.shcommon import IN_PYTHONISTA, ON_IPAD
-from .system.shcommon import _STASH_ROOT, _STASH_CONFIG_FILES, _SYS_STDOUT
-from .system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
-from .system.shcommon import _EXTERNAL_DIRS
-from .system.shuseractionproxy import ShUserActionProxy
-from .system.shiowrapper import enable as enable_io_wrapper, disable as disable_io_wrapper
-from .system.shparsers import ShParser, ShExpander, ShCompleter
-from .system.shruntime import ShRuntime
-from .system.shstreams import ShMiniBuffer, ShStream
-from .system.shscreens import ShSequentialScreen, ShSequentialRenderer
-from .system.shui import ShUI
+from .system.shcommon import (_EXTERNAL_DIRS, _STASH_CONFIG_FILES, _STASH_ROOT,
+                              _SYS_STDOUT, IN_PYTHONISTA, ON_IPAD)
+from .system.shcommon import Control as ctrl
+from .system.shcommon import Escape as esc
+from .system.shcommon import Graphics as graphics
 from .system.shio import ShIO
-
+from .system.shiowrapper import disable as disable_io_wrapper
+from .system.shiowrapper import enable as enable_io_wrapper
+from .system.shparsers import ShCompleter, ShExpander, ShParser
+from .system.shruntime import ShRuntime
+from .system.shscreens import ShSequentialRenderer, ShSequentialScreen
+from .system.shstreams import ShMiniBuffer, ShStream
+from .system.shui import ShUI
+from .system.shuseractionproxy import ShUserActionProxy
 
 # Setup logging
 LOGGER = logging.getLogger('StaSh')
@@ -102,7 +95,7 @@ class StaSh(object):
     utility interfaces to running scripts.
     """
     
-    PY3 = PY3
+    PY3 = six.PY3
 
     def __init__(self, debug=(), log_setting=None,
                  no_cfgfile=False, no_rcfile=False, no_historyfile=False,
@@ -183,12 +176,12 @@ class StaSh(object):
     def _load_config(no_cfgfile=False):
         config = ConfigParser()
         config.optionxform = str  # make it preserve case
-        
+
         # defaults
-        if not PY3:
-        	config.readfp(StringIO(_DEFAULT_CONFIG))
+        if not six.PY3:
+            config.readfp(BytesIO(_DEFAULT_CONFIG))
         else:
-        	config.read_file(StringIO(_DEFAULT_CONFIG))
+            config.read_file(StringIO(_DEFAULT_CONFIG))
 
         # update from config file
         if not no_cfgfile:

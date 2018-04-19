@@ -10,11 +10,6 @@ Options:
 		Wait interval seconds between sending each packet. The default is to wait for one second between each packet normally.
 	-W <timeout>, --timeout=<timeout>  [default: 2.]
 		Time to wait for a response, in seconds. The option affects only timeout in absense of any responses, otherwise ping waits for two RTTs.
-	
-"""
-	
-"""
-	
     A pure python ping implementation using raw socket.
 
 
@@ -84,19 +79,25 @@ Options:
     $Rev: $
     $Author: $
 """
+from __future__ import print_function
 
+import os
+import select
+import socket
+import struct
+import sys
+import time
 
-import os, sys, socket, struct, select, time
+from six.moves import xrange
 
-if sys.platform == "win32":
-    # On Windows, the best timer is time.clock()
-    default_timer = time.clock
-else:
-    # On most other platforms the best timer is time.time()
-    default_timer = time.time
+from docopt import docopt
+
+# On Windows, the best timer is time.clock()
+# On most other platforms the best timer is time.time()
+default_timer = time.clock if sys.platform == "win32" else time.time
 
 # From /usr/include/linux/icmp.h; your milage may vary.
-ICMP_ECHO_REQUEST = 8 # Seems to be the same on Solaris.
+ICMP_ECHO_REQUEST = 8  # Seems to be the same on Solaris.
 
 
 def install_module_from_github(username, package_name, folder, version):
@@ -124,9 +125,8 @@ try:
     if not libpath in sys.path:
         sys.path.insert(1,libpath)
     import docopt
-except  ImportError:
+except ImportError:
 	install_module_from_github('docopt','docopt','docopt.py','master')
-from docopt import docopt
 
 
 
@@ -223,17 +223,7 @@ def do_one(dest_addr, timeout):
     Returns either the delay (in seconds) or none on timeout.
     """
     icmp = socket.getprotobyname("icmp")
-    try:
-        my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, icmp)
-    except socket.error , (errno, msg):
-        if errno == 1:
-            # Operation not permitted
-            msg = msg + (
-                " - Note that ICMP messages can only be sent from processes"
-                " running as root."
-            )
-            raise socket.error(msg)
-        raise # raise the original error
+    my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, icmp)
 
     my_ID = os.getpid() & 0xFFFF
 
@@ -250,19 +240,18 @@ def verbose_ping(dest_addr, timeout = 2, count = 4,interval=1.):
     the result.
     """
     for i in xrange(count):
-        print "ping %s..." % dest_addr,
+        print("ping %s..." % dest_addr, end=' ')
         try:
-            delay  =  do_one(dest_addr, timeout)
-        except socket.gaierror, e:
-            print "failed. (socket error: '%s')" % e[1]
+            delay = do_one(dest_addr, timeout)
+        except socket.gaierror as e:
+            print("failed. (socket error: '%s')" % e[1])
             break
 
-        if delay  ==  None:
-            print "failed. (timeout within %ssec.)" % timeout
-            
+        if delay == None:
+            print("failed. (timeout within %ssec.)" % timeout)
         else:
             time.sleep(min(0,interval-delay))
-            print "got ping in %0.4fms\n" % (delay*1000)
+            print("got ping in %0.4fms\n" % (delay*1000))
 
 
 if __name__ == '__main__':
@@ -276,5 +265,3 @@ if __name__ == '__main__':
 
 	dest=args['<destination>']
 	verbose_ping(dest, float(args['--timeout']),int(args['--count']),float(args['--interval']))
-
-

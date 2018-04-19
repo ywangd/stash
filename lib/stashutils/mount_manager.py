@@ -1,13 +1,13 @@
 """This module coordinates the mount-system."""
 import os
 
+from six import string_types
+
+from mlpatches.mount_patches import MOUNT_PATCHES
 from stashutils.core import get_stash
 from stashutils.fsi.base import BaseFSI
 from stashutils.fsi.errors import OperationFailure
-from stashutils.mount_ctrl import set_manager, get_manager
-
-from mlpatches.mount_patches import MOUNT_PATCHES
-
+from stashutils.mount_ctrl import get_manager, set_manager
 
 _stash = get_stash()
 
@@ -64,7 +64,7 @@ class MountManager(object):
 		"""mounts a fsi to a path."""
 		if not isinstance(fsi, BaseFSI):
 			raise ValueError("Expected a FSI!")
-		if not isinstance(path, (str, unicode)):
+		if not isinstance(path, string_types):
 			raise ValueError("Expected a string or unicode!")
 		path = os.path.abspath(path)
 		if path in self.path2fs:

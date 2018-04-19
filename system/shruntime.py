@@ -6,7 +6,7 @@ import logging
 import threading
 import functools
 
-from six import StringIO, text_type, PY3
+from six import StringIO, text_type, binary_type, PY3
 try:
 	file
 except NameError:
@@ -456,7 +456,8 @@ class ShRuntime(object):
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
             finally:
-                if isinstance(outs, file):
+                if isinstance(outs, file) and not isinstance(outs, StringIO):
+                	# StringIO is subclass of IOBase in py3 but not in py2
                     outs.close()
                 if isinstance(ins, StringIO):  # release the string buffer
                     ins.close()
@@ -486,10 +487,7 @@ class ShRuntime(object):
         # First argument is the script name
         argv = [os.path.basename(filename)] + (args or [])
         
-        # convert sys.argv to unicode if on python3
-        if PY3:
-        	# todo: this is only a temporary solution and needs to be redone. This may be buggy.
-        	argv = [c if isinstance(c, text_type) else c.decode("utf-8") for c in argv]
+        argv = self.encode_argv(argv)
         sys.argv = argv
 
         # Set current os environ to the threading environ
@@ -548,6 +546,7 @@ class ShRuntime(object):
 
         if args is None:
             args = []
+        args = self.encode_argv(args)
 
         for i, arg in enumerate([filename] + args):
             current_state.temporary_environ[str(i)] = arg
@@ -556,7 +555,7 @@ class ShRuntime(object):
 
         # Enclosing variables will be merged to environ when creating new thread
         try:
-            with open(filename) as fins:
+            with open(filename, "rU") as fins:
                 child_worker = self.run(fins.readlines(),
                                         final_ins=ins,
                                         final_outs=outs,
@@ -575,6 +574,19 @@ class ShRuntime(object):
         except:
             self.stash.write_message('%s: error while executing shell script\n' % filename)
             current_state.return_value = 2
+    
+    def encode_argv(self, argv):
+    	"""
+    	Convert an argv list into the appropiate string type depending
+    	on the currently used python version.
+    	"""
+    	if PY3:
+    		# we need unicode argv
+    		argv = [c if isinstance(c, text_type) else c.decode("utf-8") for c in argv]
+    	else:
+    		# we need bytestring argv
+    		argv = [c if isinstance(c, binary_type) else c.encode("utf-8") for c in argv]
+    	return argv
 
     def get_prompt(self):
         """

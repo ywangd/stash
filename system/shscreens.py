@@ -2,24 +2,26 @@
 """
 In-memory screen related code.
 """
-import logging
-from time import time
-
-import threading
 import itertools
+import logging
+import threading
 from collections import deque, namedtuple
 from contextlib import contextmanager
+from time import time
+
+from six.moves import xrange
+
+# noinspection PyPep8Naming
+from .shcommon import IN_PYTHONISTA, ON_IOS_8
+from .shcommon import Graphics as graphics
+from .shcommon import sh_delay
 
 try:
     from objc_util import *
 except ImportError:
-    from dummyobjc_util import *
+    from .dummyobjc_util import *
 
-from .shcommon import IN_PYTHONISTA, ON_IOS_8
-# noinspection PyPep8Naming
-from .shcommon import sh_delay, Graphics as graphics
 
-from six.moves import xrange
 
 NSMutableAttributedString = ObjCClass('NSMutableAttributedString')
 UIFont = ObjCClass('UIFont')
