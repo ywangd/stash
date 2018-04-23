@@ -261,7 +261,7 @@ class ColorPicker(object):
 	@property
 	def hexcode(self):
 		"""returns the selected color as a html-like hexcode"""
-		hexc = "#%.02X%.02X%.02X" % self.rgb_255
+		hexc = "#%.02X%.02X%.02X" % (int(self.rgb_255[0]), int(self.rgb_255[1]), int(self.rgb_255[2]))
 		return hexc
 	
 	@property
@@ -401,7 +401,7 @@ class ConfigView(ui.View):
 			b = ui.Button()
 			rawcolor = _stash.config.get(sn, info["option_name"])
 			color = ast.literal_eval(rawcolor)
-			rgb255color = color[0] * 255, color[1] * 255, color[2] * 255
+			rgb255color = int(color[0] * 255), int(color[1] * 255), int(color[2] * 255)
 			b.background_color = color
 			b.title = "#%.02X%.02X%.02X" % rgb255color
 			b.tint_color = ((0, 0, 0) if color[0] >= 0.5 else (1, 1, 1))
