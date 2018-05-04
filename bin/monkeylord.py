@@ -10,6 +10,14 @@ _stash = globals()["_stash"]
 from mlpatches import patches
 
 
+def patch_is_compatible(patch):
+	"""Return True if the patch is compatible."""
+	if _stash.PY3:
+		return patch.PY3
+	else:
+		return patch.PY2
+
+
 def save_config(path):
 	"""save the current config to path."""
 	ts = {}
@@ -62,6 +70,14 @@ def main(ns):
 				)
 			sys.exit(1)
 		patch = patches.PATCHES[name]
+		if not patch_is_compatible(patch):
+			print(
+				_stash.text_color(
+					"Error: Patch '{n}' not compatible with this python version!".format(n=name),
+					"red"
+					)
+				)
+			sys.exit(1)
 		patch.enable()
 	elif ns.action == "disable":
 		# disable a patch
@@ -74,6 +90,14 @@ def main(ns):
 				)
 			sys.exit(1)
 		patch = patches.PATCHES[name]
+		if not patch_is_compatible(patch):
+			print(
+				_stash.text_color(
+					"Error: Patch '{n}' not compatible with this python version!".format(n=name),
+					"red"
+					)
+				)
+			sys.exit(1)
 		patch.disable()
 	elif ns.action == "list":
 		# show monkeypatches and their state
@@ -81,6 +105,8 @@ def main(ns):
 		mlength = max([len(e) for e in patches.PATCHES.keys()]) + 2
 		for pn in sorted(patches.PATCHES.keys()):
 			patch = patches.PATCHES[pn]
+			if not patch_is_compatible(patch):
+				continue
 			if patch.enabled:
 				t = "[enabled]"
 				c = "green"
@@ -98,6 +124,7 @@ def main(ns):
 		save_config(name)
 	elif ns.action == "loadconf":
 		load_config(name)
+
 
 if __name__ == "__main__":
 	# main code
