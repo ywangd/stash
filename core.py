@@ -153,6 +153,22 @@ class StaSh(object):
         		always=True,
         		),
         	)
+        # warn on py3
+        if self.PY3:
+            self.io.write(
+                self.text_style(
+                    'Warning: you are running StaSh in python3. Some commands may not work correctly in python3.\n',
+                    {'color': 'red'},
+                    always=True,
+                    ),
+                )
+            self.io.write(
+                self.text_style(
+                    'Please help us improving StaSh by reporting bugs on github.\n',
+                    {'color': 'yellow', 'traits': ['italic']},
+                    always=True,
+                    ),
+                )
         # Load shared libraries
         self._load_lib()
 
@@ -163,7 +179,6 @@ class StaSh(object):
         if command:
         	# do not run command if command is False (but not None)
             self(command, add_to_history=False, persistent_level=0)
-
     def __call__(self, input_, persistent_level=2, *args, **kwargs):
         """ This function is to be called by external script for
          executing shell commands """
