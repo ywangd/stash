@@ -924,7 +924,7 @@ class PyPIRepository(PackageRepository):
     def get_standard_package_name(self, pkg_name):
         if pkg_name not in self.standard_package_names:
             try:
-                r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
+                r = requests.get('https://pypi.python.org/pypi/{}/json'.format(pkg_name))
                 self.standard_package_names[pkg_name] = r.json()['info']['name']
             except:
                 return pkg_name
@@ -944,7 +944,7 @@ class PyPIRepository(PackageRepository):
         return hits
 
     def _package_data(self, pkg_name):
-        r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
+        r = requests.get('https://pypi.python.org/pypi/{}/json'.format(pkg_name))
         if not r.status_code == requests.codes.ok:
             raise PipError('Failed to fetch package release urls')
 
