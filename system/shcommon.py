@@ -10,6 +10,9 @@ import threading
 import ctypes
 from itertools import chain
 
+import six
+
+
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 
 if IN_PYTHONISTA:
@@ -51,6 +54,7 @@ _STASH_ROOT = os.path.realpath(os.path.abspath(
     os.path.dirname(os.path.dirname(__file__))))
 _STASH_CONFIG_FILES = ('.stash_config', 'stash.cfg')
 _STASH_HISTORY_FILE = '.stash_history'
+
 # directory for stash extensions
 _STASH_EXTENSION_PATH = os.path.abspath(
 	os.path.join(os.getenv("HOME"), "Documents", "stash_extensions"),
@@ -71,6 +75,9 @@ _EXTERNAL_DIRS = [
 	_STASH_EXTENSION_FSI_PATH,
 	_STASH_EXTENSION_PATCH_PATH,
 	]
+
+# Python 3 or not Python 3
+PY3 = six.PY3
 
 # Save the true IOs
 if IN_PYTHONISTA:
@@ -119,7 +126,7 @@ if IN_PYTHONISTA:
             def write(self, s):
                 if isinstance(s, str):
                     _outputcapture.CaptureStdout(s)
-                elif isinstance(s, unicode):
+                elif isinstance(s, six.text_type):
                     _outputcapture.CaptureStdout(s.encode('utf8'))
 
             def writelines(self, lines):
@@ -143,15 +150,13 @@ if IN_PYTHONISTA:
             def write(self, s):
                 if isinstance(s, str):
                     _outputcapture.CaptureStderr(s)
-                elif isinstance(s, unicode):
+                elif isinstance(s, six.text_type):
                     _outputcapture.CaptureStderr(s.encode('utf8'))
 
             def writelines(self, lines):
                 self.write(''.join(lines))
 
-
         _SYS_STDERR = StderrCatcher()
-
 else:
     _SYS_STDOUT = sys.stdout
     _SYS_STDERR = sys.stderr
@@ -170,7 +175,10 @@ def is_binary_file(filename, nbytes=1024):
     """
     with open(filename, 'rb') as ins:
         for c in ins.read(nbytes):
-            oc = ord(c)
+            if isinstance(c, six.integer_types):
+                oc = c
+            else:
+                oc = ord(c)
             if 127 < oc < 256 or (oc < 32 and oc not in (9, 10, 13)):
                 return True
         else:

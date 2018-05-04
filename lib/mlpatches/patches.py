@@ -54,10 +54,9 @@ PATCHES.update(STABLE_PATCHES)  # update with STABLE patches (overwriting INSTAB
 
 
 # define a PatchGroup with all patches
-
-STABLE_GROUP = base.VariablePatchGroup(STABLE_PATCHES.values())
-INSTABLE_GROUP = base.VariablePatchGroup(INSTABLE_PATCHES.values())
-ALL_GROUP = base.VariablePatchGroup(PATCHES.values())
+STABLE_GROUP = base.VariablePatchGroup(list(STABLE_PATCHES.values()))
+INSTABLE_GROUP = base.VariablePatchGroup(list(INSTABLE_PATCHES.values()))
+ALL_GROUP = base.VariablePatchGroup(list(PATCHES.values()))
 
 
 PATCHES["ALL"] = ALL_GROUP

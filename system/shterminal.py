@@ -9,10 +9,16 @@ try:
     import ui
     from objc_util import *
 except ImportError:
-    import dummyui as ui
+    from . import dummyui as ui
     from .dummyobjc_util import *
 
 from .shcommon import CTRL_KEY_FLAG
+
+
+try:
+	unicode
+except NameError:
+	unicode = str
 
 # ObjC related stuff
 UIFont = ObjCClass('UIFont')

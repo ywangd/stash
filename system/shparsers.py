@@ -5,7 +5,8 @@ import string
 import glob
 import logging
 import threading
-from StringIO import StringIO
+
+from six import StringIO
 
 import pyparsing as pp
 
@@ -559,7 +560,8 @@ class ShExpander(object):
         if self.debug:
             self.logger.debug(tok)
 
-        ret = tok.decode('unicode_escape')
+        ret = tok.encode('latin-1').decode('unicode_escape')
+        # ^^^ no, we can not use utf-8 here
         return ret, ret
 
     def expand_uq_word(self, tok):

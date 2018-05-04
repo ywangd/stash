@@ -1,7 +1,9 @@
 """base patches for mount."""
 import os
 import stat as _stat
-import __builtin__
+
+from six import text_type
+from six.moves import builtins
 
 from mlpatches import base
 
@@ -12,7 +14,7 @@ from stashutils.fsi.errors import IsFile, OperationFailure
 # store default functions
 
 _org_listdir = os.listdir
-_org_open = __builtin__.open
+_org_open = builtins.open
 _org_chdir = os.chdir
 _org_getcwd = os.getcwd
 _org_ismount = os.path.ismount
@@ -88,7 +90,7 @@ def getcwd(patch):
 
 def getcwdu(patch):
 	"""Return a Unicode object representing the current working directory."""
-	return unicode(CWD)
+	return text_type(CWD)
 
 
 def chdir(patch, path):
@@ -199,7 +201,7 @@ def lstat(patch, path):
 				)
 
 
-def mkdir(patch, path, mode=0777):
+def mkdir(patch, path, mode=0o777):
 	"""
 	Create a directory named path with numeric mode mode.
 	The default mode is 0777 (octal). On some systems, mode is ignored.
@@ -366,25 +368,59 @@ class ListdirPatch(base.FunctionPatch):
 	replacement = listdir
 
 
-class OpenPatch(base.FunctionPatch):
-	"""patch for __builtin__.open()"""
+class Py2OpenPatch(base.FunctionPatch):
+	"""patch for builtins.open()"""
+	PY3 = base.SKIP
 	module = "__builtin__"
 	function = "open"
 	replacement = open
 
 
-class GetcwdPatch(base.FunctionPatch):
+class Py3OpenPatch(base.FunctionPatch):
+	"""patch for builtins.open()"""
+	PY2 = base.SKIP
+	module = "builtins"
+	function = "open"
+	replacement = open
+
+
+class SixOpenPatch(base.FunctionPatch):
+	"""patch for builtins.open()"""
+	module = "six.moves.builtins"
+	function = "open"
+	replacement = open
+
+
+class Py2GetcwdPatch(base.FunctionPatch):
 	"""patch for os.getcwd()"""
+	PY3 = base.SKIP
 	module = "os"
 	function = "getcwd"
 	replacement = getcwd
 
 
-class GetcwduPatch(base.FunctionPatch):
+class Py3GetcwdPatch(base.FunctionPatch):
+	"""patch for os.getcwd()"""
+	PY2 = base.SKIP
+	module = "os"
+	function = "getcwd"
+	replacement = getcwdu
+
+
+class Py2GetcwduPatch(base.FunctionPatch):
 	"""patch for os.getcwdu()"""
+	PY3 = base.SKIP
 	module = "os"
 	function = "getcwdu"
 	replacement = getcwdu
+
+
+class Py3GetcwdbPatch(base.FunctionPatch):
+	"""patch for os.getcwd()"""
+	PY2 = base.SKIP
+	module = "os"
+	function = "getcwdb"
+	replacement = getcwd
 
 
 class ChdirPatch(base.FunctionPatch):
@@ -453,9 +489,16 @@ class ChmodPatch(base.FunctionPatch):
 # create patch instances
 
 LISTDIR_PATCH = ListdirPatch()
-OPEN_PATCH = OpenPatch()
-GETCWD_PATCH = GetcwdPatch()
-GETCWDU_PATCH = GetcwduPatch()
+
+PY2_OPEN_PATCH = Py2OpenPatch()
+PY3_OPEN_PATCH = Py3OpenPatch()
+SIX_OPEN_PATCH = SixOpenPatch()
+
+PY2_GETCWD_PATCH = Py2GetcwdPatch()
+PY3_GETCWD_PATCH = Py3GetcwdPatch()
+PY2_GETCWDU_PATCH = Py2GetcwduPatch()
+PY3_GETCWDB_PATCH = Py3GetcwdbPatch()
+
 CHDIR_PATCH = ChdirPatch()
 ISMOUNT_PATCH = IsmountPatch()
 STAT_PATCH = StatPatch()

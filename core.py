@@ -5,31 +5,35 @@ StaSh - Pythonista Shell
 https://github.com/ywangd/stash
 """
 
-__version__ = '0.6.20'
+__version__ = '0.7.0'
 
-import os
-import sys
-from ConfigParser import ConfigParser
-from StringIO import StringIO
 import imp as pyimp  # rename to avoid name conflict with objc_util
 import logging
 import logging.handlers
+import os
+import platform
+import sys
+from io import IOBase
 
+import six
+from six import BytesIO, StringIO
+from six.moves.configparser import ConfigParser
 
 # noinspection PyPep8Naming
-from .system.shcommon import IN_PYTHONISTA, ON_IPAD
-from .system.shcommon import _STASH_ROOT, _STASH_CONFIG_FILES, _SYS_STDOUT
-from .system.shcommon import Graphics as graphics, Control as ctrl, Escape as esc
-from .system.shcommon import _EXTERNAL_DIRS
-from .system.shuseractionproxy import ShUserActionProxy
-from .system.shiowrapper import enable as enable_io_wrapper, disable as disable_io_wrapper
-from .system.shparsers import ShParser, ShExpander, ShCompleter
-from .system.shruntime import ShRuntime
-from .system.shstreams import ShMiniBuffer, ShStream
-from .system.shscreens import ShSequentialScreen, ShSequentialRenderer
-from .system.shui import ShUI
+from .system.shcommon import (_EXTERNAL_DIRS, _STASH_CONFIG_FILES, _STASH_ROOT,
+                              _SYS_STDOUT, IN_PYTHONISTA, ON_IPAD)
+from .system.shcommon import Control as ctrl
+from .system.shcommon import Escape as esc
+from .system.shcommon import Graphics as graphics
 from .system.shio import ShIO
-
+from .system.shiowrapper import disable as disable_io_wrapper
+from .system.shiowrapper import enable as enable_io_wrapper
+from .system.shparsers import ShCompleter, ShExpander, ShParser
+from .system.shruntime import ShRuntime
+from .system.shscreens import ShSequentialRenderer, ShSequentialScreen
+from .system.shstreams import ShMiniBuffer, ShStream
+from .system.shui import ShUI
+from .system.shuseractionproxy import ShUserActionProxy
 
 # Setup logging
 LOGGER = logging.getLogger('StaSh')
@@ -56,10 +60,10 @@ py_traceback=0
 py_pdb=0
 input_encoding_utf8=1
 ipython_style_history_search=1
-thread_type=ctypes
+thread_type=traced
 
 [display]
-TEXT_FONT_SIZE={text_size}
+TEXT_FONT_SIZE={font_size}
 BUTTON_FONT_SIZE=14
 BACKGROUND_COLOR=(0.0, 0.0, 0.0)
 TEXT_COLOR=(1.0, 1.0, 1.0)
@@ -69,7 +73,9 @@ HISTORY_MAX=50
 BUFFER_MAX=150
 AUTO_COMPLETION_MAX=50
 VK_SYMBOLS=~/.-*|>$'=!&_"\?`
-""".format(text_size=14 if ON_IPAD else 12)
+""".format(
+	font_size=(14 if ON_IPAD else 12),
+	)
 
 
 # create directories outside STASH_ROOT
@@ -88,6 +94,8 @@ class StaSh(object):
     Main application class. It initialize and wires the components and provide
     utility interfaces to running scripts.
     """
+    
+    PY3 = six.PY3
 
     def __init__(self, debug=(), log_setting=None,
                  no_cfgfile=False, no_rcfile=False, no_historyfile=False,
@@ -135,9 +143,32 @@ class StaSh(object):
         if IN_PYTHONISTA:
             os.chdir(self.runtime.state.environ_get('HOME2'))
         self.runtime.load_rcfile(no_rcfile=no_rcfile)
-        self.io.write(self.text_style('StaSh v%s\n' % self.__version__,
-                                      {'color': 'blue', 'traits': ['bold']},
-                                      always=True))
+        self.io.write(
+        	self.text_style(
+        		'StaSh v%s on python %s\n' % (
+        			self.__version__,
+        			platform.python_version(),
+        			), 
+        		{'color': 'blue', 'traits': ['bold']},
+        		always=True,
+        		),
+        	)
+        # warn on py3
+        if self.PY3:
+            self.io.write(
+                self.text_style(
+                    'Warning: you are running StaSh in python3. Some commands may not work correctly in python3.\n',
+                    {'color': 'red'},
+                    always=True,
+                    ),
+                )
+            self.io.write(
+                self.text_style(
+                    'Please help us improving StaSh by reporting bugs on github.\n',
+                    {'color': 'yellow', 'traits': ['italic']},
+                    always=True,
+                    ),
+                )
         # Load shared libraries
         self._load_lib()
 
@@ -148,7 +179,6 @@ class StaSh(object):
         if command:
         	# do not run command if command is False (but not None)
             self(command, add_to_history=False, persistent_level=0)
-
     def __call__(self, input_, persistent_level=2, *args, **kwargs):
         """ This function is to be called by external script for
          executing shell commands """
@@ -161,8 +191,12 @@ class StaSh(object):
     def _load_config(no_cfgfile=False):
         config = ConfigParser()
         config.optionxform = str  # make it preserve case
+
         # defaults
-        config.readfp(StringIO(_DEFAULT_CONFIG))
+        if not six.PY3:
+            config.readfp(BytesIO(_DEFAULT_CONFIG))
+        else:
+            config.read_file(StringIO(_DEFAULT_CONFIG))
 
         # update from config file
         if not no_cfgfile:
@@ -249,9 +283,11 @@ class StaSh(object):
         :return:
         """
         # No color for pipes, files and Pythonista console
-        if not always and (isinstance(sys.stdout, StringIO)
-                           or isinstance(sys.stdout, file)
-                           or sys.stdout.write.im_self is _SYS_STDOUT):
+        if not always and (
+        	isinstance(sys.stdout, (StringIO, IOBase))
+        	# or sys.stdout.write.im_self is _SYS_STDOUT
+        	or sys.stdout is _SYS_STDOUT
+        	):
             return s
 
         fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)

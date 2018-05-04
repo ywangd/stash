@@ -1,10 +1,11 @@
 # coding=utf-8
-import os
 import time
 import unittest
-from StringIO import StringIO
+
+from six import StringIO
 
 from stash import stash
+
 
 class ThreadsTests(unittest.TestCase):
 
@@ -37,9 +38,20 @@ sleeping ... 1
         outs = StringIO()
         self.stash('test_102_1.py &', final_outs=outs)
         self.stash('test_102_2.py &', final_outs=outs)
-        time.sleep(7)
+        time.sleep(5)
         s = outs.getvalue()
-        assert 0 < s.find('test_102_2.py') < len(s)/2, 'Output do not interleave'
+
+        # Count the number of times the output switches between threads
+        change_cnt = 0
+        prev_line = None
+        for cur_line in outs.getvalue().splitlines():
+            if prev_line is None: 
+                prev_line = cur_line
+            elif prev_line != cur_line:
+                change_cnt += 1
+                prev_line = cur_line
+        
+        self.assertTrue(change_cnt > 2, 'Output do not interleave')
 
     def test_103(self):
         """
@@ -66,6 +78,3 @@ test_102_1.py
 test_102_1.py
 """
         assert outs1.getvalue() == cmp_str2, 'output not identical'
-
-
-

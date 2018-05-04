@@ -17,6 +17,7 @@ List of sub-commands:
         remove      removed an installed package
         update      update an installed package
 """
+from __future__ import print_function
 import sys
 import os
 import ast
@@ -26,6 +27,7 @@ import contextlib
 import requests
 import re
 import operator
+import traceback
 
 import six
 from distutils.util import convert_path
@@ -35,6 +37,11 @@ from six.moves import filterfalse
 
 from stashutils.extensions import create_command
 
+
+try:
+	unicode
+except NameError:
+	unicode = str
 
 PYTHONISTA_BUNDLED_MODULES = [
     'bottle', 'beautifulsoup4', 'pycrypto', 'py-dateutil',
@@ -51,11 +58,17 @@ PACKAGE_NAME_FIXER = {
     'lazy_object_proxy': 'lazy-object-proxy',
 }
 
-SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/site-packages')
+_stash = globals()['_stash']
+
+if _stash.PY3:
+    SITE_PACKAGES_DIR_NAME = 'site-packages-3'
+else:
+    SITE_PACKAGES_DIR_NAME = 'site-packages-2'
+
+SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(SITE_PACKAGES_DIR_NAME))
 
 NO_OVERWRITE = False
 
-_stash = globals()['_stash']
 
 
 def _setup_stub_(*args, **kwargs):
@@ -145,9 +158,9 @@ class PackageFinder(object):
     def _find_packages_iter(cls, base_path):
         candidates = cls._candidate_dirs(base_path)
         return (
-            path.replace(os.path.sep, '.')
-            for path in candidates
-            if cls._looks_like_package(os.path.join(base_path, path))
+        path.replace(os.path.sep, '.')
+        for path in candidates
+        if cls._looks_like_package(os.path.join(base_path, path))
         )
 
     @staticmethod
@@ -211,48 +224,48 @@ def fake_setuptools_modules():
     Created a bunch of stub setuptools modules
     """
     setuptools_modules = [
-        'setuptools',
-        'setuptools.command',
-        'setuptools.command.alias',
-        'setuptools.command.bdist_egg',
-        'setuptools.command.bdist_rpm',
-        'setuptools.command.bdist_wininst',
-        'setuptools.command.build_ext',
-        'setuptools.command.build_py',
-        'setuptools.command.develop',
-        'setuptools.command.easy_install',
-        'setuptools.command.egg_info',
-        'setuptools.command.install',
-        'setuptools.depends.install_egg_info',
-        'setuptools.command.install_lib',
-        'setuptools.command.install_scripts',
-        'setuptools.command.register',
-        'setuptools.command.rotate',
-        'setuptools.command.saveopts',
-        'setuptools.command.sdist',
-        'setuptools.command.setopt',
-        'setuptools.command.test',
-        'setuptools.command.upload',
-        'setuptools.command.upload_docs',
-        'setuptools.extern',
-        'setuptools.dist',
-        'setuptools.extension',
-        'setuptools.launch',
-        'setuptools.lib2to3_ex',
-        'setuptools.msvc9_support',
-        'setuptools.package_index',
-        'setuptools.py26compat',
-        'setuptools.py27compat',
-        'setuptools.py31compat',
-        'setuptools.sandbox',
-        'setuptools.site-patch',
-        'setuptools.ssl_support',
-        'setuptools.unicode_utils',
-        'setuptools.utils',
-        'setuptools.version',
-        'setuptools.windows_support',
-        # 'pkg_resources',
-        # 'pkg_resources.extern',
+    'setuptools',
+    'setuptools.command',
+    'setuptools.command.alias',
+    'setuptools.command.bdist_egg',
+    'setuptools.command.bdist_rpm',
+    'setuptools.command.bdist_wininst',
+    'setuptools.command.build_ext',
+    'setuptools.command.build_py',
+    'setuptools.command.develop',
+    'setuptools.command.easy_install',
+    'setuptools.command.egg_info',
+    'setuptools.command.install',
+    'setuptools.depends.install_egg_info',
+    'setuptools.command.install_lib',
+    'setuptools.command.install_scripts',
+    'setuptools.command.register',
+    'setuptools.command.rotate',
+    'setuptools.command.saveopts',
+    'setuptools.command.sdist',
+    'setuptools.command.setopt',
+    'setuptools.command.test',
+    'setuptools.command.upload',
+    'setuptools.command.upload_docs',
+    'setuptools.extern',
+    'setuptools.dist',
+    'setuptools.extension',
+    'setuptools.launch',
+    'setuptools.lib2to3_ex',
+    'setuptools.msvc9_support',
+    'setuptools.package_index',
+    'setuptools.py26compat',
+    'setuptools.py27compat',
+    'setuptools.py31compat',
+    'setuptools.sandbox',
+    'setuptools.site-patch',
+    'setuptools.ssl_support',
+    'setuptools.unicode_utils',
+    'setuptools.utils',
+    'setuptools.version',
+    'setuptools.windows_support',
+    # 'pkg_resources',
+    # 'pkg_resources.extern',
     ]
 
     for m in setuptools_modules:
@@ -263,21 +276,21 @@ def fake_setuptools_modules():
     import distutils.core
     import distutils.util
     distutils_command_modules = [
-        'distutils.command.bdist'
-        'distutils.command.bdist_dumb',
-        'distutils.command.bdist_msi',
-        'distutils.command.bdist_rpm',
-        'distutils.command.bdist_wininst',
-        'distutils.command.build',
-        'distutils.command.build_clib',
-        'distutils.command.build_ext',
-        'distutils.command.build_py',
-        'distutils.command.build_scripts',
+    'distutils.command.bdist'
+    'distutils.command.bdist_dumb',
+    'distutils.command.bdist_msi',
+    'distutils.command.bdist_rpm',
+    'distutils.command.bdist_wininst',
+    'distutils.command.build',
+    'distutils.command.build_clib',
+    'distutils.command.build_ext',
+    'distutils.command.build_py',
+    'distutils.command.build_scripts',
     ]
     for m in distutils_command_modules:
         fake_module(m)
     sys.modules['distutils.util'].get_platform = OmniClass()
-    # fix for new problem in issue 169 
+    # fix for new problem in issue 169
     sys.modules['distutils.command.build_ext'].sub_commands = []
     sys.modules['setuptools.command.build_ext'].sub_commands = []
 
@@ -343,9 +356,9 @@ class CIConfigParer(SafeConfigParser):
         section_name = self._get_section_name(name)
         return SafeConfigParser.items(self, section_name)
 
-    def get(self, name, option_name):
+    def get(self, name, option_name, *args, **kwargs):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.get(self, section_name, option_name)
+        return SafeConfigParser.get(self, section_name, option_name, *args, **kwargs)
 
     def set(self, name, option_name, value):
         section_name = self._get_section_name(name)
@@ -361,10 +374,12 @@ class PackageConfigHandler(object):
     Manager class for packages files for tracking installation of modules
     """
 
-    def __init__(self):
-        self.package_cfg = os.path.expanduser('~/Documents/site-packages/.pypi_packages')
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+        self.package_cfg = os.path.join(SITE_PACKAGES_FOLDER, '.pypi_packages')
         if not os.path.isfile(self.package_cfg):
-            print('Creating package file')
+            if self.verbose:
+                print('Creating package file...')
             with open(self.package_cfg, 'w') as outs:
                 outs.close()
         self.parser = CIConfigParer()
@@ -440,8 +455,8 @@ class ArchiveFileInstaller(object):
     class SetupTransformer(ast.NodeTransformer):
         """
         Analyze and Transform AST of a setup file.
-            1. Create empty modules for any setuptools imports (if it is not already covered)
-            2. replace setup calls with a stub one to get values of its arguments
+        1. Create empty modules for any setuptools imports (if it is not already covered)
+        2. replace setup calls with a stub one to get values of its arguments
         """
 
         def visit_Import(self, node):
@@ -458,10 +473,10 @@ class ArchiveFileInstaller(object):
         def visit_Call(self, node):
             func_name = self._get_possible_setup_name(node)
             if func_name is not None and \
-                    (func_name == 'setup' or func_name.endswith('.setup')):
+            (func_name == 'setup' or func_name.endswith('.setup')):
                 node.func = ast.copy_location(
-                    ast.Name('_setup_stub_', ast.Load()),
-                    node.func)
+                ast.Name('_setup_stub_', ast.Load()),
+                node.func)
             return node
 
         def _get_possible_setup_name(self, node):
@@ -477,6 +492,10 @@ class ArchiveFileInstaller(object):
             else:
                 return None
 
+
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+
     def run(self, pkg_name, archive_filename):
         """
         Main method for Installer to do its job.
@@ -490,32 +509,38 @@ class ArchiveFileInstaller(object):
 
             try:
                 print('Running setup file ...')
-                return ArchiveFileInstaller._run_setup_file(setup_filename)
+                return self._run_setup_file(setup_filename)
 
             except Exception as e:
                 print('{!r}'.format(e))
-                print('Failed to run setup.py\nFall back to directory guessing ...')
+                print('Failed to run setup.py')
+                if self.verbose:
+                    # print traceback
+                    print("")
+                    traceback.print_exc()
+                    print("")
+                print('Fall back to directory guessing ...')
 
                 pkg_name = pkg_name.lower().replace('-', '_')
 
                 if os.path.isdir(os.path.join(src_dir, pkg_name)):
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(src_dir, pkg_name),
-                        os.path.join(SITE_PACKAGES_FOLDER, pkg_name)
+                    os.path.join(src_dir, pkg_name),
+                    os.path.join(SITE_PACKAGES_FOLDER, pkg_name)
                     )
                     return [os.path.join(SITE_PACKAGES_FOLDER, pkg_name)], []
 
                 elif os.path.isfile(os.path.join(src_dir, pkg_name + '.py')):
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(src_dir, pkg_name + '.py'),
-                        os.path.join(SITE_PACKAGES_FOLDER, pkg_name + '.py')
+                    os.path.join(src_dir, pkg_name + '.py'),
+                    os.path.join(SITE_PACKAGES_FOLDER, pkg_name + '.py')
                     )
                     return [os.path.join(SITE_PACKAGES_FOLDER, pkg_name + '.py')], []
 
                 elif os.path.isdir(os.path.join(src_dir, 'src', pkg_name)):
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(src_dir, 'src', pkg_name),
-                        os.path.join(SITE_PACKAGES_FOLDER, pkg_name)
+                    os.path.join(src_dir, 'src', pkg_name),
+                    os.path.join(SITE_PACKAGES_FOLDER, pkg_name)
                     )
                     return [os.path.join(SITE_PACKAGES_FOLDER, pkg_name)], []
 
@@ -542,12 +567,11 @@ class ArchiveFileInstaller(object):
 
         return EXTRACTED_FOLDER
 
-    @staticmethod
-    def _run_setup_file(filename):
+    def _run_setup_file(self, filename):
         """
         Transform and Run AST of the setup file
         """
-        
+
         try:
             import pkg_resources
         except ImportError:
@@ -555,11 +579,11 @@ class ArchiveFileInstaller(object):
             pkg_resources = None
 
         namespace = {
-            '_setup_stub_': _setup_stub_,
-            '__file__': filename,
-            '__name__': '__main__',
-            'setup_args': None,
-            'setup_kwargs': None,
+        '_setup_stub_': _setup_stub_,
+        '__file__': filename,
+        '__name__': '__main__',
+        'setup_args': None,
+        'setup_kwargs': None,
         }
 
         source_folder = os.path.dirname(filename)
@@ -574,7 +598,7 @@ class ArchiveFileInstaller(object):
         os.chdir(source_folder)
         sys.path.insert(0, source_folder)
         try:
-            exec (codeobj, namespace, namespace)
+            exec(codeobj, namespace, namespace)
         finally:
             os.chdir(saved_cwd)
             sys.path = saved_sys_path
@@ -601,7 +625,8 @@ class ArchiveFileInstaller(object):
         # while handling the packages
         scripts = kwargs.get("scripts", [])
         for script in scripts:
-            print("Handling commandline script: {s}".format(s=script))
+            if self.verbose:
+                print("Handling commandline script: {s}".format(s=script))
             cmdname = script.replace(os.path.dirname(script), "").replace("/", "")
             if not "." in cmdname:
                 cmdname += ".py"
@@ -619,8 +644,8 @@ class ArchiveFileInstaller(object):
                 for f in ArchiveFileInstaller._find_package_files(from_folder):
                     target_file = os.path.join(SITE_PACKAGES_FOLDER, f)
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(from_folder, f),
-                        target_file
+                    os.path.join(from_folder, f),
+                    target_file
                     )
                     files_installed.append(target_file)
                     if use_2to3:
@@ -630,20 +655,20 @@ class ArchiveFileInstaller(object):
                 target_dir = os.path.join(SITE_PACKAGES_FOLDER, p)
                 if p in package_dirs:
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(source_folder, package_dirs[p]),
-                        target_dir
+                    os.path.join(source_folder, package_dirs[p]),
+                    target_dir
                     )
 
                 elif '' in package_dirs:
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(source_folder, package_dirs[''], p),
-                        target_dir
+                    os.path.join(source_folder, package_dirs[''], p),
+                    target_dir
                     )
 
                 else:
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(source_folder, p),
-                        target_dir
+                    os.path.join(source_folder, p),
+                    target_dir
                     )
                 files_installed.append(target_dir)
                 if use_2to3:
@@ -658,8 +683,8 @@ class ArchiveFileInstaller(object):
             if os.path.isdir(os.path.join(source_folder, p)):  # folder
                 target_dir = os.path.join(SITE_PACKAGES_FOLDER, p)
                 ArchiveFileInstaller._safe_move(
-                    os.path.join(source_folder, p),
-                    target_dir
+                os.path.join(source_folder, p),
+                target_dir
                 )
                 files_installed.append(target_dir)
                 if use_2to3:
@@ -668,8 +693,8 @@ class ArchiveFileInstaller(object):
             else:  # file
                 target_file = os.path.join(SITE_PACKAGES_FOLDER, p + '.py')
                 ArchiveFileInstaller._safe_move(
-                    os.path.join(source_folder, p + '.py'),
-                    target_file
+                os.path.join(source_folder, p + '.py'),
+                target_file
                 )
                 files_installed.append(target_file)
                 if use_2to3:
@@ -684,6 +709,8 @@ class ArchiveFileInstaller(object):
                 print("Warning: pkg_resources not available, skipping entry_points definitions.")
                 entry_points = {}
         for epn in entry_points:
+            if self.verbose:
+                print("Handling entrypoints for: " + epn)
             ep = entry_points[epn]
             if isinstance(ep, (str, unicode)):
                 ep = [ep]
@@ -695,18 +722,18 @@ class ArchiveFileInstaller(object):
                         name += ".py"
                     desc = kwargs.get("description", "")
                     path = create_command(
-                        name,
-                        """'''{d}'''
+                    name,
+                    b"""'''{d}'''
 from {m} import {n}
 
 if __name__ == "__main__":
     {n}()
 """.format(
-    m=modname,
-    n=funcname,
-    d=desc,
-    ),
-                        )
+                    m=modname,
+                    n=funcname,
+                    d=desc,
+                    ),
+                    )
                     files_installed.append(path)
             else:
                 print("Warning: passing entry points for '{n}'.".format(n=epn))
@@ -763,8 +790,8 @@ if __name__ == "__main__":
         shutil.move(src, dest)
 
 
-package_config_handler = PackageConfigHandler()
-archive_file_installer = ArchiveFileInstaller()
+# package_config_handler = PackageConfigHandler()
+# archive_file_installer = ArchiveFileInstaller()
 
 
 class PackageRepository(object):
@@ -774,9 +801,10 @@ class PackageRepository(object):
     This is a base class providing basic layout of a Repository.
     """
 
-    def __init__(self):
-        self.config = package_config_handler
-        self.installer = archive_file_installer
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+        self.config = PackageConfigHandler(verbose=self.verbose)
+        self.installer = ArchiveFileInstaller(verbose=self.verbose)
 
     def versions(self, pkg_name):
         raise PipError('versions only available for PyPI packages')
@@ -793,7 +821,7 @@ class PackageRepository(object):
         # never install setuptools as dependency
         dependencies = [dependency for dependency in dependencies if dependency != 'setuptools']
         name_versions = [VersionSpecifier.parse_requirement(requirement)
-                         for requirement in dependencies]
+        for requirement in dependencies]
         sys.modules['setuptools']._installed_requirements_.append(pkg_name)
         pkg_info['files'] = ','.join(files_installed)
         pkg_info['dependency'] = ','.join(name_version[0] for name_version in name_versions)
@@ -863,7 +891,7 @@ class PackageRepository(object):
                         # that do not have a dependency option (since they are manually
                         # installed before).
                         if self.config.module_exists(dependency) \
-                                and self.config.get_dependencies(dependency) is not None:
+                        and self.config.get_dependencies(dependency) is not None:
                             print('Removing dependency: {}'.format(dependency))
                             self.remove(dependency)
 
@@ -882,9 +910,13 @@ class PyPIRepository(PackageRepository):
     This repository performs its actions using the PyPI as a backend store.
     """
 
-    def __init__(self):
-        super(PyPIRepository, self).__init__()
-        import xmlrpclib
+    def __init__(self, *args, **kwargs):
+        super(PyPIRepository, self).__init__(*args, **kwargs)
+        try:
+            import xmlrpclib
+        except ImportError:
+            # py3
+            import xmlrpc.client as xmlrpclib
         # DO NOT USE self.pypi, it's there just for search, it's obsolete/legacy
         self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
         self.standard_package_names = {}
@@ -892,7 +924,7 @@ class PyPIRepository(PackageRepository):
     def get_standard_package_name(self, pkg_name):
         if pkg_name not in self.standard_package_names:
             try:
-                r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
+                r = requests.get('https://pypi.python.org/pypi/{}/json'.format(pkg_name))
                 self.standard_package_names[pkg_name] = r.json()['info']['name']
             except:
                 return pkg_name
@@ -912,7 +944,7 @@ class PyPIRepository(PackageRepository):
         return hits
 
     def _package_data(self, pkg_name):
-        r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
+        r = requests.get('https://pypi.python.org/pypi/{}/json'.format(pkg_name))
         if not r.status_code == requests.codes.ok:
             raise PipError('Failed to fetch package release urls')
 
@@ -930,7 +962,7 @@ class PyPIRepository(PackageRepository):
     def _package_info(self, pkg_data):
         return pkg_data['info']
 
-    def versions(self, pkg_name):                
+    def versions(self, pkg_name):
         pkg_name = self.get_standard_package_name(pkg_name)
         pkg_data = self._package_data(pkg_name)
         releases = self._package_releases(pkg_data)
@@ -1026,7 +1058,7 @@ class GitHubRepository(PackageRepository):
     def versions(self, owner_repo):
         owner, repo = owner_repo.split('/')
         data = requests.get('https://api.github.com/repos/{}/{}/releases'.format(
-            owner, repo
+        owner, repo
         )).json()
         return [entry['name'] for entry in data]
 
@@ -1035,17 +1067,17 @@ class GitHubRepository(PackageRepository):
 
         owner, repo = owner_repo.split('/')
         metadata = requests.get('https://api.github.com/repos/{}/{}'.format(
-            owner, repo
+        owner, repo
         )).json()
 
         _stash('wget https://github.com/{0}/{1}/archive/{2}.zip -o $TMPDIR/{2}.zip'.format(
-            owner, repo, release
+        owner, repo, release
         ))
         return os.path.join(os.getenv('TMPDIR'), release + '.zip'), {
-            'name': owner_repo,
-            'url': 'github',
-            'version': release,
-            'summary': metadata.get('description', ''),
+        'name': owner_repo,
+        'url': 'github',
+        'version': release,
+        'summary': metadata.get('description', ''),
         }
 
     def install(self, owner_repo, ver_spec):
@@ -1070,10 +1102,10 @@ class UrlRepository(PackageRepository):
         _stash('wget {} -o $TMPDIR/{}'.format(url, archive_filename))
 
         return os.path.join(os.getenv('TMPDIR'), archive_filename), {
-            'name': url,
-            'url': 'url',
-            'version': '',
-            'summary': '',
+        'name': url,
+        'url': 'url',
+        'version': '',
+        'summary': '',
         }
 
     def install(self, url, ver_spec):
@@ -1092,48 +1124,50 @@ class LocalRepository(PackageRepository):
 
     def install(self, archive_filename, ver_spec):
         pkg_info = {
-            'name': archive_filename,
-            'url': 'local',
-            'version': '',
-            'summary': ''
+        'name': archive_filename,
+        'url': 'local',
+        'version': '',
+        'summary': ''
         }
         self._install(pkg_name, pkg_info, archive_filename)
 
 
-url_repository = UrlRepository()
-local_repository = LocalRepository()
-github_repository = GitHubRepository()
-pypi_repository = PyPIRepository()
+# url_repository = UrlRepository()
+# local_repository = LocalRepository()
+# github_repository = GitHubRepository()
+# pypi_repository = PyPIRepository()
 
 
-def get_repository(pkg_name):
+def get_repository(pkg_name, verbose=False):
     """
     The corresponding repository based on the given package name.
     :param pkg_name: It can be one of the four following options:
-                        1. An URL pointing to an archive file
-                        2. Path to a local archive file
-                        3. A owner/repo pair pointing to a GitHub repo
-                        4. A name representing a PyPI package.
+    1. An URL pointing to an archive file
+    2. Path to a local archive file
+    3. A owner/repo pair pointing to a GitHub repo
+    4. A name representing a PyPI package.
+    :param verbose: enable additional output
+    :type verbose: bool
     """
 
     if pkg_name.startswith('http://') \
-            or pkg_name.startswith('https://') \
-            or pkg_name.startswith('ftp://'):  # remote archive file
+    or pkg_name.startswith('https://') \
+    or pkg_name.startswith('ftp://'):  # remote archive file
         print('Working on URL repository ...')
-        return url_repository
+        return UrlRepository(verbose=verbose)
 
     # local archive file
     elif os.path.isfile(pkg_name) and \
-            (pkg_name.endswith('.zip') or pkg_name.endswith('.gz') or pkg_name.endswith('.bz2')):
+    (pkg_name.endswith('.zip') or pkg_name.endswith('.gz') or pkg_name.endswith('.bz2')):
         print('Working on Local repository ...')
-        return local_repository
+        return LocalRepository(verbose=verbose)
 
     elif '/' in pkg_name:  # github, e.g. selectel/pyte
         print('Working on GitHub repository ...')
-        return GitHubRepository()
+        return GitHubRepository(verbose=verbose)
 
     else:  # PyPI
-        return PyPIRepository()
+        return PyPIRepository(verbose=verbose)
 
 
 class VersionSpecifier(object):
@@ -1141,12 +1175,12 @@ class VersionSpecifier(object):
     This class is to represent the versions of a requirement, e.g. pyte==0.4.10.
     """
     OPS = {'<=': operator.le,
-           '<': operator.lt,
-           '!=': operator.ne,
-           '>=': operator.ge,
-           '>': operator.gt,
-           '==': operator.eq,
-           '~=': operator.ge}
+    '<': operator.lt,
+    '!=': operator.ne,
+    '>=': operator.ge,
+    '>': operator.gt,
+    '==': operator.eq,
+    '~=': operator.ge}
 
     def __init__(self, version_specs):
         self.specs = [(VersionSpecifier.OPS[op], version) for (op, version) in version_specs]
@@ -1173,8 +1207,8 @@ class VersionSpecifier(object):
         if not parsed:
             return requirement, None
         name = parsed[0][0]
-        reqt = zip(*parsed)
-        version_specifiers = zip(*reqt[1:])  # ((op,version),(op,version))
+        reqt = list(zip(*parsed))
+        version_specifiers = list(zip(*reqt[1:]))  # ((op,version),(op,version))
         version = VersionSpecifier(version_specifiers)
 
         return name, version
@@ -1188,25 +1222,25 @@ if __name__ == '__main__':
     ap.add_argument('--verbose', action='store_true', help='be more chatty')
 
     subparsers = ap.add_subparsers(dest='sub_command',
-                                   title='List of sub-commands',
-                                   metavar='sub-command',
-                                   help='"pip sub-command -h" for more help on a sub-command')
+    title='List of sub-commands',
+    metavar='sub-command',
+    help='"pip sub-command -h" for more help on a sub-command')
 
     list_parser = subparsers.add_parser('list', help='list packages installed')
 
     install_parser = subparsers.add_parser('install', help='install a package')
     install_parser.add_argument('requirement',
-                                help='the requirement specifier for installation')
+    help='the requirement specifier for installation')
     install_parser.add_argument('-N', '--no-overwrite', action='store_true', default=False,
-                                help='Do not overwrite existing folder/files')
+    help='Do not overwrite existing folder/files')
     install_parser.add_argument('-d', '--directory',
-                                help='target directory for installation')
+    help='target directory for installation')
 
     download_parser = subparsers.add_parser('download', help='download a package')
     download_parser.add_argument('requirement',
-                                 help='the requirement specifier for download')
+    help='the requirement specifier for download')
     download_parser.add_argument('-d', '--directory',
-                                 help='the directory to save the downloaded file')
+    help='the directory to save the downloaded file')
 
     search_parser = subparsers.add_parser('search', help='search with the given word fragment')
     search_parser.add_argument('term', help='the word fragment to search')
@@ -1224,13 +1258,13 @@ if __name__ == '__main__':
 
     try:
         if ns.sub_command == 'list':
-            repository = get_repository('pypi')
+            repository = get_repository('pypi', verbose=ns.verbose)
             info_list = repository.list()
             for module, info in info_list:
                 print('{} ({}) - {}'.format(module, info['version'], info['summary']))
 
         elif ns.sub_command == 'install':
-            repository = get_repository(ns.requirement)
+            repository = get_repository(ns.requirement, verbose=ns.verbose)
             if ns.directory is not None:
                 SITE_PACKAGES_FOLDER = ns.directory
             NO_OVERWRITE = ns.no_overwrite
@@ -1245,32 +1279,32 @@ if __name__ == '__main__':
                 repository.install(pkg_name, ver_spec)
 
         elif ns.sub_command == 'download':
-            repository = get_repository(ns.requirement)
+            repository = get_repository(ns.requirement, verbose=ns.verbose)
             pkg_name, ver_spec = VersionSpecifier.parse_requirement(ns.requirement)
             archive_filename, pkg_info = repository.download(pkg_name, ver_spec)
             directory = ns.directory or os.getcwd()
             shutil.move(archive_filename, directory)
 
         elif ns.sub_command == 'search':
-            repository = get_repository('pypi')
+            repository = get_repository('pypi', verbose=ns.verbose)
             search_hits = repository.search(ns.term)
             search_hits = sorted(search_hits, key=lambda pkg: pkg['_pypi_ordering'], reverse=True)
             for hit in search_hits:
                 print('{} {} - {}'.format(hit['name'], hit['version'], hit['summary']))
 
         elif ns.sub_command == 'versions':
-            repository = get_repository(ns.package_name)
+            repository = get_repository(ns.package_name, verbose=ns.verbose)
             version_hits = repository.versions(ns.package_name)
             for hit in version_hits:
                 print('{} - {}'.format(ns.package_name, hit))
 
         elif ns.sub_command == 'remove':
-            repository = get_repository('pypi')
+            repository = get_repository('pypi', verbose=ns.verbose)
             repository.remove(ns.package_name)
 
         elif ns.sub_command == 'update':
-            repository = get_repository(ns.package_name)
-            
+            repository = get_repository(ns.package_name, verbose=ns.verbose)
+
             with save_current_sys_modules():
                 fake_setuptools_modules()
                 ensure_pkg_resources()  # install pkg_resources if needed

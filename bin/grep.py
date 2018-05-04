@@ -9,6 +9,7 @@ import re
 import sys
 
 def main(args):
+    global _stash
     ap = argparse.ArgumentParser()
     ap.add_argument('pattern', help='the pattern to match')
     ap.add_argument('files', nargs='*', help='files to be searched')

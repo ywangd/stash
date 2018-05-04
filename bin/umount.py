@@ -1,4 +1,5 @@
 """unmount a filesystem."""
+from __future__ import print_function
 import argparse
 import sys
 
@@ -29,9 +30,9 @@ if __name__ == "__main__":
 	ns = parser.parse_args()
 	
 	if not (ns.directory or ("-a" in sys.argv) or ("--all" in sys.argv)):
-		print _stash.text_color(
+		print(_stash.text_color(
 			"Error: no target directory specified!", "red"
-			)
+			))
 		sys.exit(1)
 	
 	manager = mount_ctrl.get_manager()
@@ -49,14 +50,14 @@ if __name__ == "__main__":
 	
 	for path in to_unmount:
 		if ns.v:
-			print "Unmounting '{p}'...".format(p=path)
+			print("Unmounting '{p}'...".format(p=path))
 		try:
 			manager.unmount_fsi(path, force=ns.force)
 		except mount_manager.MountError as e:
 			exitcode = 1
-			print _stash.text_color(
+			print(_stash.text_color(
 				"Error: {e}".format(e=e.message), "red"
-				)
+				))
 	if ns.v:
-		print "Done."
+		print("Done.")
 	sys.exit(exitcode)

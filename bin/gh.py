@@ -10,9 +10,15 @@ supported commands are:
 	gh create_key <title> [<public_key_path>] add a key to github (or create new key if none exist)
 For all commands, use gh <command> --help for more detailed help
 
-NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.com', which is also the default from the git module.  
-
+NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.com', which is also the default from the git module.
 '''
+from __future__ import print_function
+import os
+import sys
+
+from six.moves import input
+
+
 def install_module_from_github(username, package_name, folder, version):
     """
     Install python module from github zip files
@@ -39,7 +45,7 @@ try:
         sys.path.insert(1,libpath)
     import github
 except ImportError:
-    print 'no github found in ',libpath
+    print('no github found in ',libpath)
     install_module_from_github('pygithub', 'pygithub', 'github','master')
     import github
 try: 
@@ -66,7 +72,7 @@ def command(func):
        	 args=docopt(func.__doc__,argv=argv)
        	 return func(args)
        except SystemExit as e:
-       	print e
+       	print(e)
 
     return tmp
 
@@ -173,8 +179,8 @@ Examples:
 		if args['--issue']:
 			kwargs['issue']=baserepo.get_issue(args['--issue'])
 		elif not args['--title']:
-			kwargs['title']=raw_input('Enter pull title:')
-			kwargs['body']=raw_input('Enter pull body:')
+			kwargs['title']=input('Enter pull title:')
+			kwargs['body']=input('Enter pull body:')
 		else:
 			kwargs['title']=args['--title']
 			kwargs['body']=args['--body'] or ''

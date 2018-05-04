@@ -2,6 +2,12 @@ import os
 import fileinput
 
 
+try:
+	unicode
+except NameError:
+	unicode = str
+
+
 def collapseuser(path):
     """Reverse of os.path.expanduser: return path relative to ~, if
     such representation is meaningful. If path is not ~ or a

@@ -18,21 +18,24 @@ optional arguments:
   -f FILE, --file FILE  Attachment to send.
   -e                    Edit .mailrc
 '''
+from __future__ import print_function
 
+import argparse
 import os
 import smtplib
-import argparse
 import sys
-from ConfigParser import RawConfigParser
- 
 from email import Encoders
-from email.MIMEBase import MIMEBase
-from email.MIMEMultipart import MIMEMultipart
-from email.Utils import formatdate
-from email.MIMEText import MIMEText
+from email.utils import formatdate
+
+from six.moves import input
+from six.moves.configparser import RawConfigParser
+from six.moves.email_mime_base import MIMEBase
+from six.moves.email_mime_multipart import MIMEMultipart
+from six.moves.email_mime_text import MIMEText
 
 APP_DIR = os.environ['STASH_ROOT']
- 
+
+
 class Mail(object):
     def __init__(self,cfg_file='',verbose=False):
         #from config
@@ -49,13 +52,13 @@ class Mail(object):
         
     def _print(self,msg):
         if self.verbose:
-            print msg
+            print(msg)
             
     def read_cfg(self):
         parser = RawConfigParser()
         parser.read(self.cfg_file)
         if not parser.has_section('mail'):
-            print 'Creating cfg file.'
+            print('Creating cfg file.')
             self.make_cfg()
         
         self.auth     = parser.get('mail','auth')
@@ -67,6 +70,7 @@ class Mail(object):
         self.tls      = parser.get('mail','tls')
             
     def edit_cfg(self):
+        global _stash
         _stash('edit -t %s' %self.cfg_file)
         sys.exit(0)
         
@@ -89,7 +93,7 @@ password = Your user password
                  subject='',
                  attach='',
                  body=' '): 
-        print 'Sending email'
+        print('Sending email')
         msg = MIMEMultipart()
         msg["From"]    = self.mailfrom
         msg["To"]      = sendto
@@ -120,24 +124,24 @@ password = Your user password
             try:
                 self._print('Logging into to SMTP: %s %s'%(self.user,self.passwd))
                 server.login(self.user, self.passwd)  # optional
-            except Exception,e:
-                print 'Failed Login %s'%e
+            except Exception as e:
+                print('Failed Login %s'%e)
                 sys.exit(0)
             
         else:
             try:
                 self._print('Connecting to SMTP')
                 server.connect()
-            except Exception,e:
-                print 'Failed to connect %s'%e
+            except Exception as e:
+                print('Failed to connect %s'%e)
                 sys.exit(0)
      
         try:
             self._print('Sending mail to: %s' %sendto)
             server.sendmail(self.mailfrom, sendto, msg.as_string())
-            print 'mail sent.'
+            print('mail sent.')
             server.close()
-        except Exception, e:
+        except Exception as e:
             errorMsg = "Unable to send email. Error: %s" % str(e)
         
 
@@ -164,15 +168,13 @@ if __name__ == "__main__":
                     body=args.message)
     else:
         #try except blocks used do to stash reading EOF on no input
-        sendto = raw_input('Send to: ') or None
+        sendto = input('Send to: ') or None
         if not sendto:
             sys.exit(0)
-        subject = raw_input('Subject: ') or ''
-        msg = raw_input('Message: ') or ''
-        file = raw_input('Attachment: ') or ''
+        subject = input('Subject: ') or ''
+        msg = input('Message: ') or ''
+        file = input('Attachment: ') or ''
         smail.send(sendto=sendto,
                     subject=subject,
                     attach=file,
                     body=msg)
-        
-

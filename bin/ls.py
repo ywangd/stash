@@ -1,4 +1,5 @@
 """List information about files (the current directory by default)"""
+from __future__ import print_function
 import os
 import sys
 import time
@@ -124,7 +125,7 @@ def main(args):
 
     if len(ns.files) == 0:
         out = joiner.join(_fmt(f) for f in os.listdir('.') if _filter(f))
-        print out
+        print(out)
 
     else:
         out_dir = []
@@ -142,12 +143,12 @@ def main(args):
                 out_file.append(_fmt(f))
 
         for o in out_miss:
-            print o
-        print joiner.join(out_file)
+            print(o)
+        print(joiner.join(out_file))
         if out_file:
-            print
+            print("")
         for o in out_dir:
-            print o
+            print(o)
     sys.exit(exitcode)
 
 

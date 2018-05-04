@@ -3,12 +3,12 @@ from mlpatches.base import PatchGroup
 from mlpatches import mount_base
 from stashutils import mount_ctrl
 
-_BASE_PATCHES = filter(
+_BASE_PATCHES = list(filter(
 	None,
 	[
 		getattr(mount_base, p) if p.endswith("PATCH") else None for p in dir(mount_base)
 		]
-	)
+	))
 
 
 class MountPatches(PatchGroup):

@@ -1,5 +1,6 @@
 """ Find files in specified paths
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -112,7 +113,7 @@ def main(args):
     ap.add_argument('-maxdepth', '--maxdepth',
                     metavar='n',
                     nargs='?',
-                    default=sys.maxint,
+                    default=sys.maxsize,
                     type=int,
                     help='descend at most n directory levels below command line arguments')
     ns = ap.parse_args(args)
@@ -140,7 +141,7 @@ def main(args):
 
     names = file_predicate.run(ns.paths)
 
-    print '\n'.join(names)
+    print('\n'.join(names))
 
 
 if __name__ == "__main__":
