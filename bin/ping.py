@@ -90,8 +90,6 @@ import time
 
 from six.moves import xrange
 
-from docopt import docopt
-
 # On Windows, the best timer is time.clock()
 # On most other platforms the best timer is time.time()
 default_timer = time.clock if sys.platform == "win32" else time.time
@@ -127,6 +125,7 @@ try:
     import docopt
 except ImportError:
 	install_module_from_github('docopt','docopt','docopt.py','master')
+	import docopt
 
 
 
@@ -140,7 +139,13 @@ def checksum(source_string):
     countTo = (len(source_string)/2)*2
     count = 0
     while count<countTo:
-        thisVal = ord(source_string[count + 1])*256 + ord(source_string[count])
+        v1 = source_string[count + 1]
+        if not isinstance(v1, int):
+            v1 = ord(v1)
+        v2 = source_string[count]
+        if not isinstance(v2, int):
+            v2 = ord(v2)
+        thisVal = v1 * 256 + v2
         sum = sum + thisVal
         sum = sum & 0xffffffff # Necessary?
         count = count + 2
@@ -176,14 +181,14 @@ def receive_one_ping(my_socket, ID, timeout):
         recPacket, addr = my_socket.recvfrom(1024)
         icmpHeader = recPacket[20:28]
         type, code, checksum, packetID, sequence = struct.unpack(
-            "bbHHh", icmpHeader
+            b"bbHHh", icmpHeader
         )
         # Filters out the echo request itself. 
         # This can be tested by pinging 127.0.0.1 
         # You'll see your own request
         if type != 8 and packetID == ID:
-            bytesInDouble = struct.calcsize("d")
-            timeSent = struct.unpack("d", recPacket[28:28 + bytesInDouble])[0]
+            bytesInDouble = struct.calcsize(b"d")
+            timeSent = struct.unpack(b"d", recPacket[28:28 + bytesInDouble])[0]
             return timeReceived - timeSent
 
         timeLeft = timeLeft - howLongInSelect
@@ -201,9 +206,9 @@ def send_one_ping(my_socket, dest_addr, ID):
     my_checksum = 0
 
     # Make a dummy heder with a 0 checksum.
-    header = struct.pack("bbHHh", ICMP_ECHO_REQUEST, 0, my_checksum, ID, 1)
+    header = struct.pack(b"bbHHh", ICMP_ECHO_REQUEST, 0, my_checksum, ID, 1)
     bytesInDouble = struct.calcsize("d")
-    data = (192 - bytesInDouble) * "Q"
+    data = (192 - bytesInDouble) * b"Q"
     data = struct.pack("d", default_timer()) + data
 
     # Calculate the checksum on the data and the dummy header.
@@ -212,7 +217,7 @@ def send_one_ping(my_socket, dest_addr, ID):
     # Now that we have the right checksum, we put that in. It's just easier
     # to make up a new header than to stuff it into the dummy.
     header = struct.pack(
-        "bbHHh", ICMP_ECHO_REQUEST, 0, socket.htons(my_checksum), ID, 1
+        b"bbHHh", ICMP_ECHO_REQUEST, 0, socket.htons(my_checksum), ID, 1
     )
     packet = header + data
     my_socket.sendto(packet, (dest_addr, 1)) # Don't know about the 1
@@ -261,7 +266,7 @@ if __name__ == '__main__':
 	if len(sys.argv)==1:
 		sys.argv.append('--help')
 
-	args=docopt(__doc__, version='0.1', options_first=True)
+	args=docopt.docopt(__doc__, version='0.1', options_first=True)
 
 	dest=args['<destination>']
 	verbose_ping(dest, float(args['--timeout']),int(args['--count']),float(args['--interval']))
