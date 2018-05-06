@@ -33,7 +33,7 @@ def get_remote_version(owner, branch):
     """
     import ast
 
-    url = '%s/%s/core.py?q=%s' % (URL_BASE.format(owner=owner), branch, randint(1, 999999))
+    url = '%s/%s/stash.py?q=%s' % (URL_BASE.format(owner=owner), branch, randint(1, 999999))
 
     try:
         req = requests.get(url)
