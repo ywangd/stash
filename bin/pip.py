@@ -503,10 +503,10 @@ class ArchiveFileInstaller(object):
         Main method for Installer to do its job.
         """
 
-        EXTRACTED_FOLDER = self._unzip(pkg_name, archive_filename)
+        extracted_folder = self._unzip(pkg_name, archive_filename)
         try:
             # locate the setup file
-            src_dir = os.path.join(EXTRACTED_FOLDER, os.listdir(EXTRACTED_FOLDER)[0])
+            src_dir = os.path.join(extracted_folder, os.listdir(extracted_folder)[0])
             setup_filename = os.path.join(src_dir, 'setup.py')
 
             try:
@@ -550,24 +550,24 @@ class ArchiveFileInstaller(object):
                     raise PipError('Cannot locate packages. Manual installation required.')
 
         finally:
-            shutil.rmtree(EXTRACTED_FOLDER)
+            shutil.rmtree(extracted_folder)
             os.remove(archive_filename)
 
     def _unzip(self, pkg_name, archive_filename):
         import uuid
         print('Extracting archive file ...')
-        EXTRACTED_FOLDER = os.path.join(os.getenv('TMPDIR'), uuid.uuid4().hex)
-        os.mkdir(EXTRACTED_FOLDER)
+        extracted_folder = os.path.join(os.getenv('TMPDIR'), uuid.uuid4().hex)
+        os.mkdir(extracted_folder)
         if '.zip' in archive_filename:
-            d = os.path.join(EXTRACTED_FOLDER, pkg_name)
+            d = os.path.join(extracted_folder, pkg_name)
             os.mkdir(d)
             _stash('unzip -d {} {}'.format(d, archive_filename))
         elif '.bz2' in archive_filename:
-            _stash('tar -C {} -jxf {}'.format(EXTRACTED_FOLDER, archive_filename))
+            _stash('tar -C {} -jxf {}'.format(extracted_folder, archive_filename))
         else:  # gzip
-            _stash('tar -C {} -zxf {}'.format(EXTRACTED_FOLDER, archive_filename))
+            _stash('tar -C {} -zxf {}'.format(extracted_folder, archive_filename))
 
-        return EXTRACTED_FOLDER
+        return extracted_folder
 
     def _run_setup_file(self, filename):
         """
@@ -822,6 +822,8 @@ class PackageRepository(object):
         dependencies = [dependency for dependency in dependencies if dependency != 'setuptools']
         name_versions = [VersionSpecifier.parse_requirement(requirement)
         for requirement in dependencies]
+        # filter (None, ...)
+        name_versions = list(filter(lambda e: e[0] is not None, name_versions))
         sys.modules['setuptools']._installed_requirements_.append(pkg_name)
         pkg_info['files'] = ','.join(files_installed)
         pkg_info['dependency'] = ','.join(name_version[0] for name_version in name_versions)
@@ -829,7 +831,7 @@ class PackageRepository(object):
         print('Package installed: {}'.format(pkg_name))
 
         for pkg_name, ver_spec in name_versions:
-
+            
             if pkg_name == 'setuptools':  # do not install setuptools
                 continue
 
@@ -1196,7 +1198,15 @@ class VersionSpecifier(object):
         """
         Factory method to create a VersionSpecifier object from a requirement
         """
+        if isinstance(requirement, (list, tuple)):
+            if len(requirement) == 1:
+                requirement = requirement[0]
+            else:
+                raise PipError("Unknown requirement format: " + repr(requirement))
         requirement = requirement.replace(' ', '')  # remove all whitespaces
+        if requirement.startswith("#"):
+            # ignore
+            return None, None
         letterOrDigit = r'\w'
         PAREN = lambda x: '(' + x + ')'
 
