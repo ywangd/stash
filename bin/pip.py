@@ -64,8 +64,10 @@ if _stash.PY3:
     SITE_PACKAGES_DIR_NAME = 'site-packages-3'
 else:
     SITE_PACKAGES_DIR_NAME = 'site-packages-2'
+OLD_SITE_PACKAGES_DIR_NAME = 'site-packages'
 
 SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(SITE_PACKAGES_DIR_NAME))
+OLD_SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(OLD_SITE_PACKAGES_DIR_NAME))
 
 NO_OVERWRITE = False
 
@@ -723,17 +725,12 @@ class ArchiveFileInstaller(object):
                     desc = kwargs.get("description", "")
                     path = create_command(
                     name,
-                    b"""'''{d}'''
-from {m} import {n}
+                    (u"""'''%s'''
+from %s import %s
 
 if __name__ == "__main__":
-    {n}()
-""".format(
-                    m=modname,
-                    n=funcname,
-                    d=desc,
-                    ),
-                    )
+    %s()
+""" % (desc, modname, funcname, funcname)).encode("utf-8"))
                     files_installed.append(path)
             else:
                 print("Warning: passing entry points for '{n}'.".format(n=epn))
@@ -924,7 +921,7 @@ class PyPIRepository(PackageRepository):
     def get_standard_package_name(self, pkg_name):
         if pkg_name not in self.standard_package_names:
             try:
-                r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
+                r = requests.get('https://pypi.python.org/pypi/{}/json'.format(pkg_name))
                 self.standard_package_names[pkg_name] = r.json()['info']['name']
             except:
                 return pkg_name
@@ -944,7 +941,7 @@ class PyPIRepository(PackageRepository):
         return hits
 
     def _package_data(self, pkg_name):
-        r = requests.get('http://pypi.python.org/pypi/{}/json'.format(pkg_name))
+        r = requests.get('https://pypi.python.org/pypi/{}/json'.format(pkg_name))
         if not r.status_code == requests.codes.ok:
             raise PipError('Failed to fetch package release urls')
 
@@ -1220,6 +1217,7 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
 
     ap.add_argument('--verbose', action='store_true', help='be more chatty')
+    ap.add_argument("--2and3", action='store_true', help='manage packages for py2 and py3', dest='py2and3')
 
     subparsers = ap.add_subparsers(dest='sub_command',
     title='List of sub-commands',
@@ -1255,6 +1253,9 @@ if __name__ == '__main__':
     update_parser.add_argument('package_name', help='the package name')
 
     ns = ap.parse_args()
+    
+    if ns.py2and3:
+    	SITE_PACKAGES_FOLDER = OLD_SITE_PACKAGES_FOLDER
 
     try:
         if ns.sub_command == 'list':
