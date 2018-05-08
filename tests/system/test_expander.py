@@ -1,10 +1,9 @@
 # coding=utf-8
 import os
-import unittest
 
 from stash.tests.stashtest import StashTestCase
 
-class ExpanderTests(unittest.TestCase):
+class ExpanderTests(StashTestCase):
 
     def setUp(self):
         StashTestCase.setUp(self)

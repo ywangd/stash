@@ -1,13 +1,11 @@
  
 # coding=utf-8
-import os
-import unittest
 
 from stash.tests.stashtest import StashTestCase
 
 class RuntimeTests(StashTestCase):
 	
-	setup_commands = ['BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH']
+    setup_commands = ['BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH']
 
     def test_03(self):
         cmp_str = r"""[stash]$ x y
