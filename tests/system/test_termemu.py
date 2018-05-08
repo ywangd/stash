@@ -1,20 +1,11 @@
 # coding=utf-8
 import unittest
 
-from stash import stash
+from stash.tests.stashtest import StashTestCase
 
-class TermemuTests(unittest.TestCase):
-
-    def setUp(self):
-        self.stash = stash.StaSh()
-        self.stash('cd $STASH_ROOT')
-        self.stash('BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH')
-        self.stash('clear')
-
-    def tearDown(self):
-        assert self.stash.runtime.child_thread is None, 'child thread is not cleared'
-        assert len(self.stash.runtime.worker_registry) == 0, 'worker registry not empty'
-        del self.stash
+class TermemuTests(StashTestCase):
+	
+	setup_commands = ['BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH']
 
     def test_201(self):
         self.stash('test_201.py')

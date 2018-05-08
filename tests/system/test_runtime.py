@@ -3,36 +3,11 @@
 import os
 import unittest
 
-from stash import stash
+from stash.tests.stashtest import StashTestCase
 
-class RuntimeTests(unittest.TestCase):
-
-    def setUp(self):
-        self.stash = stash.StaSh()
-        self.stash('cd $STASH_ROOT')
-        self.stash('BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH')
-        self.stash('clear')
-
-    def tearDown(self):
-        assert self.stash.runtime.child_thread is None, 'child thread is not cleared'
-        assert len(self.stash.runtime.worker_registry) == 0, 'worker registry not empty'
-        del self.stash
-
-    def do_test(self, cmd, cmp_str, ensure_same_cwd=True, ensure_undefined=(), ensure_defined=()):
-
-        saved_cwd = os.getcwd()
-        self.stash(cmd, persistent_level=1)  # 1 for mimicking running from console
-
-        assert cmp_str == self.stash.main_screen.text, 'output not identical'
-
-        if ensure_same_cwd:
-            assert os.getcwd() == saved_cwd, 'cwd changed'
-
-        for v in ensure_undefined:
-            assert v not in self.stash.runtime.state.environ.keys(), '%s should be undefined' % v
-
-        for v in ensure_defined:
-            assert v in self.stash.runtime.state.environ.keys(), '%s should be defined' % v
+class RuntimeTests(StashTestCase):
+	
+	setup_commands = ['BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH']
 
     def test_03(self):
         cmp_str = r"""[stash]$ x y

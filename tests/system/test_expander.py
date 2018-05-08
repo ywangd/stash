@@ -2,17 +2,13 @@
 import os
 import unittest
 
-from stash import stash
+from stash.tests.stashtest import StashTestCase
 
 class ExpanderTests(unittest.TestCase):
 
     def setUp(self):
-        self.stash = stash.StaSh()
-        self.stash('cd $STASH_ROOT')
+        StashTestCase.setUp(self)
         self.expand = self.stash.runtime.expander.expand
-
-    def tearDown(self):
-        del self.stash
 
     def _get_pipe_sequence(self, line):
         expanded = self.expand(line)
