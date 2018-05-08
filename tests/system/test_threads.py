@@ -1,13 +1,12 @@
 # coding=utf-8
 import time
-import unittest
 
 from six import StringIO
 
 from stash.tests.stashtest import StashTestCase
 
 
-class ThreadsTests(unittest.TestCase):
+class ThreadsTests(StashTestCase):
 	
     setup_commands = ['BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH']
 
