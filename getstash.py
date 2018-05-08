@@ -86,11 +86,11 @@ shutil.move(os.path.join(TARGET_DIR, 'launch_stash.py'),
 try:
     os.remove(TEMP_ZIPFILE)
 
-    shutil.rmtree(os.path.join(TARGET_DIR, 'tests'))
+    # shutil.rmtree(os.path.join(TARGET_DIR, 'tests'))  # TODO: maybe readd this line later
 
     unwanted_files = ['getstash.py', 'run_tests.py', 'testing.py', 
                       'dummyui.py', 'dummyconsole.py', 
-                      'bin/pcsm.py', 'bin/bh.py', 'bin/pythonista.py', 'bin/cls.py']
+                      'bin/pcsm.py', 'bin/bh.py', 'bin/pythonista.py', 'bin/cls.py', 'stash.py']
 
     for fname in unwanted_files:
         os.remove(os.path.join(TARGET_DIR, fname))
