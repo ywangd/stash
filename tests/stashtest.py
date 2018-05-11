@@ -56,7 +56,8 @@ class StashTestCase(unittest.TestCase):
 		"""run a command and return its output."""
 		outs = StringIO()
 		worker = self.stash(command, persistent_level=1, final_outs=outs, final_errs=outs, cwd=self.cwd)  # 1 for mimicking running from console
+		output = outs.getvalue()
 		if exitcode is not None:
 			returnvalue = worker.state.return_value
-			assert returnvalue == exitcode, "unexpected exitcode ({e} expected, got {g})".format(e=exitcode, g=returnvalue)
-		return outs.getvalue()
+			assert returnvalue == exitcode, "unexpected exitcode ({e} expected, got {g})\nOutput:\n{o}\n".format(e=exitcode, g=returnvalue, o=output)
+		return output
