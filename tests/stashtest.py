@@ -3,7 +3,14 @@
 import os
 import unittest
 
+try:
+	from StringIO import StringIO
+except ImportError:
+	from io import StringIO
+
 from stash import stash
+from stash.system.shcommon import _STASH_ROOT
+
 
 class StashTestCase(unittest.TestCase):
 	"""A test case implementing utility methods for testing StaSh"""
@@ -13,6 +20,9 @@ class StashTestCase(unittest.TestCase):
 	
 	def setUp(self):
 		self.stash = stash.StaSh()
+		if not "STASH_ROOT" in os.environ:
+			os.environ["STASH_ROOT"] = _STASH_ROOT
+		self.cwd = os.path.abspath(os.path.expandvars(self.cwd))
 		self.stash('cd ' + self.cwd)
 		for c in self.setup_commands:
 			self.stash(c)
@@ -41,3 +51,12 @@ class StashTestCase(unittest.TestCase):
 			
 		for v in ensure_defined:
 			assert v in self.stash.runtime.state.environ.keys(), '%s should be defined' % v
+	
+	def run_command(self, command, exitcode=None):
+		"""run a command and return its output."""
+		outs = StringIO()
+		worker = self.stash(command, persistent_level=1, final_outs=outs, final_errs=outs, cwd=self.cwd)  # 1 for mimicking running from console
+		if exitcode is not None:
+			returnvalue = worker.state.return_value
+			assert returnvalue == exitcode, "unexpected exitcode ({e} expected, got {g})".format(e=exitcode, g=returnvalue)
+		return outs.getvalue()
