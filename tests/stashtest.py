@@ -23,9 +23,9 @@ class StashTestCase(unittest.TestCase):
 		if not "STASH_ROOT" in os.environ:
 			os.environ["STASH_ROOT"] = _STASH_ROOT
 		self.cwd = os.path.abspath(os.path.expandvars(self.cwd))
-		self.stash('cd ' + self.cwd)
+		self.stash('cd ' + self.cwd, persistent_level=1)
 		for c in self.setup_commands:
-			self.stash(c)
+			self.stash(c, persistent_level=1)
 		self.stash('clear')
 		
 	def tearDown(self):
