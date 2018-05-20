@@ -69,6 +69,13 @@ class StashTestCase(unittest.TestCase):
 	
 	def run_command(self, command, exitcode=None):
 		"""run a command and return its output."""
+		# for debug purposes, locate script
+		try:
+			scriptname = command.split(" ")[0]
+			scriptfile = self.stash.runtime.find_script_file(scriptname)
+			self.logger.debug("Scriptfile for command: " + str(scriptfile))
+		except Exception as e:
+			self.logger.error("Could not find script for command: " + repr(e))
 		outs = StringIO()
 		self.logger.info("Executing: " + repr(command))
 		worker = self.stash(command, persistent_level=1, final_outs=outs, final_errs=outs) #  1 for mimicking running from console
