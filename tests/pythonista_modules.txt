@@ -1,0 +1,3 @@
+# this file *should* contain requirements which a shipped with pythonista
+# TODO: use check version used by pythonista
+cryptography
