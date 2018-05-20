@@ -242,9 +242,16 @@ class ShBaseThread(threading.Thread):
         """
         Status of the thread. Created, Started or Stopped.
         """
+        # STATES
+        # isAlive() | self.ident  | Meaning
+        # ----------+-------------+--------
+        # False     |     None    | created
+        # False     | not None    | stopped
+        # True      |     None    | impossible
+        # True      | not None    | running
         if self.isAlive():
             return self.STARTED
-        elif self._Thread__stopped:
+        elif (not self.is_alive()) and (self.ident is not None):
             return self.STOPPED
         else:
             return self.CREATED
