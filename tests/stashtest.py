@@ -23,9 +23,9 @@ class StashTestCase(unittest.TestCase):
 		if not "STASH_ROOT" in os.environ:
 			os.environ["STASH_ROOT"] = _STASH_ROOT
 		self.cwd = os.path.abspath(os.path.expandvars(self.cwd))
-		self.stash('cd ' + self.cwd)
+		self.stash('cd ' + self.cwd, persistent_level=1)
 		for c in self.setup_commands:
-			self.stash(c)
+			self.stash(c, persistent_level=1)
 		self.stash('clear')
 		
 	def tearDown(self):
@@ -55,7 +55,7 @@ class StashTestCase(unittest.TestCase):
 	def run_command(self, command, exitcode=None):
 		"""run a command and return its output."""
 		outs = StringIO()
-		worker = self.stash(command, persistent_level=1, final_outs=outs, final_errs=outs, cwd=self.cwd)  # 1 for mimicking running from console
+		worker = self.stash(command, persistent_level=1, final_outs=outs, final_errs=outs) #  1 for mimicking running from console
 		output = outs.getvalue()
 		if exitcode is not None:
 			returnvalue = worker.state.return_value
