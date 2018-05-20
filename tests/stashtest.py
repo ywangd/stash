@@ -2,6 +2,7 @@
 # coding=utf-8
 import os
 import unittest
+import logging
 
 try:
 	from StringIO import StringIO
@@ -18,13 +19,21 @@ class StashTestCase(unittest.TestCase):
 	cwd = "$STASH_ROOT"
 	setup_commands = []
 	
+	def setupClass(self):
+		logging.basicConfig(level=logging.DEBUG)
+	
 	def setUp(self):
+		self.logger = logging.getLogger(self.__class__.__name__)
 		self.stash = stash.StaSh()
 		if not "STASH_ROOT" in os.environ:
+			self.logger.debug("Setting $STASH_ROOT to: " + repr(_STASH_ROOT))
 			os.environ["STASH_ROOT"] = _STASH_ROOT
 		self.cwd = os.path.abspath(os.path.expandvars(self.cwd))
+		self.logger.info("Target CWD is: "+ str(self.cwd))
 		self.stash('cd ' + self.cwd, persistent_level=1)
+		self.logger.debug("After cd, CWD is: " + os.getcwd())
 		for c in self.setup_commands:
+			self.logger.debug("executing setup command: " + repr(c))
 			self.stash(c, persistent_level=1)
 		self.stash('clear')
 		
@@ -36,15 +45,21 @@ class StashTestCase(unittest.TestCase):
 	def do_test(self, cmd, cmp_str, ensure_same_cwd=True, ensure_undefined=(), ensure_defined=(), exitcode=None):
 	
 		saved_cwd = os.getcwd()
+		self.logger.info("executing {c} in {d}...".format(c=cmd, d=saved_cwd))
 		worker = self.stash(cmd, persistent_level=1)  # 1 for mimicking running from console
 		
 		assert cmp_str == self.stash.main_screen.text, 'output not identical'
 		
 		if exitcode is not None:
 			assert worker.state.return_value == exitcode, "unexpected exitcode"
+		else:
+			self.logger.info("Exitcode: " + str(worker.state.return_value))
 		
 		if ensure_same_cwd:
 			assert os.getcwd() == saved_cwd, 'cwd changed'
+		else:
+			if os.getcwd() != saved_cwd:
+				self.logger.warning("CWD changed from '{o}' to '{n}'!".format(o=saved_cwd, n=os.getcwd()))
 			
 		for v in ensure_undefined:
 			assert v not in self.stash.runtime.state.environ.keys(), '%s should be undefined' % v
@@ -55,9 +70,12 @@ class StashTestCase(unittest.TestCase):
 	def run_command(self, command, exitcode=None):
 		"""run a command and return its output."""
 		outs = StringIO()
+		self.logger.info("Executing: " + repr(command))
 		worker = self.stash(command, persistent_level=1, final_outs=outs, final_errs=outs) #  1 for mimicking running from console
 		output = outs.getvalue()
+		returnvalue = worker.state.return_value
+		self.logger.debug(output)
+		self.logger.debug("Exitcode: " + str(returnvalue))
 		if exitcode is not None:
-			returnvalue = worker.state.return_value
 			assert returnvalue == exitcode, "unexpected exitcode ({e} expected, got {g})\nOutput:\n{o}\n".format(e=exitcode, g=returnvalue, o=output)
 		return output
