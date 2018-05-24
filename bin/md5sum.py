@@ -1,5 +1,5 @@
 '''
-Get md5 hash of a file or string. 
+Get md5 hash of a file or string.
 
 usage: md5sum.py [-h] [-c] [file [file ...]]
 
@@ -21,7 +21,7 @@ import os
 import re
 import sys
 
-from six import StringIO
+import six
 
 from Crypto.Hash import MD5
 
@@ -57,8 +57,11 @@ def check_list(fileobj):
 
 
 def make_file(txt):
-    f = StringIO()
-    f.write(txt)
+    f = six.BytesIO()
+    if isinstance(txt, six.binary_type):
+        f.write(txt)
+    else:
+        f.write(txt.encode("utf-8"))
     f.seek(0)
     return f
 
