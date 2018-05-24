@@ -87,9 +87,15 @@ else:
     if args.file:
         for arg in args.file:
             if os.path.isfile(arg):
+                # hash file
                 with open(arg, 'rb') as f:
                     print(get_hash(f)+' '+arg)
+            elif arg == "-":
+                # read from stdin
+                print(get_hash(make_file(sys.stdin.read())))
             else:
+                # hash arg
+                # TODO: should we realy do this? It does not seem like normal md5sum behavior
                 print(get_hash(make_file(arg)))
     else:
         print(get_hash(make_file(sys.stdin.read())))

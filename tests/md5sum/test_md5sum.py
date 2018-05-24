@@ -52,8 +52,14 @@ class Md5sumTests(StashTestCase):
         finally:
             os.chdir(old)
 
-    def test_hash_stdin(self):
-        """test hashing of stdin"""
+    def test_hash_stdin_implicit(self):
+        """test hashing of stdin without arg"""
         output = self.run_command("echo test | md5sum", exitcode=0).replace("\n", "")
+        expected = "d8e8fca2dc0f896fd7cb4cb0031ba249"
+        self.assertEqual(output, expected)
+
+    def test_hash_stdin_explicit(self):
+        """test hashing of stdin with '-' arg"""
+        output = self.run_command("echo test | md5sum -", exitcode=0).replace("\n", "")
         expected = "d8e8fca2dc0f896fd7cb4cb0031ba249"
         self.assertEqual(output, expected)
