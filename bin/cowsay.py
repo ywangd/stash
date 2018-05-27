@@ -49,6 +49,8 @@ def main():
 		text = ""
 		while True:
 			inp = sys.stdin.read(4096)
+			if inp.endswith("\n"):
+				inp = inp[:-1]
 			if not inp:
 				break
 			text += inp
