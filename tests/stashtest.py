@@ -77,7 +77,8 @@ class StashTestCase(unittest.TestCase):
             scriptfile = self.stash.runtime.find_script_file(scriptname)
             self.logger.debug("Scriptfile for command: " + str(scriptfile))
         except Exception as e:
-            self.logger.error("Could not find script for command: " + repr(e))
+            self.logger.warning("Could not find script for command: " + repr(e))
+            # do NOT return here, script may be alias
         outs = StringIO()
         self.logger.info("Executing: " + repr(command))
         worker = self.stash(command, persistent_level=1, final_outs=outs, final_errs=outs) #  1 for mimicking running from console
