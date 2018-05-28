@@ -15,7 +15,7 @@ class ExpanderTests(StashTestCase):
         return next(expanded)
 
     def test_envars(self):
-        pipe_sequence = self._get_pipe_sequence(r'ls $SELFUPDATE_BRANCH')
+        pipe_sequence = self._get_pipe_sequence(r'ls $SELFUPDATE_TARGET')
         assert pipe_sequence.lst[0].args[0] == 'master'
 
     def test_tilda(self):
@@ -49,7 +49,7 @@ class ExpanderTests(StashTestCase):
         assert pipe_sequence.lst[0].args[0] == '\x1b[32m'
 
     def test_double_quotes(self):
-        pipe_sequence = self._get_pipe_sequence(r'ls "$SELFUPDATE_BRANCH"')
+        pipe_sequence = self._get_pipe_sequence(r'ls "$SELFUPDATE_TARGET"')
         assert pipe_sequence.lst[0].args[0] == 'master'
 
         pipe_sequence = self._get_pipe_sequence(r'ls "~/"')
@@ -63,7 +63,7 @@ class ExpanderTests(StashTestCase):
 
     def test_single_quotes(self):
         pipe_sequence = self._get_pipe_sequence(r"ls '$SELFUPDATE_BRANCH'")
-        assert pipe_sequence.lst[0].args[0] == '$SELFUPDATE_BRANCH'
+        assert pipe_sequence.lst[0].args[0] == '$SELFUPDATE_TARGET'
 
         pipe_sequence = self._get_pipe_sequence(r'ls "~/"')
         assert pipe_sequence.lst[0].args[0] == '~/'
