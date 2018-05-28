@@ -15,14 +15,21 @@ collapseuser = _stash.libcore.collapseuser
 # Following functions for getting Pythonista and iOS version information are adapted from
 # https://github.com/cclauss/Ten-lines-or-less/blob/master/pythonista_version.py
 def pythonista_version():  # 2.0.1 (201000)
-    plist = plistlib.readPlist(os.path.abspath(os.path.join(sys.executable, '..', 'Info.plist')))
-    return '{CFBundleShortVersionString} ({CFBundleVersion})'.format(**plist)
+    try:
+        plist = plistlib.readPlist(os.path.abspath(os.path.join(sys.executable, '..', 'Info.plist')))
+        return '{CFBundleShortVersionString} ({CFBundleVersion})'.format(**plist)
+    except Exception as e:
+        return "UNKNOWN ({e})".format(e=repr(e))
 
 
 def ios_version():  # 9.2 (64-bit iPad5,4)
-    ios_ver, _, machine_model = platform.mac_ver()
-    bit = platform.architecture()[0].rstrip('bit') + '-bit'
-    return '{} ({} {})'.format(ios_ver, bit, machine_model)
+    try:
+        ios_ver, _, machine_model = platform.mac_ver()
+    except Exception as e:
+        return "UNKNOWN ({e})".format(e=repr(e))
+    else:
+        bit = platform.architecture()[0].rstrip('bit') + '-bit'
+        return '{} ({} {})'.format(ios_ver, bit, machine_model)
 
 
 def main():
@@ -38,8 +45,8 @@ def main():
     _stat = os.stat(os.path.join(STASH_ROOT, 'core.py'))
     last_modified = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(_stat.st_mtime))
     print(u'%s: %s' % (_stash.text_bold('core.py'), last_modified))
-    print(u'%s: %s' % (_stash.text_bold('SELFUPDATE_BRANCH'),
-                       os.environ['SELFUPDATE_BRANCH']))
+    print(u'%s: %s' % (_stash.text_bold('SELFUPDATE_TARGET'),
+                       os.environ['SELFUPDATE_TARGET']))
     print(_stash.text_bold('BIN_PATH:'))
     for p in os.environ['BIN_PATH'].split(':'):
         print('  %s' % collapseuser(p))
