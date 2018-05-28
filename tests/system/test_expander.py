@@ -62,7 +62,7 @@ class ExpanderTests(StashTestCase):
         assert pipe_sequence.lst[0].args[0] == '\033[32m'
 
     def test_single_quotes(self):
-        pipe_sequence = self._get_pipe_sequence(r"ls '$SELFUPDATE_BRANCH'")
+        pipe_sequence = self._get_pipe_sequence(r"ls '$SELFUPDATE_TARGET'")
         assert pipe_sequence.lst[0].args[0] == '$SELFUPDATE_TARGET'
 
         pipe_sequence = self._get_pipe_sequence(r'ls "~/"')
