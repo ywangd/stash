@@ -33,7 +33,7 @@ from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, Sh
 
 # Default .stashrc file
 _DEFAULT_RC = r"""BIN_PATH=~/Documents/bin:{bin_ext}:$BIN_PATH
-SELFUPDATE_BRANCH=master
+SELFUPDATE_TARGET=master
 PYTHONPATH=$STASH_ROOT/lib:$PYTHONPATH
 alias env='printenv'
 alias logout='echo "Use the close button in the upper right corner to exit StaSh."'
