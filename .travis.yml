@@ -6,7 +6,7 @@ python:
 # command to install dependencies
 install:
   - "pip install pyparsing==2.0.1"
-  - "pip install pytest>=3.5.0"
+  - "pip install pytest>=3.6.0"
   - "pip install flake8>=3.5.0"
   # install modules shipped with pythonista
   - "pip install -r tests/pythonista_modules.txt"
@@ -16,4 +16,5 @@ before_script:
   # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
   - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 # command to run tests
-script: py.test tests/ --ignore=tests/system/data --showlocals --verbose
+script: py.test tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
+
