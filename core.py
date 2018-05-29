@@ -60,7 +60,7 @@ py_traceback=0
 py_pdb=0
 input_encoding_utf8=1
 ipython_style_history_search=1
-thread_type=traced
+thread_type=ctypes
 
 [display]
 TEXT_FONT_SIZE={font_size}
