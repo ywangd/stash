@@ -15,6 +15,8 @@ before_script:
   - flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics
   # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
   - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+  # show pytest version
+  - py.test --version
 # command to run tests
 script: py.test tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
 
