@@ -19,9 +19,6 @@ class StashTestCase(unittest.TestCase):
     cwd = "$STASH_ROOT"
     setup_commands = []
 
-    def setupClass(self):
-        logging.basicConfig(level=logging.DEBUG)
-
     def setUp(self):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.stash = stash.StaSh()
