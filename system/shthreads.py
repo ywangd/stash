@@ -79,17 +79,22 @@ class ShState(object):
         :param ShState child_state: Child state
         """
         if persistent_level == 0:
+            # restore old state
             if os.getcwd() != child_state.enclosed_cwd:
                 os.chdir(child_state.enclosed_cwd)
                 # TODO: return status?
 
         elif persistent_level == 1:
+            # update state
             self.aliases = dict(child_state.aliases)
-            self.enclosed_cwd = os.getcwd()
+            self.enclosing_aliases = child_state.aliases
+            self.enclosed_cwd = self.enclosing_cwd = os.getcwd()
             self.environ = dict(child_state.environ)
+            self.enclosing_environ = child_state.environ
             self.sys_path = child_state.sys_path[:]
 
         elif persistent_level == 2:
+            # ensure future children will have child state
             self.enclosing_aliases = child_state.aliases
             self.enclosing_environ = child_state.environ
             self.enclosing_cwd = os.getcwd()

@@ -29,7 +29,7 @@ class StashTestCase(unittest.TestCase):
         self.stash("stashconf py_traceback 1")
         self.cwd = os.path.abspath(os.path.expandvars(self.cwd))
         self.logger.info("Target CWD is: "+ str(self.cwd))
-        self.stash('cd ' + self.cwd, persistent_level=2)
+        self.stash('cd ' + self.cwd, persistent_level=1)
         self.logger.debug("After cd, CWD is: " + os.getcwd())
         for c in self.setup_commands:
             self.logger.debug("executing setup command: " + repr(c))
