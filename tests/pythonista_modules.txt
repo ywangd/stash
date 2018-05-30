@@ -1,3 +1,4 @@
 # this file *should* contain requirements which a shipped with pythonista
 # TODO: use check version used by pythonista
 pycrypto==2.6
+requests==2.9.1
