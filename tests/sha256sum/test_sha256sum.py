@@ -37,20 +37,15 @@ class Sha256sumTests(StashTestCase):
 
     def test_checkhash(self):
         """test sha256sum -c"""
-        old = os.getcwd()
-        try:
-            os.chdir(self.get_data_path())
-            output = self.run_command("sha256sum -c results.sha256sum", exitcode=0)
-        finally:
-            os.chdir(old)
+        output = self.run_command("sha256sum -c results.sha256sum", exitcode=0)
+        self.assertIn("Pass", output)
+        self.assertNotIn("Fail", output)
 
     def test_checkhash_fail(self):
         """test failure sha256sum -c with invalid data"""
-        old = os.getcwd()
-        try:
-            output = self.run_command("md5sum -c wrong_results.sha256sum", exitcode=1)
-        finally:
-            os.chdir(old)
+        output = self.run_command("sha256sum -c wrong_results.sha256sum", exitcode=1)
+        self.assertIn("Pass", output)  # some files should have the correct hash
+        self.assertIn("Fail", output)
 
     def test_hash_stdin_implicit(self):
         """test hashing of stdin without arg"""
