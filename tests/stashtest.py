@@ -29,7 +29,7 @@ class StashTestCase(unittest.TestCase):
         self.stash("stashconf py_traceback 1")
         self.cwd = os.path.abspath(os.path.expandvars(self.cwd))
         self.logger.info("Target CWD is: "+ str(self.cwd))
-        self.stash('cd ' + self.cwd, persistent_level=1)
+        self.stash('cd ' + self.cwd, persistent_level=2)
         self.logger.debug("After cd, CWD is: " + os.getcwd())
         for c in self.setup_commands:
             self.logger.debug("executing setup command: " + repr(c))
@@ -78,7 +78,7 @@ class StashTestCase(unittest.TestCase):
             # do NOT return here, script may be alias
         outs = StringIO()
         self.logger.info("Executing: " + repr(command))
-        worker = self.stash(command, persistent_level=1, final_outs=outs, final_errs=outs) #  1 for mimicking running from console
+        worker = self.stash(command, persistent_level=1, final_outs=outs, final_errs=outs, cwd=self.cwd) #  1 for mimicking running from console
         output = outs.getvalue()
         returnvalue = worker.state.return_value
         self.logger.debug(output)
