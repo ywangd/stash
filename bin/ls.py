@@ -124,7 +124,8 @@ def main(args):
                 return filename
 
     if len(ns.files) == 0:
-        out = joiner.join(_fmt(f) for f in os.listdir('.') if _filter(f))
+        filenames =  [".", ".."] + os.listdir('.')
+        out = joiner.join(_fmt(f) for f in filenames if _filter(f))
         print(out)
 
     else:
@@ -136,9 +137,11 @@ def main(args):
                 out_miss.append('ls: %s: No such file or directory' % f)
                 exitcode = 1
             elif os.path.isdir(f):
+                filenames = [".", ".."] + os.listdir(f)
+                fn = (f[:-1] if f.endswith("/") else f)
                 out_dir.append('%s/:\n%s\n' %
-                               (f,
-                                joiner.join(_fmt(sf, f) for sf in os.listdir(f) if _filter(sf))))
+                               (fn,
+                                joiner.join(_fmt(sf, f) for sf in filenames if _filter(sf))))
             else:
                 out_file.append(_fmt(f))
 
