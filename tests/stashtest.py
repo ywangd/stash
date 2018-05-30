@@ -9,8 +9,47 @@ try:
 except ImportError:
     from io import StringIO
 
+import requests
+
 from stash import stash
 from stash.system.shcommon import _STASH_ROOT
+
+
+def network_is_available():
+    """
+    Check whether the network is available.
+    :return: whether the network is available.
+    :rtype: bool
+    """
+    # to be sure, test multiple sites in case one of them is offline
+    test_sites = [
+        "https://github.com/ywangd/stash/",  # main StaSh repo
+        "https://forum.omz-software.com/",  # pythonista forums
+        "https://python.org/",  # python website
+        ]
+    for url in test_sites:
+        try:
+            requests.get(url, timeout=5.0)
+        except (requests.ConnectionError, requests.Timeout):
+            # can not connect, retry.
+            continue
+        else:
+            # successfully connected.
+            return True
+    return False
+
+
+def requires_network(f):
+    """
+    Decorator for specifying that a test needs a network connection.
+    If no network connection is available, skip test.
+    :param f: test function
+    :type f: callable
+    :return: decorated function
+    :rtype: callable
+    """
+    network_unavailable = (not network_is_available())
+    return unittest.skipIf(network_unavailable, "No network connection available.")(f)
 
 
 class StashTestCase(unittest.TestCase):
