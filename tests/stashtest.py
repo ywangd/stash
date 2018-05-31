@@ -12,7 +12,7 @@ except ImportError:
 import requests
 
 from stash import stash
-from stash.system.shcommon import _STASH_ROOT
+from stash.system.shcommon import _STASH_ROOT, PY3
 
 
 def network_is_available():
@@ -50,6 +50,20 @@ def requires_network(f):
     """
     network_unavailable = (not network_is_available())
     return unittest.skipIf(network_unavailable, "No network connection available.")(f)
+
+
+def expected_failure_on_py3(f):
+    """
+    Decorator for specifying that a test will probably fail on py3.
+    :param f: test function
+    :type f: callable
+    :return: decorated function
+    :rtype: callable
+    """
+    if PY3:
+        return unittest.expectedFailure(f)
+    else:
+        return f
 
 
 class StashTestCase(unittest.TestCase):

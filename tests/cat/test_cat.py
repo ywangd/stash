@@ -1,5 +1,6 @@
 """tests for the 'cat' command."""
 import os
+from unittest import expectedFailure
 
 from stash.tests.stashtest import StashTestCase
 
@@ -55,3 +56,9 @@ class CatTests(StashTestCase):
         self.assertIn("cat: ", output)
         self.assertIn("No such file or directory: ", output)
         self.assertIn("invalid.txt", output)
+
+    @expectedFailure
+    def test_cat_nonascii(self):
+        """test 'cat <some file containing non-ascii characters.>'."""
+        output = self.run_command("cat nonascii.txt", exitcode=0).replace("\n", "")
+        self.assertEqual(output, "äöüß")
