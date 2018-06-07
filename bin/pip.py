@@ -10,11 +10,11 @@ optional arguments:
 List of sub-commands:
     sub-command     "pip sub-command -h" for more help on a sub-command
         list        list packages installed
-        install     install a package
-        download    download a package
+        install     install packages
+        download    download packages
         search      search with the given word fragment
         versions    find versions available for the given package
-        remove      removed an installed package
+        uninstall   uninstall packages
         update      update an installed package
 """
 from __future__ import print_function
@@ -28,6 +28,7 @@ import requests
 import re
 import operator
 import traceback
+import site
 
 import six
 from distutils.util import convert_path
@@ -37,21 +38,40 @@ from six.moves import filterfalse
 
 from stashutils.extensions import create_command
 
+from stash.system.shcommon import IN_PYTHONISTA
+
 
 try:
     unicode
 except NameError:
     unicode = str
 
-PYTHONISTA_BUNDLED_MODULES = [
-    'bottle', 'beautifulsoup4', 'pycrypto', 'py-dateutil',
-    'dropbox', 'ecdsa', 'evernote', 'Faker', 'feedparser', 'flask', 'html2text',
-    'html5lib', 'httplib2', 'itsdangerous', 'jedi', 'jinja2', 'markdown', 'markdown2',
-    'matplotlib', 'mechanize', 'midiutil', 'mpmath', 'numpy', 'oauth2', 'paramiko',
-    'parsedatetime', 'Pillow', 'pycparser', 'pyflakes', 'pygments', 'pyparsing',
-    'PyPDF2', 'pytz', 'qrcode', 'reportlab', 'requests', 'simpy', 'six', 'sqlalchemy',
-    'pysqlite', 'sympy', 'thrift', 'werkzeug', 'wsgiref', 'pisa', 'xmltodict', 'PyYAML'
-]
+if IN_PYTHONISTA:
+    PYTHONISTA_BUNDLED_MODULES = [
+        'bottle', 'beautifulsoup4', 'pycrypto', 'py-dateutil',
+        'dropbox', 'ecdsa', 'evernote', 'Faker', 'feedparser', 'flask', 'html2text',
+        'html5lib', 'httplib2', 'itsdangerous', 'jedi', 'jinja2', 'markdown', 'markdown2',
+        'matplotlib', 'mechanize', 'midiutil', 'mpmath', 'numpy', 'oauth2', 'paramiko',
+        'parsedatetime', 'Pillow', 'pycparser', 'pyflakes', 'pygments', 'pyparsing',
+        'PyPDF2', 'pytz', 'qrcode', 'reportlab', 'requests', 'simpy', 'six', 'sqlalchemy',
+        'pysqlite', 'sympy', 'thrift', 'werkzeug', 'wsgiref', 'pisa', 'xmltodict', 'PyYAML'
+    ]
+
+    if _stash.PY3:
+        SITE_PACKAGES_DIR_NAME = 'site-packages-3'
+    else:
+        SITE_PACKAGES_DIR_NAME = 'site-packages-2'
+    OLD_SITE_PACKAGES_DIR_NAME = 'site-packages'
+    SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(SITE_PACKAGES_DIR_NAME))
+    OLD_SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(OLD_SITE_PACKAGES_DIR_NAME))
+
+else:
+    PYTHONISTA_BUNDLED_MODULES = []
+    SITE_PACKAGES_FOLDER = site.getsitepackages()[0]
+    OLD_SITE_PACKAGES_FOLDER = site.getsitepackages()[0]
+    SITE_PACKAGES_DIR_NAME = os.path.basename(SITE_PACKAGES_FOLDER)
+    OLD_SITE_PACKAGES_DIR_NAME = os.path.basename(OLD_SITE_PACKAGES_FOLDER)
+
 
 # Some packages use wrong name for their dependencies
 PACKAGE_NAME_FIXER = {
@@ -59,15 +79,6 @@ PACKAGE_NAME_FIXER = {
 }
 
 _stash = globals()['_stash']
-
-if _stash.PY3:
-    SITE_PACKAGES_DIR_NAME = 'site-packages-3'
-else:
-    SITE_PACKAGES_DIR_NAME = 'site-packages-2'
-OLD_SITE_PACKAGES_DIR_NAME = 'site-packages'
-
-SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(SITE_PACKAGES_DIR_NAME))
-OLD_SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(OLD_SITE_PACKAGES_DIR_NAME))
 
 NO_OVERWRITE = False
 
@@ -831,7 +842,7 @@ class PackageRepository(object):
         print('Package installed: {}'.format(pkg_name))
 
         for pkg_name, ver_spec in name_versions:
-            
+
             if pkg_name == 'setuptools':  # do not install setuptools
                 continue
 
@@ -1241,19 +1252,36 @@ if __name__ == '__main__':
 
     list_parser = subparsers.add_parser('list', help='list packages installed')
 
-    install_parser = subparsers.add_parser('install', help='install a package')
-    install_parser.add_argument('requirement',
-    help='the requirement specifier for installation')
-    install_parser.add_argument('-N', '--no-overwrite', action='store_true', default=False,
-    help='Do not overwrite existing folder/files')
-    install_parser.add_argument('-d', '--directory',
-    help='target directory for installation')
+    install_parser = subparsers.add_parser('install', help='install packages')
+    install_parser.add_argument(
+        'requirements',
+        help='the requirement specifier for installation',
+        nargs="+",
+        )
+    install_parser.add_argument(
+        '-N',
+        '--no-overwrite',
+        action='store_true',
+        default=False,
+        help='Do not overwrite existing folder/files',
+        )
+    install_parser.add_argument(
+        '-d',
+        '--directory',
+        help='target directory for installation',
+        )
 
-    download_parser = subparsers.add_parser('download', help='download a package')
-    download_parser.add_argument('requirement',
-    help='the requirement specifier for download')
-    download_parser.add_argument('-d', '--directory',
-    help='the directory to save the downloaded file')
+    download_parser = subparsers.add_parser('download', help='download packages')
+    download_parser.add_argument(
+        'requirements',
+        help='the requirement specifier for download',
+        nargs="+",
+        )
+    download_parser.add_argument(
+        '-d',
+        '--directory',
+        help='the directory to save the downloaded file',
+        )
 
     search_parser = subparsers.add_parser('search', help='search with the given word fragment')
     search_parser.add_argument('term', help='the word fragment to search')
@@ -1261,14 +1289,19 @@ if __name__ == '__main__':
     versions_parser = subparsers.add_parser('versions', help='find versions available for given package')
     versions_parser.add_argument('package_name', help='the package name')
 
-    remove_parser = subparsers.add_parser('remove', help='remove an installed package')
-    remove_parser.add_argument('package_name', help='the package name')
+    remove_parser = subparsers.add_parser('uninstall', help='uninstall packages')
+    remove_parser.add_argument(
+        'packages',
+        nargs="+",
+        metavar="package",
+        help='packages to uninstall',
+        )
 
     update_parser = subparsers.add_parser('update', help='update an installed package')
-    update_parser.add_argument('package_name', help='the package name')
+    update_parser.add_argument('packages', nargs="+", help='the package name')
 
     ns = ap.parse_args()
-    
+
     try:
         if ns.sub_command == 'list':
             repository = get_repository('pypi', site_packages=ns.site_packages, verbose=ns.verbose)
@@ -1281,24 +1314,26 @@ if __name__ == '__main__':
                 site_packages = ns.directory
             else:
                 site_packages = ns.site_packages
-            repository = get_repository(ns.requirement, site_packages=site_packages, verbose=ns.verbose)
-            NO_OVERWRITE = ns.no_overwrite
+            for requirement in ns.requirements:
+                repository = get_repository(requirement, site_packages=site_packages, verbose=ns.verbose)
+                NO_OVERWRITE = ns.no_overwrite
 
-            pkg_name, ver_spec = VersionSpecifier.parse_requirement(ns.requirement)
+                pkg_name, ver_spec = VersionSpecifier.parse_requirement(requirement)
 
-            with save_current_sys_modules():
-                fake_setuptools_modules()
-                ensure_pkg_resources()  # install pkg_resources if needed
-                # start with what we have installed (i.e. in the config file)
-                sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
-                repository.install(pkg_name, ver_spec)
+                with save_current_sys_modules():
+                    fake_setuptools_modules()
+                    ensure_pkg_resources()  # install pkg_resources if needed
+                    # start with what we have installed (i.e. in the config file)
+                    sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
+                    repository.install(pkg_name, ver_spec)
 
         elif ns.sub_command == 'download':
-            repository = get_repository(ns.requirement, site_packages=ns.site_packages, verbose=ns.verbose)
-            pkg_name, ver_spec = VersionSpecifier.parse_requirement(ns.requirement)
-            archive_filename, pkg_info = repository.download(pkg_name, ver_spec)
-            directory = ns.directory or os.getcwd()
-            shutil.move(archive_filename, directory)
+            for requirement in ns.requirements:
+                repository = get_repository(requirement, site_packages=ns.site_packages, verbose=ns.verbose)
+                pkg_name, ver_spec = VersionSpecifier.parse_requirement(requirement)
+                archive_filename, pkg_info = repository.download(pkg_name, ver_spec)
+                directory = ns.directory or os.getcwd()
+                shutil.move(archive_filename, directory)
 
         elif ns.sub_command == 'search':
             repository = get_repository('pypi', site_packages=ns.site_packages, verbose=ns.verbose)
@@ -1313,19 +1348,21 @@ if __name__ == '__main__':
             for hit in version_hits:
                 print('{} - {}'.format(ns.package_name, hit))
 
-        elif ns.sub_command == 'remove':
-            repository = get_repository('pypi', site_packages=ns.site_packages, verbose=ns.verbose)
-            repository.remove(ns.package_name)
+        elif ns.sub_command == 'uninstall':
+            for package_name in ns.packages:
+                repository = get_repository('pypi', site_packages=ns.site_packages, verbose=ns.verbose)
+                repository.remove(package_name)
 
         elif ns.sub_command == 'update':
-            repository = get_repository(ns.package_name, site_packages=ns.site_packages, verbose=ns.verbose)
+            for package_name in ns.packages:
+                repository = get_repository(ns.package_name, site_packages=ns.site_packages, verbose=ns.verbose)
 
-            with save_current_sys_modules():
-                fake_setuptools_modules()
-                ensure_pkg_resources()  # install pkg_resources if needed
-                # start with what we have installed (i.e. in the config file)
-                sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
-                repository.update(ns.package_name)
+                with save_current_sys_modules():
+                    fake_setuptools_modules()
+                    ensure_pkg_resources()  # install pkg_resources if needed
+                    # start with what we have installed (i.e. in the config file)
+                    sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
+                    repository.update(package_name)
         else:
             raise PipError('unknown command: {}'.format(ns.sub_command))
 
