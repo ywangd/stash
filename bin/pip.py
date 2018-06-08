@@ -41,6 +41,9 @@ from stashutils.extensions import create_command
 from stash.system.shcommon import IN_PYTHONISTA
 
 
+_stash = globals()['_stash']
+
+
 try:
     unicode
 except NameError:
@@ -77,8 +80,6 @@ else:
 PACKAGE_NAME_FIXER = {
     'lazy_object_proxy': 'lazy-object-proxy',
 }
-
-_stash = globals()['_stash']
 
 NO_OVERWRITE = False
 
