@@ -2,14 +2,14 @@
 
 """
 Usage: 
-	ping [-c <count>] [-i <interval>] [-W <timeout>] <destination>
+    ping [-c <count>] [-i <interval>] [-W <timeout>] <destination>
 
 Options:
-	-c <count>, --count=<count>  [default: 5]
-	-i <interval>, --interval=<interval>  [default: 1.0]
-		Wait interval seconds between sending each packet. The default is to wait for one second between each packet normally.
-	-W <timeout>, --timeout=<timeout>  [default: 2.]
-		Time to wait for a response, in seconds. The option affects only timeout in absense of any responses, otherwise ping waits for two RTTs.
+    -c <count>, --count=<count>  [default: 5]
+    -i <interval>, --interval=<interval>  [default: 1.0]
+        Wait interval seconds between sending each packet. The default is to wait for one second between each packet normally.
+    -W <timeout>, --timeout=<timeout>  [default: 2.]
+        Time to wait for a response, in seconds. The option affects only timeout in absense of any responses, otherwise ping waits for two RTTs.
     A pure python ping implementation using raw socket.
 
 
@@ -87,6 +87,7 @@ import socket
 import struct
 import sys
 import time
+import argparse
 
 from six.moves import xrange
 
@@ -96,38 +97,6 @@ default_timer = time.clock if sys.platform == "win32" else time.time
 
 # From /usr/include/linux/icmp.h; your milage may vary.
 ICMP_ECHO_REQUEST = 8  # Seems to be the same on Solaris.
-
-
-def install_module_from_github(username, package_name, folder, version):
-    """
-    Install python module from github zip files
-    """
-    cmd_string = """
-        echo Installing {1} {3} ...
-        wget https://github.com/{0}/{1}/archive/{3}.zip -o $TMPDIR/{1}.zip
-        mkdir $TMPDIR/{1}_src
-        unzip $TMPDIR/{1}.zip -d $TMPDIR/{1}_src
-        rm -f $TMPDIR/{1}.zip
-        mv $TMPDIR/{1}_src/{2} $STASH_ROOT/lib/
-        rm -rf $TMPDIR/{1}_src
-        echo Done
-        """.format(username,
-                   package_name,folder,
-                   version
-                   )
-    globals()['_stash'](cmd_string)
-
-
-try:
-    libpath=os.path.join(os.environ['STASH_ROOT'] ,'lib')
-    if not libpath in sys.path:
-        sys.path.insert(1,libpath)
-    import docopt
-except ImportError:
-	install_module_from_github('docopt','docopt','docopt.py','master')
-	import docopt
-
-
 
 
 def checksum(source_string):
@@ -239,11 +208,12 @@ def do_one(dest_addr, timeout):
     return delay
 
 
-def verbose_ping(dest_addr, timeout = 2, count = 4,interval=1.):
+def verbose_ping(dest_addr, timeout = 2, count = 4,interval=1.0):
     """
     Send >count< ping to >dest_addr< with the given >timeout< and display
     the result.
     """
+    ping_succeeded = False
     for i in xrange(count):
         print("ping %s..." % dest_addr, end=' ')
         try:
@@ -257,16 +227,22 @@ def verbose_ping(dest_addr, timeout = 2, count = 4,interval=1.):
         else:
             time.sleep(min(0,interval-delay))
             print("got ping in %0.4fms\n" % (delay*1000))
+            ping_succeeded = True
+    return ping_succeeded
 
 
 if __name__ == '__main__':
 
-	
-	import sys
-	if len(sys.argv)==1:
-		sys.argv.append('--help')
+    parser = argparse.ArgumentParser(description="send ICMP ECHO_REQUEST to network hosts")
+    parser.add_argument("destination", help="host to ping")
+    parser.add_argument("-W", "--timeout", help="specify a timeout", type=float, default=2)
+    parser.add_argument("-c", "--count", help="stop after sending this much ECHO_REQUEST packkets", type=int, default=5)
+    parser.add_argument("-i", "--interval", help="Wait the specified time between each ping", type=float, default=1.0)
+    
+    ns = parser.parse_args()
 
-	args=docopt.docopt(__doc__, version='0.1', options_first=True)
-
-	dest=args['<destination>']
-	verbose_ping(dest, float(args['--timeout']),int(args['--count']),float(args['--interval']))
+    s = verbose_ping(ns.destination, ns.timeout, ns.count ,ns.interval)
+    if s:
+        sys.exit(0)
+    else:
+        sys.exit(1)
