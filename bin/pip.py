@@ -28,7 +28,6 @@ import requests
 import re
 import operator
 import traceback
-import site
 
 import six
 from distutils.util import convert_path
@@ -70,8 +69,8 @@ if IN_PYTHONISTA:
 
 else:
     PYTHONISTA_BUNDLED_MODULES = []
-    SITE_PACKAGES_FOLDER = site.getsitepackages()[0]
-    OLD_SITE_PACKAGES_FOLDER = site.getsitepackages()[0]
+    SITE_PACKAGES_FOLDER = os.path.expandvars("$STASH_ROOT/lib/")
+    OLD_SITE_PACKAGES_FOLDER = os.path.expandvars("$STASH_ROOT/lib/")
     SITE_PACKAGES_DIR_NAME = os.path.basename(SITE_PACKAGES_FOLDER)
     OLD_SITE_PACKAGES_DIR_NAME = os.path.basename(OLD_SITE_PACKAGES_FOLDER)
 
