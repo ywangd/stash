@@ -49,7 +49,7 @@ class PingTests(StashTestCase):
             dt = et - st
             self.assertIn("got ping in " + target, output)
             self.assertNotIn("failed", output)
-            c = output.count("got ping in")
+            n = output.count("got ping in")
             self.assertEqaual(n, c)
             mintime = c * t
             maxtime = c * t + 5
