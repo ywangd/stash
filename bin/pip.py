@@ -1012,7 +1012,7 @@ class PyPIRepository(PackageRepository):
 
         worker = _stash('wget {} -o $TMPDIR/{}'.format(source['url'], source['filename']))
 
-        if worker.state.environ.get('?', 0) != 0:
+        if worker.state.return_value != 0:
             raise PipError('failed to download package from {}'.format(source['url']))
 
         return os.path.join(os.getenv('TMPDIR'), source['filename']), pkg_info
@@ -1365,6 +1365,10 @@ if __name__ == '__main__':
                     repository.update(package_name)
         else:
             raise PipError('unknown command: {}'.format(ns.sub_command))
+            sys.exit(1)
 
     except PipError as e:
         print('Error: {}'.format(e))
+        if ns.verbose:
+            traceback.print_exc()
+        sys.exit(1)

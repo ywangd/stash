@@ -70,9 +70,9 @@ class PipTests(StashTestCase):
     @requires_network
     def test_install_pypi_simple(self):
         """test 'pip install <pypi_package>'."""
-        output = self.run_command("pip install benterfaces", exitcode=0)
+        output = self.run_command("pip --verbose install benterfaces", exitcode=0)
         self.assertIn("Downloading package", output)
-        self.assertIn("Running setu file", output)
+        self.assertIn("Running setup file", output)
         self.assertIn("Package installed: benterfaces", output)
         self.assertNotIn("Failed to run setup.py")
         try:
