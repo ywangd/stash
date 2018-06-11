@@ -74,9 +74,8 @@ class PipTests(StashTestCase):
         self.assertIn("Downloading package", output)
         self.assertIn("Running setup file", output)
         self.assertIn("Package installed: benterfaces", output)
-        self.assertNotIn("Failed to run setup.py")
+        self.assertNotIn("Failed to run setup.py", output)
         try:
             import benterfaces
         except ImportError as e:
             raise AssertionError("Could not import installed module: " + repr(e))
-
