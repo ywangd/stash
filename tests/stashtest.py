@@ -3,6 +3,7 @@
 import os
 import unittest
 import logging
+import tempfile
 
 try:
     from StringIO import StringIO
@@ -71,13 +72,21 @@ class StashTestCase(unittest.TestCase):
 
     cwd = "$STASH_ROOT"
     setup_commands = []
+    environment = {
+        "STASH_ROOT": _STASH_ROOT,
+        "TMP": tempfile.gettempdir(),
+        "TMPDIR": tempfile.gettempdir(),
+    }
 
     def setUp(self):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.stash = stash.StaSh()
-        if not "STASH_ROOT" in os.environ:
-            self.logger.debug("Setting $STASH_ROOT to: " + repr(_STASH_ROOT))
-            os.environ["STASH_ROOT"] = _STASH_ROOT
+        self.logger.debug("preparing environment...")
+        for kn in self.environment:
+            if kn not in os.environ:
+                v = self.environment[kn]
+                self.logger.debug("Setting $" + str(kn) + " to: " + repr(v))
+                os.environ[kn] = v
         self.logger.debug("Enabling tracebacks...")
         self.stash("stashconf py_traceback 1")
         self.cwd = os.path.abspath(os.path.expandvars(self.cwd))
