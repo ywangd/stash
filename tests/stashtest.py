@@ -1,6 +1,7 @@
 """utility StaSh testcase for common methids"""
 # coding=utf-8
 import os
+import sys
 import unittest
 import logging
 import tempfile
@@ -81,18 +82,27 @@ class StashTestCase(unittest.TestCase):
     def setUp(self):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.stash = stash.StaSh()
+
         self.logger.debug("preparing environment...")
         for kn in self.environment:
             if kn not in os.environ:
                 v = self.environment[kn]
                 self.logger.debug("Setting $" + str(kn) + " to: " + repr(v))
                 os.environ[kn] = v
+
+        self.logger.debug("preparing sys.path...")
+        libpath = os.path.abspath(os.path.join(_STASH_ROOT, "lib"))
+
         self.logger.debug("Enabling tracebacks...")
+        if libpath not in sys.path:
+            sys.path.append(libpath)
         self.stash("stashconf py_traceback 1")
+
         self.cwd = os.path.abspath(os.path.expandvars(self.cwd))
         self.logger.info("Target CWD is: "+ str(self.cwd))
         self.stash('cd ' + self.cwd, persistent_level=1)
         self.logger.debug("After cd, CWD is: " + os.getcwd())
+
         for c in self.setup_commands:
             self.logger.debug("executing setup command: " + repr(c))
             self.stash(c, persistent_level=1)

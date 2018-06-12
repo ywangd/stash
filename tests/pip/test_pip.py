@@ -1,5 +1,6 @@
 """tests for the 'pip' command."""
 import os
+import sys
 
 from stash.tests.stashtest import StashTestCase, requires_network
 
@@ -78,4 +79,5 @@ class PipTests(StashTestCase):
         try:
             import benterfaces
         except ImportError as e:
+            self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
