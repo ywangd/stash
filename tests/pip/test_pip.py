@@ -69,8 +69,8 @@ class PipTests(StashTestCase):
         self.assertIn("pytest - 3.5.0", output)
 
     @requires_network
-    def test_install_pypi_simple(self):
-        """test 'pip install <pypi_package>'."""
+    def test_install_pypi_simple_1(self):
+        """test 'pip install <pypi_package>' (Test 1)."""
         output = self.run_command("pip --verbose install benterfaces", exitcode=0)
         self.assertIn("Downloading package", output)
         self.assertIn("Running setup file", output)
@@ -81,3 +81,80 @@ class PipTests(StashTestCase):
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
+     
+    @requires_network
+    def test_install_pypi_simple_2(self):
+        """test 'pip install <pypi_package>' (Test 2)."""
+        output = self.run_command("pip --verbose install nose", exitcode=0)
+        self.assertIn("Downloading package", output)
+        self.assertIn("Running setup file", output)
+        self.assertIn("Package installed: nose", output)
+        self.assertNotIn("Failed to run setup.py", output)
+        try:
+            import nose
+        except ImportError as e:
+            self.logger.info("sys.path = " + str(sys.path))
+            raise AssertionError("Could not import installed module: " + repr(e))
+    
+    @requires_network
+    def test_install_pypi_version_1(self):
+        """test 'pip install <pypi_package>==<specific_version_1>' (Test 1)."""
+        output = self.run_command("pip --verbose install nose==1.1.0", exitcode=0)
+        self.assertIn("Downloading package", output)
+        self.assertIn("Running setup file", output)
+        self.assertIn("Package installed: nose", output)
+        self.assertNotIn("Failed to run setup.py", output)
+        try:
+            import nose
+            reload(nose)
+        except ImportError as e:
+            self.logger.info("sys.path = " + str(sys.path))
+            raise AssertionError("Could not import installed module: " + repr(e))
+        else:
+            self.assertEqual(nose.__version__, "1.1.0")
+    
+    @requires_network
+    def test_install_pypi_version_2(self):
+        """test 'pip install <pypi_package>==<specific_version_2>' (Test 2)."""
+        output = self.run_command("pip --verbose install nose==1.3.0", exitcode=0)
+        self.assertIn("Downloading package", output)
+        self.assertIn("Running setup file", output)
+        self.assertIn("Package installed: nose", output)
+        self.assertNotIn("Failed to run setup.py", output)
+        try:
+            import nose
+            reload(nose)
+        except ImportError as e:
+            self.logger.info("sys.path = " + str(sys.path))
+            raise AssertionError("Could not import installed module: " + repr(e))
+        else:
+            self.assertEqual(nose.__version__, "1.3.0")
+    
+    @requires_network
+    def test_update(self):
+        """test 'pip update <pypi_package>'."""
+        output = self.run_command("pip --verbose install nose==1.2.0", exitcode=0)
+        self.assertIn("Downloading package", output)
+        self.assertIn("Running setup file", output)
+        self.assertIn("Package installed: nose", output)
+        self.assertNotIn("Failed to run setup.py", output)
+        try:
+            import nose
+            reload(nose)
+        except ImportError as e:
+            self.logger.info("sys.path = " + str(sys.path))
+            raise AssertionError("Could not import installed module: " + repr(e))
+        else:
+            self.assertEqual(nose.__version__, "1.2.0")
+            del nose
+        output = self.run_command("pip --verbose update nose", exitcode=0)
+        try:
+            import nose
+            reload(nose)
+        except ImportError as e:
+            self.logger.info("sys.path = " + str(sys.path))
+            raise AssertionError("Could not import installed module: " + repr(e))
+        else:
+            self.assertNotEqual(nose.__version__, "1.2.0")
+            del nose
+
