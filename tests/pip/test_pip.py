@@ -2,6 +2,8 @@
 import os
 import sys
 
+from six.moves import reload_module
+
 from stash.tests.stashtest import StashTestCase, requires_network
 
 
@@ -106,7 +108,7 @@ class PipTests(StashTestCase):
         self.assertNotIn("Failed to run setup.py", output)
         try:
             import nose
-            reload(nose)
+            reload_module(nose)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
@@ -123,7 +125,7 @@ class PipTests(StashTestCase):
         self.assertNotIn("Failed to run setup.py", output)
         try:
             import nose
-            reload(nose)
+            reload_module(nose)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
@@ -140,7 +142,7 @@ class PipTests(StashTestCase):
         self.assertNotIn("Failed to run setup.py", output)
         try:
             import nose
-            reload(nose)
+            reload_module(nose)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
@@ -150,11 +152,10 @@ class PipTests(StashTestCase):
         output = self.run_command("pip --verbose update nose", exitcode=0)
         try:
             import nose
-            reload(nose)
+            reload_module(nose)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
         else:
             self.assertNotEqual(nose.__version__, "1.2.0")
             del nose
-
