@@ -24,7 +24,7 @@ def create_file(dest, content):
 	"""
 	if not isinstance(content, (binary_type, text_type)):
 		content = content.read()
-	parent = os.path.dest(dest)
+	parent = os.path.dirname(dest)
 	if not os.path.exists(parent):
 		os.makedirs(parent)
 	with open(dest, "wb") as f:
