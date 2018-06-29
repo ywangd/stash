@@ -1,3 +1,0 @@
-temp file for the tests
-git requires a file in a directory to habdle the directory.
-This file should be removed in the future.

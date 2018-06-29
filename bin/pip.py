@@ -1355,7 +1355,7 @@ if __name__ == '__main__':
 
         elif ns.sub_command == 'update':
             for package_name in ns.packages:
-                repository = get_repository(ns.package_name, site_packages=ns.site_packages, verbose=ns.verbose)
+                repository = get_repository(package_name, site_packages=ns.site_packages, verbose=ns.verbose)
 
                 with save_current_sys_modules():
                     fake_setuptools_modules()
