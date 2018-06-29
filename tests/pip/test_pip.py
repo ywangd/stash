@@ -177,4 +177,11 @@ class PipTests(StashTestCase):
         
         output = self.run_command("stash_pip_test", exitcode=0)
         self.assertIn("local pip test successfull!", output)
-        
+    
+    def test_install_github(self):
+        """test 'pip install <owner>/<repo>'."""
+        output = self.run_command("pip --verbose install bennr01/benterfaces", exitcode=0)
+        self.assertIn("Working on GitHub repository ...", output)
+        self.assertIn("Running setup file", output)
+        self.assertIn("Package installed: benterfaces-master", output)
+        self.assertNotIn("Failed to run setup.py", output)
