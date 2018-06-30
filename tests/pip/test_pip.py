@@ -36,7 +36,7 @@ class PipTests(StashTestCase):
             if package in ("", " ", "\n"):
                 continue
             self.run_command("pip uninstall " + package)
-    
+
     def reload_module(self, m):
         """reload a module."""
         reload_module(m)
@@ -88,7 +88,7 @@ class PipTests(StashTestCase):
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
-     
+
     @requires_network
     def test_install_pypi_simple_2(self):
         """test 'pip install <pypi_package>' (Test 2)."""
@@ -102,69 +102,69 @@ class PipTests(StashTestCase):
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
-    
+
     @requires_network
     def test_install_pypi_version_1(self):
         """test 'pip install <pypi_package>==<specific_version_1>' (Test 1)."""
-        output = self.run_command("pip --verbose install nose==1.1.0", exitcode=0)
+        output = self.run_command("pip --verbose install rsa==3.4.2", exitcode=0)
         self.assertIn("Downloading package", output)
         self.assertIn("Running setup file", output)
-        self.assertIn("Package installed: nose", output)
+        self.assertIn("Package installed: rsa", output)
         self.assertNotIn("Failed to run setup.py", output)
         try:
-            import nose
-            self.reload_module(nose)
+            import rsa
+            self.reload_module(rsa)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
         else:
-            self.assertEqual(nose.__version__, "1.1.0")
-    
+            self.assertEqual(rsa.__version__, "3.4.2")
+
     @requires_network
     def test_install_pypi_version_2(self):
         """test 'pip install <pypi_package>==<specific_version_2>' (Test 2)."""
-        output = self.run_command("pip --verbose install nose==1.3.0", exitcode=0)
+        output = self.run_command("pip --verbose install rsa==3.2.2", exitcode=0)
         self.assertIn("Downloading package", output)
         self.assertIn("Running setup file", output)
-        self.assertIn("Package installed: nose", output)
+        self.assertIn("Package installed: rsa", output)
         self.assertNotIn("Failed to run setup.py", output)
         try:
-            import nose
-            self.reload_module(nose)
+            import rsa
+            self.reload_module(rsa)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
         else:
-            self.assertEqual(nose.__version__, "1.3.0")
-    
+            self.assertEqual(rsa.__version__, "3.2.2")
+
     @unittest.skip("test not fully working")
     @requires_network
     def test_update(self):
         """test 'pip update <pypi_package>'."""
-        output = self.run_command("pip --verbose install nose==1.3.0", exitcode=0)
+        output = self.run_command("pip --verbose install rsa==3.2.3", exitcode=0)
         self.assertIn("Downloading package", output)
         self.assertIn("Running setup file", output)
-        self.assertIn("Package installed: nose", output)
+        self.assertIn("Package installed: rsa", output)
         self.assertNotIn("Failed to run setup.py", output)
         try:
-            import nose
-            self.reload_module(nose)
+            import rsa
+            self.reload_module(rsa)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
         else:
-            self.assertEqual(nose.__version__, "1.3.0")
-            del nose
-        output = self.run_command("pip --verbose update nose", exitcode=0)
+            self.assertEqual(rsa.__version__, "3.2.3")
+            del rsa
+        output = self.run_command("pip --verbose update rsa", exitcode=0)
         try:
-            import nose
-            self.reload_module(nose)
+            import rsa
+            self.reload_module(rsa)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
         else:
-            self.assertNotEqual(nose.__version__, "1.3.0")
-            del nose
+            self.assertNotEqual(rsa.__version__, "3.2.3")
+            del rsa
 
     def test_install_local(self):
         """test 'pip install <path/to/package/>'."""
@@ -174,10 +174,10 @@ class PipTests(StashTestCase):
         self.assertNotIn("Downloading package", output)
         self.assertIn("Running setup file", output)
         self.assertNotIn("Failed to run setup.py", output)
-        
+
         output = self.run_command("stash_pip_test", exitcode=0)
         self.assertIn("local pip test successfull!", output)
-    
+
     def test_install_github(self):
         """test 'pip install <owner>/<repo>'."""
         output = self.run_command("pip --verbose install bennr01/benterfaces", exitcode=0)
