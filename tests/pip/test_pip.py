@@ -105,6 +105,45 @@ class PipTests(StashTestCase):
             raise AssertionError("Could not import installed module: " + repr(e))
 
     @requires_network
+    def test_install_pypi_complex_1(self):
+        """test 'pip install <pypi_package>' with a complex package."""
+        output = self.run_command("pip --verbose install twisted", exitcode=0)
+        self.assertIn("Downloading package", output)
+        self.assertIn("Running setup file", output)
+        self.assertIn("Package installed: Twisted", output)
+        self.assertNotIn("Failed to run setup.py", output)
+        try:
+            import twisted
+        except ImportError as e:
+            self.logger.info("sys.path = " + str(sys.path))
+            raise AssertionError("Could not import installed module: " + repr(e))
+
+    @requires_network
+    def test_install_command(self):
+        """test 'pip install <package>' creates commandline scripts."""
+        # 1. test command not yet installed
+        self.run_command("pyrsa-keygen --help", exitcode=127)
+
+        # 2. install
+        output = self.run_command("pip --verbose install rsa", exitcode=0)
+        self.assertIn("Downloading package", output)
+        self.assertIn("Running setup file", output)
+        self.assertIn("Package installed: rsa", output)
+        self.assertNotIn("Failed to run setup.py", output)
+
+        # 3. test command
+        output = self.run_command("pyrsa-keygen --help", exitcode=0)
+        self.assertIn("pyrsa-keygen", output)
+        self.assertIn("RSA", output)
+
+        # 4. remove package
+        self.run_command("pip --verbose uninstall rsa", exitcode=0)
+
+        # 5. ensure command not found after uninstall
+        self.run_command("pyrsa-keygen --help", exitcode=127)
+
+
+    @requires_network
     def test_install_pypi_version_1(self):
         """test 'pip install <pypi_package>==<specific_version_1>' (Test 1)."""
         output = self.run_command("pip --verbose install rsa==3.4.2", exitcode=0)
@@ -176,6 +215,12 @@ class PipTests(StashTestCase):
         self.assertIn("Running setup file", output)
         self.assertNotIn("Failed to run setup.py", output)
 
+        try:
+            import stpkg
+        except ImportError as e:
+            self.logger.info("sys.path = " + str(sys.path))
+            raise AssertionError("Could not import installed module: " + repr(e))
+
         output = self.run_command("stash_pip_test", exitcode=0)
         self.assertIn("local pip test successfull!", output)
 
@@ -186,3 +231,39 @@ class PipTests(StashTestCase):
         self.assertIn("Running setup file", output)
         self.assertIn("Package installed: benterfaces-master", output)
         self.assertNotIn("Failed to run setup.py", output)
+
+        try:
+            import benterfaces
+        except ImportError as e:
+            self.logger.info("sys.path = " + str(sys.path))
+            raise AssertionError("Could not import installed module: " + repr(e))
+
+    def test_uninstall(self):
+        """test 'pip uninstall <package>."""
+        # 1. install package
+        self.run_command("zip ./stpkg.zip ./stpkg/", exitcode=0)
+        output = self.run_command("pip --verbose install stpkg.zip", exitcode=0)
+        self.assertIn("Package installed: stpkg.zip", output)
+        self.assertNotIn("Downloading package", output)
+        self.assertIn("Running setup file", output)
+        self.assertNotIn("Failed to run setup.py", output)
+
+        # 2. test successfull install
+        try:
+            import stpkg
+        except ImportError as e:
+            self.logger.info("sys.path = " + str(sys.path))
+            raise AssertionError("Could not import installed module: " + repr(e))
+
+        # 3. uninstall package
+        output = self.run_command("pip --verbose uninstall stpkg.zip", exitcode=0)
+        if "stpkg" in sys.modules:
+            del sys.modules["stpkg"]
+
+        # 4. ensure import failes
+        try:
+            import stpkg
+            raise AssertionError("can still import uninstalled package!")
+        except ImportError as e:
+            # expected failure
+            pass
