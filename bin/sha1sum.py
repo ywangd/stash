@@ -1,5 +1,5 @@
 '''
-Get sha1 hash of a file or string. 
+Get sha1 hash of a file or string.
 
 usage: sha1sum.py [-h] [-c] [file [file ...]]
 
@@ -21,7 +21,7 @@ import os
 import re
 import sys
 
-from six import StringIO
+import six
 
 from Crypto.Hash import SHA
 
@@ -38,6 +38,7 @@ def get_hash(fileobj):
 
 
 def check_list(fileobj):
+    correct = True
     for line in fileobj:
         match = re.match(r'(\w+)[ \t]+(.+)',line)
         try:
@@ -46,13 +47,19 @@ def check_list(fileobj):
                     print(match.group(2)+': Pass')
                 else:
                     print(match.group(2)+': Fail')
+                    correct = False
         except Exception:
             print('Invalid format.')
+            correct = False
+    return correct
 
 
 def make_file(txt):
-    f = StringIO()
-    f.write(txt)
+    f = six.BytesIO()
+    if isinstance(txt, six.binary_type):
+        f.write(txt)
+    else:
+        f.write(txt.encode("utf-8"))
     f.seek(0)
     return f
 
@@ -65,17 +72,25 @@ args = ap.parse_args(sys.argv[1:])
 
 if args.check:
     if args.file:
+        s = True
         for arg in args.file:
             if os.path.isfile(arg):
-                check_list(open(arg))
+                s = s and check_list(open(arg))
     else:
-        check_list(make_file(sys.stdin.read()))
+        s = check_list(make_file(sys.stdin.read()))
+    if s:
+        sys.exit(0)
+    else:
+        sys.exit(1)
+
 else:
     if args.file:
         for arg in args.file:
             if os.path.isfile(arg):
                 with open(arg, 'rb') as f:
                     print(get_hash(f)+' '+arg)
+            elif arg == "-":
+                print(get_hash(make_file(sys.stdin.read())))
             else:
                 print(get_hash(make_file(arg)))
     else:

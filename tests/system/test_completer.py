@@ -1,17 +1,12 @@
 # coding=utf-8
-import unittest
 
-from stash import stash
+from stash.tests.stashtest import StashTestCase
 
-class CompleterTests(unittest.TestCase):
+class CompleterTests(StashTestCase):
 
     def setUp(self):
-        self.stash = stash.StaSh()
-        self.stash('cd $STASH_ROOT')
+        StashTestCase.setUp(self)
         self.complete = self.stash.completer.complete
-
-    def tearDown(self):
-        del self.stash
 
     def test_completion_01(self):
         newline, possibilities = self.complete('pw')
