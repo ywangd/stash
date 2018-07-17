@@ -36,6 +36,7 @@ from fnmatch import fnmatchcase
 from six.moves import filterfalse
 
 from stashutils.extensions import create_command
+from stashutils.wheels import Wheel, wheel_is_compatible
 
 from stash.system.shcommon import IN_PYTHONISTA
 
@@ -827,8 +828,11 @@ class PackageRepository(object):
         raise PipError('Action Not Available: install')
 
     def _install(self, pkg_name, pkg_info, archive_filename):
-
-        files_installed, dependencies = self.installer.run(pkg_name, archive_filename)
+        if archive_filename.endswith(".whl"):
+            wheel = Wheel(archive_filename, verbose=self.verbose)
+            files_installed, dependencies = wheel.install(self.site_packages)
+        else:
+            files_installed, dependencies = self.installer.run(pkg_name, archive_filename)
         # never install setuptools as dependency
         dependencies = [dependency for dependency in dependencies if dependency != 'setuptools']
         name_versions = [VersionSpecifier.parse_requirement(requirement)
@@ -985,7 +989,7 @@ class PyPIRepository(PackageRepository):
 
         return releases
 
-    def download(self, pkg_name, ver_spec):
+    def download(self, pkg_name, ver_spec, wheel_priority=False):
         print('Querying PyPI ... ')
         pkg_name = self.get_standard_package_name(pkg_name)
         pkg_data = self._package_data(pkg_name)
@@ -997,13 +1001,25 @@ class PyPIRepository(PackageRepository):
             raise PipError('No download available for {}: {}'.format(pkg_name, hit))
 
         source = None
+        wheel = None
         for download in downloads:
             if any((suffix in download['url']) for suffix in ('.zip', '.bz2', '.gz')):
                 source = download
-                break
+                # break
+            if ".whl" in download["url"]:
+                fn = download["url"][download["url"].rfind("/")+1:]
+                if wheel_is_compatible(fn):
+                    wheel = download
 
         if not source:
-            raise PipError('Source distribution not available for {}: {}'.format(pkg_name, hit))
+            if not wheel:
+                raise PipError('Source distribution not available for {}: {}'.format(pkg_name, hit))
+            else:
+                source = wheel
+        else:
+            if wheel_priority:
+                if wheel is not None:
+                    source = wheel
 
         pkg_info = self._package_info(pkg_data)
         pkg_info['url'] = 'pypi'
@@ -1020,7 +1036,7 @@ class PyPIRepository(PackageRepository):
     def install(self, pkg_name, ver_spec):
         pkg_name = self.get_standard_package_name(pkg_name)
         if not self.config.module_exists(pkg_name):
-            archive_filename, pkg_info = self.download(pkg_name, ver_spec)
+            archive_filename, pkg_info = self.download(pkg_name, ver_spec, wheel_priority=True)
             self._install(pkg_name, pkg_info, archive_filename)
         else:
             raise PipError('Package already installed')
