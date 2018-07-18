@@ -115,11 +115,13 @@ class BaseHandler(object):
 		self.wheel = wheel
 		self.verbose = verbose
 	
-	def copytree(self, src, dest):
+	def copytree(self, src, dest, remove=False):
 		"""copies a directory tree."""
 		if self.verbose:
 			print("Copying {s} -> {d}".format(s=src, d=dest))
 		if os.path.isfile(src):
+			if os.path.exists(dest) and remove:
+				os.remove(dest)
 			i = shutil.copy(src, dest)
 			return i
 		else:
@@ -127,6 +129,8 @@ class BaseHandler(object):
 				dest,
 				os.path.basename(os.path.normpath(src)),
 				)
+			if os.path.exists(target) and remove:
+				shutil.rmtree(target)
 			shutil.copytree(src, target)
 			return target
 	
@@ -150,7 +154,7 @@ class TopLevelHandler(BaseHandler):
 		with open(tltxtp, "r") as fin:
 			for pkg_name in fin:
 				pure = pkg_name.replace("\r", "").replace("\n", "")
-				p = self.copytree(os.path.join(src, pure), dest)
+				p = self.copytree(os.path.join(src, pure), dest, remove=True)
 				files_installed.append(p)
 		return files_installed
 
