@@ -166,7 +166,13 @@ class ConsoleScriptsHandler(BaseHandler):
 				print("No entry_points.txt found, skipping.")
 			return
 		parser = configparser.ConfigParser()
-		parser.read(eptxtp)
+		try:
+			parser.read(eptxtp)
+		except configparser.MissingSectionHeaderError:
+			# print message and return
+			if self.verbose:
+				print("No section headers found in entry_points.txt, passing.")
+				return
 		if not parser.has_section("console_scripts"):
 			if self.verbose:
 				print("No console_scripts definition found, skipping.")
@@ -174,7 +180,8 @@ class ConsoleScriptsHandler(BaseHandler):
 		
 		files_installed = []
 		
-		with open(src, self.distinfo_name, "metadata.json") as fin:
+		mdp = os.path.join(src, self.distinfo_name, "metadata.json")
+		with open(mdp, "r") as fin:
 			desc = json.load(fin).get("summary", "???")
 		
 		for command, definition in parser.items(section="console_scripts"):
