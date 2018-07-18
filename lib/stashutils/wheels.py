@@ -96,7 +96,7 @@ def wheel_is_compatible(filename):
 		if not data["python_tag"].startswith("py3"):
 			return False
 	else:
-		if not data["python_tag"].startswith("py3"):
+		if not data["python_tag"].startswith("py2"):
 			return False
 	if data["abi_tag"].lower() != "none":
 		return False
@@ -165,7 +165,8 @@ class ConsoleScriptsHandler(BaseHandler):
 			if self.verbose:
 				print("No entry_points.txt found, skipping.")
 			return
-		parser = configparser.read(eptxtp)
+		parser = configparser.ConfigParser()
+		parser.read(eptxtp)
 		if not parser.has_section("console_scripts"):
 			if self.verbose:
 				print("No console_scripts definition found, skipping.")
@@ -269,19 +270,22 @@ class Wheel(object):
 		tp = self.extract_into_temppath()
 		if self.verbose:
 			print("Extraction finished, running handlers...")
-		files_installed = []
-		for handler in self.handlers:
-			if hasattr(handler, "handle_install"):
-				if self.verbose:
-					print("Running handler '{h}'...".format(
-						h=getattr(handler, "name", "<unknown>"))
-						)
-				tfi = handler.handle_install(tp, targetdir)
-				if tfi is not None:
-					files_installed += tfi
-		if self.verbose:
-			print("Cleaning up...")
-		shutil.rmtree(tp)
+		try:
+			files_installed = []
+			for handler in self.handlers:
+				if hasattr(handler, "handle_install"):
+					if self.verbose:
+						print("Running handler '{h}'...".format(
+							h=getattr(handler, "name", "<unknown>"))
+							)
+					tfi = handler.handle_install(tp, targetdir)
+					if tfi is not None:
+						files_installed += tfi
+		finally:
+			if self.verbose:
+				print("Cleaning up...")
+			if os.path.exists(tp):
+				shutil.rmtree(tp)
 		return (files_installed, self.dependencies)
 	
 	def extract_into_temppath(self):
