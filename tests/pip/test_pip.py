@@ -41,6 +41,11 @@ class PipTests(StashTestCase):
         """reload a module."""
         reload_module(m)
 
+    def assert_did_run_setup(self, output):
+        """assert that the output shows that either setup.py was successfully executed or a wheel was installed."""
+        if not (("Running setup file" in output) or ("Installing wheel:" in output)):
+            raise AssertionError("Output '{o}' does not seem to have installed a wheel or run setup.py!".format(o=output))
+        self.assertNotIn("Failed to run setup.py", output)
 
     def test_help(self):
         """test 'pip --help'"""
@@ -80,9 +85,8 @@ class PipTests(StashTestCase):
         """test 'pip install <pypi_package>' (Test 1)."""
         output = self.run_command("pip --verbose install benterfaces", exitcode=0)
         self.assertIn("Downloading package", output)
-        self.assertIn("Running setup file", output)
+        self.assert_did_run_setup(output)
         self.assertIn("Package installed: benterfaces", output)
-        self.assertNotIn("Failed to run setup.py", output)
         try:
             import benterfaces
         except ImportError as e:
@@ -95,9 +99,8 @@ class PipTests(StashTestCase):
         """test 'pip install <pypi_package>' (Test 2)."""
         output = self.run_command("pip --verbose install nose", exitcode=0)
         self.assertIn("Downloading package", output)
-        self.assertIn("Running setup file", output)
+        self.assert_did_run_setup(output)
         self.assertIn("Package installed: nose", output)
-        self.assertNotIn("Failed to run setup.py", output)
         try:
             import nose
         except ImportError as e:
@@ -110,9 +113,8 @@ class PipTests(StashTestCase):
         """test 'pip install <pypi_package>' with a complex package."""
         output = self.run_command("pip --verbose install twisted", exitcode=0)
         self.assertIn("Downloading package", output)
-        self.assertIn("Running setup file", output)
+        self.assert_did_run_setup(output)
         self.assertIn("Package installed: Twisted", output)
-        self.assertNotIn("Failed to run setup.py", output)
         try:
             import twisted
         except ImportError as e:
@@ -128,9 +130,8 @@ class PipTests(StashTestCase):
         # 2. install
         output = self.run_command("pip --verbose install rsa", exitcode=0)
         self.assertIn("Downloading package", output)
-        self.assertIn("Running setup file", output)
+        self.assert_did_run_setup(output)
         self.assertIn("Package installed: rsa", output)
-        self.assertNotIn("Failed to run setup.py", output)
 
         # 3. test command
         output = self.run_command("pyrsa-keygen --help", exitcode=0)
@@ -149,9 +150,8 @@ class PipTests(StashTestCase):
         """test 'pip install <pypi_package>==<specific_version_1>' (Test 1)."""
         output = self.run_command("pip --verbose install rsa==3.4.2", exitcode=0)
         self.assertIn("Downloading package", output)
-        self.assertIn("Running setup file", output)
+        self.assert_did_run_setup(output)
         self.assertIn("Package installed: rsa", output)
-        self.assertNotIn("Failed to run setup.py", output)
         try:
             import rsa
             self.reload_module(rsa)
@@ -166,9 +166,8 @@ class PipTests(StashTestCase):
         """test 'pip install <pypi_package>==<specific_version_2>' (Test 2)."""
         output = self.run_command("pip --verbose install rsa==3.2.2", exitcode=0)
         self.assertIn("Downloading package", output)
-        self.assertIn("Running setup file", output)
+        self.assert_did_run_setup(output)
         self.assertIn("Package installed: rsa", output)
-        self.assertNotIn("Failed to run setup.py", output)
         try:
             import rsa
             self.reload_module(rsa)
@@ -184,9 +183,8 @@ class PipTests(StashTestCase):
         """test 'pip update <pypi_package>'."""
         output = self.run_command("pip --verbose install rsa==3.2.3", exitcode=0)
         self.assertIn("Downloading package", output)
-        self.assertIn("Running setup file", output)
+        self.assert_did_run_setup(output)
         self.assertIn("Package installed: rsa", output)
-        self.assertNotIn("Failed to run setup.py", output)
         try:
             import rsa
             self.reload_module(rsa)
@@ -213,8 +211,7 @@ class PipTests(StashTestCase):
         output = self.run_command("pip --verbose install stpkg.zip", exitcode=0)
         self.assertIn("Package installed: stpkg.zip", output)
         self.assertNotIn("Downloading package", output)
-        self.assertIn("Running setup file", output)
-        self.assertNotIn("Failed to run setup.py", output)
+        self.assert_did_run_setup(output)
 
         try:
             import stpkg
@@ -229,9 +226,8 @@ class PipTests(StashTestCase):
         """test 'pip install <owner>/<repo>'."""
         output = self.run_command("pip --verbose install bennr01/benterfaces", exitcode=0)
         self.assertIn("Working on GitHub repository ...", output)
-        self.assertIn("Running setup file", output)
+        self.assert_did_run_setup(output)
         self.assertIn("Package installed: benterfaces-master", output)
-        self.assertNotIn("Failed to run setup.py", output)
 
         try:
             import benterfaces
@@ -246,8 +242,7 @@ class PipTests(StashTestCase):
         output = self.run_command("pip --verbose install stpkg.zip", exitcode=0)
         self.assertIn("Package installed: stpkg.zip", output)
         self.assertNotIn("Downloading package", output)
-        self.assertIn("Running setup file", output)
-        self.assertNotIn("Failed to run setup.py", output)
+        self.assert_did_run_setup(output)
 
         # 2. test successfull install
         try:
