@@ -189,12 +189,12 @@ class ConsoleScriptsHandler(BaseHandler):
 			desc = json.load(fin).get("summary", "???")
 		
 		for command, definition in parser.items(section="console_scripts"):
-			name, loc = definition.replace(" ", "").split("=")
-			modname, funcname = loc.split(":")
-			if not name.endswith(".py"):
-				name += ".py"
+			# name, loc = definition.replace(" ", "").split("=")
+			modname, funcname = definition.split(":")
+			if not command.endswith(".py"):
+				command += ".py"
 			path = create_command(
-				name,
+				command,
 				(u"""'''%s'''
 from %s import %s
 
