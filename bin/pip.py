@@ -28,6 +28,7 @@ import requests
 import re
 import operator
 import traceback
+import codecs
 
 import six
 from distutils.util import convert_path
@@ -759,7 +760,7 @@ if __name__ == "__main__":
         Get AST of the setup file and also transform it for fake setuptools
         and stub setup calls.
         """
-        with open(filename) as ins:
+        with codecs.open(filename, mode="r", encoding="UTF-8") as ins:
             s = ins.read()
         tree = ast.parse(s, filename=filename, mode='exec')
         ArchiveFileInstaller.SetupTransformer().visit(tree)
@@ -1230,7 +1231,9 @@ class VersionSpecifier(object):
                 requirement = requirement[0]
             else:
                 raise PipError("Unknown requirement format: " + repr(requirement))
-        requirement = requirement.replace(' ', '')  # remove all whitespaces
+        # remove all whitespaces and '()'
+        requirement = requirement.replace(' ', '')
+        requirement = requirement.replace("(", "").replace(")", "")
         if requirement.startswith("#"):
             # ignore
             return None, None
