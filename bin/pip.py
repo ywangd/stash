@@ -94,6 +94,11 @@ class PipError(Exception):
     pass
 
 
+class PackageAlreadyInstalled(PipError):
+	"""Error raised when a package is already installed."""
+	pass
+	
+
 class OmniClass(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -865,7 +870,12 @@ class PackageRepository(object):
 
             print('Installing dependency: {}'.format('{}{}'.format(pkg_name, ver_spec if ver_spec else '')))
             repository = get_repository(pkg_name)
-            repository.install(pkg_name, ver_spec)
+            try:
+                repository.install(pkg_name, ver_spec)
+            except PackageAlreadyInstalled:
+                # well, it is already installed...
+                # TODO: maybe update package if required?
+                pass
 
     def search(self, name_fragment):
         raise PipError('search only available for PyPI packages')
@@ -1040,7 +1050,8 @@ class PyPIRepository(PackageRepository):
             archive_filename, pkg_info = self.download(pkg_name, ver_spec, wheel_priority=True)
             self._install(pkg_name, pkg_info, archive_filename)
         else:
-            raise PipError('Package already installed')
+        	# todo: maybe update package?
+            raise PackageAlreadyInstalled('Package already installed')
 
     def update(self, pkg_name):
         pkg_name = self.get_standard_package_name(pkg_name)
