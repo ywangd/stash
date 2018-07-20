@@ -835,6 +835,7 @@ class PackageRepository(object):
 
     def _install(self, pkg_name, pkg_info, archive_filename):
         if archive_filename.endswith(".whl"):
+            print("Installing wheel: {}...".format(os.path.basename(archive_filename)))
             wheel = Wheel(archive_filename, verbose=self.verbose)
             files_installed, dependencies = wheel.install(self.site_packages)
         else:
