@@ -92,7 +92,10 @@ def wheel_is_compatible(filename):
 	Return True if the wheel is compatible, False otherwise.
 	"""
 	data = parse_wheel_name(filename)
-	if six.PY3:
+	if ("py2.py3" in data["python_tag"]) or ("py3.py2" in data["python_tag"]):
+		# only here to skip elif/else
+		pass
+	elif six.PY3:
 		if not data["python_tag"].startswith("py3"):
 			return False
 	else:
@@ -154,7 +157,14 @@ class TopLevelHandler(BaseHandler):
 		with open(tltxtp, "r") as fin:
 			for pkg_name in fin:
 				pure = pkg_name.replace("\r", "").replace("\n", "")
-				p = self.copytree(os.path.join(src, pure), dest, remove=True)
+				sp = os.path.join(src, pure)
+				if os.path.exists(sp):
+					p = self.copytree(sp, dest, remove=True)
+				elif os.path.exists(sp + ".py"):
+					dp = os.path.join(dest, pure + ".py")
+					p = self.copytree(sp + ".py", dp, remove=True)
+				else:
+					raise WheelError("top_lehel.txt entry '{e}' not found in toplevel directory!".format(e=pure))
 				files_installed.append(p)
 		return files_installed
 
