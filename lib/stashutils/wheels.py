@@ -255,6 +255,10 @@ class DependencyHandler(BaseHandler):
 	
 	def handle_install(self, src, dest):
 		metap = os.path.join(src, self.distinfo_name, "metadata.json")
+		if not os.path.exists(metap):
+			if self.verbose:
+				print("Warning: could not find 'metadata.json', can not detect dependencies!")
+			return
 		with open(metap, "r") as fin:
 			content = json.load(fin)
 		dependencies = content.get("run_requires", [{"requires": []}])[0]["requires"]
