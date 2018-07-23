@@ -123,10 +123,12 @@ class BaseHandler(object):
 		if self.verbose:
 			print("Copying {s} -> {d}".format(s=src, d=dest))
 		if os.path.isfile(src):
+			if os.path.isdir(dest):
+				dest = os.path.join(dest, os.path.basename(src))
 			if os.path.exists(dest) and remove:
 				os.remove(dest)
-			i = shutil.copy(src, dest)
-			return i
+			shutil.copy(src, dest)
+			return dest
 		else:
 			target = os.path.join(
 				dest,
@@ -164,7 +166,7 @@ class TopLevelHandler(BaseHandler):
 					dp = os.path.join(dest, pure + ".py")
 					p = self.copytree(sp + ".py", dp, remove=True)
 				else:
-					raise WheelError("top_lehel.txt entry '{e}' not found in toplevel directory!".format(e=pure))
+					raise WheelError("top_level.txt entry '{e}' not found in toplevel directory!".format(e=pure))
 				files_installed.append(p)
 		return files_installed
 
