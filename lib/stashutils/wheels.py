@@ -197,8 +197,11 @@ class ConsoleScriptsHandler(BaseHandler):
 		files_installed = []
 		
 		mdp = os.path.join(src, self.distinfo_name, "metadata.json")
-		with open(mdp, "r") as fin:
-			desc = json.load(fin).get("summary", "???")
+		if os.path.exists(mdp):
+			with open(mdp, "r") as fin:
+				desc = json.load(fin).get("summary", "???")
+		else:
+			desc = "???"
 		
 		for command, definition in parser.items(section="console_scripts"):
 			# name, loc = definition.replace(" ", "").split("=")
