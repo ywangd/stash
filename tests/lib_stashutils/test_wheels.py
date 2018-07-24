@@ -1,8 +1,6 @@
 """tests for the wheel-support"""
 import six
 
-from stashutils import wheels
-
 from stash.tests.stashtest import StashTestCase
 
 
@@ -10,6 +8,8 @@ class WheelsTests(StashTestCase):
     """tests fpr the wheel-support."""
     def test_wheel_is_compatible(self):
         """test wheel_is_compatible() result"""
+        from stashutils import wheels
+
         wheelnamecompatibility = [
             ("package-1.0.0-py2.py3-none-any.whl", True),  # full compatibility
             ("package-1.0.0-2-py2.py3-none-any.whl", True),  # full compatible with build tag
@@ -27,6 +27,8 @@ class WheelsTests(StashTestCase):
 
     def test_wheel_is_compatible_raises(self):
         """test wheel_is_compatible() error handling"""
+        from stashutils import wheels
+
         wrong_wheelnames = [
             "nonwheel-1.0.0-py2.py3-none-any.txt",
             "noabi-1.0.0-py2.py3-any.whl",
@@ -42,6 +44,8 @@ class WheelsTests(StashTestCase):
 
     def test_parse_wheel_name(self):
         """test parse_wheel_name()"""
+        from stashutils import wheels
+
         name1 = "distribution-version-buildtag-pythontag-abitag-platformtag.whl"
         result1 = wheels.parse_wheel_name(name1)
         expected1 = {
@@ -68,6 +72,8 @@ class WheelsTests(StashTestCase):
 
     def test_generate_filename(self):
         """test generate_filename()"""
+        from stashutils import wheels
+
         data = {
             "distribution": "somepackage",
             "version": "1.0.0",
