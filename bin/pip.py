@@ -28,6 +28,7 @@ import requests
 import re
 import operator
 import traceback
+import codecs
 
 import six
 from distutils.util import convert_path
@@ -36,6 +37,7 @@ from fnmatch import fnmatchcase
 from six.moves import filterfalse
 
 from stashutils.extensions import create_command
+from stashutils.wheels import Wheel, wheel_is_compatible
 
 from stash.system.shcommon import IN_PYTHONISTA
 
@@ -91,6 +93,11 @@ def _setup_stub_(*args, **kwargs):
 class PipError(Exception):
     pass
 
+
+class PackageAlreadyInstalled(PipError):
+	"""Error raised when a package is already installed."""
+	pass
+	
 
 class OmniClass(object):
     def __init__(self, *args, **kwargs):
@@ -758,7 +765,7 @@ if __name__ == "__main__":
         Get AST of the setup file and also transform it for fake setuptools
         and stub setup calls.
         """
-        with open(filename) as ins:
+        with codecs.open(filename, mode="r", encoding="UTF-8") as ins:
             s = ins.read()
         tree = ast.parse(s, filename=filename, mode='exec')
         ArchiveFileInstaller.SetupTransformer().visit(tree)
@@ -827,8 +834,12 @@ class PackageRepository(object):
         raise PipError('Action Not Available: install')
 
     def _install(self, pkg_name, pkg_info, archive_filename):
-
-        files_installed, dependencies = self.installer.run(pkg_name, archive_filename)
+        if archive_filename.endswith(".whl"):
+            print("Installing wheel: {}...".format(os.path.basename(archive_filename)))
+            wheel = Wheel(archive_filename, verbose=self.verbose)
+            files_installed, dependencies = wheel.install(self.site_packages)
+        else:
+            files_installed, dependencies = self.installer.run(pkg_name, archive_filename)
         # never install setuptools as dependency
         dependencies = [dependency for dependency in dependencies if dependency != 'setuptools']
         name_versions = [VersionSpecifier.parse_requirement(requirement)
@@ -860,7 +871,12 @@ class PackageRepository(object):
 
             print('Installing dependency: {}'.format('{}{}'.format(pkg_name, ver_spec if ver_spec else '')))
             repository = get_repository(pkg_name)
-            repository.install(pkg_name, ver_spec)
+            try:
+                repository.install(pkg_name, ver_spec)
+            except PackageAlreadyInstalled:
+                # well, it is already installed...
+                # TODO: maybe update package if required?
+                pass
 
     def search(self, name_fragment):
         raise PipError('search only available for PyPI packages')
@@ -985,7 +1001,7 @@ class PyPIRepository(PackageRepository):
 
         return releases
 
-    def download(self, pkg_name, ver_spec):
+    def download(self, pkg_name, ver_spec, wheel_priority=False):
         print('Querying PyPI ... ')
         pkg_name = self.get_standard_package_name(pkg_name)
         pkg_data = self._package_data(pkg_name)
@@ -997,13 +1013,25 @@ class PyPIRepository(PackageRepository):
             raise PipError('No download available for {}: {}'.format(pkg_name, hit))
 
         source = None
+        wheel = None
         for download in downloads:
             if any((suffix in download['url']) for suffix in ('.zip', '.bz2', '.gz')):
                 source = download
-                break
+                # break
+            if ".whl" in download["url"]:
+                fn = download["url"][download["url"].rfind("/")+1:]
+                if wheel_is_compatible(fn):
+                    wheel = download
 
         if not source:
-            raise PipError('Source distribution not available for {}: {}'.format(pkg_name, hit))
+            if not wheel:
+                raise PipError('Source distribution not available for {}: {}'.format(pkg_name, hit))
+            else:
+                source = wheel
+        else:
+            if wheel_priority:
+                if wheel is not None:
+                    source = wheel
 
         pkg_info = self._package_info(pkg_data)
         pkg_info['url'] = 'pypi'
@@ -1020,10 +1048,11 @@ class PyPIRepository(PackageRepository):
     def install(self, pkg_name, ver_spec):
         pkg_name = self.get_standard_package_name(pkg_name)
         if not self.config.module_exists(pkg_name):
-            archive_filename, pkg_info = self.download(pkg_name, ver_spec)
+            archive_filename, pkg_info = self.download(pkg_name, ver_spec, wheel_priority=True)
             self._install(pkg_name, pkg_info, archive_filename)
         else:
-            raise PipError('Package already installed')
+        	# todo: maybe update package?
+            raise PackageAlreadyInstalled('Package already installed')
 
     def update(self, pkg_name):
         pkg_name = self.get_standard_package_name(pkg_name)
@@ -1214,7 +1243,9 @@ class VersionSpecifier(object):
                 requirement = requirement[0]
             else:
                 raise PipError("Unknown requirement format: " + repr(requirement))
-        requirement = requirement.replace(' ', '')  # remove all whitespaces
+        # remove all whitespaces and '()'
+        requirement = requirement.replace(' ', '')
+        requirement = requirement.replace("(", "").replace(")", "")
         if requirement.startswith("#"):
             # ignore
             return None, None
