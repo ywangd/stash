@@ -76,7 +76,7 @@ command from within the shell.
 
 *selfupdate cannot be used for version 0.4.x and under. A fresh
 [installation](#installation) is needed.*
-*Version 0.7.0 requires a forced update. Please run `selfupdate -f`*
+*Version 0.7.0 requires a forced update. Please run `selfupdate -f`.*
 
 ## Notable Features
 StaSh has a pile of features that are expected from a real shell. These
