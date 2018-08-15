@@ -4,6 +4,15 @@
 * New Features
     * Python 3 compatibility
         - StaSh now supports python 3, though some commands still need to be ported.
+    * StaSh now shows a short tip on startup
+    * `pip` now supports wheels and commandline scripts and has been improved greatly.
+    * the `python` command now has an interactive console
+    * `man` can now also show help for other topics, e.g. `man monkeypatching`
+    * the `monkeylord` command helps improving desktop compatibility by providing monkeypatches for various modules and functions (e.g. `subprocess`)
+    * `easy_config.py` allows you to easily configure your StaSh using a UI.
+    * access other filesystems using the `mount`, `umount` and `mc` commands.
+    * StaSh can now run commands specified in `sys.argv`, allowing command execution using the pythonista URL schema.
+    * And many more improvements and bugfixes everywhere.
 * Command Scripts
     - `cowsay.py`
     - `dropbox_setup.py`
