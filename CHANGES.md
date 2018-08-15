@@ -1,5 +1,31 @@
 # Change Log #
 
+### Version 0.7.0 - 2018-05-04
+* New Features
+    * Python 3 compatibility
+        - StaSh now supports python 3, though some commands still need to be ported.
+* Command Scripts
+    - `cowsay.py`
+    - `dropbox_setup.py`
+    - `easy_config.py`
+    - `ftpserver.py`
+    - `gci.py`
+    - `gh.py`
+    - `head.py`
+    - `latte.py`
+    - `mc.py`
+    - `monkeylord.py`
+    - `more.py`
+    - `mount.py`
+    - `ping.py`
+    - `python3.py`
+    - `rmdir.py`
+    - `tail.py`
+    - `totd.py`
+    - `umount.py`
+    - `webviewer.py`
+    - `whatis.py`
+
 ### Version 0.6.0 - 2016-02-08
 * New Features
     * New thread management system enables multiple jobs running at once.
