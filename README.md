@@ -16,12 +16,18 @@ Remarkable contributions are also made by
 [@cclauss](https://github.com/cclauss),
 [@georg.viehoever](https://github.com/GeorgViehoever),
 [@BBOOXX](https://github.com/BBOOXX),
-[@bennr01](https://github.com/stars/bennr01) and
-[@glider-gun](https://github.com/glider-gun). 
+[@bennr01](https://github.com/bennr01),
+[@glider-gun](https://github.com/glider-gun),
+[@steljas](https://github.com/steljas),
+[@zrzka](https://github.com/zrzka),
+[@seanld](https://github.com/Seanld),
+[@zed](https://github.com/zed),
+[@sdushantha](https://github.com/sdushantha) and
+[@ywang-bom](https://github.com/ywang-bom).
 
 StaSh stands for Pythoni**sta** **Sh**ell. While **Sta** may not be the best
 abbreviation for Pythonista, it forms a concise and meaningful word with the
-following **Sh** part. So the name StaSh was chose to indicate it is a confined
+following **Sh** part. So the name StaSh was chosen to indicate it is a confined
 environment and great treasures may be found within.
 
 
@@ -36,10 +42,7 @@ execute. It installs StaSh as a Python module under the `site-packages`
 folder (`~/Documents/site-packages/stash`) and copies **a launching script, 
 `~/Documents/launch_stash.py`** for easy access.
 
-*StaSh works with both Pythonista 2 and 3. Though it always runs with the
-Python 2 interpreter, there is no need to change your default interpreter setting
-thanks to [the shebang line](http://omz-software.com/pythonista/docs/ios/new.html)
-in the launch script*
+*StaSh works with both Pythonista 2 and 3, though not all commands support python3.*
 
 *If you have previous versions of StaSh installed (e.g. v0.4.x), 
 You may need to restart Pythonista BEFORE the installation.*
@@ -50,7 +53,7 @@ You may need to restart Pythonista BEFORE the installation.*
 you can choose to directly clone or download the
 [repository](https://github.com/ywangd/stash).*
 
-*StaSh requires Pythonista v2.0 as the new ObjC feature is heavily used. For
+*StaSh requires Pythonista v2.0 or Pythonista3 as the new ObjC feature is heavily used. For
 older Pythonista 1.5 compatible version, please refer to the
 [v0.4](https://github.com/ywangd/stash/tree/v0.4) branch.*
 
@@ -73,6 +76,7 @@ command from within the shell.
 
 *selfupdate cannot be used for version 0.4.x and under. A fresh
 [installation](#installation) is needed.*
+*Version 0.7.0 requires a forced update. Please run `selfupdate -f`.*
 
 ## Notable Features
 StaSh has a pile of features that are expected from a real shell. These
@@ -194,7 +198,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
 
 * The search paths for executable scripts is set via an environment variable
   called `BIN_PATH` as `PATH` is used by the system. The default `BIN_PATH` is
-  `~/Documents/bin:$STASH_ROOT/bin`.
+  `~/Documents/bin:~/Documents/stash_extensions/bin:$STASH_ROOT/bin`.
 
 * The executable files are either Python scripts or StaSh scripts. The type of
   script is determined by looking at the file extensions ".py" and ".sh".
@@ -214,22 +218,26 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   scripts are by no means complete when compared to a real Linux shell. The
   collection will be gradually expanded should the need arise. It is
   also expected and appreciated that the community would come up with more
-  scripts.
+  scripts. The `pip` command may also install new commands.
     * `alias.py` - Define or print aliases
     * `cat.py` - Print contents of file
     * `cd.py` - Change current directory
     * `clear.py` - Clear console
+    * `cowsay.py` - configurable speaking cow
     * `cp.py` - Copy file
     * `crypt.py` - File encryption using AES in CBC mode
     * `curl.py` - Transfer from an URL
     * `cut.py` - Cut out selection portions of each line of a file
+    * `dropbox_setup.py` - Configure dropbox accounts for other commands
     * `du.py` - Summarize disk usage of the set of FILEs, recursively for directories
+    * `easy_config.py` - UI for configuring stash
     * `echo.py` - Output text to console
     * `edit.py` - Open any text type files in Pythonista editor
     * `find.py` - Powerful file searching tool
     * `fg.py` - Bring a background job to foreground
     * `ftpserver.py` - A simple FTP server
     * `gci.py` - Interface to Python's built-in garbage collector
+    * `gh.py` - GitHub interface
     * `git.py` - Git client ported from shellista
     * `grep.py` - search contents of file(s)
     * `head.py` - Display first lines of a file
@@ -237,6 +245,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
       https://gist.github.com/UniIsland/3346170)
     * `jobs.py` - List all jobs that are currently running
     * `kill.py` - Terminate a running job
+    * `latte.py` - package manager
     * `ls.py` - List files
     * `mail.py` - Send emails with optional file attachment
     * `man.py` - Show help message (docstring) of a given command
@@ -245,18 +254,23 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `md5sum.py` - Print or check MD5 checksums
     * `mkdir.py` - Create directory
     * `monkeylord.py` - Manage monkey patches with the goal to make Pythonista more viable
+    * `more.py` - Display output one screen page at a time
+    * `mount.py` - Mount filesystems
     * `mv.py` - Move file
     * `openin.py` - Show the **open in** dialog to open a file in external apps.
     * `pbcopy.py` - Copy to iOS clipboard
     * `pbpaste.py` - Paste from iOS clipboard
+    * `ping.py` - Ping remote hosts
     * `pip.py` - Search, download, install, update and uninstall pure Python
       packages from PyPI.
     * `printenv.py` - List environment variables
     * `printhex.py` - Print hexadecimal dump of the given file 
     * `pwd.py` - Print current directory
     * `python.py` - Run python scripts or modules
+    * `python3.py` - Run python3 scripts or modules
     * `quicklook.py` - iOS quick look for files of known types
     * `rm.py` - delete (remove) file
+    * `rmdir.py` - delete (remove) directories
     * `scp.py` - Copy files from/to remote servers. 
     * `selfupdate.py` - Update StaSh from its GitHub repo
     * `sha1sum.py` - Print of check SHA1 checksums
@@ -272,11 +286,15 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `tail.py` - Print last lines of a FILE.
     * `tar.py` - Manipulate archive files
     * `touch.py` - Update timestamp of the given file or create it if not exist
+    * `totd.py` - Print a random tip
+    * `umount.py` - Unmount filesystems
     * `uniq.py` - Remove duplicates from list, also see sort
     * `unzip.py` - Unzip file, also see zip
     * `version.py` - Show StaSh installation and version information
     * `wc.py` - Line, word, character counting
+    * `webviewer.py` - Open a url in the webbrowser
     * `wget.py` - get data from the net
+    * `whatis.py` - Show a description for some of the commands
     * `which.py` - Find the exact path to a command script
     * `wol.py`- Wake on LAN using MAC address for launching a sleeping system
     * `xargs.py` - Command constructing and executing utility
@@ -299,6 +317,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
 ## Known Issues
 * Pickled objects are not restored correctly and generate `AttributeError` as
   if the class definition cannot be found. 
+* Some commands may still not fully support python3.
 
 
 ## Contributing

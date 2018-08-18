@@ -1,29 +1,23 @@
-#Python 3 TODO
+# Python 3 TODO
 List of known issues, bugs and todos for stash py3 (and py2) compatibility.
 
-#General
-- ctype threads in py3 bugged (crash on cc and kill)
+# General
 - more commands need to be ported
 - sys.argv needs to be bytestr in py2 and unistt in py3. There is only a quick fix in place (somewhere in `shruntime.py`), which should be replaced as it only works for common usage situations
-- unittests for py3
 - i/o seems to switch between jobs from time to time
-- 'ValueError: I/O operation on closed file' prevents some pipes from working
 
 
-#`crypt.py`
+# `crypt.py`
 - in py3, the key is shown as `b'<key>'` instead of `<key>`. Also test solution with py2
 
-#`curl.py`
+# `curl.py`
 - more testing
 
-#`easy_config.py`
-- while syntax is py3 compatible, there are some errors
-- untested
-
-#`pip.py`
+# `pip.py`
 - many bugs
 - installation using `setupy.py` fails most of the time, always falls back to package detection
 - maybe `pip3` for py3 instead of a single `pip` command.
+  - maybe only an alias?
 
-#Non py3-issues
+# Non py3-issues
 - `cp.py` has no `-r` argument
