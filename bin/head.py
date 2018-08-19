@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import argparse
+import string
 import sys
 import fileinput
 
