@@ -27,7 +27,7 @@ def more(filenames, pagesize=10, clear=False, fmt='{line}'):
         pageno = 1
         if clear:
             clear_screen()
-        for line in fileinput.input(filenames):
+        for line in fileinput.input(filenames, openhook=fileinput.hook_encoded("utf-8")):
             lineno, filename, filelineno = fileinput.lineno(), fileinput.filename(), fileinput.filelineno()
             print(fmt.format(**locals()), end='')
             if pagesize and lineno % pagesize == 0:
