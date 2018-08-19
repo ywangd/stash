@@ -25,7 +25,8 @@ def main(args):
 
     fileinput.close()  # in case it is not closed
     try:
-        for line in fileinput.input(ns.files):
+        for line in fileinput.input(ns.files, 
+                                    openhook=fileinput.hook_encoded("utf-8")):
             print(filter_non_printable(line), end='')
     except Exception as e:
         print('cat: %s' % str(e))
