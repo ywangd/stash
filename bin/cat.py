@@ -7,12 +7,13 @@
 from __future__ import print_function
 
 import argparse
+import string
 import sys
 import fileinput
 
 
 def filter_non_printable(s):
-    return ''.join([c if (31 < ord(c) < 127 or c in "\n\r\t\b") else ' ' for c in s])
+    return ''.join([c if c.isalnum() or c.isspace() or c in string.punctuation else ' ' for c in s])
 
 
 def main(args):
