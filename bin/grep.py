@@ -30,7 +30,7 @@ def main(args):
 
     fileinput.close()  # in case it is not closed
     try:
-        for line in fileinput.input(files):
+        for line in fileinput.input(files, openhook=fileinput.hook_encoded("utf-8")):
             if bool(pattern.search(line)) != ns.invert:
                 if ns.invert: # optimize: if ns.invert, then no match, so no highlight color needed
                     newline = line
