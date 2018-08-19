@@ -19,7 +19,7 @@ def main(args):
     try:
         prev_line = None
         lines = None
-        for line in fileinput.input(ns.files):
+        for line in fileinput.input(ns.files, openhook=fileinput.hook_encoded("utf-8")):
             if fileinput.isfirstline():
                 _print(lines)
                 lines = []
