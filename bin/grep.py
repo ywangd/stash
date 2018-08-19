@@ -37,7 +37,7 @@ def main(args):
         for line in fileinput.input(files, openhook=fileinput.hook_encoded("utf-8")):
             if bool(pattern.search(line)) != ns.invert:
               if ns.count:
-                    count[fileinput.filename()] += 1
+                    counts[fileinput.filename()] += 1
               else:
                 if ns.invert: # optimize: if ns.invert, then no match, so no highlight color needed
                     newline = line
