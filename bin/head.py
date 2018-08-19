@@ -59,7 +59,7 @@ def main(args):
                     print(header_fmt.format(fname), end='')
 
             fileinput.close()
-            inp = fileinput.input(fname)
+            inp = fileinput.input(fname, openhook=fileinput.hook_encoded("utf-8"))
             if ns.lines >= 0:
                 buf = []
                 for i, line in enumerate(inp):
@@ -70,7 +70,7 @@ def main(args):
                     print(line, end='')
             else:
                 buf = []
-                for line in fileinput.input(inp):
+                for line in fileinput.input(inp, openhook=fileinput.hook_encoded("utf-8")):
                     buf.append(line)
                     if len(buf) > -ns.lines:
                         del buf[0]
