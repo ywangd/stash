@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import argparse
+import collections
 import fileinput
 import os
 import re
@@ -17,6 +18,8 @@ def main(args):
                     help='ignore case while searching')
     ap.add_argument('-v', '--invert', action='store_true',
                     help='invert the search result')
+    ap.add_argument('-c', '--count', action='store_true',
+                    help='count the search results instead of normal output')
     ns = ap.parse_args(args)
 
     flags = 0
@@ -30,8 +33,12 @@ def main(args):
 
     fileinput.close()  # in case it is not closed
     try:
-        for line in fileinput.input(files):
+        counts = collections.defaultdict(int)
+        for line in fileinput.input(files, openhook=fileinput.hook_encoded("utf-8")):
             if bool(pattern.search(line)) != ns.invert:
+              if ns.count:
+                    counts[fileinput.filename()] += 1
+              else:
                 if ns.invert: # optimize: if ns.invert, then no match, so no highlight color needed
                     newline = line
                 else:
@@ -44,6 +51,12 @@ def main(args):
                 print(fmt.format(filename=fileinput.filename(),
                                  lineno=fileinput.filelineno(),
                                  line=newline.rstrip()))
+                
+        if ns.count:
+            for filename, count in counts.items():
+                fmt = u'{count:6} {filename}'
+                print(fmt.format(filename=filename, count=count))
+                
     except Exception as err:
         print("grep: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
     finally:

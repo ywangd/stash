@@ -12,7 +12,7 @@ echo
 
 # sourcing the file creating the variable in parent shell
 echo --- source the file ---
-source system/tests/data/tobesourced
+source tests/system/data/tobesourced
 # AA should now be defined
 echo AA is $AA
 alias | sort

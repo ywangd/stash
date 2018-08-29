@@ -1,18 +1,13 @@
 # coding=utf-8
 import os
-import unittest
 
-from stash import stash
+from stash.tests.stashtest import StashTestCase
 
-class ExpanderTests(unittest.TestCase):
+class ExpanderTests(StashTestCase):
 
     def setUp(self):
-        self.stash = stash.StaSh()
-        self.stash('cd $STASH_ROOT')
+        StashTestCase.setUp(self)
         self.expand = self.stash.runtime.expander.expand
-
-    def tearDown(self):
-        del self.stash
 
     def _get_pipe_sequence(self, line):
         expanded = self.expand(line)
@@ -20,7 +15,7 @@ class ExpanderTests(unittest.TestCase):
         return next(expanded)
 
     def test_envars(self):
-        pipe_sequence = self._get_pipe_sequence(r'ls $SELFUPDATE_BRANCH')
+        pipe_sequence = self._get_pipe_sequence(r'ls $SELFUPDATE_TARGET')
         assert pipe_sequence.lst[0].args[0] == 'master'
 
     def test_tilda(self):
@@ -54,7 +49,7 @@ class ExpanderTests(unittest.TestCase):
         assert pipe_sequence.lst[0].args[0] == '\x1b[32m'
 
     def test_double_quotes(self):
-        pipe_sequence = self._get_pipe_sequence(r'ls "$SELFUPDATE_BRANCH"')
+        pipe_sequence = self._get_pipe_sequence(r'ls "$SELFUPDATE_TARGET"')
         assert pipe_sequence.lst[0].args[0] == 'master'
 
         pipe_sequence = self._get_pipe_sequence(r'ls "~/"')
@@ -67,8 +62,8 @@ class ExpanderTests(unittest.TestCase):
         assert pipe_sequence.lst[0].args[0] == '\033[32m'
 
     def test_single_quotes(self):
-        pipe_sequence = self._get_pipe_sequence(r"ls '$SELFUPDATE_BRANCH'")
-        assert pipe_sequence.lst[0].args[0] == '$SELFUPDATE_BRANCH'
+        pipe_sequence = self._get_pipe_sequence(r"ls '$SELFUPDATE_TARGET'")
+        assert pipe_sequence.lst[0].args[0] == '$SELFUPDATE_TARGET'
 
         pipe_sequence = self._get_pipe_sequence(r'ls "~/"')
         assert pipe_sequence.lst[0].args[0] == '~/'

@@ -6,6 +6,9 @@ import os
 from stashutils.core import get_stash
 
 
+SKIP = "<skip>'  # indicate that this patch should be skipped.'"
+
+
 _stash = get_stash()
 
 
@@ -35,10 +38,16 @@ class BasePatch(object):
 			patch.enable()
 		if not self.enabled:
 			pyv = sys.version_info[0]
-			if pyv == 2 and not self.PY2:
-				raise IncompatiblePatch("Python 2 not supported!")
-			if pyv == 3 and not self.PY3:
-				raise IncompatiblePatch("Python 3 not supported!")
+			if pyv == 2:
+				if self.PY2 == SKIP:
+					return  # skip patch activation
+				if not self.PY2:
+					raise IncompatiblePatch("Python 2 not supported!")
+			if pyv == 3:
+				if self.PY3 == SKIP:
+					return  # skip patch activation
+				if not self.PY3:
+					raise IncompatiblePatch("Python 3 not supported!")
 			self.pre_enable()
 			self.do_enable()
 			self.enabled = True

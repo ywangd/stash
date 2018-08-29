@@ -26,15 +26,18 @@ if IN_PYTHONISTA:
         python_capi = ctypes.pythonapi
     else:
         # The default pythonapi always points to Python 3 in Pythonista 3
-        # So we need to load the Python 2 API manually
-        try:
-            python_capi = ctypes.PyDLL(
-            os.path.join(os.path.dirname(sys.executable),
-                         'Frameworks/Py2Kit.framework/Py2Kit'))
-        except OSError:
-            python_capi = ctypes.PyDLL(
-            os.path.join(os.path.dirname(sys.executable),
-                         'Frameworks/PythonistaKit.framework/PythonistaKit'))
+        if six.PY3:
+            python_capi = ctypes.pythonapi
+        else:
+             # We need to load the Python 2 API manually
+            try:
+                python_capi = ctypes.PyDLL(
+                os.path.join(os.path.dirname(sys.executable),
+                             'Frameworks/Py2Kit.framework/Py2Kit'))
+            except OSError:
+                python_capi = ctypes.PyDLL(
+                os.path.join(os.path.dirname(sys.executable),
+                             'Frameworks/PythonistaKit.framework/PythonistaKit'))
         
 else:
     PYTHONISTA_VERSION = '0.0'

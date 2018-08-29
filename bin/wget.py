@@ -11,7 +11,7 @@ try:
     import clipboard
     import console
 except ImportError:
-    from . import dummyconsole as console
+    console = None
 
 _stash = globals()["_stash"]
 
@@ -25,7 +25,9 @@ def main(args):
     url = ns.url or clipboard.get()
     output_file = ns.output_file or url.split('/')[-1]
 
-    console.show_activity()
+    if console is not None:
+        console.show_activity()
+
     try:
 
         print('Opening: %s\n' % url)
@@ -59,12 +61,13 @@ def main(args):
                 print('\r' + status, end="")
             print("")
 
-    except Exception:
-        print('invalid url: %s' % url)
+    except Exception as e:
+        print('Invalid url: %s' % url)
         sys.exit(1)
 
     finally:
-        console.hide_activity()
+        if console is not None:
+            console.hide_activity()
 
     sys.exit(0)
 
