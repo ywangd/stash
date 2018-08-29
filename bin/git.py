@@ -412,7 +412,7 @@ def get_config_or_prompt(repo, section, name, prompt, save=None):
             saveglobal = reply == 'y'
             if saveglobal:
                 globalcfg = config.default_backends()
-                if isempty(globalcfg):
+                if not globalcfg:
                     open(os.expanduser('~/.gitconfig','w')).close() #create file
                     globalcfg = config.default_backends()[0]
                 globalcfg.set(section,name,value)
