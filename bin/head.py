@@ -4,11 +4,12 @@
 from __future__ import print_function
 
 import argparse
+import string
 import sys
 import fileinput
 
 def filter_non_printable(s):
-    return ''.join([c if (31 < ord(c) < 127 or c in "\n\r\t\b") else ' ' for c in s])
+    return ''.join([c if c.isalnum() or c.isspace() or c in string.punctuation else ' ' for c in s])
 
 def head(f, nlines):
     if nlines >= 0:
@@ -59,7 +60,7 @@ def main(args):
                     print(header_fmt.format(fname), end='')
 
             fileinput.close()
-            inp = fileinput.input(fname)
+            inp = fileinput.input(fname, openhook=fileinput.hook_encoded("utf-8"))
             if ns.lines >= 0:
                 buf = []
                 for i, line in enumerate(inp):
@@ -70,7 +71,7 @@ def main(args):
                     print(line, end='')
             else:
                 buf = []
-                for line in fileinput.input(inp):
+                for line in fileinput.input(inp, openhook=fileinput.hook_encoded("utf-8")):
                     buf.append(line)
                     if len(buf) > -ns.lines:
                         del buf[0]

@@ -15,7 +15,7 @@ def main(args):
     
     fileinput.close() # in case it is not closed
     try:
-        clipboard.set(''.join(line for line in fileinput.input(ns.file)))
+        clipboard.set(''.join(line for line in fileinput.input(ns.file, openhook=fileinput.hook_encoded("utf-8"))))
     except Exception as err:
         print("pbcopy: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
     finally:
