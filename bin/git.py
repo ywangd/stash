@@ -30,6 +30,7 @@ import posix
 import subprocess
 import sys
 
+
 from six import StringIO
 from six.moves import input
 from six.moves.urllib.parse import urlparse, urlunparse
@@ -402,13 +403,23 @@ def get_config_or_prompt(repo, section, name, prompt, save=None):
     try:
         value = config.get(section, name)
     except KeyError:
-        value = input(prompt)
+        value = input(prompt).encode()
         if save == None:
             reply = input('Save this setting? [y/n]')
             save = reply == 'y'
         if save:
-            config.set(section, name, value)
-            config.write_to_path()
+            reply = input('Save globally (~/.gitconfig) for all repos? [y/n]')
+            saveglobal = reply == 'y'
+            if saveglobal:
+                globalcfg = config.default_backends()
+                if not globalcfg:
+                    open(os.expanduser('~/.gitconfig','w')).close() #create file
+                    globalcfg = config.default_backends()[0]
+                globalcfg.set(section,name,value)
+                globalcfg.write_to_path()
+            else:
+                config.set(section, name, value)
+                config.writable.write_to_path()
     return value
         
 def git_commit(args):
