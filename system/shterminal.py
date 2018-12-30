@@ -275,7 +275,8 @@ class ShTerminal(object):
     @background_color.setter
     @on_main_thread
     def background_color(self, value):
-        r, g, b = self._background_color = value
+        self._background_color = value
+        r, g, b, a = ui.parse_color(value)
         self.tvo.setBackgroundColor_(UIColor.colorWithRed_green_blue_alpha_(r, g, b, 1))
 
     @property
@@ -309,7 +310,8 @@ class ShTerminal(object):
     @text_color.setter
     @on_main_thread
     def text_color(self, value):
-        r, g, b = self._text_color = value
+        self._text_color = value
+        r, g, b, a = ui.parse_color(value)
         self.tvo.setTextColor_(UIColor.colorWithRed_green_blue_alpha_(r, g, b, 1))
 
     @property
@@ -319,7 +321,8 @@ class ShTerminal(object):
     @tint_color.setter
     @on_main_thread
     def tint_color(self, value):
-        r, g, b = self._tint_color = value
+        self._tint_color = value
+        r, g, b, a = ui.parse_color(value)
         self.tvo.setTintColor_(UIColor.colorWithRed_green_blue_alpha_(r, g, b, 1))
 
     @property

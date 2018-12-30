@@ -30,13 +30,15 @@ BlackColor = UIColor.blackColor()
 RedColor = UIColor.redColor()
 GreenColor = UIColor.greenColor()
 BrownColor = UIColor.brownColor()
-# BlueColor = UIColor.blueColor()
-BlueColor = UIColor.colorWithRed_green_blue_alpha_(0.3, 0.3, 1.0, 1.0)
+BlueColor = UIColor.blueColor()
+# BlueColor = UIColor.colorWithRed_green_blue_alpha_(0.3, 0.3, 1.0, 1.0)
 MagentaColor = UIColor.magentaColor()
 CyanColor = UIColor.cyanColor()
 WhiteColor = UIColor.whiteColor()
-GrayColor = UIColor.colorWithRed_green_blue_alpha_(0.5, 0.5, 0.5, 1.0)
+GrayColor = UIColor.grayColor()
+# GrayColor = UIColor.colorWithRed_green_blue_alpha_(0.5, 0.5, 0.5, 1.0)
 YellowColor = UIColor.yellowColor()
+# SmokeColor = UIColor.smokeColor()
 SmokeColor = UIColor.colorWithRed_green_blue_alpha_(0.8, 0.8, 0.8, 1.0)
 
 
@@ -636,6 +638,10 @@ class ShSequentialRenderer(object):
         self.logger = logging.getLogger('StaSh.SequentialRenderer')
         self.last_rendered_time = 0
         self.render_thread = None
+        
+        # update default colors to match terminal
+        self.FG_COLORS["default"] = self.FG_COLORS.get(self.terminal.text_color, WhiteColor)
+        self.BG_COLORS["default"] = self.BG_COLORS.get(self.terminal.background_color, BlackColor)
 
     @staticmethod
     def _same_style(char1, char2):
