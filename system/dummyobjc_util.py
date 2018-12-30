@@ -50,6 +50,10 @@ class UIColor(ObjCClass):
         pass
 
     @classmethod
+    def grayColor(cls):
+        pass
+
+    @classmethod
     def yellowColor(cls):
         pass
 
