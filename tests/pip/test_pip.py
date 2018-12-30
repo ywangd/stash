@@ -68,7 +68,7 @@ class PipTests(StashTestCase):
         """test 'pip search <term>'"""
         output = self.run_command("pip search pytest", exitcode=0)
         self.assertIn("pytest", output)
-        self.assertIn("pytest-faker", output)
+        self.assertIn("pytest-translations", output)
         self.assertIn("pytest-env", output)
 
     @requires_network
