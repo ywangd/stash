@@ -8,6 +8,7 @@ from six import string_types
 import console
 import pythonista_add_action as paa
 import ui
+import dialogs
 from stash.system.shcommon import _STASH_CONFIG_FILES
 
 _stash = globals()["_stash"]
@@ -20,14 +21,31 @@ TYPE_INT = 2
 TYPE_STR = 3
 TYPE_FILE = 4  # NotImplemented
 TYPE_COLOR = 5
-TYPE_CHOICE = 6
-TYPE_LABEL = 7
+TYPE_RGB = TYPE_RGB_COLOR = 6
+TYPE_CHOICE = 7
+TYPE_LABEL = 8
 TYPE_COMMAND = 9
 
 CONFIG_PATH = os.path.join(
 	os.getenv("STASH_ROOT"),  # not using shcommons._STASH_ROOT here
 	_STASH_CONFIG_FILES[0],
 	)
+
+
+# list of colors
+COLORS = [
+	"black",
+	"white",
+	"red",
+	"green",
+	"blue",
+	"yellow",
+	"magenta",
+	"brown",
+	"cyan",
+	"gray",
+	# "smoke",
+	]
 
 # define functions for commands
 
@@ -165,6 +183,12 @@ OPTIONS = {
 			"value": _stash.__version__,
 		},
 		{
+			"display_name": "Selfupdate target",
+			"option_name": None,
+			"type": TYPE_LABEL,
+			"value": os.getenv("SELFUPDATE_TARGET", "ywangd:master")
+		},
+		{
 			"display_name": "Update",
 			"option_name": None,
 			"type": TYPE_COMMAND,
@@ -193,7 +217,7 @@ SECTIONS = [
 	]
 	
 
-class ColorPicker(object):
+class RGBColorPicker(object):
 	"""
 	This object will prompt the user for a color.
 	Parts of this are copied from the pythonista examples.
@@ -401,12 +425,30 @@ class ConfigView(ui.View):
 			b = ui.Button()
 			rawcolor = _stash.config.get(sn, info["option_name"])
 			color = ast.literal_eval(rawcolor)
+			b.background_color = color
+			b.title = str(color)
+			b.tint_color = ((0, 0, 0) if color[0] >= 0.5 else (1, 1, 1))
+			i = (sn, info["option_name"])
+			callback = lambda s, self=self, i=i: self.choose_color(s, i)
+			b.action = callback
+			cell.content_view.add_subview(b)
+			b.width = (cell.width / 6.0)
+			b.height = ((cell.height / 4.0) * 3.0)
+			b.y = (cell.height / 2.0) - (b.height / 2.0)
+			b.x = (cell.width - b.width) - (cell.width / 20)
+			b.flex = "LW"
+			b.border_color = "#000000"
+			b.border_width = 1
+		elif otype == TYPE_RGB_COLOR:
+			b = ui.Button()
+			rawcolor = _stash.config.get(sn, info["option_name"])
+			color = ast.literal_eval(rawcolor)
 			rgb255color = int(color[0] * 255), int(color[1] * 255), int(color[2] * 255)
 			b.background_color = color
 			b.title = "#%.02X%.02X%.02X" % rgb255color
 			b.tint_color = ((0, 0, 0) if color[0] >= 0.5 else (1, 1, 1))
 			i = (sn, info["option_name"])
-			callback = lambda s, self=self, i=i: self.choose_color(s, i)
+			callback = lambda s, self=self, i=i: self.choose_rgb_color(s, i)
 			b.action = callback
 			cell.content_view.add_subview(b)
 			b.width = (cell.width / 6.0)
@@ -534,7 +576,21 @@ class ConfigView(ui.View):
 		"""called when the user wants to change a color."""
 		section, option = name
 		cur = b.background_color[:3]
-		picker = ColorPicker(cur)
+		self.subview_open = True
+		name = dialogs.list_dialog("Choose a color", COLORS, multiple=False)
+		self.subview_open = False
+		if name is None:
+			return
+		_stash.config.set(section, option, repr(name))
+		self.table.reload_data()
+		self.save()
+	
+	@ui.in_background
+	def choose_rgb_color(self, b, name):
+		"""called when the user wants to change a rgb color."""
+		section, option = name
+		cur = b.background_color[:3]
+		picker = RGBColorPicker(cur)
 		self.subview_open = True
 		rgb = picker.get_color()
 		self.subview_open = False
