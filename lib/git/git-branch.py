@@ -10,10 +10,10 @@ import argparse
 import os
 import sys
 
-from six.moves import input
-
 from git.gitutils import (GitError, _get_repo, any_one, count_commits_between,
                           find_revision_sha, get_remote_tracking_branch)
+from six import iteritems
+from six.moves import input
 
 
 def branch(args):
@@ -120,7 +120,7 @@ def branch_list(result):
         N=result.abbrev
         repo = _get_repo()
         if not result.remotes:
-            for key,value in repo.branches.iteritems():
+            for key,value in iteritems(repo.branches):
                 dispval=value[0:N]  #todo, --abbrev=n
                 commitmsg=(repo[value].message if result.verbose else '').strip()
                 tracking=get_remote_tracking_branch(repo,key)
@@ -133,7 +133,7 @@ def branch_list(result):
                     trackmsg='[{} {} {}]'.format(diffmsg,tracking,trackingsha[0:N])
                 print (' '.join([('* ' if repo.active_branch == key else '') + key,  dispval, commitmsg]))
         if result.remotes or result.all:
-            for key, value in repo.remote_branches.iteritems():
+            for key, value in iteritems(repo.remote_branches):
                 dispval=value[0:N]  #todo, --abbrev=n
                 commitmsg=(repo[value].message if result.verbose else '').strip()
                 print (' '.join([('* ' if repo.active_branch == key else '') + key,  dispval, commitmsg]))
