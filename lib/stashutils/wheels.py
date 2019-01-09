@@ -118,8 +118,18 @@ class BaseHandler(object):
 		self.wheel = wheel
 		self.verbose = verbose
 	
-	def copytree(self, src, dest, remove=False):
-		"""copies a directory tree."""
+	def copytree(self, packagepath, src, dest, remove=False):
+		"""
+		Copies a package directory tree.
+		:param packagepath: relative path of the (sub-)package, e.g. 'package/subpackage/'
+		:type packagepath: str
+		:param src: path to the actual source of the root package
+		:type src: str
+		:param dest: path to copy to
+		:type dest: str
+		:return: the path to which the directories have been copied.
+		:trype: str
+		"""
 		if self.verbose:
 			print("Copying {s} -> {d}".format(s=src, d=dest))
 		if os.path.isfile(src):
@@ -132,7 +142,8 @@ class BaseHandler(object):
 		else:
 			target = os.path.join(
 				dest,
-				os.path.basename(os.path.normpath(src)),
+				# os.path.basename(os.path.normpath(src)),
+				packagepath,
 				)
 			if os.path.exists(target) and remove:
 				shutil.rmtree(target)
@@ -161,10 +172,10 @@ class TopLevelHandler(BaseHandler):
 				pure = pkg_name.replace("\r", "").replace("\n", "")
 				sp = os.path.join(src, pure)
 				if os.path.exists(sp):
-					p = self.copytree(sp, dest, remove=True)
+					p = self.copytree(pure, sp, dest, remove=True)
 				elif os.path.exists(sp + ".py"):
 					dp = os.path.join(dest, pure + ".py")
-					p = self.copytree(sp + ".py", dp, remove=True)
+					p = self.copytree(pure, sp + ".py", dp, remove=True)
 				else:
 					raise WheelError("top_level.txt entry '{e}' not found in toplevel directory!".format(e=pure))
 				files_installed.append(p)
