@@ -1397,6 +1397,7 @@ if __name__ == '__main__':
                 if ns.nobinary == ":all:":
                     # disable all binaries
                     dist = dist & ~DIST_ALLOW_WHL
+                    dist = dist & ~DIST_PREFER_WHL
                 elif ns.nobinary == ":none:":
                     # allow all binaries
                     dist = dist | DIST_ALLOW_WHL
@@ -1408,6 +1409,8 @@ if __name__ == '__main__':
                 if ns.onlybinary == ":all:":
                     # disable all source
                     dist = dist & ~DIST_ALLOW_SRC
+                    dist = dist & ~DIST_PREFER_SRC
+
                 elif ns.nobinary == ":none:":
                     # allow all source
                     dist = dist | DIST_ALLOW_SRC
