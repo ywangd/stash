@@ -1053,7 +1053,14 @@ class PyPIRepository(PackageRepository):
             if self.verbose:
                 print("No source distribution found, but a binary distribution was found and will be used.")
             target = wheel
-        else:
+
+        if target is None:
+            if self.verbose:
+                print("No allowed distribution found!")
+                if wheel is not None and (dist & DIST_ALLOW_WHL == 0):
+                    print("However, a wheel is available. Maybe try without '--no-binary' or with '--only-binary :all:'?")
+                if source is not None and (dist & DIST_ALLOW_SRC == 0):
+                    print("However, a source distribution is available. Maybe try with '--no-binary :all:'?")
             raise PipError("No allowed distribution found for '{}': {}!".format(pkg_name, hit))
 
         pkg_info = self._package_info(pkg_data)
