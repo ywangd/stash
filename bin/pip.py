@@ -85,6 +85,13 @@ PACKAGE_NAME_FIXER = {
 NO_OVERWRITE = False
 
 
+# Utility constants
+DIST_ALLOW_SRC = 1
+DIST_ALLOW_WHL = 2
+DIST_PREFER_SRC = 4
+DIST_PREFER_WHL = 8
+DIST_DEFAULT = DIST_ALLOW_SRC | DIST_ALLOW_WHL | DIST_PREFER_WHL
+
 def _setup_stub_(*args, **kwargs):
     setuptools = sys.modules['setuptools']
     setuptools._setup_params_ = (args, kwargs)
@@ -95,9 +102,9 @@ class PipError(Exception):
 
 
 class PackageAlreadyInstalled(PipError):
-	"""Error raised when a package is already installed."""
-	pass
-	
+    """Error raised when a package is already installed."""
+    pass
+
 
 class OmniClass(object):
     def __init__(self, *args, **kwargs):
@@ -830,7 +837,7 @@ class PackageRepository(object):
     def download(self, pkg_name, ver_spec):
         raise PipError('Action Not Available: download')
 
-    def install(self, pkg_name, ver_spec):
+    def install(self, pkg_name, ver_spec, dist=DIST_DEFAULT):
         raise PipError('Action Not Available: install')
 
     def _install(self, pkg_name, pkg_info, archive_filename):
@@ -1001,7 +1008,7 @@ class PyPIRepository(PackageRepository):
 
         return releases
 
-    def download(self, pkg_name, ver_spec, wheel_priority=False):
+    def download(self, pkg_name, ver_spec, dist=DIST_DEFAULT):
         print('Querying PyPI ... ')
         pkg_name = self.get_standard_package_name(pkg_name)
         pkg_data = self._package_data(pkg_name)
@@ -1023,35 +1030,43 @@ class PyPIRepository(PackageRepository):
                 if wheel_is_compatible(fn):
                     wheel = download
 
-        if not source:
-            if not wheel:
-                raise PipError('Source distribution not available for {}: {}'.format(pkg_name, hit))
-            else:
-                source = wheel
-        else:
-            if wheel_priority:
-                if wheel is not None:
-                    source = wheel
+        #raise PipError('Source distribution not available for {}: {}'.format(pkg_name, hit))
+        # source = wheel
+        target = None
+        if source is not None and (dist & DIST_ALLOW_SRC > 0):
+            # source is available and allowed
+            if (wheel is None) or (dist & DIST_PREFER_SRC > 0):
+                # no wheel is available or source is prefered
+                # use source
+                target = source
+            elif (dist & DIST_ALLOW_SRC > 0):
+                # a wheel is available and allowed and source is not preffered
+                # use wheel
+                target = wheel
+        elif wheel is not None and (dist & DIST_ALLOW_WHL):
+            # source is not available or allowed, but a wheel is available and allowed
+            # use wheel
+            target = wheel
 
         pkg_info = self._package_info(pkg_data)
         pkg_info['url'] = 'pypi'
 
         print('Downloading package ...')
 
-        worker = _stash('wget {} -o $TMPDIR/{}'.format(source['url'], source['filename']))
+        worker = _stash('wget {} -o $TMPDIR/{}'.format(target['url'], target['filename']))
 
         if worker.state.return_value != 0:
-            raise PipError('failed to download package from {}'.format(source['url']))
+            raise PipError('failed to download package from {}'.format(target['url']))
 
-        return os.path.join(os.getenv('TMPDIR'), source['filename']), pkg_info
+        return os.path.join(os.getenv('TMPDIR'), target['filename']), pkg_info
 
-    def install(self, pkg_name, ver_spec):
+    def install(self, pkg_name, ver_spec, dist=DIST_DEFAULT):
         pkg_name = self.get_standard_package_name(pkg_name)
         if not self.config.module_exists(pkg_name):
-            archive_filename, pkg_info = self.download(pkg_name, ver_spec, wheel_priority=True)
+            archive_filename, pkg_info = self.download(pkg_name, ver_spec, dist=dist)
             self._install(pkg_name, pkg_info, archive_filename)
         else:
-        	# todo: maybe update package?
+            # todo: maybe update package?
             raise PackageAlreadyInstalled('Package already installed')
 
     def update(self, pkg_name):
@@ -1122,7 +1137,7 @@ class GitHubRepository(PackageRepository):
         'summary': metadata.get('description', ''),
         }
 
-    def install(self, owner_repo, ver_spec):
+    def install(self, owner_repo, ver_spec, dist=DIST_DEFAULT):
         if not self.config.module_exists(owner_repo):
             owner, repo = owner_repo.split('/')
             release = self._get_release_from_version_specifier(ver_spec)
@@ -1150,7 +1165,7 @@ class UrlRepository(PackageRepository):
         'summary': '',
         }
 
-    def install(self, url, ver_spec):
+    def install(self, url, ver_spec, dist=DIST_DEFAULT):
         if not self.config.module_exists(url):
             archive_filename, pkg_info = self.download(url, ver_spec)
             pkg_name = os.path.splitext(os.path.basename(archive_filename))[0]
@@ -1164,7 +1179,7 @@ class LocalRepository(PackageRepository):
     This repository deals with a local archive file.
     """
 
-    def install(self, archive_filename, ver_spec):
+    def install(self, archive_filename, ver_spec, dist=DIST_DEFAULT):
         pkg_info = {
         'name': archive_filename,
         'url': 'local',
@@ -1301,6 +1316,24 @@ if __name__ == '__main__':
         '--directory',
         help='target directory for installation',
         )
+    install_parser.add_argument(
+        "--no-binary",
+        action="store",
+        help="Do not use binary packages",
+        dest="nobinary"
+    )
+    install_parser.add_argument(
+        "--only-binary",
+        action="store",
+        help="Do not use binary packages",
+        dest="onlybinary"
+    )
+    install_parser.add_argument(
+        "--prefer-binary",
+        action="store_true",
+        help="Prefer older binary packages over newer source packages",  # TODO: do we actually check older sources/wheels?
+        dest="prerferbinary",
+    )
 
     download_parser = subparsers.add_parser('download', help='download packages')
     download_parser.add_argument(
@@ -1345,6 +1378,35 @@ if __name__ == '__main__':
                 site_packages = ns.directory
             else:
                 site_packages = ns.site_packages
+
+            dist = DIST_DEFAULT
+            if ns.nobinary is not None:
+                if ns.nobinary == ":all:":
+                    # disable all binaries
+                    dist = dist & ~DIST_ALLOW_WHL
+                elif ns.nobinary == ":none:":
+                    # allow all binaries
+                    dist = dist | DIST_ALLOW_WHL
+                else:
+                    # TODO: implement this
+                    print("Error: --no-binary does currently only support :all: or :none:")
+
+            if ns.onlybinary is not None:
+                if ns.onlybinary == ":all:":
+                    # disable all source
+                    dist = dist & ~DIST_ALLOW_SRC
+                elif ns.nobinary == ":none:":
+                    # allow all source
+                    dist = dist | DIST_ALLOW_SRC
+                else:
+                    # TODO: implement this
+                    print("Error: --only-binary does currently only support :all: or :none:")
+
+            if ns.preferbinary:
+                # set preference to wheels
+                dist = dist | DIST_PREFER_WHL | DIST_ALLOW_WHL
+                dist = dist & ~DIST_PREFER_SRC
+
             for requirement in ns.requirements:
                 repository = get_repository(requirement, site_packages=site_packages, verbose=ns.verbose)
                 NO_OVERWRITE = ns.no_overwrite
@@ -1356,7 +1418,7 @@ if __name__ == '__main__':
                     ensure_pkg_resources()  # install pkg_resources if needed
                     # start with what we have installed (i.e. in the config file)
                     sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
-                    repository.install(pkg_name, ver_spec)
+                    repository.install(pkg_name, ver_spec, dist=dist)
 
         elif ns.sub_command == 'download':
             for requirement in ns.requirements:
