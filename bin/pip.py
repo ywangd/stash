@@ -1030,23 +1030,31 @@ class PyPIRepository(PackageRepository):
                 if wheel_is_compatible(fn):
                     wheel = download
 
-        #raise PipError('Source distribution not available for {}: {}'.format(pkg_name, hit))
-        # source = wheel
         target = None
         if source is not None and (dist & DIST_ALLOW_SRC > 0):
             # source is available and allowed
             if (wheel is None) or (dist & DIST_PREFER_SRC > 0):
                 # no wheel is available or source is prefered
                 # use source
+                if self.verbose:
+                    print("A source distribution is available and will be used.")
                 target = source
-            elif (dist & DIST_ALLOW_SRC > 0):
+            elif (dist & DIST_ALLOW_WHL > 0):
                 # a wheel is available and allowed and source is not preffered
                 # use wheel
+                if self.verbose:
+                    print("A binary distribution is available and will be used.")
                 target = wheel
-        elif wheel is not None and (dist & DIST_ALLOW_WHL):
+            else:
+                raise PipError("No allowed distribution found for '{}': {}!".format(pkg_name, hit))
+        elif wheel is not None and (dist & DIST_ALLOW_WHL > 0):
             # source is not available or allowed, but a wheel is available and allowed
             # use wheel
+            if self.verbose:
+                print("No source distribution found, but a binary distribution was found and will be used.")
             target = wheel
+        else:
+            raise PipError("No allowed distribution found for '{}': {}!".format(pkg_name, hit))
 
         pkg_info = self._package_info(pkg_data)
         pkg_info['url'] = 'pypi'
