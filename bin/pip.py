@@ -1045,8 +1045,6 @@ class PyPIRepository(PackageRepository):
                 if self.verbose:
                     print("A binary distribution is available and will be used.")
                 target = wheel
-            else:
-                raise PipError("No allowed distribution found for '{}': {}!".format(pkg_name, hit))
         elif wheel is not None and (dist & DIST_ALLOW_WHL > 0):
             # source is not available or allowed, but a wheel is available and allowed
             # use wheel
