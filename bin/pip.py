@@ -1033,7 +1033,7 @@ class PyPIRepository(PackageRepository):
         target = None
         if source is not None and (dist & DIST_ALLOW_SRC > 0):
             # source is available and allowed
-            if (wheel is None or (dist & DIST_ALLOW_SRC == 0)) or (dist & DIST_PREFER_SRC > 0):
+            if (wheel is None or (dist & DIST_ALLOW_WHL == 0)) or (dist & DIST_PREFER_SRC > 0):
                 # no wheel is available or source is prefered
                 # use source
                 if self.verbose:
