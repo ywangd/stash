@@ -1332,7 +1332,7 @@ if __name__ == '__main__':
         "--prefer-binary",
         action="store_true",
         help="Prefer older binary packages over newer source packages",  # TODO: do we actually check older sources/wheels?
-        dest="prerferbinary",
+        dest="preferbinary",
     )
 
     download_parser = subparsers.add_parser('download', help='download packages')
