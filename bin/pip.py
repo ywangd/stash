@@ -772,7 +772,9 @@ if __name__ == "__main__":
         Get AST of the setup file and also transform it for fake setuptools
         and stub setup calls.
         """
-        with codecs.open(filename, mode="r", encoding="UTF-8") as ins:
+        # with codecs.open(filename, mode="r", encoding="UTF-8") as ins:
+        #    s = ins.read()
+        with open(filename, "r") as ins:
             s = ins.read()
         tree = ast.parse(s, filename=filename, mode='exec')
         ArchiveFileInstaller.SetupTransformer().visit(tree)
