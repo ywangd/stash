@@ -878,7 +878,7 @@ class PackageRepository(object):
                 continue
 
             print('Installing dependency: {}'.format('{}{}'.format(pkg_name, ver_spec if ver_spec else '')))
-            repository = get_repository(pkg_name)
+            repository = get_repository(pkg_name, verbose=self.verbose)
             try:
                 repository.install(pkg_name, ver_spec, dist=dependency_dist)
             except PackageAlreadyInstalled:
