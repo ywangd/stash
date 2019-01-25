@@ -28,7 +28,6 @@ import requests
 import re
 import operator
 import traceback
-import codecs
 
 import six
 from distutils.util import convert_path
@@ -58,7 +57,7 @@ if IN_PYTHONISTA:
         'matplotlib', 'mechanize', 'midiutil', 'mpmath', 'numpy', 'oauth2', 'paramiko',
         'parsedatetime', 'Pillow', 'pycparser', 'pyflakes', 'pygments', 'pyparsing',
         'PyPDF2', 'pytz', 'qrcode', 'reportlab', 'requests', 'simpy', 'six', 'sqlalchemy',
-        'pysqlite', 'sympy', 'thrift', 'werkzeug', 'wsgiref', 'pisa', 'xmltodict', 'PyYAML'
+        'pysqlite', 'sympy', 'thrift', 'werkzeug', 'wsgiref', 'pisa', 'xmltodict', 'PyYAML',
     ]
 
     if _stash.PY3:
@@ -842,7 +841,7 @@ class PackageRepository(object):
     def install(self, pkg_name, ver_spec, dist=DIST_DEFAULT):
         raise PipError('Action Not Available: install')
 
-    def _install(self, pkg_name, pkg_info, archive_filename):
+    def _install(self, pkg_name, pkg_info, archive_filename, dependency_dist=DIST_DEFAULT):
         if archive_filename.endswith(".whl"):
             print("Installing wheel: {}...".format(os.path.basename(archive_filename)))
             wheel = Wheel(archive_filename, verbose=self.verbose)
@@ -881,7 +880,7 @@ class PackageRepository(object):
             print('Installing dependency: {}'.format('{}{}'.format(pkg_name, ver_spec if ver_spec else '')))
             repository = get_repository(pkg_name)
             try:
-                repository.install(pkg_name, ver_spec)
+                repository.install(pkg_name, ver_spec, dist=dependency_dist)
             except PackageAlreadyInstalled:
                 # well, it is already installed...
                 # TODO: maybe update package if required?
@@ -1079,7 +1078,7 @@ class PyPIRepository(PackageRepository):
         pkg_name = self.get_standard_package_name(pkg_name)
         if not self.config.module_exists(pkg_name):
             archive_filename, pkg_info = self.download(pkg_name, ver_spec, dist=dist)
-            self._install(pkg_name, pkg_info, archive_filename)
+            self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist)
         else:
             # todo: maybe update package?
             raise PackageAlreadyInstalled('Package already installed')
@@ -1157,7 +1156,7 @@ class GitHubRepository(PackageRepository):
             owner, repo = owner_repo.split('/')
             release = self._get_release_from_version_specifier(ver_spec)
             archive_filename, pkg_info = self.download(owner_repo, release)
-            self._install('-'.join([repo, release]), pkg_info, archive_filename)
+            self._install('-'.join([repo, release]), pkg_info, archive_filename, dependency_dist=dist)
         else:
             raise PipError('Package already installed')
 
@@ -1184,7 +1183,7 @@ class UrlRepository(PackageRepository):
         if not self.config.module_exists(url):
             archive_filename, pkg_info = self.download(url, ver_spec)
             pkg_name = os.path.splitext(os.path.basename(archive_filename))[0]
-            self._install(pkg_name, pkg_info, archive_filename)
+            self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist)
         else:
             raise PipError('Package already installed')
 
@@ -1201,7 +1200,7 @@ class LocalRepository(PackageRepository):
         'version': '',
         'summary': ''
         }
-        self._install(pkg_name, pkg_info, archive_filename)
+        self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist)
 
 
 # url_repository = UrlRepository()
