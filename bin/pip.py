@@ -1138,27 +1138,28 @@ class PyPIRepository(PackageRepository):
         :return: whether dist allows the release or not
         :rtype: boolean
         """
-        had_hit = False
+        had_v = False
         downloads = self._package_downloads(pkg_data, release)
         for download in downloads:
             pv = download.get("python_version", None)
-            if pt is None:
+            if pv is None:
                 continue
-            elif pt in ("py2.py3", "py3.py2"):
+            elif pv in ("py2.py3", "py3.py2"):
                 # compatible with both py versions
                 return True
-            elif pt.startswith("2")):
+            elif pv.startswith("2"):
                 # py2 release
                 if not six.PY3:
                     return True
-            elif pt.startswith("3"):
+            elif pv.startswith("3"):
                 # py3 release
                 if six.PY3:
                     return True
-            elif pt == "source":
+            elif pv == "source":
                 # i honestly have no idea what this means
                 # i assume it means "this source is compatible with both", so just return True
                 return True
+            had_v = True
         if had_v:
             # no allowed downloads found
             return False
