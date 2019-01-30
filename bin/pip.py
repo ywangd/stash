@@ -1128,7 +1128,7 @@ class PyPIRepository(PackageRepository):
             else:
                 raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec))
 
-    def _releases_matches_py_version(self, pkg_data, release):
+    def _release_matches_py_version(self, pkg_data, release):
         """
         Check if a release is compatible with the python version.
         :param pkg_data: package information
