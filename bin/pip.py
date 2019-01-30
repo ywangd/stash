@@ -1013,7 +1013,7 @@ class PyPIRepository(PackageRepository):
         print('Querying PyPI ... ')
         pkg_name = self.get_standard_package_name(pkg_name)
         pkg_data = self._package_data(pkg_name)
-        hit = self._determin_hit(pkg_data, ver_spec)
+        hit = self._determin_hit(pkg_data, ver_spec, dist=dist)
 
         downloads = self._package_downloads(pkg_data, hit)
 
@@ -1098,16 +1098,104 @@ class PyPIRepository(PackageRepository):
         else:
             raise PipError('package not installed: {}'.format(pkg_name))
 
-    def _determin_hit(self, pkg_data, ver_spec):
+    def _determin_hit(self, pkg_data, ver_spec, dist=None):
+        """
+        Find a release for a package matching a specified version.
+        :param pkg_data: the package information
+        :type pkg_data: dict
+        :param ver_spec: the version specification
+        :type ver_spec: VersionSpecifier
+        :param dist: distribution options
+        :type dist: int or None
+        :return: a version matching the specified version
+        :rtype: str
+        """
         pkg_name = pkg_data['info']['name']
         if ver_spec is None:
             return self._package_latest_release(pkg_data)
         else:
-            for hit in self._package_releases(pkg_data):
+            for hit in sorted(self._package_releases(pkg_data), reverse=True):
+                # we return the fist matching hit, so we should sort the hits by descending version
+                if (dist is not None) and not self._dist_allows_release(dist, pkg_data, hit):
+                    # hit has no source/binary release and is not allowed by dis
+                    continue
+                if not self._release_matches_py_version(pkg_data, hit):
+                    # hit contains no compatible releases
+                    continue
                 if all([op(hit, ver) for op, ver in ver_spec.specs]):
+                    # version is allowed
                     return hit
             else:
                 raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec))
+
+    def _releases_matches_py_version(self, pkg_data, release):
+        """
+        Check if a release is compatible with the python version.
+        :param pkg_data: package information
+        :type pkg_data: dict
+        :param release: the release to check
+        :type release: str
+        :return: whether dist allows the release or not
+        :rtype: boolean
+        """
+        had_hit = False
+        downloads = self._package_downloads(pkg_data, release)
+        for download in downloads:
+            pv = download.get("python_version", None)
+            if pt is None:
+                continue
+            elif pt in ("py2.py3", "py3.py2"):
+                # compatible with both py versions
+                return True
+            elif pt.startswith("2")):
+                # py2 release
+                if not six.PY3:
+                    return True
+            elif pt.startswith("3"):
+                # py3 release
+                if six.PY3:
+                    return True
+            elif pt == "source":
+                # i honestly have no idea what this means
+                # i assume it means "this source is compatible with both", so just return True
+                return True
+        if had_v:
+            # no allowed downloads found
+            return False
+        else:
+            # none found, maybe pypi changed
+            # in this case, just return True
+            # we did it before without these checks and it worked *most* of the time, so missing this check is not horrible...
+            return True
+
+    def _dist_allows_release(self, dist, pkg_data, release):
+        """
+        Check if a release is allowed by the distribution settings.
+        :param dist: the distribution options
+        :type dist: int
+        :param pkg_data: package information
+        :type pkg_data: dict
+        :param release: the release to check
+        :type release: str
+        :return: whether dist allows the release or not
+        :rtype: boolean
+        """
+        downloads = self._package_downloads(pkg_data, release)
+        for download in downloads:
+            pt = download.get("package_type", None)
+            if pt is None:
+                continue
+            elif pt in ("source", "sdist"):
+                # source distribution
+                if (dist & DIST_ALLOW_SRC > 0):
+                    return True
+            elif pt in ("bdist_wheel", "wheel", "whl"):
+                # wheel
+                if (dist & DIST_ALLOW_WHL > 0):
+                    return True
+        # no allowed downloads found
+        return False
+
 
 
 class GitHubRepository(PackageRepository):
