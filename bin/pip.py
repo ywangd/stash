@@ -1116,9 +1116,11 @@ class PyPIRepository(PackageRepository):
         """
         pkg_name = pkg_data['info']['name']
         if ver_spec is None:
+            # TODO: add compatibility check
             return self._package_latest_release(pkg_data)
         else:
             for hit in sorted(self._package_releases(pkg_data), reverse=True):
+                # TODO: more intiligent sort
                 # we return the fist matching hit, so we should sort the hits by descending version
                 if (dist is not None) and not self._dist_allows_release(dist, pkg_data, hit):
                     # hit has no source/binary release and is not allowed by dis
@@ -1145,24 +1147,19 @@ class PyPIRepository(PackageRepository):
         had_v = False
         has_source = False
         downloads = self._package_downloads(pkg_data, release)
-        print("checking: " + pkg_data["info"].get("name", "???"), "==", release)  # DEBUG
         for download in downloads:
             requires_python = download.get("requires_python", None)
             if requires_python is not None:
-                print("requires_python found: " + requires_python)  # DEBUG
                 reqs = "python" + requires_python
                 name, ver_spec = VersionSpecifier.parse_requirement(reqs)
                 assert name == "python"  # if this if False some large bug happened...
                 if all([op(platform.python_version(), ver) for op, ver in ver_spec.specs]):
                     # compatible
-                    print("COMPATIBLE!")  # DEBUG
                     return True
             else:
                 # fallback
-                print("falling back to python_version")  # DEBUG
                 # TODO: do we require this?
                 pv = download.get("python_version", None)
-                print("python_version: ", pv)  # DEBUG
                 if pv is None:
                     continue
                 elif pv in ("py2.py3", "py3.py2"):
@@ -1182,7 +1179,6 @@ class PyPIRepository(PackageRepository):
                     # however, this seems to be wrong. Instead, we use this as a fallback yes
                     has_source = True
             had_v = True
-        print("No compatible found! had_v: ", had_v, " has_source: ", has_source)  # DEBUG
         if had_v:
             # no allowed downloads found
             return has_source
