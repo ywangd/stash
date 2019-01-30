@@ -1183,7 +1183,7 @@ class PyPIRepository(PackageRepository):
         """
         downloads = self._package_downloads(pkg_data, release)
         for download in downloads:
-            pt = download.get("package_type", None)
+            pt = download.get("packagetype", None)
             if pt is None:
                 continue
             elif pt in ("source", "sdist"):
