@@ -296,6 +296,7 @@ class DependencyHandler(BaseHandler):
         dependencies = []
         with open(p, "r") as fin:
             for line in fin:
+                line = line.replace("\n", "")
                 if line.startswith("Requires-Dist: "):
                     t = line[len("Requires-Dist: "):]
                     if ";" in t:
