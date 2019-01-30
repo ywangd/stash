@@ -1143,41 +1143,49 @@ class PyPIRepository(PackageRepository):
         :rtype: boolean
         """
         had_v = False
+        has_source = False
         downloads = self._package_downloads(pkg_data, release)
+        print("checking: " + pkg_data["info"].get("name", "???"), "==", release)  # DEBUG
         for download in downloads:
             requires_python = download.get("requires_python", None)
             if requires_python is not None:
+                print("requires_python found: " + requires_python)  # DEBUG
                 reqs = "python" + requires_python
                 name, ver_spec = VersionSpecifier.parse_requirement(reqs)
                 assert name == "python"  # if this if False some large bug happened...
                 if all([op(platform.python_version(), ver) for op, ver in ver_spec.specs]):
                     # compatible
+                    print("COMPATIBLE!")  # DEBUG
                     return True
             else:
                 # fallback
+                print("falling back to python_version")  # DEBUG
                 # TODO: do we require this?
                 pv = download.get("python_version", None)
+                print("python_version: ", pv)  # DEBUG
                 if pv is None:
                     continue
                 elif pv in ("py2.py3", "py3.py2"):
                     # compatible with both py versions
                     return True
-                elif pv.startswith("2"):
+                elif pv.startswith("2") or pv == "py2":
                     # py2 release
                     if not six.PY3:
                         return True
-                elif pv.startswith("3"):
+                elif pv.startswith("3") or pv == "py3":
                     # py3 release
                     if six.PY3:
                         return True
                 elif pv == "source":
                     # i honestly have no idea what this means
-                    # i assume it means "this source is compatible with both", so just return True
-                    return True
+                    # i first assumed it means "this source is compatible with both", so just return True
+                    # however, this seems to be wrong. Instead, we use this as a fallback yes
+                    has_source = True
             had_v = True
+        print("No compatible found! had_v: ", had_v, " has_source: ", has_source)  # DEBUG
         if had_v:
             # no allowed downloads found
-            return False
+            return has_source
         else:
             # none found, maybe pypi changed
             # in this case, just return True
