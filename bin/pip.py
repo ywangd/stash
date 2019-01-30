@@ -1016,6 +1016,9 @@ class PyPIRepository(PackageRepository):
         pkg_data = self._package_data(pkg_name)
         hit = self._determin_hit(pkg_data, ver_spec, dist=dist)
 
+        if self.verbose:
+            print("Using {n}=={v}...".format(n=pkg_name, v=hit))
+
         downloads = self._package_downloads(pkg_data, hit)
 
         if not downloads:
