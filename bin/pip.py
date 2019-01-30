@@ -28,6 +28,7 @@ import requests
 import re
 import operator
 import traceback
+import platform
 
 import six
 from distutils.util import convert_path
@@ -1146,7 +1147,7 @@ class PyPIRepository(PackageRepository):
                 reqs = "python" + requires_python
                 name, ver_spec = VersionSpecifier.parse_requirement(reqs)
                 assert name == "python"  # if this if False some large bug happened...
-                if all([op(hit, ver) for op, ver in ver_spec.specs]):
+                if all([op(platform.python_version(), ver) for op, ver in ver_spec.specs]):
                     # compatible
                     return True
             else:
