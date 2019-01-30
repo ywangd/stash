@@ -1141,24 +1141,35 @@ class PyPIRepository(PackageRepository):
         had_v = False
         downloads = self._package_downloads(pkg_data, release)
         for download in downloads:
-            pv = download.get("python_version", None)
-            if pv is None:
-                continue
-            elif pv in ("py2.py3", "py3.py2"):
-                # compatible with both py versions
-                return True
-            elif pv.startswith("2"):
-                # py2 release
-                if not six.PY3:
+            requires_python = download.get("requires_python", None)
+            if requires_python is not None:
+                reqs = "python" + requires_python
+                name, ver_spec = VersionSpecifier.parse_requirement(reqs)
+                assert name == "python"  # if this if False some large bug happened...
+                if all([op(hit, ver) for op, ver in ver_spec.specs]):
+                    # compatible
                     return True
-            elif pv.startswith("3"):
-                # py3 release
-                if six.PY3:
+            else:
+                # fallback
+                # TODO: do we require this?
+                pv = download.get("python_version", None)
+                if pv is None:
+                    continue
+                elif pv in ("py2.py3", "py3.py2"):
+                    # compatible with both py versions
                     return True
-            elif pv == "source":
-                # i honestly have no idea what this means
-                # i assume it means "this source is compatible with both", so just return True
-                return True
+                elif pv.startswith("2"):
+                    # py2 release
+                    if not six.PY3:
+                        return True
+                elif pv.startswith("3"):
+                    # py3 release
+                    if six.PY3:
+                        return True
+                elif pv == "source":
+                    # i honestly have no idea what this means
+                    # i assume it means "this source is compatible with both", so just return True
+                    return True
             had_v = True
         if had_v:
             # no allowed downloads found
