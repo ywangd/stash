@@ -383,7 +383,8 @@ def sort_versions(versionlist):
                     a = 0
                 else:
                     a = int(a)
-            ret.append((a, b))
+            # ret.append((a, b))
+            ret.append(a)  # TODO: replace with above line. There still seem to be some issues with the order of versions containing non-digits.
         return tuple(ret)
     return sorted(versionlist, key=sortf, reverse=True)
 
@@ -896,27 +897,27 @@ class PackageRepository(object):
         self.config.add_module(pkg_info)
         print('Package installed: {}'.format(pkg_name))
 
-        for pkg_name, ver_spec in name_versions:
+        for dep_name, ver_spec in name_versions:
 
-            if pkg_name == 'setuptools':  # do not install setuptools
+            if dep_name == 'setuptools':  # do not install setuptools
                 continue
 
             # Some packages have error on dependency names
-            pkg_name = PACKAGE_NAME_FIXER.get(pkg_name, pkg_name)
+            dep_name = PACKAGE_NAME_FIXER.get(dep_name, dep_name)
 
             # If this dependency is installed before, skipping
-            if pkg_name in sys.modules['setuptools']._installed_requirements_:
-                print('Dependency already installed: {}'.format(pkg_name))
+            if dep_name in sys.modules['setuptools']._installed_requirements_:
+                print('Dependency already installed: {}'.format(dep_name))
                 continue
 
-            if pkg_name in PYTHONISTA_BUNDLED_MODULES:
-                print('Dependency available in Pythonista bundle : {}'.format(pkg_name))
+            if dep_name in PYTHONISTA_BUNDLED_MODULES:
+                print('Dependency available in Pythonista bundle : {}'.format(dep_name))
                 continue
 
-            print('Installing dependency: {}'.format('{}{}'.format(pkg_name, ver_spec if ver_spec else '')))
-            repository = get_repository(pkg_name, verbose=self.verbose)
+            print('Installing dependency: {} (required by: {})'.format('{}{}'.format(dep_name, ver_spec if ver_spec else ''), pkg_name))
+            repository = get_repository(dep_name, verbose=self.verbose)
             try:
-                repository.install(pkg_name, ver_spec, dist=dependency_dist)
+                repository.install(dep_name, ver_spec, dist=dependency_dist)
             except PackageAlreadyInstalled:
                 # well, it is already installed...
                 # TODO: maybe update package if required?
