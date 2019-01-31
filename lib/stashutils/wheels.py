@@ -5,14 +5,17 @@ import tempfile
 import json
 import re
 import zipfile
+import platform
 
 import six
 from six.moves import configparser
 
 try:
     from stashutils.extensions import create_command
+    from libversion import VersionSpecifier
 except ImportError:
     create_command = None
+    VersionSpecifier = None
 
 
 class WheelError(Exception):
@@ -300,14 +303,30 @@ class DependencyHandler(BaseHandler):
                 if line.startswith("Requires-Dist: "):
                     t = line[len("Requires-Dist: "):]
                     if ";" in t:
-                        # TODO: handle extras
-                        es = t[t.find(";") + 1]
+                        es = t[t.find(";") + 1].replace('"', "").replace("'", "")
                         t = t[:t.find(";")]
-                    if "(" in t:
-                        # TODO: handle versions
-                        t = t[:t.find("(")]
-                        while t.endswith(" "):
-                            t = t[:-1]
+                        if VersionSpecifier is None:
+                            # libversion not found
+                            print("Warning: could not import libversion.VersionSpecifier! Ignoring version and extra dependencies.")
+                            rq, v = "<libversion not found>", "???"
+                        else:
+                            rq, v = VersionSpecifier.parse_requirement(es)
+                        if rq == "python_version":
+                            # handle python version dependencies
+                            if not v.match(platform.python_version()):
+                                # dependency NOT required
+                                continue
+                        elif rq == "extra":
+                            # handle extra dependencies
+                            if not v.match(self.wheel.extra):
+                                # dependency NOT required
+                                continue
+                        else:
+                            # unknown requirement for dependency
+                            # warn user and register the dependency
+                            print("Warning: unknown dependency requirement: '{}'".format(rq))
+                            print("Warning: Adding dependency '{}', ignoring requirements for dependency.".format(t))
+                            # do not do anything here- As long as we dont use 'continue', 'break', ... the dependency will be added.
                     dependencies.append(t)
         return dependencies
 
@@ -323,13 +342,15 @@ DEFAULT_HANDLERS = [
 
 class Wheel(object):
     """class for installing python wheels."""
-    def __init__(self, path, handlers=DEFAULT_HANDLERS, verbose=False):
+    def __init__(self, path, handlers=DEFAULT_HANDLERS, extra=None, verbose=False):
         self.path = path
-        self.verbose = True
+        self.extra = extra
+        self.verbose = verbose
         self.filename = os.path.basename(self.path)
         self.handlers = [handler(self, self.verbose) for handler in handlers]
         self.version = None  # to be set by handler
         self.dependencies = []  # to be set by handler
+        self.extras = {}  # to be set by handler
 
         if not wheel_is_compatible(self.filename):
             raise WheelError("Incompatible wheel: {p}!".format(p=self.filename))

@@ -25,7 +25,6 @@ import shutil
 import types
 import contextlib
 import requests
-import re
 import operator
 import traceback
 import platform
@@ -43,6 +42,7 @@ from stash.system.shcommon import IN_PYTHONISTA
 
 
 _stash = globals()['_stash']
+VersionSpecifier = _stash.libversion.VersionSpecifier  # alias for readability
 
 
 try:
@@ -351,42 +351,6 @@ def save_current_sys_modules():
             sys.modules.pop(name)
     for k, v in save_setuptools.items():
         sys.modules[k] = v
-
-
-def sort_versions(versionlist):
-    """
-    Return a list containing the versions in versionlist, starting with the highest version.
-    :param versionlist: list of versions to sort
-    :type versionlist: list of str
-    :return: the sorted list
-    :rtype: list of str
-    """
-    def sortf(e):
-        """extract the key for the search"""
-        splitted = e.split(".")
-        ret = []
-        for v in splitted:
-            # some versions may contain a string
-            # in py3, comparsion between int and str is no longer possible :(
-            # thus we instead sort by a tuple of (int, str), where str is the non-digt part of the version
-            s = re.search("[^0-9]", v)
-            if s is None:
-                # only numbers
-                a, b = int(v), ""
-            else:
-                # contains non-digits
-                i = s.start()
-                a, b = v[:i], v[i:]
-                if a == "":
-                    # sometimes, non-numeric versions are used for dev releases
-                    # we should fallback to 0, to give priority to non-dev versions
-                    a = 0
-                else:
-                    a = int(a)
-            # ret.append((a, b))
-            ret.append(a)  # TODO: replace with above line. There still seem to be some issues with the order of versions containing non-digits.
-        return tuple(ret)
-    return sorted(versionlist, key=sortf, reverse=True)
 
 
 # noinspection PyUnresolvedReferences
@@ -1155,7 +1119,7 @@ class PyPIRepository(PackageRepository):
         # create a sorted list of versions, newest fist.
         # we manualle  add the  latest release in front to improve the chances of finding
         # the most recent compatible version
-        versions = [latest] + sort_versions(self._package_releases(pkg_data))
+        versions = [latest] + _stash.libversion.sort_versions(self._package_releases(pkg_data))
         for hit in versions:
             # we return the fist matching hit, so we should sort the hits by descending version
             if (dist is not None) and not self._dist_allows_release(dist, pkg_data, hit):
@@ -1387,70 +1351,6 @@ def get_repository(pkg_name, site_packages=SITE_PACKAGES_FOLDER, verbose=False):
         return PyPIRepository(site_packages=site_packages, verbose=verbose)
 
 
-class VersionSpecifier(object):
-    """
-    This class is to represent the versions of a requirement, e.g. pyte==0.4.10.
-    """
-    OPS = {'<=': operator.le,
-    '<': operator.lt,
-    '!=': operator.ne,
-    '>=': operator.ge,
-    '>': operator.gt,
-    '==': operator.eq,
-    '~=': operator.ge}
-
-    def __init__(self, version_specs):
-        self.specs = [(VersionSpecifier.OPS[op], version) for (op, version) in version_specs]
-        self.str = str(version_specs)
-
-    def __str__(self):
-        return self.str
-
-    @staticmethod
-    def parse_requirement(requirement):
-        """
-        Factory method to create a VersionSpecifier object from a requirement
-        """
-        if isinstance(requirement, (list, tuple)):
-            if len(requirement) == 1:
-                requirement = requirement[0]
-            else:
-                raise PipError("Unknown requirement format: " + repr(requirement))
-        # remove all whitespaces and '()'
-        requirement = requirement.replace(' ', '')
-        requirement = requirement.replace("(", "").replace(")", "")
-        if requirement.startswith("#"):
-            # ignore
-            return None, None
-        letterOrDigit = r'\w'
-        PAREN = lambda x: '(' + x + ')'
-
-        version_cmp = PAREN('?:' + '|'.join(('<=', '<', '!=', '>=', '>', '~=', '==')))
-        version_re = PAREN('?:' + '|'.join((letterOrDigit, '-', '_', '\.', '\*', '\+', '\!'))) + '+'
-        version_one = PAREN(version_cmp) + PAREN(version_re)
-        package_name = '^([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9._-]*[A-Za-z0-9])'
-        parsed = re.findall(package_name + version_one, requirement)
-
-        if not parsed:
-            return requirement, None
-        name = parsed[0][0]
-        reqt = list(zip(*parsed))
-        version_specifiers = list(zip(*reqt[1:]))  # ((op,version),(op,version))
-        version = VersionSpecifier(version_specifiers)
-
-        return name, version
-
-    def match(self, version):
-        """
-        Check if version is allowed by the version specifiers.
-        :param version: version to check
-        :type version: str
-        :return: whether the version is allowed or not
-        :rtype: boolean
-        """
-        return all([op(version, ver) for op, ver in self.specs])
-
-
 if __name__ == '__main__':
     import argparse
 
@@ -1594,7 +1494,10 @@ if __name__ == '__main__':
         elif ns.sub_command == 'download':
             for requirement in ns.requirements:
                 repository = get_repository(requirement, site_packages=ns.site_packages, verbose=ns.verbose)
-                pkg_name, ver_spec = VersionSpecifier.parse_requirement(requirement)
+                try:
+                    pkg_name, ver_spec = VersionSpecifier.parse_requirement(requirement)
+                except ValueError as e:
+                    print("Error during parsing of the requirement : {e}".format(e=e))
                 archive_filename, pkg_info = repository.download(pkg_name, ver_spec)
                 directory = ns.directory or os.getcwd()
                 shutil.move(archive_filename, directory)
