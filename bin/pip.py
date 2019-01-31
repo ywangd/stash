@@ -353,6 +353,29 @@ def save_current_sys_modules():
         sys.modules[k] = v
 
 
+def sort_versions(versionlist):
+    """
+    Return a list containing the versions in versionlist, starting with the highest version.
+    :param versionlist: list of versions to sort
+    :type versionlist: list of str
+    :return: the sorted list
+    :rtype: list of str
+    """
+    def sortf(e):
+        """extract the key for the search"""
+        splitted = e.split(".")
+        ret = []
+        for v in splitted:
+            try:
+                v = int(v)
+            except ValueError:
+                # non-int. Some versions contain letters, like "1.2.3d"
+                pass
+            ret.append(v)
+        return tuple(ret)
+    return sorted(versionlist, key=sortf, reverse=True)
+
+
 # noinspection PyUnresolvedReferences
 from six.moves.configparser import SafeConfigParser, NoSectionError
 
@@ -1115,24 +1138,24 @@ class PyPIRepository(PackageRepository):
         :rtype: str
         """
         pkg_name = pkg_data['info']['name']
-        if ver_spec is None:
-            # TODO: add compatibility check
-            return self._package_latest_release(pkg_data)
+        latest = self._package_latest_release(pkg_data)
+        # create a sorted list of versions, newest fist.
+        # we manualle  add the  latest release in front to improve the chances of finding
+        # the most recent compatible version
+        versions = [latest] + sort_versions(self._package_releases(pkg_data))
+        for hit in versions:
+            # we return the fist matching hit, so we should sort the hits by descending version
+            if (dist is not None) and not self._dist_allows_release(dist, pkg_data, hit):
+                # hit has no source/binary release and is not allowed by dis
+                continue
+            if not self._release_matches_py_version(pkg_data, hit):
+                # hit contains no compatible releases
+                continue
+            if ver_spec is None or ver_spec.match(hit):
+                # version is allowed
+                return hit
         else:
-            for hit in sorted(self._package_releases(pkg_data), reverse=True):
-                # TODO: more intiligent sort
-                # we return the fist matching hit, so we should sort the hits by descending version
-                if (dist is not None) and not self._dist_allows_release(dist, pkg_data, hit):
-                    # hit has no source/binary release and is not allowed by dis
-                    continue
-                if not self._release_matches_py_version(pkg_data, hit):
-                    # hit contains no compatible releases
-                    continue
-                if all([op(hit, ver) for op, ver in ver_spec.specs]):
-                    # version is allowed
-                    return hit
-            else:
-                raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec))
+            raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec))
 
     def _release_matches_py_version(self, pkg_data, release):
         """
@@ -1153,7 +1176,7 @@ class PyPIRepository(PackageRepository):
                 reqs = "python" + requires_python
                 name, ver_spec = VersionSpecifier.parse_requirement(reqs)
                 assert name == "python"  # if this if False some large bug happened...
-                if all([op(platform.python_version(), ver) for op, ver in ver_spec.specs]):
+                if ver_spec.match(platform.python_version()):
                     # compatible
                     return True
             else:
@@ -1403,6 +1426,16 @@ class VersionSpecifier(object):
         version = VersionSpecifier(version_specifiers)
 
         return name, version
+
+    def match(self, version):
+        """
+        Check if version is allowed by the version specifiers.
+        :param version: version to check
+        :type version: str
+        :return: whether the version is allowed or not
+        :rtype: boolean
+        """
+        return all([op(version, ver) for op, ver in self.specs])
 
 
 if __name__ == '__main__':
