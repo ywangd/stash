@@ -376,7 +376,13 @@ def sort_versions(versionlist):
             else:
                 # contains non-digits
                 i = s.start()
-                a, b = int(v[:i]), v[i:]
+                a, b = v[:i], v[i:]
+                if a == "":
+                    # sometimes, non-numeric versions are used for dev releases
+                    # we should fallback to 0, to give priority to non-dev versions
+                    a = 0
+                else:
+                    a = int(a)
             ret.append((a, b))
         return tuple(ret)
     return sorted(versionlist, key=sortf, reverse=True)
