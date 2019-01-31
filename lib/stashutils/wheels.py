@@ -303,8 +303,8 @@ class DependencyHandler(BaseHandler):
                 if line.startswith("Requires-Dist: "):
                     t = line[len("Requires-Dist: "):]
                     if ";" in t:
-                        es = t[t.find(";") + 1].replace('"', "").replace("'", "")
-                        t = t[:t.find(";")]
+                        es = t[t.find(";") + 1:].replace('"', "").replace("'", "")
+                        t = t[:t.find(";")].strip()
                         if VersionSpecifier is None:
                             # libversion not found
                             print("Warning: could not import libversion.VersionSpecifier! Ignoring version and extra dependencies.")
