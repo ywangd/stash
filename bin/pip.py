@@ -366,12 +366,18 @@ def sort_versions(versionlist):
         splitted = e.split(".")
         ret = []
         for v in splitted:
-            try:
-                v = int(v)
-            except ValueError:
-                # non-int. Some versions contain letters, like "1.2.3d"
-                pass
-            ret.append(v)
+            # some versions may contain a string
+            # in py3, comparsion between int and str is no longer possible :(
+            # thus we instead sort by a tuple of (int, str), where str is the non-digt part of the version
+            s = re.search("[^0-9]", v)
+            if s is None:
+                # only numbers
+                a, b = int(v), ""
+            else:
+                # contains non-digits
+                i = s.start()
+                a, b = int(v[:i]), v[i:]
+            ret.append((a, b))
         return tuple(ret)
     return sorted(versionlist, key=sortf, reverse=True)
 
