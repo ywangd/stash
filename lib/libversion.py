@@ -2,6 +2,18 @@
 import re
 import operator
 
+
+# release type identifier -> release type priority (higher == better)
+RELEASE_TYPE_PRIORITIES = {
+    None: 4,   # no release type
+    "a": 1,    # alpha post release
+    "b": 2,    # beta post release
+    "rc": 3,   # release candidate
+    "post": 5,  # post release
+    "dev": 0,   # dev release
+}
+
+
 def sort_versions(versionlist):
     """
     Return a list containing the versions in versionlist, starting with the highest version.
@@ -10,31 +22,92 @@ def sort_versions(versionlist):
     :return: the sorted list
     :rtype: list of str
     """
+    # version scheme (PEP440): [N!]N(.N)*[{a|b|rc}N][.postN][.devN]
+    # order:
+    # 1. epoch
+    # 2. release version
+    # 3. postrelease > release > prerelease
+    # 4. postrelease#
+    # 5. non-dev > dev
+    # 6. dev#
     def sortf(e):
         """extract the key for the search"""
-        splitted = e.split(".")
-        ret = []
+        # convert to lowercase, since all versions must be case insenstive (PEP440)
+        e = e.lower()
+        # extract information from
+        if "!" in e:
+            # read epoch
+            es = e[:e.find("!")]
+            e = e[e.find("!") + 1:]
+            epoch = int(es)
+        else:
+            # default epoch is 0
+            epoch = 0
+        # parse version tuple
+        veis = re.search("[^0-9\\.]", e)
+        if veis is None:
+            # no non-digits
+            vei = len(e)
+        else:
+            vei = veis.start()
+        vstr = e[:vei]
+        while vstr.endswith("."):
+            # remove trailing '.'
+            vstr = vstr[:-1]
+        splitted = vstr.split(".")
+        verparts = []
         for v in splitted:
-            # some versions may contain a string
-            # in py3, comparsion between int and str is no longer possible :(
-            # thus we instead sort by a tuple of (int, str), where str is the non-digt part of the version
-            s = re.search("[^0-9]", v)
-            if s is None:
-                # only numbers
-                a, b = int(v), ""
+            verparts.append(int(v))
+        # parse post release
+        rtstr = e[vei:]
+        if "post" in rtstr:
+            try:
+                subpriority = int(rtstr[rtstr.find("post") + 4:])
+            except ValueError:
+                # PEP440: implicit post version 0
+                subpriority = 0
+            rtstr = rtstr[:rtstr.find("post") - 1]
+            is_post = True
+        else:
+            subpriority = 0
+            is_post = False
+        # parse release type
+        rtype = None
+        if len(rtstr) == 0:
+            rtype = None
+        elif rtstr[0] in ("a", "b"):
+            rtype = rtstr[0]
+        elif rtstr.startswith("rc"):
+            rtype = "rc"
+        # parse number of release
+        if rtype is None:
+            # not needed
+            rsubpriority = 0
+        else:
+            # 1. strip rtype
+            rtps = rtstr[len(rtype):]
+            # 2. extract until non-digit
+            rtpsr = re.search("[0-9]*", rtps)
+            if rtpsr is None or rtpsr.end() == 0:
+                # no number
+                rsubpriority = 0
             else:
-                # contains non-digits
-                i = s.start()
-                a, b = v[:i], v[i:]
-                if a == "":
-                    # sometimes, non-numeric versions are used for dev releases
-                    # we should fallback to 0, to give priority to non-dev versions
-                    a = 0
-                else:
-                    a = int(a)
-            # ret.append((a, b))
-            ret.append(a)  # TODO: replace with above line. There still seem to be some issues with the order of versions containing non-digits.
-        return tuple(ret)
+                rsubpriority = int(rtps[:rtpsr.end()])
+        rpriority = RELEASE_TYPE_PRIORITIES.get(rtype, 0)  # unknown -> be skeptical
+        # extract dev release information
+        devr = re.search("\\.?dev[0-9]*", rtstr)
+        if devr is None:
+            devnum = 0
+        else:
+            devns = rtstr[devr.start() + 4:]  # 4: 1 for '.'; 3 for 'dev'
+            if len(devns) == 0:
+                devnum = 0
+            else:
+                devnum = int(devns)
+        isdev = (devnum != None)
+        # below is the search key (=value by which the version list will be ordered)
+        # comparsion *should* be from i=0 to i=-1
+        return (epoch, tuple(verparts), rpriority, rsubpriority, is_post, subpriority, not isdev, devnum)
     return sorted(versionlist, key=sortf, reverse=True)
 
 
@@ -42,13 +115,15 @@ class VersionSpecifier(object):
     """
     This class is to represent the versions of a requirement, e.g. pyte==0.4.10.
     """
-    OPS = {'<=': operator.le,
-    '<': operator.lt,
-    '!=': operator.ne,
-    '>=': operator.ge,
-    '>': operator.gt,
-    '==': operator.eq,
-    '~=': operator.ge}
+    OPS = {
+        '<=': operator.le,
+        '<': operator.lt,
+        '!=': operator.ne,
+        '>=': operator.ge,
+        '>': operator.gt,
+        '==': operator.eq,
+        '~=': operator.ge,
+        }
 
     def __init__(self, version_specs):
         self.specs = [(VersionSpecifier.OPS[op], version) for (op, version) in version_specs]
