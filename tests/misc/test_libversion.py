@@ -21,7 +21,7 @@ class LibVersionTests(StashTestCase):
         to_test = [
             # format: (requirement_str, pkg_name, [(op1, v1), ...])
             ("test==1.2.3", "test", [(operator.eq, "1.2.3")]),
-            ("test_2 == 7.3.12", "test_2", [(operator.eq, "1.2.3")]),
+            ("test_2 == 7.3.12", "test_2", [(operator.eq, "7.3.12")]),
             ("with1number == 923.1512.12412", "with1number",[(operator.eq, "923.1512.12412")]),
             ("tge >= 2.0.1", "tge", [(operator.ge, "2.0.1")]),
             ("tgt > 3.0.0", "tgt", [(operator.gt, "3.0.0")]),
@@ -45,27 +45,27 @@ class LibVersionTests(StashTestCase):
         ]
         for rs, test in to_test:
             ver_spec = self.stash.libversion.VersionSpecifier.parse_requirement(rs)
-            ts, expected = test
-            result = ver_spec.match(ts)
-            self.assertEqual(result, expected)
+            for ts, expected in test:
+                result = ver_spec.match(ts)
+                self.assertEqual(result, expected)
 
     def test_sort_versions_main(self):
         """test 'libversion.sort_versions()' for main versions"""
         raw = ["1.0.0", "0.5.0", "0.6.0", "0.5.9", "11.0.3", "11.0.4", "0.1.0", "5.7.0"]
         expected = ["11.0.4", "11.0.3", "5.7.0", "1.0.0", "0.6.0", "0.5.9", "0.5.0", "0.1.0"]
-        sorted = self.stash.libversion.sort_versions(raw)
-        self.assertEqual(raw, expected)
+        sortedres = self.stash.libversion.sort_versions(raw)
+        self.assertEqual(sortedres, expected)
 
     def test_sort_versions_post(self):
         """test 'libversion.sort_versions()' for post release number"""
         raw = ["1.0.0", "1.0.0.post2", "1.0.0.post3", "1.0.0-post1", "1.0.0.post"]
         expected = ["1.0.0.post3", "1.0.0.post2", "1.0.0-post1", "1.0.0.post", "1.0.0"]
-        sorted = self.stash.libversion.sort_versions(raw)
-        self.assertEqual(raw, expected)
+        sortedres = self.stash.libversion.sort_versions(raw)
+        self.assertEqual(sortedres, expected)
 
     def test_sort_versions_type(self):
         """test 'libversion.sort_versions()' for release type"""
         raw = ["1.0.0b", "1.0.0rc", "1.0.0a", "1.0.0a2", "1.0.0", "1.0.0.post1", "1.0.0a.dev2", "1.0.0a.dev3", "1!0.5.0", "0.5.0", "1.0.0a.dev1"]
         expected = ["1!0.5.0", "1.0.0.post1", "1.0.0", "1.0.0rc", "1.0.0b", "1.0.0a2", "1.0.0a", "1.0.0a.dev3", "1.0.0a.dev2", "1.0.0a.dev1", "0.5.0"]
-        sorted = self.stash.libversion.sort_versions(raw)
-        self.assertEqual(raw, expected)
+        sortedres = self.stash.libversion.sort_versions(raw)
+        self.assertEqual(sortedres, expected)
