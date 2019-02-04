@@ -21,7 +21,7 @@ class LibVersionTests(StashTestCase):
         to_test = [
             # format: (requirement_str, pkg_name, [(op1, v1), ...])
             ("test==1.2.3", "test", [(operator.eq, "1.2.3")]),
-            ("test_2 == 7.3.12", "test2", [(operator.eq, "1.2.3")]),
+            ("test_2 == 7.3.12", "test_2", [(operator.eq, "1.2.3")]),
             ("with1number == 923.1512.12412", "with1number",[(operator.eq, "923.1512.12412")]),
             ("tge >= 2.0.1", "tge", [(operator.ge, "2.0.1")]),
             ("tgt > 3.0.0", "tgt", [(operator.gt, "3.0.0")]),
@@ -36,13 +36,13 @@ class LibVersionTests(StashTestCase):
 
     def test_version_specifier_match(self):
         """test 'libversion.VersionSpecifier().match()'"""
-        to_test = {
+        to_test = [
             # format: (requirement_str, [(testversion, result)])
             ("eqtest == 1.0.0", [("1.0.0", True), ("1.0.1", False), ("1.0.0.0", False), ("11.0.0", False), ("0.1.0.0", False), ("0.9.0", False)]),
             ("lttest <= 2.0.0", [("2.0.0", True), ("2.0.1", False), ("3.0.0", False), ("1.0.0", True), ("1.9.0", True), ("11.0.0", False), ("1.9.2b", True)]),
             ("gttest >= 3.5.0", [("3.5.0", True), ("3.4.9", False), ("3.6.0", True), ("11.0.0", True), ("3.5.0a", True), ("1.0.0", False)]),
             ("eqstr == str", [("1.0.0", False), ("str", True), ("str2", False), ("s", False), ("99.999.99", False)]),
-        }
+        ]
         for rs, test in to_test:
             ver_spec = self.stash.libversion.VersionSpecifier.parse_requirement(rs)
             ts, expected = test
