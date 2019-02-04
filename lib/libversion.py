@@ -97,14 +97,15 @@ def sort_versions(versionlist):
         # extract dev release information
         devr = re.search("\\.?dev[0-9]*", rtstr)
         if devr is None:
+            isdev = False
             devnum = 0
         else:
+            isdev = True
             devns = rtstr[devr.start() + 4:]  # 4: 1 for '.'; 3 for 'dev'
             if len(devns) == 0:
                 devnum = 0
             else:
                 devnum = int(devns)
-        isdev = (devnum != None)
         # below is the search key (=value by which the version list will be ordered)
         # comparsion *should* be from i=0 to i=-1
         return (epoch, tuple(verparts), rpriority, rsubpriority, is_post, subpriority, not isdev, devnum)
