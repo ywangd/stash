@@ -32,7 +32,11 @@ class LibVersionTests(StashTestCase):
         for req, pkg, spec in to_test:
             name, ver_spec = self.stash.libversion.VersionSpecifier.parse_requirement(req)
             self.assertEqual(name, pkg)
-            self.assertItemsEqual(ver_spec.specs, spec)
+            if self.stash.PY3:
+                # in py3, assertItemsEqual has been renamed to assertCountEqual
+                self.assertCountEqual(ver_spec.specs, spec)
+            else:
+                self.assertItemsEqual(ver_spec.specs, spec)
 
     def test_version_specifier_match(self):
         """test 'libversion.VersionSpecifier().match()'"""
