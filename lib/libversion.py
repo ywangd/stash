@@ -194,31 +194,31 @@ class Version(object):
         return (self.epoch, self.versiontuple, rpriority, self.subversion, self.is_postrelease, self.postrelease, not self.is_devrelease, self.devrelease)
 
     def __eq__(self, other):
-        if isinstance(othjer, self.__class__):
+        if isinstance(other, self.__class__):
             return self._get_sortkey() == other._get_sortkey()
         else:
             return False
 
     def __gt__(self, other):
-        if isinstance(othjer, self.__class__):
+        if isinstance(other, self.__class__):
             return self._get_sortkey() > other._get_sortkey()
         else:
             return True
 
     def __lt__(self, other):
-        if isinstance(othjer, self.__class__):
+        if isinstance(other, self.__class__):
             return self._get_sortkey() < other._get_sortkey()
         else:
             return False
 
     def __ge__(self, other):
-        if isinstance(othjer, self.__class__):
+        if isinstance(other, self.__class__):
             return self._get_sortkey() >= other._get_sortkey()
         else:
             return False
 
     def __le__(self, other):
-        if isinstance(othjer, self.__class__):
+        if isinstance(other, self.__class__):
             return self._get_sortkey() <= other._get_sortkey()
         else:
             return False
