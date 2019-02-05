@@ -117,7 +117,7 @@ def sort_versions(versionlist):
     :return: the sorted list
     :rtype: list of str
     """
-    return sorted(versionlist, sortkey=lambda s: Version.parse(s) if isinstance(s, str) else s, reverse=True)
+    return sorted(versionlist, key=lambda s: Version.parse(s) if isinstance(s, str) else s, reverse=True)
 
 
 class Version(object):
@@ -193,14 +193,37 @@ class Version(object):
         rpriority = self.RELEASE_TYPE_PRIORITIES.get(self.rtype, 0)
         return (self.epoch, self.versiontuple, rpriority, self.subversion, self.is_postrelease, self.postrelease, not self.is_devrelease, self.devrelease)
 
-    def __cmp__(self, other):
-        """
-        Compare to another object
-        """
-        if isinstance(other, self.__class__):
-            return cmp(self._get_sortkey(), other._get_sortkey())
+    def __eq__(self, other):
+        if isinstance(othjer, self.__class__):
+            return self._get_sortkey() == other._get_sortkey()
         else:
-            return 1  # assume greater than non-versions
+            return False
+
+    def __gt__(self, other):
+        if isinstance(othjer, self.__class__):
+            return self._get_sortkey() > other._get_sortkey()
+        else:
+            return True
+
+    def __lt__(self, other):
+        if isinstance(othjer, self.__class__):
+            return self._get_sortkey() < other._get_sortkey()
+        else:
+            return False
+
+    def __ge__(self, other):
+        if isinstance(othjer, self.__class__):
+            return self._get_sortkey() >= other._get_sortkey()
+        else:
+            return False
+
+    def __le__(self, other):
+        if isinstance(othjer, self.__class__):
+            return self._get_sortkey() <= other._get_sortkey()
+        else:
+            return False
+
+
 
     def __str__(self):
         """return a string representation of this version"""
