@@ -313,4 +313,11 @@ class VersionSpecifier(object):
         :return: whether the version is allowed or not
         :rtype: boolean
         """
-        return all([op(Version.parse(version), Version.parse(ver)) for op, ver in self.specs])
+        # return all([op(Version.parse(version), Version.parse(ver)) for op, ver in self.specs])
+        vi = Version.parse(version)
+        matches = True
+        for op, ver in self.specs:
+            evi = Version.parse(ver)
+            if not op(vi, evi):
+                matches = False
+        return matches

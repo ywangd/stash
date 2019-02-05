@@ -40,7 +40,7 @@ class LibVersionTests(StashTestCase):
             # format: (requirement_str, [(testversion, result)])
             ("eqtest == 1.0.0", [("1.0.0", True), ("1.0.1", False), ("1.0.0.0", False), ("11.0.0", False), ("0.1.0.0", False), ("0.9.0", False)]),
             ("lttest <= 2.0.0", [("2.0.0", True), ("2.0.1", False), ("3.0.0", False), ("1.0.0", True), ("1.9.0", True), ("11.0.0", False), ("1.9.2b", True)]),
-            ("gttest >= 3.5.0", [("3.5.0", True), ("3.4.9", False), ("3.6.0", True), ("11.0.0", True), ("3.5.0a", True), ("1.0.0", False)]),
+            ("gttest >= 3.5.0", [("3.5.0", True), ("3.4.9", False), ("3.6.0", True), ("11.0.0", True), ("3.5.0a", False), ("1.0.0", False)]),
             ("eqstr == str", [("1.0.0", False), ("str", True), ("str2", False), ("s", False), ("99.999.99", False)]),
         ]
         for rs, test in to_test:
@@ -78,7 +78,7 @@ class LibVersionTests(StashTestCase):
             ("1!2.3", {"epoch": 1, "versiontuple": (2, 3), "is_devrelease": False}),
             ("5.5.4a.post5", {"versiontuple": (5, 5, 4), "rtype": self.stash.libversion.Version.TYPE_ALPHA, "is_postrelease": True, "postrelease": 5}),
             ("0.0.1rc5.dev7", {"versiontuple": (0, 0, 1), "rtype": self.stash.libversion.Version.TYPE_RELEASE_CANDIDATE, "subversion": 5, "is_devrelease": True, "devrelease": 7, "is_postrelease": False}),
-            ("0.8.4.post.dev", {"veriontuple": (0, 8, 4), "is_postrelease": True, "postrelease": 0, "is_devrelease": True}),
+            ("0.8.4.post.dev", {"versiontuple": (0, 8, 4), "is_postrelease": True, "postrelease": 0, "is_devrelease": True}),
         ]
         for vs, ea in to_test:
             version = self.stash.libversion.Version.parse(vs)
@@ -100,7 +100,7 @@ class LibVersionTests(StashTestCase):
             ("1.0.0", operator.eq, "1.0.0a", False),
             ("1.0.0", operator.eq, "1.0.0b", False),
             ("1.0.0.post1", operator.eq, "1.0.0.post2", False),
-            ("1.0.0.post", operator.eq, "1.0.0.post1", True),
+            ("1.0.0.post", operator.eq, "1.0.0.post0", True),
             ("1.0.0.post", operator.eq, "1.0.0.dev", False),
             # testdata for main version comparsion
             ("1.2.3", operator.eq, "1.5.0", False),
