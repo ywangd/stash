@@ -318,7 +318,7 @@ class DependencyHandler(BaseHandler):
                                 continue
                         elif rq == "extra":
                             # handle extra dependencies
-                            if not v.match(self.wheel.extra):
+                            if (self.wheel.extra is None) or (not v.match(self.wheel.extra)):
                                 # dependency NOT required
                                 continue
                         else:

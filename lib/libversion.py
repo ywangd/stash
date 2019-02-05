@@ -314,10 +314,17 @@ class VersionSpecifier(object):
         :rtype: boolean
         """
         # return all([op(Version.parse(version), Version.parse(ver)) for op, ver in self.specs])
-        vi = Version.parse(version)
         matches = True
         for op, ver in self.specs:
-            evi = Version.parse(ver)
-            if not op(vi, evi):
-                matches = False
+            try:
+                vi = Version.parse(version)
+                evi = Version.parse(ver)
+            except:
+                # warning: wildcard except!
+                # fallback to old, string-based comparsion
+                if not op(version, ver):
+                    matches = False
+            else:
+                if not op(vi, evi):
+                    matches = False
         return matches
