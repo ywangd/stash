@@ -1132,7 +1132,7 @@ class PyPIRepository(PackageRepository):
                 # version is allowed
                 return hit
         else:
-            raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec))
+            raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec if ver_spec is not None else ""))
 
     def _release_matches_py_version(self, pkg_data, release):
         """
