@@ -287,22 +287,20 @@ class VersionSpecifier(object):
         if requirement.startswith("#"):
             # ignore
             return None, None
-        letterOrDigit = r'\w'
         PAREN = lambda x: '(' + x + ')'
-
         version_cmp = PAREN('?:' + '|'.join(('<=', '<', '!=', '>=', '>', '~=', '==')))
-        version_re = PAREN('?:' + '|'.join((letterOrDigit, '-', '_', '\.', '\*', '\+', '\!'))) + '+'
-        version_one = PAREN(version_cmp) + PAREN(version_re)
-        package_name = '^([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9._-]*[A-Za-z0-9])'
-        parsed = re.findall(package_name + version_one, requirement)
-
-        if not parsed:
+        name_end_res = re.search(version_cmp, requirement)
+        if name_end_res is None:
             return requirement, None
-        name = parsed[0][0]
-        reqt = list(zip(*parsed))
-        version_specifiers = list(zip(*reqt[1:]))  # ((op,version),(op,version))
-        version = VersionSpecifier(version_specifiers)
-
+        name_end = name_end_res.start()
+        name, specs_s = requirement[:name_end], requirement[name_end:]
+        splitted = specs_s.split(",")
+        specs = []
+        for vs in splitted:
+            cmp_end = re.search(version_cmp, vs).end()
+            c, v = vs[:cmp_end], vs[cmp_end:]
+            specs.append((c, v))
+        version = VersionSpecifier(specs)
         return name, version
 
     def match(self, version):

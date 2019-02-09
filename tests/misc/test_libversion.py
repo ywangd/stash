@@ -28,6 +28,7 @@ class LibVersionTests(StashTestCase):
             ("tne != 7.0.0", "tne", [(operator.ne, "7.0.0")]),
             ("pkg_b (< 0.7.0", "pkg_b", [(operator.lt, "0.7.0")]),
             ("nondigitver <= 1.5.3b", "nondigitver", [(operator.le, "1.5.3b")]),
+            ("wrapt < 2, >= 1", "wrapt", [(operator.lt, "2"), (operator.ge, "1")]),
         ]
         for req, pkg, spec in to_test:
             name, ver_spec = self.stash.libversion.VersionSpecifier.parse_requirement(req)
@@ -46,6 +47,7 @@ class LibVersionTests(StashTestCase):
             ("lttest <= 2.0.0", [("2.0.0", True), ("2.0.1", False), ("3.0.0", False), ("1.0.0", True), ("1.9.0", True), ("11.0.0", False), ("1.9.2b", True)]),
             ("gttest >= 3.5.0", [("3.5.0", True), ("3.4.9", False), ("3.6.0", True), ("11.0.0", True), ("3.5.0a", False), ("1.0.0", False)]),
             ("eqstr == str", [("1.0.0", False), ("str", True), ("str2", False), ("s", False), ("99.999.99", False)]),
+            ("wrapt < 2, >= 1", [("0.0.1", False), ("1.0.0", True), ("1.5.0", True), ("2.0.0", False), ("1.9.9", True)]),
         ]
         for rs, test in to_test:
             _, ver_spec = self.stash.libversion.VersionSpecifier.parse_requirement(rs)
