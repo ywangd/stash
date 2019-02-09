@@ -291,7 +291,17 @@ class DependencyHandler(BaseHandler):
         else:
             with open(metajsonp, "r") as fin:
                 content = json.load(fin)
-            dependencies = content.get("run_requires", [{"requires": []}])[0]["requires"]
+            # dependencies = content.get("run_requires", [{"requires": []}])[0]["requires"]
+            dependencies = []
+            for ds in content.get("run_requires", []):
+                ex = ds.get("extra", None)
+                dep = ds.get("requires", [])
+                if ex is not None:
+                    if ex != self.wheel.extra:
+                        # extra not wanted
+                        continue
+                else:
+                    dependencies.append(dep)
         self.wheel.dependencies += dependencies
 
     def read_dependencies_from_METADATA(self, p):
