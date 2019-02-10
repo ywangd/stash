@@ -15,68 +15,47 @@ NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.
 from __future__ import print_function
 import os
 import sys
+from functools import wraps
 
 from six.moves import input
 
 
-def install_module_from_github(username, package_name, folder, version):
-    """
-    Install python module from github zip files
-    """
-    cmd_string = """
-        echo Installing {1} {3} ...
-        wget https://github.com/{0}/{1}/archive/{3}.zip -o $TMPDIR/{1}.zip
-        mkdir $TMPDIR/{1}_src
-        unzip $TMPDIR/{1}.zip -d $TMPDIR/{1}_src
-        rm -f $TMPDIR/{1}.zip
-        mv $TMPDIR/{1}_src/{2} $STASH_ROOT/lib/
-        rm -rf $TMPDIR/{1}_src
-        echo Done
-        """.format(username,
-                   package_name,folder,
-                   version
-                   )
-    globals()['_stash'](cmd_string)
+_stash = globals()["_stash"]
 
 
 try:
-    libpath=os.path.join(os.environ['STASH_ROOT'] ,'lib')
-    if not libpath in sys.path:
-        sys.path.insert(1,libpath)
     import github
 except ImportError:
-    print('no github found in ',libpath)
-    install_module_from_github('pygithub', 'pygithub', 'github','master')
+    print("Could not import 'github', installing it...")
+    _stash("pip install pygithub")
     import github
 try: 
-	import docopt
+    import docopt
 except  ImportError:
-	install_module_from_github('docopt','docopt','docopt.py','master')
+    print("Could not import 'docopt', installing it...")
+    _stash("pip install docopt")
 from docopt import docopt
 from github import Github
-import keychain,console,inspect
+import keychain, console, inspect
+
 
 class GitHubRepoNotFoundError(Exception):
 	pass
 
-
-from functools import wraps
 
 def command(func):
     @wraps(func)
     def tmp(argv):
        if len(argv)==1:
          if func.__name__ not in ['gh_list_keys']:
-         	argv.append('--help')
+             argv.append('--help')
        try:
-       	 args=docopt(func.__doc__,argv=argv)
-       	 return func(args)
+           args=docopt(func.__doc__,argv=argv)
+           return func(args)
        except SystemExit as e:
-       	print(e)
+           print(e)
 
     return tmp
-
-
 
 
 @command
@@ -233,7 +212,7 @@ Examples:
 			echo ssh-keygen -d rsa -b2048
 			ssh-keygen -trsa -b2048
 			'''
-			globals()['_stash'](cmd_string)
+			_stash(cmd_string)
 		args['<public_key_path>']=default_keyfile
 	#if private key, use pub key
 	if not args['<public_key_path>'].endswith('.pub'):

@@ -25,10 +25,9 @@ import shutil
 import types
 import contextlib
 import requests
-import re
 import operator
 import traceback
-import codecs
+import platform
 
 import six
 from distutils.util import convert_path
@@ -43,6 +42,7 @@ from stash.system.shcommon import IN_PYTHONISTA
 
 
 _stash = globals()['_stash']
+VersionSpecifier = _stash.libversion.VersionSpecifier  # alias for readability
 
 
 try:
@@ -58,7 +58,7 @@ if IN_PYTHONISTA:
         'matplotlib', 'mechanize', 'midiutil', 'mpmath', 'numpy', 'oauth2', 'paramiko',
         'parsedatetime', 'Pillow', 'pycparser', 'pyflakes', 'pygments', 'pyparsing',
         'PyPDF2', 'pytz', 'qrcode', 'reportlab', 'requests', 'simpy', 'six', 'sqlalchemy',
-        'pysqlite', 'sympy', 'thrift', 'werkzeug', 'wsgiref', 'pisa', 'xmltodict', 'PyYAML'
+        'pysqlite', 'sympy', 'thrift', 'werkzeug', 'wsgiref', 'pisa', 'xmltodict', 'PyYAML',
     ]
 
     if _stash.PY3:
@@ -85,6 +85,13 @@ PACKAGE_NAME_FIXER = {
 NO_OVERWRITE = False
 
 
+# Utility constants
+DIST_ALLOW_SRC = 1
+DIST_ALLOW_WHL = 2
+DIST_PREFER_SRC = 4
+DIST_PREFER_WHL = 8
+DIST_DEFAULT = DIST_ALLOW_SRC | DIST_ALLOW_WHL | DIST_PREFER_WHL
+
 def _setup_stub_(*args, **kwargs):
     setuptools = sys.modules['setuptools']
     setuptools._setup_params_ = (args, kwargs)
@@ -95,9 +102,9 @@ class PipError(Exception):
 
 
 class PackageAlreadyInstalled(PipError):
-	"""Error raised when a package is already installed."""
-	pass
-	
+    """Error raised when a package is already installed."""
+    pass
+
 
 class OmniClass(object):
     def __init__(self, *args, **kwargs):
@@ -765,7 +772,9 @@ if __name__ == "__main__":
         Get AST of the setup file and also transform it for fake setuptools
         and stub setup calls.
         """
-        with codecs.open(filename, mode="r", encoding="UTF-8") as ins:
+        # with codecs.open(filename, mode="r", encoding="UTF-8") as ins:
+        #    s = ins.read()
+        with open(filename, "r") as ins:
             s = ins.read()
         tree = ast.parse(s, filename=filename, mode='exec')
         ArchiveFileInstaller.SetupTransformer().visit(tree)
@@ -830,10 +839,10 @@ class PackageRepository(object):
     def download(self, pkg_name, ver_spec):
         raise PipError('Action Not Available: download')
 
-    def install(self, pkg_name, ver_spec):
+    def install(self, pkg_name, ver_spec, dist=DIST_DEFAULT):
         raise PipError('Action Not Available: install')
 
-    def _install(self, pkg_name, pkg_info, archive_filename):
+    def _install(self, pkg_name, pkg_info, archive_filename, dependency_dist=DIST_DEFAULT):
         if archive_filename.endswith(".whl"):
             print("Installing wheel: {}...".format(os.path.basename(archive_filename)))
             wheel = Wheel(archive_filename, verbose=self.verbose)
@@ -852,27 +861,27 @@ class PackageRepository(object):
         self.config.add_module(pkg_info)
         print('Package installed: {}'.format(pkg_name))
 
-        for pkg_name, ver_spec in name_versions:
+        for dep_name, ver_spec in name_versions:
 
-            if pkg_name == 'setuptools':  # do not install setuptools
+            if dep_name == 'setuptools':  # do not install setuptools
                 continue
 
             # Some packages have error on dependency names
-            pkg_name = PACKAGE_NAME_FIXER.get(pkg_name, pkg_name)
+            dep_name = PACKAGE_NAME_FIXER.get(dep_name, dep_name)
 
             # If this dependency is installed before, skipping
-            if pkg_name in sys.modules['setuptools']._installed_requirements_:
-                print('Dependency already installed: {}'.format(pkg_name))
+            if dep_name in sys.modules['setuptools']._installed_requirements_:
+                print('Dependency already installed: {}'.format(dep_name))
                 continue
 
-            if pkg_name in PYTHONISTA_BUNDLED_MODULES:
-                print('Dependency available in Pythonista bundle : {}'.format(pkg_name))
+            if dep_name in PYTHONISTA_BUNDLED_MODULES:
+                print('Dependency available in Pythonista bundle : {}'.format(dep_name))
                 continue
 
-            print('Installing dependency: {}'.format('{}{}'.format(pkg_name, ver_spec if ver_spec else '')))
-            repository = get_repository(pkg_name)
+            print('Installing dependency: {} (required by: {})'.format('{}{}'.format(dep_name, ver_spec if ver_spec else ''), pkg_name))
+            repository = get_repository(dep_name, verbose=self.verbose)
             try:
-                repository.install(pkg_name, ver_spec)
+                repository.install(dep_name, ver_spec, dist=dependency_dist)
             except PackageAlreadyInstalled:
                 # well, it is already installed...
                 # TODO: maybe update package if required?
@@ -1001,11 +1010,14 @@ class PyPIRepository(PackageRepository):
 
         return releases
 
-    def download(self, pkg_name, ver_spec, wheel_priority=False):
+    def download(self, pkg_name, ver_spec, dist=DIST_DEFAULT):
         print('Querying PyPI ... ')
         pkg_name = self.get_standard_package_name(pkg_name)
         pkg_data = self._package_data(pkg_name)
-        hit = self._determin_hit(pkg_data, ver_spec)
+        hit = self._determin_hit(pkg_data, ver_spec, dist=dist)
+
+        if self.verbose:
+            print("Using {n}=={v}...".format(n=pkg_name, v=hit))
 
         downloads = self._package_downloads(pkg_data, hit)
 
@@ -1023,35 +1035,56 @@ class PyPIRepository(PackageRepository):
                 if wheel_is_compatible(fn):
                     wheel = download
 
-        if not source:
-            if not wheel:
-                raise PipError('Source distribution not available for {}: {}'.format(pkg_name, hit))
-            else:
-                source = wheel
-        else:
-            if wheel_priority:
-                if wheel is not None:
-                    source = wheel
+        target = None
+        if source is not None and (dist & DIST_ALLOW_SRC > 0):
+            # source is available and allowed
+            if (wheel is None or (dist & DIST_ALLOW_WHL == 0)) or (dist & DIST_PREFER_SRC > 0):
+                # no wheel is available or source is prefered
+                # use source
+                if self.verbose:
+                    print("A source distribution is available and will be used.")
+                target = source
+            elif (dist & DIST_ALLOW_WHL > 0):
+                # a wheel is available and allowed and source is not preffered
+                # use wheel
+                if self.verbose:
+                    print("A binary distribution is available and will be used.")
+                target = wheel
+        elif wheel is not None and (dist & DIST_ALLOW_WHL > 0):
+            # source is not available or allowed, but a wheel is available and allowed
+            # use wheel
+            if self.verbose:
+                print("No source distribution found, but a binary distribution was found and will be used.")
+            target = wheel
+
+        if target is None:
+            if self.verbose:
+                print("No allowed distribution found!")
+                if wheel is not None and (dist & DIST_ALLOW_WHL == 0):
+                    print("However, a wheel is available. Maybe try without '--no-binary' or with '--only-binary :all:'?")
+                if source is not None and (dist & DIST_ALLOW_SRC == 0):
+                    print("However, a source distribution is available. Maybe try with '--no-binary :all:'?")
+            raise PipError("No allowed distribution found for '{}': {}!".format(pkg_name, hit))
 
         pkg_info = self._package_info(pkg_data)
         pkg_info['url'] = 'pypi'
 
         print('Downloading package ...')
 
-        worker = _stash('wget {} -o $TMPDIR/{}'.format(source['url'], source['filename']))
+        worker = _stash('wget {} -o $TMPDIR/{}'.format(target['url'], target['filename']))
 
         if worker.state.return_value != 0:
-            raise PipError('failed to download package from {}'.format(source['url']))
+            raise PipError('failed to download package from {}'.format(target['url']))
 
-        return os.path.join(os.getenv('TMPDIR'), source['filename']), pkg_info
+        return os.path.join(os.getenv('TMPDIR'), target['filename']), pkg_info
 
-    def install(self, pkg_name, ver_spec):
+    def install(self, pkg_name, ver_spec, dist=DIST_DEFAULT):
         pkg_name = self.get_standard_package_name(pkg_name)
         if not self.config.module_exists(pkg_name):
-            archive_filename, pkg_info = self.download(pkg_name, ver_spec, wheel_priority=True)
-            self._install(pkg_name, pkg_info, archive_filename)
+            archive_filename, pkg_info = self.download(pkg_name, ver_spec, dist=dist)
+            self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist)
         else:
-        	# todo: maybe update package?
+            # todo: maybe update package?
             raise PackageAlreadyInstalled('Package already installed')
 
     def update(self, pkg_name):
@@ -1069,16 +1102,120 @@ class PyPIRepository(PackageRepository):
         else:
             raise PipError('package not installed: {}'.format(pkg_name))
 
-    def _determin_hit(self, pkg_data, ver_spec):
+    def _determin_hit(self, pkg_data, ver_spec, dist=None):
+        """
+        Find a release for a package matching a specified version.
+        :param pkg_data: the package information
+        :type pkg_data: dict
+        :param ver_spec: the version specification
+        :type ver_spec: VersionSpecifier
+        :param dist: distribution options
+        :type dist: int or None
+        :return: a version matching the specified version
+        :rtype: str
+        """
         pkg_name = pkg_data['info']['name']
-        if ver_spec is None:
-            return self._package_latest_release(pkg_data)
+        latest = self._package_latest_release(pkg_data)
+        # create a sorted list of versions, newest fist.
+        # we manualle  add the  latest release in front to improve the chances of finding
+        # the most recent compatible version
+        versions = [latest] + _stash.libversion.sort_versions(self._package_releases(pkg_data))
+        for hit in versions:
+            # we return the fist matching hit, so we should sort the hits by descending version
+            if (dist is not None) and not self._dist_allows_release(dist, pkg_data, hit):
+                # hit has no source/binary release and is not allowed by dis
+                continue
+            if not self._release_matches_py_version(pkg_data, hit):
+                # hit contains no compatible releases
+                continue
+            if ver_spec is None or ver_spec.match(hit):
+                # version is allowed
+                return hit
         else:
-            for hit in self._package_releases(pkg_data):
-                if all([op(hit, ver) for op, ver in ver_spec.specs]):
-                    return hit
+            raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec if ver_spec is not None else ""))
+
+    def _release_matches_py_version(self, pkg_data, release):
+        """
+        Check if a release is compatible with the python version.
+        :param pkg_data: package information
+        :type pkg_data: dict
+        :param release: the release to check
+        :type release: str
+        :return: whether dist allows the release or not
+        :rtype: boolean
+        """
+        had_v = False
+        has_source = False
+        downloads = self._package_downloads(pkg_data, release)
+        for download in downloads:
+            requires_python = download.get("requires_python", None)
+            if requires_python is not None:
+                reqs = "python" + requires_python
+                name, ver_spec = VersionSpecifier.parse_requirement(reqs)
+                assert name == "python"  # if this if False some large bug happened...
+                if ver_spec.match(platform.python_version()):
+                    # compatible
+                    return True
             else:
-                raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec))
+                # fallback
+                # TODO: do we require this?
+                pv = download.get("python_version", None)
+                if pv is None:
+                    continue
+                elif pv in ("py2.py3", "py3.py2"):
+                    # compatible with both py versions
+                    return True
+                elif pv.startswith("2") or pv == "py2":
+                    # py2 release
+                    if not six.PY3:
+                        return True
+                elif pv.startswith("3") or pv == "py3":
+                    # py3 release
+                    if six.PY3:
+                        return True
+                elif pv == "source":
+                    # i honestly have no idea what this means
+                    # i first assumed it means "this source is compatible with both", so just return True
+                    # however, this seems to be wrong. Instead, we use this as a fallback yes
+                    has_source = True
+            had_v = True
+        if had_v:
+            # no allowed downloads found
+            return has_source
+        else:
+            # none found, maybe pypi changed
+            # in this case, just return True
+            # we did it before without these checks and it worked *most* of the time, so missing this check is not horrible...
+            return True
+
+    def _dist_allows_release(self, dist, pkg_data, release):
+        """
+        Check if a release is allowed by the distribution settings.
+        :param dist: the distribution options
+        :type dist: int
+        :param pkg_data: package information
+        :type pkg_data: dict
+        :param release: the release to check
+        :type release: str
+        :return: whether dist allows the release or not
+        :rtype: boolean
+        """
+        downloads = self._package_downloads(pkg_data, release)
+        for download in downloads:
+            pt = download.get("packagetype", None)
+            if pt is None:
+                continue
+            elif pt in ("source", "sdist"):
+                # source distribution
+                if (dist & DIST_ALLOW_SRC > 0):
+                    return True
+            elif pt in ("bdist_wheel", "wheel", "whl"):
+                # wheel
+                if (dist & DIST_ALLOW_WHL > 0):
+                    return True
+        # no allowed downloads found
+        return False
+
 
 
 class GitHubRepository(PackageRepository):
@@ -1122,12 +1259,12 @@ class GitHubRepository(PackageRepository):
         'summary': metadata.get('description', ''),
         }
 
-    def install(self, owner_repo, ver_spec):
+    def install(self, owner_repo, ver_spec, dist=DIST_DEFAULT):
         if not self.config.module_exists(owner_repo):
             owner, repo = owner_repo.split('/')
             release = self._get_release_from_version_specifier(ver_spec)
             archive_filename, pkg_info = self.download(owner_repo, release)
-            self._install('-'.join([repo, release]), pkg_info, archive_filename)
+            self._install('-'.join([repo, release]), pkg_info, archive_filename, dependency_dist=dist)
         else:
             raise PipError('Package already installed')
 
@@ -1150,11 +1287,11 @@ class UrlRepository(PackageRepository):
         'summary': '',
         }
 
-    def install(self, url, ver_spec):
+    def install(self, url, ver_spec, dist=DIST_DEFAULT):
         if not self.config.module_exists(url):
             archive_filename, pkg_info = self.download(url, ver_spec)
             pkg_name = os.path.splitext(os.path.basename(archive_filename))[0]
-            self._install(pkg_name, pkg_info, archive_filename)
+            self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist)
         else:
             raise PipError('Package already installed')
 
@@ -1164,14 +1301,14 @@ class LocalRepository(PackageRepository):
     This repository deals with a local archive file.
     """
 
-    def install(self, archive_filename, ver_spec):
+    def install(self, archive_filename, ver_spec, dist=DIST_DEFAULT):
         pkg_info = {
         'name': archive_filename,
         'url': 'local',
         'version': '',
         'summary': ''
         }
-        self._install(pkg_name, pkg_info, archive_filename)
+        self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist)
 
 
 # url_repository = UrlRepository()
@@ -1214,60 +1351,6 @@ def get_repository(pkg_name, site_packages=SITE_PACKAGES_FOLDER, verbose=False):
         return PyPIRepository(site_packages=site_packages, verbose=verbose)
 
 
-class VersionSpecifier(object):
-    """
-    This class is to represent the versions of a requirement, e.g. pyte==0.4.10.
-    """
-    OPS = {'<=': operator.le,
-    '<': operator.lt,
-    '!=': operator.ne,
-    '>=': operator.ge,
-    '>': operator.gt,
-    '==': operator.eq,
-    '~=': operator.ge}
-
-    def __init__(self, version_specs):
-        self.specs = [(VersionSpecifier.OPS[op], version) for (op, version) in version_specs]
-        self.str = str(version_specs)
-
-    def __str__(self):
-        return self.str
-
-    @staticmethod
-    def parse_requirement(requirement):
-        """
-        Factory method to create a VersionSpecifier object from a requirement
-        """
-        if isinstance(requirement, (list, tuple)):
-            if len(requirement) == 1:
-                requirement = requirement[0]
-            else:
-                raise PipError("Unknown requirement format: " + repr(requirement))
-        # remove all whitespaces and '()'
-        requirement = requirement.replace(' ', '')
-        requirement = requirement.replace("(", "").replace(")", "")
-        if requirement.startswith("#"):
-            # ignore
-            return None, None
-        letterOrDigit = r'\w'
-        PAREN = lambda x: '(' + x + ')'
-
-        version_cmp = PAREN('?:' + '|'.join(('<=', '<', '!=', '>=', '>', '~=', '==')))
-        version_re = PAREN('?:' + '|'.join((letterOrDigit, '-', '_', '\.', '\*', '\+', '\!'))) + '+'
-        version_one = PAREN(version_cmp) + PAREN(version_re)
-        package_name = '^([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9._-]*[A-Za-z0-9])'
-        parsed = re.findall(package_name + version_one, requirement)
-
-        if not parsed:
-            return requirement, None
-        name = parsed[0][0]
-        reqt = list(zip(*parsed))
-        version_specifiers = list(zip(*reqt[1:]))  # ((op,version),(op,version))
-        version = VersionSpecifier(version_specifiers)
-
-        return name, version
-
-
 if __name__ == '__main__':
     import argparse
 
@@ -1301,6 +1384,24 @@ if __name__ == '__main__':
         '--directory',
         help='target directory for installation',
         )
+    install_parser.add_argument(
+        "--no-binary",
+        action="store",
+        help="Do not use binary packages",
+        dest="nobinary"
+    )
+    install_parser.add_argument(
+        "--only-binary",
+        action="store",
+        help="Do not use binary packages",
+        dest="onlybinary"
+    )
+    install_parser.add_argument(
+        "--prefer-binary",
+        action="store_true",
+        help="Prefer older binary packages over newer source packages",  # TODO: do we actually check older sources/wheels?
+        dest="preferbinary",
+    )
 
     download_parser = subparsers.add_parser('download', help='download packages')
     download_parser.add_argument(
@@ -1345,6 +1446,38 @@ if __name__ == '__main__':
                 site_packages = ns.directory
             else:
                 site_packages = ns.site_packages
+
+            dist = DIST_DEFAULT
+            if ns.nobinary is not None:
+                if ns.nobinary == ":all:":
+                    # disable all binaries
+                    dist = dist & ~DIST_ALLOW_WHL
+                    dist = dist & ~DIST_PREFER_WHL
+                elif ns.nobinary == ":none:":
+                    # allow all binaries
+                    dist = dist | DIST_ALLOW_WHL
+                else:
+                    # TODO: implement this
+                    print("Error: --no-binary does currently only support :all: or :none:")
+
+            if ns.onlybinary is not None:
+                if ns.onlybinary == ":all:":
+                    # disable all source
+                    dist = dist & ~DIST_ALLOW_SRC
+                    dist = dist & ~DIST_PREFER_SRC
+
+                elif ns.nobinary == ":none:":
+                    # allow all source
+                    dist = dist | DIST_ALLOW_SRC
+                else:
+                    # TODO: implement this
+                    print("Error: --only-binary does currently only support :all: or :none:")
+
+            if ns.preferbinary:
+                # set preference to wheels
+                dist = dist | DIST_PREFER_WHL | DIST_ALLOW_WHL
+                dist = dist & ~DIST_PREFER_SRC
+
             for requirement in ns.requirements:
                 repository = get_repository(requirement, site_packages=site_packages, verbose=ns.verbose)
                 NO_OVERWRITE = ns.no_overwrite
@@ -1356,12 +1489,15 @@ if __name__ == '__main__':
                     ensure_pkg_resources()  # install pkg_resources if needed
                     # start with what we have installed (i.e. in the config file)
                     sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
-                    repository.install(pkg_name, ver_spec)
+                    repository.install(pkg_name, ver_spec, dist=dist)
 
         elif ns.sub_command == 'download':
             for requirement in ns.requirements:
                 repository = get_repository(requirement, site_packages=ns.site_packages, verbose=ns.verbose)
-                pkg_name, ver_spec = VersionSpecifier.parse_requirement(requirement)
+                try:
+                    pkg_name, ver_spec = VersionSpecifier.parse_requirement(requirement)
+                except ValueError as e:
+                    print("Error during parsing of the requirement : {e}".format(e=e))
                 archive_filename, pkg_info = repository.download(pkg_name, ver_spec)
                 directory = ns.directory or os.getcwd()
                 shutil.move(archive_filename, directory)

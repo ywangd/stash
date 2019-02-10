@@ -41,9 +41,9 @@ class PipTests(StashTestCase):
         """reload a module."""
         reload_module(m)
 
-    def assert_did_run_setup(self, output):
+    def assert_did_run_setup(self, output, allow_source=True, allow_wheel=True):
         """assert that the output shows that either setup.py was successfully executed or a wheel was installed."""
-        if not (("Running setup file" in output) or ("Installing wheel:" in output)):
+        if not (("Running setup file" in output and allow_source) or ("Installing wheel:" in output and allow_wheel)):
             raise AssertionError("Output '{o}' does not seem to have installed a wheel or run setup.py!".format(o=output))
         self.assertNotIn("Failed to run setup.py", output)
 
@@ -123,6 +123,32 @@ class PipTests(StashTestCase):
             raise AssertionError("Could not import installed module: " + repr(e))
 
     @requires_network
+    def test_install_pypi_nobinary(self):
+        """test 'pip install --no-binary :all: <pypi_package>'."""
+        output = self.run_command("pip --verbose install --no-binary :all: rsa", exitcode=0)
+        self.assertIn("Downloading package", output)
+        self.assert_did_run_setup(output, allow_wheel=False)
+        self.assertIn("Package installed: rsa", output)
+        try:
+            import benterfaces
+        except ImportError as e:
+            self.logger.info("sys.path = " + str(sys.path))
+            raise AssertionError("Could not import installed module: " + repr(e))
+
+    @requires_network
+    def test_install_pypi_onlybinary(self):
+        """test 'pip install --only-binary :all: <pypi_package>'."""
+        output = self.run_command("pip --verbose install --only-binary :all: rsa", exitcode=0)
+        self.assertIn("Downloading package", output)
+        self.assert_did_run_setup(output, allow_source=False)
+        self.assertIn("Package installed: rsa", output)
+        try:
+            import benterfaces
+        except ImportError as e:
+            self.logger.info("sys.path = " + str(sys.path))
+            raise AssertionError("Could not import installed module: " + repr(e))
+
+    @requires_network
     def test_install_command(self):
         """test 'pip install <package>' creates commandline scripts."""
         # 1. test command not yet installed
@@ -144,6 +170,7 @@ class PipTests(StashTestCase):
 
         # 5. ensure command not found after uninstall
         self.run_command("pyrsa-keygen --help", exitcode=127)
+
 
 
     @requires_network
