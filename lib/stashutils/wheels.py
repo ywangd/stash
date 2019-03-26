@@ -6,6 +6,7 @@ import json
 import re
 import zipfile
 import platform
+from io import open
 
 import six
 from six.moves import configparser
