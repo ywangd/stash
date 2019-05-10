@@ -6,6 +6,7 @@ import json
 import re
 import zipfile
 import platform
+from io import open
 
 import six
 from six.moves import configparser
@@ -306,7 +307,7 @@ class DependencyHandler(BaseHandler):
     def read_dependencies_from_METADATA(self, p):
         """read dependencies from distinfo/METADATA"""
         dependencies = []
-        with open(p, "r") as fin:
+        with open(p, "r", encoding='utf-8') as fin:
             for line in fin:
                 line = line.replace("\n", "")
                 if line.startswith("Requires-Dist: "):
