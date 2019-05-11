@@ -66,7 +66,7 @@ def get_defaults_dict():
 def get_actions():
 	'''return action list'''
 	defaults = NSUserDefaults.standardUserDefaults()
-	return list(defaults.arrayForKey_('EditorActionInfos'))
+	return list(defaults.arrayForKey_('EditorActionInfos') or ())
 
 		
 def save_defaults():
