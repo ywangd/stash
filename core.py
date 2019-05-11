@@ -73,6 +73,10 @@ HISTORY_MAX=50
 BUFFER_MAX=150
 AUTO_COMPLETION_MAX=50
 VK_SYMBOLS=~/.-*|>$'=!&_"\?`
+
+[style]
+enable_styles=1
+colored_errors=1
 """.format(
 	font_size=(14 if ON_IPAD else 12),
 	)
@@ -107,6 +111,7 @@ class StaSh(object):
 
         self.config = self._load_config(no_cfgfile=no_cfgfile)
         self.logger = self._config_logging(log_setting)
+        self.enable_styles = self.config.getboolean("style", "enable_styles")
 
         self.user_action_proxy = ShUserActionProxy(self)
 
@@ -179,6 +184,7 @@ class StaSh(object):
         if command:
         	# do not run command if command is False (but not None)
             self(command, add_to_history=False, persistent_level=0)
+
     def __call__(self, input_, persistent_level=2, *args, **kwargs):
         """ This function is to be called by external script for
          executing shell commands """
@@ -254,12 +260,22 @@ class StaSh(object):
                     try:
                         self.__dict__[name] = pyimp.load_source(name, os.path.join(lib_path, f))
                     except Exception as e:
-                        self.write_message('%s: failed to load library file (%s)' % (f, repr(e)))
+                        self.write_message('%s: failed to load library file (%s)' % (f, repr(e)), error=True)
         finally:  # do not modify environ permanently
             os.environ.pop('STASH_ROOT')
 
-    def write_message(self, s):
-        self.io.write('stash: %s\n' % s)
+    def write_message(self, s, error=False, prefix="stash: "):
+        """
+        Write a message to the output.
+        :param s: message to write
+        :type w: str
+        :param error: whether this is an error message
+        :type error: bool
+        """
+        s = '%s%s\n' % (prefix, s)
+        if error and self.runtime.colored_errors:
+            s = self.text_color(s, "red")
+        self.io.write(s)
 
     def launch(self, style='panel'):
         self.ui.present(style)
@@ -272,8 +288,8 @@ class StaSh(object):
         return [worker for worker in self.runtime.worker_registry]
 
     # noinspection PyProtectedMember
-    @staticmethod
-    def text_style(s, style, always=False):
+    # @staticmethod
+    def text_style(self, s, style, always=False):
         """
         Style the given string with ASCII escapes.
 
@@ -283,11 +299,11 @@ class StaSh(object):
         :return:
         """
         # No color for pipes, files and Pythonista console
-        if not always and (
+        if not self.enable_styles or (not always and (
         	isinstance(sys.stdout, (StringIO, IOBase))
         	# or sys.stdout.write.im_self is _SYS_STDOUT
         	or sys.stdout is _SYS_STDOUT
-        	):
+        	)):
             return s
 
         fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)

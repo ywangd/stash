@@ -5,6 +5,7 @@ import platform
 import logging
 import threading
 import functools
+import traceback
 
 from six import StringIO, text_type, binary_type, PY3
 try:
@@ -92,6 +93,7 @@ class ShRuntime(object):
             config.get('system', 'thread_type'),
             ShCtypesThread
         )
+        self.colored_errors = config.getboolean("style", "colored_errors")
 
         # load history from last session
         # NOTE the first entry in history is the latest one
@@ -123,7 +125,31 @@ class ShRuntime(object):
                                persistent_level=1,
                                add_to_history=False, add_new_inp_line=False)
             except IOError:
-                self.stash.write_message('%s: error reading rcfile\n' % self.rcfile)
+                self.stash.write_error_message('%s: error reading rcfile\n' % self.rcfile)
+    
+    def write_error_message(self, stream, msg, prefix=None, log=True):
+        """
+        Write/print an error message to stream.
+        :param stream: file to write to or None
+        :type stream: file or None
+        :param msg: error message
+        :type msg: str
+        :param log: if true, log message
+        :type log: boolean
+        """
+        if prefix is None:
+            prefix = "stash: "
+        if self.debug and log:
+            self.logger.debug(prefix + msg)
+        if stream is None:
+            self.stash.write_message(msg, error=True, prefix=prefix)
+        elif stream is self.stash.io:
+            if self.colored_errors:
+                stream.write(self.stash.text_color(prefix + msg, "red"))
+            else:
+                stream.write(prefix + msg)
+        else:
+            stream.write(prefix + msg)
 
     def find_script_file(self, filename):
         _, current_state = self.get_current_worker_and_state()
@@ -272,53 +298,35 @@ class ShRuntime(object):
                 if self.debug:
                     self.logger.debug('ParseException: %s\n' % repr(e))
                 msg = 'syntax error: at char %d: %s\n' % (e.loc, e.pstr)
-                if final_errs is None:
-                    self.stash.write_message(msg)
-                else:
-                    final_errs.write(msg)
+                self.write_error_message(final_errs, msg)
 
             except ShEventNotFound as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
                 msg = '%s: event not found\n' % e.args[0]
-                if final_errs is None:
-                    self.stash.write_message(msg)
-                else:
-                    final_errs.write(msg)
+                self.write_error_message(final_errs, msg)
 
             except ShBadSubstitution as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
                 msg = '%s\n' % e.args[0]
-                if final_errs is None:
-                    self.stash.write_message(msg)
-                else:
-                    final_errs.write(msg)
+                self.write_error_message(final_errs, msg)
 
             except ShInternalError as e:
                 if self.debug:
                     self.logger.debug('%s\n' % repr(e))
                 msg = '%s\n' % e.args[0]
-                if final_errs is None:
-                    self.stash.write_message(msg)
-                else:
-                    final_errs.write(msg)
+                self.write_error_message(final_errs, msg)
 
             except IOError as e:
                 if self.debug:
                     self.logger.debug('IOError: %s\n' % repr(e))
                 msg = '%s: %s\n' % (e.filename, e.strerror)
-                if final_errs is None:
-                    self.stash.write_message(msg)
-                else:
-                    final_errs.write(msg)
+                self.write_error_message(final_errs, msg)
 
             except KeyboardInterrupt as e:
                 msg = '^C\nKeyboardInterrupt: %s\n' % e.args[0]
-                if final_errs is None:
-                    self.stash.write_message(msg)
-                else:
-                    final_errs.write(msg)
+                self.write_error_message(final_errs, msg)
 
             # This catch all exception handler is to handle errors outside of
             # run_pipe_sequence. The traceback print is mainly for debugging
@@ -329,13 +337,11 @@ class ShRuntime(object):
                 if self.debug:
                     self.logger.debug('Exception: %s\n' % repr(e))
                 msg = '%s\n' % repr(e)
-                if final_errs is None:
-                    self.stash.write_message(msg)
-                else:
-                    final_errs.write(msg)
+                self.write_error_message(msg)
                 if self.py_traceback or self.py_pdb:
-                    import traceback
-                    traceback.print_exception(etype, evalue, tb, file=(final_errs if final_errs is not None else None))
+                    # traceback.print_exception(etype, evalue, tb, file=(final_errs if final_errs is not None else None))
+                    lines = traceback.format_exception(etype, evalue, tb)
+                    self.write_error_message(self.stash.text_color("".join(lines), "red"), prefix="")
 
             finally:
                 # Housekeeping for the thread, e.g. remove itself from registry
@@ -473,11 +479,7 @@ class ShRuntime(object):
                 if self.debug:
                     self.logger.debug(err_msg)
                     
-                if final_errs is None:
-                    self.stash.write_message(err_msg)
-                else:
-                    final_errs.write(err_msg)
-                    
+                self.write_error_message(final_errs, err_msg)
                 # set exit code to 127
                 current_state.return_value = 127
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
@@ -486,10 +488,7 @@ class ShRuntime(object):
                 err_msg = '%s\n' % e.args[0]
                 if self.debug:
                     self.logger.debug(err_msg)
-                if final_errs is None:
-                    self.stash.write_message(err_msg)
-                else:
-                    final_errs.write(err_msg)
+                self.write_error_message(final_errs, err_msg)
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
             finally:
@@ -556,19 +555,11 @@ class ShRuntime(object):
 
             etype, evalue, tb = sys.exc_info()
             err_msg = '%s: %s\n' % (repr(etype), evalue)
-            if self.debug:
-                self.logger.debug(err_msg)
-            if errs is None:
-                self.stash.write_message(err_msg)
-            else:
-                errs.write(err_msg)
+            self.write_error_message(errs, err_msg)
             
             if self.py_traceback or self.py_pdb:
-                import traceback
-                if errs is None:
-                    traceback.print_exception(etype, evalue, tb)
-                else:
-                    traceback.print_exception(etype, evalue, tb, file=errs)
+                lines = traceback.format_exception(etype, evalue, tb)
+                self.write_error_message(errs, "".join(lines), prefix="")
                 if self.py_pdb:
                     import pdb
                     pdb.post_mortem(tb)
@@ -613,18 +604,12 @@ class ShRuntime(object):
 
         except IOError as e:
             emsg = '%s: %s\n' % (e.filename, e.strerror)
-            if errs is None:
-                self.stash.write_message(emsg)
-            else:
-                errs.write(emsg)
+            self.write_error_message(errs, emsg)
             current_state.return_value = 1
 
         except:
             emsg = '%s: error while executing shell script\n' % filename
-            if errs is None:
-                self.stash.write_message(emsg)
-            else:
-                errs.write(emsg)
+            self.write_error_message(errs, emsg)
             current_state.return_value = 2
     
     def encode_argv(self, argv):

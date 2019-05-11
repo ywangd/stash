@@ -51,7 +51,15 @@ _subcmd_cfg = {
     },
     "stashconf": {
         "1": {
-            'candidates': ['input_encoding_utf8', 'ipython_style_history_search', 'py_pdb', 'py_traceback'],
+            'candidates': [
+                'input_encoding_utf8',
+                'ipython_style_history_search',
+                'py_pdb',
+                'py_traceback',
+                "enable_styles",
+                "colored_errors",
+                "enable_styles",
+                ],
             'blank_completion': True,
             'with_normal_completion': False,
         },

@@ -94,55 +94,65 @@ OPTIONS = {
 			"display_name": "Resource File",
 			"option_name": "rcfile",
 			"type": TYPE_STR,
+			"description": "Resourcefile to load on startup",
 		},
 		{
 			"display_name": "Show Traceback",
 			"option_name": "py_traceback",
 			"type": TYPE_BOOL,
+			"description": "Show a detailed traceback when an uncatched exception is raised",
 		},
 		{
 			"display_name": "Enable Debugger",
 			"option_name": "py_pdb",
 			"type": TYPE_BOOL,
+			"description": "Lauch pdb when an uncatched exception is raised",
 		},
 		{
 			"display_name": "Encode Input as UTF-8",
 			"option_name": "ipython_style_history_search",
 			"type": TYPE_BOOL,
+			"description": "You may or may not gain imaginary internet points if you figure out what this option does",
 		},
 		{
 			"display_name": "Thread Type",
 			"option_name": "thread_type",
 			"type": TYPE_CHOICE,
 			"choices": ("ctypes", "traced"),
+			"description": "Which type of threads to use. 'ctypes' is faster and should be preferred",
 		},
-		],
+	],
 	"display":
 		[
 		{
 			"display_name": "Font Size",
 			"option_name": "TEXT_FONT_SIZE",
 			"type": TYPE_INT,
+			"description": "Font size of the console",
 		},
 		{
 			"display_name": "Button Font Size",
 			"option_name": "BUTTON_FONT_SIZE",
 			"type": TYPE_INT,
+			"description": "Font size of the buttons on the virtual keyrow",
 		},
 		{
 			"display_name": "Background Color",
 			"option_name": "BACKGROUND_COLOR",
 			"type": TYPE_COLOR,
+			"description": "Background color of the terminal",
 		},
 		{
 			"display_name": "Text Color",
 			"option_name": "TEXT_COLOR",
 			"type": TYPE_COLOR,
+			"description": "Text color of the terminal",
 		},
 		{
 			"display_name": "Tint Color",
 			"option_name": "TINT_COLOR",
 			"type": TYPE_COLOR,
+			"description": "Color of special features in the terminal, e.g. the cursor",
 		},
 		{
 			"display_name": "Indicator Style",
@@ -153,67 +163,109 @@ OPTIONS = {
 				"black",
 				"white",
 				),
+			"description": "Color of indicator used by the terminal",
 		},
 		{
 			"display_name": "Max History Length",
 			"option_name": "HISTORY_MAX",
 			"type": TYPE_INT,
+			"description": "Max number of commands to store in the history",
 		},
 		{
 			"display_name": "Max Buffer",
 			"option_name": "BUFFER_MAX",
 			"type": TYPE_INT,
+			"description": "Max number of lines the terminal should show",
 		},
 		{
 			"display_name": "Max Autocompletion",
 			"option_name": "AUTO_COMPLETION_MAX",
 			"type": TYPE_INT,
+			"description": "Max nunber of commands to complete without asking the user for confirmation",
 		},
 		{
 			"display_name": "Virtual Keys",
 			"option_name": "VK_SYMBOLS",
 			"type": TYPE_STR,
+			"description": "Virtual keys available in the virtual keyrow when you press '...'",
 		},
-		],
+	],
 	"StaSh": [
 		{
 			"display_name": "Version",
 			"option_name": None,
 			"type": TYPE_LABEL,
 			"value": _stash.__version__,
+			"description": "Version of StaSh",
 		},
 		{
 			"display_name": "Selfupdate target",
 			"option_name": None,
 			"type": TYPE_LABEL,
-			"value": os.getenv("SELFUPDATE_TARGET", "ywangd:master")
+			"value": os.getenv("SELFUPDATE_TARGET", "ywangd:master"),
+			"description": "Source to download update from. Format: '<github_user>:<branch>'",
 		},
 		{
 			"display_name": "Update",
 			"option_name": None,
 			"type": TYPE_COMMAND,
 			"command": "selfupdate",
+			"description": "Update StaSh",
 		},
 		{
 			"display_name": "Create Editor Shortcut",
 			"option_name": None,
 			"type": TYPE_COMMAND,
 			"command": add_editor_action,
+			"description": "add a shortcut to the wrench menu in pythonista",
 		},
 		{
 			"display_name": "Visit Homepage",
 			"option_name": None,
 			"type": TYPE_COMMAND,
 			"command": "webviewer -f -m https://www.github.com/ywangd/stash/",
+			"description": "Visit the StaSh homepage",
 		},
-		],
+	],
+	"style": [
+	    {
+	        "display_name": "Enable Styles",
+	        "option_name": "enable_styles",
+	        "type": TYPE_BOOL,
+	        "description": "Enable styles in terminal (e.g. color or italic)",
+	    },
+	    {
+	        "display_name": "Colored Errors",
+	        "option_name": "colored_errors",
+	        "type": TYPE_BOOL,
+	        "description": "Color error messages and tracebacks in red",
+	    }
+	],
+	"Config": [
+	    {
+	        "display_name": "Current file",
+	        "option_name": None,
+	        "type": TYPE_LABEL,
+	        "value": os.path.relpath(CONFIG_PATH, start=os.environ.get("HOME", "/")),
+	        "description": "Configfile currently open",
+	    },
+	    {
+	        "display_name": "Config files",
+	        "option_name": None,
+	        "type": TYPE_LABEL,
+	        "value": ",".join([os.path.relpath(os.path.join(os.environ.get("STASH_ROOT", ""), v), start=os.environ.get("HOME", "/")) for v in _STASH_CONFIG_FILES]),
+	        "description": "Comma-seperated list of StaSh configfiles",
+	    },
+	],
 }
 
 # section order
 SECTIONS = [
 	"StaSh",
+	"Config",
 	"system",
 	"display",
+	"style",
 	]
 	
 
@@ -525,9 +577,21 @@ class ConfigView(ui.View):
 	def tableview_can_move(self, tv, section, row):
 		return False
 	
+	@ui.in_background
 	def tableview_did_select(self, tv, section, row):
 		# deselect row
 		tv.selected_row = (-1, -1)
+		
+		sn = SECTIONS[section]
+		info = OPTIONS[sn][row]
+		otype = info["type"]
+		
+		if otype == TYPE_LABEL:
+		    # show content
+		    console.alert(info.get("display_name", ""), info.get("value", ""), "Ok", hide_cancel_button=True)
+		else:
+		    # show description
+		    console.alert(info.get("display_name", ""), info.get("description", "No description available."), "Ok", hide_cancel_button=True)
 	
 	def textfield_did_begin_editing(self, tf):
 		self.cur_tf = tf

@@ -4,7 +4,9 @@ from __future__ import print_function
 import sys
 import argparse
 
+
 _stash = globals()['_stash']
+
 
 def main(args):
     ap = argparse.ArgumentParser()
@@ -19,6 +21,8 @@ def main(args):
         'py_pdb': _stash.runtime,
         'input_encoding_utf8': _stash.runtime,
         'ipython_style_history_search': _stash.runtime,
+        "enable_styles": _stash,
+        "colored_errors": _stash.runtime,
     }
 
     if ns.list:
