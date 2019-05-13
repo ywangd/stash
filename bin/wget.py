@@ -16,6 +16,26 @@ except ImportError:
 _stash = globals()["_stash"]
 
 
+def get_status_string(downloaded, total):
+    """Return a string showing the current progress"""
+    if _stash is not None and hasattr(_stash, "libcore"):
+        hdr = _stash.libcore.sizeof_fmt(downloaded)
+    else:
+        hdr = "%10d" % downloaded
+    if total:
+        total = float(total)
+        percent = min((downloaded / total) * 100.0, 100.0)
+        total_c = 20
+        nc = int(total_c * (downloaded / total))
+        sh = ">" if downloaded != total else "="
+        bar = "[" + "=" * (nc - 1) + sh + " " * (total_c - nc) + "]"
+        # status = r"%10d  [%3.2f%%]" % downloaded, percent
+        status = r"%s %3.2f%% | %s" % (bar, percent, hdr)
+    else:
+        status = hdr
+    return status
+
+
 def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('-o', '--output-file', nargs='?', help='save content as file')
@@ -46,7 +66,7 @@ def main(args):
         print("({} bytes)".format(file_size if file_size else "???"))
 
         with open(output_file, 'wb') as f:
-            file_size_dl = 0
+            file_size_dl = 0.0
             block_sz = 8192
             while True:
                 buf = u.read(block_sz)
@@ -54,11 +74,8 @@ def main(args):
                     break
                 file_size_dl += len(buf)
                 f.write(buf)
-                if file_size:
-                    status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-                else:
-                    status = "%10d" % file_size_dl
-                print('\r' + status, end="")
+                status = get_status_string(file_size_dl, file_size)
+                print('\r' + status + " " * 10, end="")
             print("")
 
     except Exception as e:
