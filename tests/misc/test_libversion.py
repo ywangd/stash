@@ -19,25 +19,33 @@ class LibVersionTests(StashTestCase):
     def test_version_specifier_parse(self):
         """test 'libversion.VersionSpecifier.parse_requirement()'"""
         to_test = [
-            # format: (requirement_str, pkg_name, [(op1, v1), ...])
-            ("test==1.2.3", "test", [(operator.eq, "1.2.3")]),
-            ("test_2 == 7.3.12", "test_2", [(operator.eq, "7.3.12")]),
-            ("with1number == 923.1512.12412", "with1number",[(operator.eq, "923.1512.12412")]),
-            ("tge >= 2.0.1", "tge", [(operator.ge, "2.0.1")]),
-            ("tgt > 3.0.0", "tgt", [(operator.gt, "3.0.0")]),
-            ("tne != 7.0.0", "tne", [(operator.ne, "7.0.0")]),
-            ("pkg_b (< 0.7.0", "pkg_b", [(operator.lt, "0.7.0")]),
-            ("nondigitver <= 1.5.3b", "nondigitver", [(operator.le, "1.5.3b")]),
-            ("wrapt < 2, >= 1", "wrapt", [(operator.lt, "2"), (operator.ge, "1")]),
+            # format: (requirement_str, pkg_name, [(op1, v1), ...], extras)
+            ("noversion", "noversion", None, []),
+            ("test==1.2.3", "test", [(operator.eq, "1.2.3")], []),
+            ("test_2 == 7.3.12", "test_2", [(operator.eq, "7.3.12")], []),
+            ("with1number == 923.1512.12412", "with1number",[(operator.eq, "923.1512.12412")], []),
+            ("tge >= 2.0.1", "tge", [(operator.ge, "2.0.1")], []),
+            ("tgt > 3.0.0", "tgt", [(operator.gt, "3.0.0")], []),
+            ("tne != 7.0.0", "tne", [(operator.ne, "7.0.0")], []),
+            ("pkg_b (< 0.7.0", "pkg_b", [(operator.lt, "0.7.0")], []),
+            ("nondigitver <= 1.5.3b", "nondigitver", [(operator.le, "1.5.3b")], []),
+            ("wrapt < 2, >= 1", "wrapt", [(operator.lt, "2"), (operator.ge, "1")], []),
+            ("extras[simple]", "extras", None, ["simple"]),
+            ("extras[multi, values]", "extras", None, ["multi", "values"]),
+            ("extras == 9.8.7 [withversion]", "extras", [(operator.eq, "9.8.7")], ["with_version"]),
         ]
-        for req, pkg, spec in to_test:
-            name, ver_spec = self.stash.libversion.VersionSpecifier.parse_requirement(req)
+        for req, pkg, spec, exp_extras in to_test:
+            name, ver_spec, extras = self.stash.libversion.VersionSpecifier.parse_requirement(req)
             self.assertEqual(name, pkg)
             if self.stash.PY3:
                 # in py3, assertItemsEqual has been renamed to assertCountEqual
-                self.assertCountEqual(ver_spec.specs, spec)
+                if spec is not None:
+                    self.assertCountEqual(ver_spec.specs, spec)
+                self.assertCountEqual(exp_extras, extras)
             else:
-                self.assertItemsEqual(ver_spec.specs, spec)
+                if spec is not None:
+                    self.assertItemsEqual(ver_spec.specs, spec)
+                self.assertItemsEqual(exp_extras, extras)
 
     def test_version_specifier_match(self):
         """test 'libversion.VersionSpecifier().match()'"""
@@ -50,7 +58,7 @@ class LibVersionTests(StashTestCase):
             ("wrapt < 2, >= 1", [("0.0.1", False), ("1.0.0", True), ("1.5.0", True), ("2.0.0", False), ("1.9.9", True)]),
         ]
         for rs, test in to_test:
-            _, ver_spec = self.stash.libversion.VersionSpecifier.parse_requirement(rs)
+            _, ver_spec, extras = self.stash.libversion.VersionSpecifier.parse_requirement(rs)
             for ts, expected in test:
                 result = ver_spec.match(ts)
                 self.assertEqual(result, expected)
@@ -142,4 +150,3 @@ class LibVersionTests(StashTestCase):
             v1 = self.stash.libversion.Version.parse(vs1)
             v2 = self.stash.libversion.Version.parse(vs2)
             self.assertEqual(op(v1, v2), expected)
-

@@ -1172,7 +1172,7 @@ class PyPIRepository(PackageRepository):
             requires_python = download.get("requires_python", None)
             if requires_python is not None:
                 reqs = "python" + requires_python
-                name, ver_spec = VersionSpecifier.parse_requirement(reqs)
+                name, ver_spec, extras = VersionSpecifier.parse_requirement(reqs)
                 assert name == "python"  # if this if False some large bug happened...
                 if ver_spec.match(platform.python_version()):
                     # compatible
@@ -1516,7 +1516,7 @@ if __name__ == '__main__':
             for requirement in ns.requirements:
                 repository = get_repository(requirement, site_packages=ns.site_packages, verbose=ns.verbose)
                 try:
-                    pkg_name, ver_spec = VersionSpecifier.parse_requirement(requirement)
+                    pkg_name, ver_spec, extras = VersionSpecifier.parse_requirement(requirement)
                 except ValueError as e:
                     print("Error during parsing of the requirement : {e}".format(e=e))
                 archive_filename, pkg_info = repository.download(pkg_name, ver_spec)
