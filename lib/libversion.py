@@ -275,6 +275,10 @@ class VersionSpecifier(object):
     def parse_requirement(requirement):
         """
         Factory method to create a VersionSpecifier object from a requirement
+        :param requirement: requirement to parse
+        :type requirement: str
+        :return: tuple of (requirement_name, version_specifier, list of extras)
+        :rtype: tuple of (str, VersionSpecifier, list of str)
         """
         if isinstance(requirement, (list, tuple)):
             if len(requirement) == 1:
@@ -286,14 +290,34 @@ class VersionSpecifier(object):
         requirement = requirement.replace("(", "").replace(")", "")
         if requirement.startswith("#"):
             # ignore
-            return None, None
+            return None, None, []
         PAREN = lambda x: '(' + x + ')'
         version_cmp = PAREN('?:' + '|'.join(('<=', '<', '!=', '>=', '>', '~=', '==')))
         name_end_res = re.search(version_cmp, requirement)
         if name_end_res is None:
-            return requirement, None
+            if "[" in requirement:
+                si = requirement.find("[")
+                extra_s = requirement[si+1:-1]
+                requirement = requirement[:si]
+                if len(extra_s) == 0:
+                    extras = []
+                else:
+                    extras = extra_s.split(",")
+            else:
+                extras = []
+            return requirement, None, extras
         name_end = name_end_res.start()
         name, specs_s = requirement[:name_end], requirement[name_end:]
+        if "[" in specs_s:
+            si = specs_s.find("[")
+            extra_s = specs_s[si+1:-1]
+            specs_s = specs_s[:si]
+            if len(extra_s) == 0:
+                extras = []
+            else:
+                extras = extra_s.split(",")
+        else:
+            extras = []
         splitted = specs_s.split(",")
         specs = []
         for vs in splitted:
@@ -301,7 +325,7 @@ class VersionSpecifier(object):
             c, v = vs[:cmp_end], vs[cmp_end:]
             specs.append((c, v))
         version = VersionSpecifier(specs)
-        return name, version
+        return name, version, extras
 
     def match(self, version):
         """

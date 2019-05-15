@@ -523,9 +523,17 @@ class ArchiveFileInstaller(object):
         self.site_packages = site_packages
         self.verbose = verbose
 
-    def run(self, pkg_name, archive_filename):
+    def run(self, pkg_name, archive_filename, extras=[]):
         """
         Main method for Installer to do its job.
+        :param pkg_name: name of package
+        :type pkg_name: str
+        :param archive_filename: path to archive
+        :type param: str
+        :param extras: extras to install
+        :type extras: list of str
+        :return: tuple of (files installed, dependencies)
+        :rtype: tuple of (list of str, list of str)
         """
 
         extracted_folder = self._unzip(pkg_name, archive_filename)
@@ -536,7 +544,7 @@ class ArchiveFileInstaller(object):
 
             try:
                 print('Running setup file ...')
-                return self._run_setup_file(setup_filename)
+                return self._run_setup_file(setup_filename, extras=extras)
 
             except Exception as e:
                 print('{!r}'.format(e))
@@ -594,9 +602,15 @@ class ArchiveFileInstaller(object):
 
         return extracted_folder
 
-    def _run_setup_file(self, filename):
+    def _run_setup_file(self, filename, extras=[]):
         """
         Transform and Run AST of the setup file
+        :param filename: file to run
+        :type filename: str
+        :param extras: extras to install
+        :type extras: list of str
+        :return: tuple of (files installed, dependencies)
+        :rtype: tuple of (list of str, list of str)
         """
 
         try:
@@ -764,6 +778,11 @@ if __name__ == "__main__":
 
         # Recursively Handle dependencies
         dependencies = kwargs.get('install_requires', [])
+        # add extra dependencies
+        extra_req = kwargs.get("extras_require", [])
+        for en in extra_req:
+            if en in extras:
+                dependencies += list(extra_req.get(en, []))
         return files_installed, dependencies
 
     @staticmethod
@@ -839,15 +858,16 @@ class PackageRepository(object):
     def download(self, pkg_name, ver_spec):
         raise PipError('Action Not Available: download')
 
-    def install(self, pkg_name, ver_spec, dist=DIST_DEFAULT):
+    def install(self, pkg_name, ver_spec, dist=DIST_DEFAULT, extras=[]):
         raise PipError('Action Not Available: install')
 
-    def _install(self, pkg_name, pkg_info, archive_filename, dependency_dist=DIST_DEFAULT):
+    def _install(self, pkg_name, pkg_info, archive_filename, dependency_dist=DIST_DEFAULT, extras=[]):
         if archive_filename.endswith(".whl"):
             print("Installing wheel: {}...".format(os.path.basename(archive_filename)))
-            wheel = Wheel(archive_filename, verbose=self.verbose)
+            wheel = Wheel(archive_filename, verbose=self.verbose, extras=extras)
             files_installed, dependencies = wheel.install(self.site_packages)
         else:
+            # TODO: support extras
             files_installed, dependencies = self.installer.run(pkg_name, archive_filename)
         # never install setuptools as dependency
         dependencies = [dependency for dependency in dependencies if dependency != 'setuptools']
@@ -861,7 +881,7 @@ class PackageRepository(object):
         self.config.add_module(pkg_info)
         print('Package installed: {}'.format(pkg_name))
 
-        for dep_name, ver_spec in name_versions:
+        for dep_name, ver_spec, extras in name_versions:
 
             if dep_name == 'setuptools':  # do not install setuptools
                 continue
@@ -870,6 +890,7 @@ class PackageRepository(object):
             dep_name = PACKAGE_NAME_FIXER.get(dep_name, dep_name)
 
             # If this dependency is installed before, skipping
+            # TODO: should we NOT skip if extras are specified?
             if dep_name in sys.modules['setuptools']._installed_requirements_:
                 print('Dependency already installed: {}'.format(dep_name))
                 continue
@@ -881,7 +902,7 @@ class PackageRepository(object):
             print('Installing dependency: {} (required by: {})'.format('{}{}'.format(dep_name, ver_spec if ver_spec else ''), pkg_name))
             repository = get_repository(dep_name, verbose=self.verbose)
             try:
-                repository.install(dep_name, ver_spec, dist=dependency_dist)
+                repository.install(dep_name, ver_spec, dist=dependency_dist, extras=extras)
             except PackageAlreadyInstalled:
                 # well, it is already installed...
                 # TODO: maybe update package if required?
@@ -1078,11 +1099,11 @@ class PyPIRepository(PackageRepository):
 
         return os.path.join(os.getenv('TMPDIR'), target['filename']), pkg_info
 
-    def install(self, pkg_name, ver_spec, dist=DIST_DEFAULT):
+    def install(self, pkg_name, ver_spec, dist=DIST_DEFAULT, extras=[]):
         pkg_name = self.get_standard_package_name(pkg_name)
         if not self.config.module_exists(pkg_name):
             archive_filename, pkg_info = self.download(pkg_name, ver_spec, dist=dist)
-            self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist)
+            self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist, extras=extras)
         else:
             # todo: maybe update package?
             raise PackageAlreadyInstalled('Package already installed')
@@ -1259,12 +1280,12 @@ class GitHubRepository(PackageRepository):
         'summary': metadata.get('description', ''),
         }
 
-    def install(self, owner_repo, ver_spec, dist=DIST_DEFAULT):
+    def install(self, owner_repo, ver_spec, dist=DIST_DEFAULT, extras=[]):
         if not self.config.module_exists(owner_repo):
             owner, repo = owner_repo.split('/')
             release = self._get_release_from_version_specifier(ver_spec)
             archive_filename, pkg_info = self.download(owner_repo, release)
-            self._install('-'.join([repo, release]), pkg_info, archive_filename, dependency_dist=dist)
+            self._install('-'.join([repo, release]), pkg_info, archive_filename, dependency_dist=dist, extras=extras)
         else:
             raise PipError('Package already installed')
 
@@ -1287,11 +1308,11 @@ class UrlRepository(PackageRepository):
         'summary': '',
         }
 
-    def install(self, url, ver_spec, dist=DIST_DEFAULT):
+    def install(self, url, ver_spec, dist=DIST_DEFAULT, extras=[]):
         if not self.config.module_exists(url):
             archive_filename, pkg_info = self.download(url, ver_spec)
             pkg_name = os.path.splitext(os.path.basename(archive_filename))[0]
-            self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist)
+            self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist, extras=extras)
         else:
             raise PipError('Package already installed')
 
@@ -1301,14 +1322,14 @@ class LocalRepository(PackageRepository):
     This repository deals with a local archive file.
     """
 
-    def install(self, archive_filename, ver_spec, dist=DIST_DEFAULT):
+    def install(self, archive_filename, ver_spec, dist=DIST_DEFAULT, extras=[]):
         pkg_info = {
         'name': archive_filename,
         'url': 'local',
         'version': '',
         'summary': ''
         }
-        self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist)
+        self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist, extras=extras)
 
 
 # url_repository = UrlRepository()
@@ -1482,14 +1503,14 @@ if __name__ == '__main__':
                 repository = get_repository(requirement, site_packages=site_packages, verbose=ns.verbose)
                 NO_OVERWRITE = ns.no_overwrite
 
-                pkg_name, ver_spec = VersionSpecifier.parse_requirement(requirement)
+                pkg_name, ver_spec, extras = VersionSpecifier.parse_requirement(requirement)
 
                 with save_current_sys_modules():
                     fake_setuptools_modules()
                     ensure_pkg_resources()  # install pkg_resources if needed
                     # start with what we have installed (i.e. in the config file)
                     sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
-                    repository.install(pkg_name, ver_spec, dist=dist)
+                    repository.install(pkg_name, ver_spec, dist=dist, extras=extras)
 
         elif ns.sub_command == 'download':
             for requirement in ns.requirements:

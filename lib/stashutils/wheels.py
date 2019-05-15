@@ -286,7 +286,7 @@ class DependencyHandler(BaseHandler):
                 dependencies = self.read_dependencies_from_METADATA(metadatap)
             else:
                 if self.verbose:
-                    print("Warning: could find neither 'metadata.json' not `METADATA`, can not detect dependencies!")
+                    print("Warning: could find neither 'metadata.json' nor `METADATA`, can not detect dependencies!")
                 return
         else:
             with open(metajsonp, "r") as fin:
@@ -296,9 +296,11 @@ class DependencyHandler(BaseHandler):
                 ex = ds.get("extra", None)
                 dep = ds.get("requires", [])
                 if ex is not None:
-                    if ex != self.wheel.extra:
+                    if ex not in self.wheel.extras:
                         # extra not wanted
                         continue
+                    else:
+                        dependencies += dep
                 else:
                     dependencies += dep
         self.wheel.dependencies += dependencies
@@ -317,9 +319,9 @@ class DependencyHandler(BaseHandler):
                         if VersionSpecifier is None:
                             # libversion not found
                             print("Warning: could not import libversion.VersionSpecifier! Ignoring version and extra dependencies.")
-                            rq, v = "<libversion not found>", "???"
+                            rq, v, extras = "<libversion not found>", "???", []
                         else:
-                            rq, v = VersionSpecifier.parse_requirement(es)
+                            rq, v, extras = VersionSpecifier.parse_requirement(es)
                         if rq == "python_version":
                             # handle python version dependencies
                             if not v.match(platform.python_version()):
@@ -327,7 +329,8 @@ class DependencyHandler(BaseHandler):
                                 continue
                         elif rq == "extra":
                             # handle extra dependencies
-                            if (self.wheel.extra is None) or (not v.match(self.wheel.extra)):
+                            matched = any([v.match(e) for e in self.wheel.extras])
+                            if not matched:
                                 # dependency NOT required
                                 continue
                         else:
@@ -351,9 +354,9 @@ DEFAULT_HANDLERS = [
 
 class Wheel(object):
     """class for installing python wheels."""
-    def __init__(self, path, handlers=DEFAULT_HANDLERS, extra=None, verbose=False):
+    def __init__(self, path, handlers=DEFAULT_HANDLERS, extras=[], verbose=False):
         self.path = path
-        self.extra = extra
+        self.extras = extras
         self.verbose = verbose
         self.filename = os.path.basename(self.path)
         self.handlers = [handler(self, self.verbose) for handler in handlers]
