@@ -32,7 +32,7 @@ class LibVersionTests(StashTestCase):
             ("wrapt < 2, >= 1", "wrapt", [(operator.lt, "2"), (operator.ge, "1")], []),
             ("extras[simple]", "extras", None, ["simple"]),
             ("extras[multi, values]", "extras", None, ["multi", "values"]),
-            ("extras == 9.8.7 [withversion]", "extras", [(operator.eq, "9.8.7")], ["with_version"]),
+            ("extras == 9.8.7 [with_version]", "extras", [(operator.eq, "9.8.7")], ["with_version"]),
         ]
         for req, pkg, spec, exp_extras in to_test:
             name, ver_spec, extras = self.stash.libversion.VersionSpecifier.parse_requirement(req)
