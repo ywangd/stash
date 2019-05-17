@@ -867,8 +867,7 @@ class PackageRepository(object):
             wheel = Wheel(archive_filename, verbose=self.verbose, extras=extras)
             files_installed, dependencies = wheel.install(self.site_packages)
         else:
-            # TODO: support extras
-            files_installed, dependencies = self.installer.run(pkg_name, archive_filename)
+            files_installed, dependencies = self.installer.run(pkg_name, archive_filename, extras=extras)
         # never install setuptools as dependency
         dependencies = [dependency for dependency in dependencies if dependency != 'setuptools']
         name_versions = [VersionSpecifier.parse_requirement(requirement)
