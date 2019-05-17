@@ -283,12 +283,16 @@ class DependencyHandler(BaseHandler):
         metadatap = os.path.join(src, self.distinfo_name, "METADATA")
         if not os.path.exists(metajsonp):
             if os.path.exists(metadatap):
+                if self.verbose:
+                    print("Reading 'METADATA' file...")
                 dependencies = self.read_dependencies_from_METADATA(metadatap)
             else:
                 if self.verbose:
                     print("Warning: could find neither 'metadata.json' nor `METADATA`, can not detect dependencies!")
                 return
         else:
+            if self.verbose:
+                print("Reading 'metadata.json' file...")
             with open(metajsonp, "r") as fin:
                 content = json.load(fin)
             dependencies = []
@@ -300,6 +304,8 @@ class DependencyHandler(BaseHandler):
                         # extra not wanted
                         continue
                     else:
+                        if self.verbose:
+                            print("Adding dependencies for extra '{e}'...".format(e=ex))
                         dependencies += dep
                 else:
                     dependencies += dep
@@ -333,6 +339,9 @@ class DependencyHandler(BaseHandler):
                             if not matched:
                                 # dependency NOT required
                                 continue
+                            else:
+                                if self.verbose:
+                                    print("Adding dependencies for extras...")
                         else:
                             # unknown requirement for dependency
                             # warn user and register the dependency
@@ -362,7 +371,6 @@ class Wheel(object):
         self.handlers = [handler(self, self.verbose) for handler in handlers]
         self.version = None  # to be set by handler
         self.dependencies = []  # to be set by handler
-        self.extras = {}  # to be set by handler
 
         if not wheel_is_compatible(self.filename):
             raise WheelError("Incompatible wheel: {p}!".format(p=self.filename))
@@ -412,9 +420,18 @@ class Wheel(object):
 
 if __name__ == "__main__":
     # test script
+    import argparse
     import sys
-    fi, dep = Wheel(sys.argv[1], verbose=True).install(os.path.expanduser("~/Documents/site-packages/"))
+    parser = argparse.ArgumentParser(description="Wheel debug installer")
+    parser.add_argument("path", help="path to .whl", action="store")
+    parser.add_argument("-q", help="be less verbose", action="store_false", dest="verbose")
+    parser.add_argument("extras", action="store", nargs="*", help="extras to install")
+    ns = parser.parse_args()
+    print("Installing {} with extras {}...".format(ns.path, ns.extras))
+    fi, dep = Wheel(ns.path, verbose=ns.verbose, extras=ns.extras).install(os.path.expanduser("~/Documents/site-packages/"))
     print("files installed: ")
     print(fi)
     print("dependencies:")
     print(dep)
+    if len(dep) > 0:
+        print("WARNING: Dependencies were not installed.")
