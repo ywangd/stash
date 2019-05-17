@@ -174,18 +174,24 @@ class TopLevelHandler(BaseHandler):
     def handle_install(self, src, dest):
         tltxtp = os.path.join(src, self.distinfo_name, "top_level.txt")
         files_installed = []
-        with open(tltxtp, "r") as fin:
-            for pkg_name in fin:
-                pure = pkg_name.replace("\r", "").replace("\n", "")
-                sp = os.path.join(src, pure)
-                if os.path.exists(sp):
-                    p = self.copytree(pure, sp, dest, remove=True)
-                elif os.path.exists(sp + ".py"):
-                    dp = os.path.join(dest, pure + ".py")
-                    p = self.copytree(pure, sp + ".py", dp, remove=True)
-                else:
-                    raise WheelError("top_level.txt entry '{e}' not found in toplevel directory!".format(e=pure))
-                files_installed.append(p)
+        if not os.path.exists(tltxtp):
+            files = os.listdir(src)
+            fin = [file_name for file_name in files if file_name != self.distinfo_name]
+            print('No top_level.txt, try to fix this.', fin)
+        else:
+            with open(tltxtp, "r") as f:
+                fin = f.readlines()
+        for pkg_name in fin:
+            pure = pkg_name.replace("\r", "").replace("\n", "")
+            sp = os.path.join(src, pure)
+            if os.path.exists(sp):
+                p = self.copytree(pure, sp, dest, remove=True)
+            elif os.path.exists(sp + ".py"):
+                dp = os.path.join(dest, pure + ".py")
+                p = self.copytree(pure, sp + ".py", dp, remove=True)
+            else:
+                raise WheelError("top_level.txt entry '{e}' not found in toplevel directory!".format(e=pure))
+            files_installed.append(p)
         return files_installed
 
 
