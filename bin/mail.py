@@ -24,7 +24,7 @@ import argparse
 import os
 import smtplib
 import sys
-from email import Encoders
+from email import encoders
 from email.utils import formatdate
 
 from six.moves import input
@@ -110,7 +110,7 @@ password = Your user password
             self._print('Attachment found: %s'% attach)
             part = MIMEBase('application', "octet-stream")
             part.set_payload( open(attach,"rb").read() )
-            Encoders.encode_base64(part)
+            encoders.encode_base64(part)
             part.add_header('Content-Disposition', 'attachment; filename="%s"' % attach)
             msg.attach(part)
         
