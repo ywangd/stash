@@ -30,6 +30,7 @@ from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE, _SYS_STDOUT, _SYS_STDERR
 from .shcommon import is_binary_file, _STASH_EXTENSION_BIN_PATH
 from .shparsers import ShPipeSequence
 from .shthreads import ShBaseThread, ShTracedThread, ShCtypesThread, ShState, ShWorkerRegistry
+from .shhistory import ShHistory
 
 
 # Default .stashrc file
@@ -82,7 +83,6 @@ class ShRuntime(object):
         config = stash.config
         self.rcfile = os.path.join(_STASH_ROOT, config.get('system', 'rcfile'))
         self.historyfile = os.path.join(_STASH_ROOT, _STASH_HISTORY_FILE)
-        self.HISTORY_MAX = config.getint('display', 'HISTORY_MAX')
 
         self.py_traceback = config.getint('system', 'py_traceback')
         self.py_pdb = config.getint('system', 'py_pdb')
@@ -96,19 +96,16 @@ class ShRuntime(object):
         self.colored_errors = config.getboolean("style", "colored_errors")
 
         # load history from last session
-        # NOTE the first entry in history is the latest one
         if not no_historyfile:
             try:
-                with open(self.historyfile) as ins:
-                    # History from old to new, history at 0 is the oldest
-                    self.history = [line.strip() for line in ins.readlines()]
+                self.history = ShHistory.load(self.historyfile, config)
             except IOError:
-                self.history = []
+                self.history = ShHistory(config)
         else:
-            self.history = []
-        self.history_alt = []
+            self.history = ShHistory(config)
+        self.history.swap("StaSh.runtime")
 
-        self.history_listsource = ui.ListDataSource(self.history)
+        self.history_listsource = ui.ListDataSource(self.history.getlist())
         self.history_listsource.action = self.history_popover_tapped
         self.idx_to_history = -1
         self.history_templine = ''
@@ -267,7 +264,7 @@ class ShRuntime(object):
                             self.add_history(newline)
 
                         if is_top:
-                            self.history_swap()
+                            self.history_swap(newline.split(" ")[0] if newline != "" else "")
 
                         try:
                             # Subsequent members are actual commands
@@ -292,7 +289,7 @@ class ShRuntime(object):
                             environ=environ, cwd=cwd)
                         finally:
                             if is_top:
-                                self.history_swap()
+                                self.history_swap("StaSh.runtime")
 
             except pp.ParseException as e:
                 if self.debug:
@@ -659,53 +656,62 @@ class ShRuntime(object):
 
     # TODO: The history stuff should be handled by a separate class
     def add_history(self, s):
-        if s.strip() != '' and (self.history == [] or s != self.history[0]):
-            self.history.insert(0, s.strip())  # remove any surrounding whites
-            if len(self.history) > self.HISTORY_MAX:
-                self.history = self.history[0:self.HISTORY_MAX]
-            self.history_listsource.items = self.history
+        """
+        Add a string to the history
+        :param s: string to add to history
+        :type s: str
+        """
+        self.history.add(s)
+        self.history_listsource.items = self.history.getlist()
         self.reset_idx_to_history()
 
     def save_history(self):
+        """
+        Save the history
+        """
         try:
-            with open(self.historyfile, 'w') as outs:
-                outs.write('\n'.join(self.history))
+            self.history.save(self.historyfile)
         except IOError:
             pass
 
     def search_history(self, tok):
+        """
+        Search the history.
+        """
+        history = self.history.getlist()
         search_string = tok[1:]
         if search_string == '':
             return ''
         if search_string == '!':
-            return self.history[0]
+            return history[0]
         try:
             idx = int(search_string)
             try:
-                return self.history[::-1][idx]
+                return history[::-1][idx]
             except IndexError:
                 raise ShEventNotFound(tok)
         except ValueError:
-            for entry in self.history:
+            for entry in history:
                 if entry.startswith(search_string):
                     return entry
             raise ShEventNotFound(tok)
 
     def history_up(self):
         # Save the unfinished line user is typing before showing entries from history
+        history = self.history.getlist()
         if self.idx_to_history == -1:
             self.history_templine = self.stash.mini_buffer.modifiable_string.rstrip()
 
         self.idx_to_history += 1
-        if self.idx_to_history >= len(self.history):
-            self.idx_to_history = len(self.history) - 1
+        if self.idx_to_history >= len(history):
+            self.idx_to_history = len(history) - 1
 
         else:
-            entry = self.history[self.idx_to_history]
+            entry = history[self.idx_to_history]
             # If move up away from an unfinished input line, try search history for
             # a line starts with the unfinished line
             if self.idx_to_history == 0 and self.ipython_style_history_search:
-                for idx, hs in enumerate(self.history):
+                for idx, hs in enumerate(history):
                     if hs.startswith(self.history_templine):
                         entry = hs
                         self.idx_to_history = idx
@@ -714,6 +720,7 @@ class ShRuntime(object):
             self.stash.mini_buffer.feed(None, entry)
 
     def history_dn(self):
+        history = self.history.getlist()
         self.idx_to_history -= 1
         if self.idx_to_history < -1:
             self.idx_to_history = -1
@@ -722,7 +729,7 @@ class ShRuntime(object):
             if self.idx_to_history == -1:
                 entry = self.history_templine
             else:
-                entry = self.history[self.idx_to_history]
+                entry = history[self.idx_to_history]
 
             self.stash.mini_buffer.feed(None, entry)
 
@@ -737,8 +744,14 @@ class ShRuntime(object):
             self.stash.mini_buffer.feed(None, sender.items[sender.selected_row])
             self.idx_to_history = sender.selected_row
 
-    def history_swap(self):
-        self.history, self.history_alt = self.history_alt, self.history
+    def history_swap(self, target=None):
+        """
+        Swap the internal history
+        :param taret: identifier to swap history to
+        :type target: str
+        """
+        self.history.swap(target)
+        self.history_listsource.items = self.history.getlist()
 
     def get_current_worker_and_state(self):
         """

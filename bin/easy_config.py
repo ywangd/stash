@@ -6,10 +6,12 @@ import threading
 from six import string_types
 
 import console
-import pythonista_add_action as paa
 import ui
 import dialogs
-from stash.system.shcommon import _STASH_CONFIG_FILES
+
+import pythonista_add_action as paa
+
+from stash.system.shcommon import _STASH_CONFIG_FILES, _STASH_HISTORY_FILE
 
 _stash = globals()["_stash"]
 
@@ -257,6 +259,32 @@ OPTIONS = {
 	        "description": "Comma-seperated list of StaSh configfiles",
 	    },
 	],
+	"history": [
+	    {
+	        "display_name": "History file",
+	        "option_name": None,
+	        "type": TYPE_LABEL,
+	        "value": _STASH_HISTORY_FILE,
+	    },
+	    {
+	        "display_name": "Max history length (per command)",
+	        "option_name": "maxsize",
+	        "type": TYPE_INT,
+	        "description": "Max number of lines to remember. This value is per command.",
+	    },
+	    {
+	        "display_name": "Allow adding a line twice in a row",
+	        "option_name": "allow_double_lines",
+	        "type": TYPE_BOOL,
+	        "description": "Allow adding a line to history even if the line equals the last line",
+	    },
+	    {
+	        "display_name": "Ignore lines starting with a space",
+	        "option_name": "hide_whitespace_lines",
+	        "type": TYPE_BOOL,
+	        "description": "Do not add lines starting with a space to the history",
+	    },
+	]
 }
 
 # section order
@@ -266,6 +294,7 @@ SECTIONS = [
 	"system",
 	"display",
 	"style",
+	"history",
 	]
 	
 

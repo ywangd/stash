@@ -69,7 +69,6 @@ BACKGROUND_COLOR=(0.0, 0.0, 0.0)
 TEXT_COLOR=(1.0, 1.0, 1.0)
 TINT_COLOR=(0.0, 0.0, 1.0)
 INDICATOR_STYLE=white
-HISTORY_MAX=50
 BUFFER_MAX=150
 AUTO_COMPLETION_MAX=50
 VK_SYMBOLS=~/.-*|>$'=!&_"\?`
@@ -77,6 +76,11 @@ VK_SYMBOLS=~/.-*|>$'=!&_"\?`
 [style]
 enable_styles=1
 colored_errors=1
+
+[history]
+allow_double_lines=0
+hide_whitespace_lines=1
+maxsize=50
 """.format(
 	font_size=(14 if ON_IPAD else 12),
 	)
