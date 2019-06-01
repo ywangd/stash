@@ -33,7 +33,7 @@ _subcmd_cfg = {
 
     "pip": {
         "1": {
-            'candidates': ['install', 'list', 'remove', 'download', 'search', 'update', 'versions'],
+            'candidates': ['install', 'list', 'remove', 'download', 'search', 'update', 'versions', 'uninstall'],
             'blank_completion': True,
             'with_normal_completion': False,
         },
