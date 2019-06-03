@@ -87,8 +87,6 @@ class ShRuntime(object):
         self.py_traceback = config.getint('system', 'py_traceback')
         self.py_pdb = config.getint('system', 'py_pdb')
         self.input_encoding_utf8 = config.getint('system', 'input_encoding_utf8')
-        self.ipython_style_history_search = config.getint(
-            'system', 'ipython_style_history_search')
         self.ShThread = {'traced': ShTracedThread, 'ctypes': ShCtypesThread}.get(
             config.get('system', 'thread_type'),
             ShCtypesThread
@@ -98,17 +96,12 @@ class ShRuntime(object):
         # load history from last session
         if not no_historyfile:
             try:
-                self.history = ShHistory.load(self.historyfile, config)
+                self.history = ShHistory.load(self.historyfile, self.stash)
             except IOError:
-                self.history = ShHistory(config)
+                self.history = ShHistory(self.stash)
         else:
-            self.history = ShHistory(config)
+            self.history = ShHistory(self.stash)
         self.history.swap("StaSh.runtime")
-
-        self.history_listsource = ui.ListDataSource(self.history.getlist())
-        self.history_listsource.action = self.history_popover_tapped
-        self.idx_to_history = -1
-        self.history_templine = ''
 
     def load_rcfile(self, no_rcfile=False):
         self.stash(_DEFAULT_RC.splitlines(),
@@ -261,10 +254,10 @@ class ShRuntime(object):
                         #   2. It is the first layer thread directly spawned by the main thread
                         #      and not explicitly required to not add
                         if (add_to_history is None and is_top) or add_to_history:
-                            self.add_history(newline)
+                            self.history.add(line)  # add non-expanded form to history
 
                         if is_top:
-                            self.history_swap(newline.split(" ")[0] if newline != "" else "")
+                            self.history.swap(newline.split(" ")[0] if newline != "" else "")
 
                         try:
                             # Subsequent members are actual commands
@@ -289,7 +282,7 @@ class ShRuntime(object):
                             environ=environ, cwd=cwd)
                         finally:
                             if is_top:
-                                self.history_swap("StaSh.runtime")
+                                self.history.swap("StaSh.runtime")
 
             except pp.ParseException as e:
                 if self.debug:
@@ -624,7 +617,9 @@ class ShRuntime(object):
 
     def get_prompt(self):
         """
-        Get the prompt string. Fill with current working directory if required
+        Get the prompt string. Fill with current working directory if required.
+        :return: the prompt
+        :rtype: str
         """
         _, current_state = self.get_current_worker_and_state()
 
@@ -639,6 +634,9 @@ class ShRuntime(object):
         return self.stash.text_color(prompt, 'smoke')
 
     def push_to_background(self):
+        """
+        Push the current job into the background and return to the shell.
+        """
         if self.child_thread:
             self.stash.write_message('pushing current job to background ...\n')
             self.child_thread.set_background()
@@ -649,21 +647,15 @@ class ShRuntime(object):
 
     @on_main_thread
     def push_to_foreground(self, worker):
+        """
+        Push the specified worker to the foreground.
+        :param worker: worker to push to the foreground
+        :type worker: ShThread
+        """
         worker.set_background(False)
         self.stash.mini_buffer.config_runtime_callback(None)
         self.stash.write_message(
             'job {} is now running in foreground ...'.format(worker.job_id))
-
-    # TODO: The history stuff should be handled by a separate class
-    def add_history(self, s):
-        """
-        Add a string to the history
-        :param s: string to add to history
-        :type s: str
-        """
-        self.history.add(s)
-        self.history_listsource.items = self.history.getlist()
-        self.reset_idx_to_history()
 
     def save_history(self):
         """
@@ -673,85 +665,6 @@ class ShRuntime(object):
             self.history.save(self.historyfile)
         except IOError:
             pass
-
-    def search_history(self, tok):
-        """
-        Search the history.
-        """
-        history = self.history.getlist()
-        search_string = tok[1:]
-        if search_string == '':
-            return ''
-        if search_string == '!':
-            return history[0]
-        try:
-            idx = int(search_string)
-            try:
-                return history[::-1][idx]
-            except IndexError:
-                raise ShEventNotFound(tok)
-        except ValueError:
-            for entry in history:
-                if entry.startswith(search_string):
-                    return entry
-            raise ShEventNotFound(tok)
-
-    def history_up(self):
-        # Save the unfinished line user is typing before showing entries from history
-        history = self.history.getlist()
-        if self.idx_to_history == -1:
-            self.history_templine = self.stash.mini_buffer.modifiable_string.rstrip()
-
-        self.idx_to_history += 1
-        if self.idx_to_history >= len(history):
-            self.idx_to_history = len(history) - 1
-
-        else:
-            entry = history[self.idx_to_history]
-            # If move up away from an unfinished input line, try search history for
-            # a line starts with the unfinished line
-            if self.idx_to_history == 0 and self.ipython_style_history_search:
-                for idx, hs in enumerate(history):
-                    if hs.startswith(self.history_templine):
-                        entry = hs
-                        self.idx_to_history = idx
-                        break
-
-            self.stash.mini_buffer.feed(None, entry)
-
-    def history_dn(self):
-        history = self.history.getlist()
-        self.idx_to_history -= 1
-        if self.idx_to_history < -1:
-            self.idx_to_history = -1
-
-        else:
-            if self.idx_to_history == -1:
-                entry = self.history_templine
-            else:
-                entry = history[self.idx_to_history]
-
-            self.stash.mini_buffer.feed(None, entry)
-
-    def reset_idx_to_history(self):
-        self.idx_to_history = -1
-
-    def history_popover_tapped(self, sender):
-        if sender.selected_row >= 0:
-            # Save the unfinished line user is typing before showing entries from history
-            if self.idx_to_history == -1:
-                self.history_templine = self.stash.mini_buffer.modifiable_string.rstrip()
-            self.stash.mini_buffer.feed(None, sender.items[sender.selected_row])
-            self.idx_to_history = sender.selected_row
-
-    def history_swap(self, target=None):
-        """
-        Swap the internal history
-        :param taret: identifier to swap history to
-        :type target: str
-        """
-        self.history.swap(target)
-        self.history_listsource.items = self.history.getlist()
 
     def get_current_worker_and_state(self):
         """

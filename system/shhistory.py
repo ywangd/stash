@@ -9,29 +9,36 @@ import json
 class ShHistory(object):
     """
     This class is responsible for input history.
+    :param stash: the StaSh core
+    :type stash: StaSh
     """
     
     ENCODING = "utf-8"
     
-    def __init__(self, config):
+    def __init__(self, stash):
+        self.stash = stash
         self._histories = {}
         self._current = None
-        self.allow_double = config.getboolean("history", "allow_double_lines")
-        self.hide_whitespace = config.getboolean("history", "hide_whitespace_lines")
-        self.maxsize = config.getint("history", "maxsize")
+        self.allow_double = self.stash.config.getboolean("history", "allow_double_lines")
+        self.hide_whitespace = self.stash.config.getboolean("history", "hide_whitespace_lines")
+        self.ipython_style_history_search = self.stash.config.getboolean(
+            'history', 'ipython_style_history_search')
+        self.maxsize = self.stash.config.getint("history", "maxsize")
+        self.templine = ""
+        self.idx = -1
     
     @classmethod
-    def load(cls, path, config):
+    def load(cls, path, stash):
         """
         Load the history from a path.
         :param path: path to load from.
         :type path: str
-        :param config: config for the ShHistory object
-        :type config: ConfigParser
+        :param config: the StaSh core
+        :type config: StaSh
         :return: the history loaded from the file
         :rtype: ShHistory
         """
-        shh = cls(config)
+        shh = cls(stash)
         try:
             with open(path, "r", encoding=cls.ENCODING) as fin:
                 h = json.loads(u"" + fin.read())
@@ -104,6 +111,9 @@ class ShHistory(object):
         # ensure maxsize
         while len(self._histories[self._current]) > max(0, self.maxsize):
             self._histories[self._current].pop(0)
+        
+        # reset index
+        self.reset_idx()
     
     def getlist(self):
         """
@@ -114,3 +124,78 @@ class ShHistory(object):
         if self._current not in self._histories:
             self._histories[self._current] = []
         return self._histories[self._current][::-1]
+    
+    def search(self, tok):
+        """
+        Search the history.
+        :param tok:
+        :type tok:
+        :return: last entry in history matching the search
+        :rtype: str
+        """
+        history = self.getlist()
+        search_string = tok[1:]
+        if search_string == '':
+            return ''
+        if search_string == '!':
+            return history[0]
+        try:
+            idx = int(search_string)
+            try:
+                return history[::-1][idx]
+            except IndexError:
+                raise ShEventNotFound(tok)
+        except ValueError:
+            for entry in history:
+                if entry.startswith(search_string):
+                    return entry
+            raise ShEventNotFound(tok)
+    
+    def reset_idx(self):
+        """
+        Reset the index of the current position in the history
+        """
+        self.idx = -1
+    
+    def up(self):
+        """
+        Move upwards in the history.
+        """
+        # Save the unfinished line user is typing before showing entries from history
+        history = self.getlist()
+        if self.idx == -1:
+            self.templine = self.stash.mini_buffer.modifiable_string.rstrip()
+
+        self.idx += 1
+        if self.idx >= len(history):
+            self.idx = len(history) - 1
+
+        else:
+            entry = history[self.idx]
+            # If move up away from an unfinished input line, try search history for
+            # a line starts with the unfinished line
+            if self.idx == 0 and self.ipython_style_history_search:
+                for idx, hs in enumerate(history):
+                    if hs.startswith(self.templine):
+                        entry = hs
+                        self.idx = idx
+                        break
+
+            self.stash.mini_buffer.feed(None, entry)
+
+    def down(self):
+        """
+        Move downwqrds in the history
+        """
+        history = self.getlist()
+        self.idx -= 1
+        if self.idx < -1:
+            self.idx = -1
+
+        else:
+            if self.idx == -1:
+                entry = self.templine
+            else:
+                entry = history[self.idx]
+
+            self.stash.mini_buffer.feed(None, entry)

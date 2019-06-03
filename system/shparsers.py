@@ -47,6 +47,7 @@ uq_word          : (WORD_CHARS)+ | '&3'
 
 _WORD_CHARS = string.digits + string.ascii_letters + r'''!#$%()*+,-./:=?@[]^_{}~'''
 
+
 class ShAssignment(object):
     def __init__(self, identifier, value):
         self.identifier = identifier
@@ -59,6 +60,7 @@ class ShAssignment(object):
     def __repr__(self):
         return self.__repr2__()
 
+
 class ShIORedirect(object):
     def __init__(self, operator, filename):
         self.operator = operator
@@ -70,6 +72,7 @@ class ShIORedirect(object):
 
     def __repr__(self):
         return self.__repr2__()
+
 
 class ShSimpleCommand(object):
     def __init__(self):
@@ -98,6 +101,7 @@ class ShSimpleCommand(object):
         if self.io_redirect:
             s += ' ' + str(self.io_redirect)
         return s
+
 
 class ShPipeSequence(object):
     def __init__(self):
@@ -448,7 +452,7 @@ class ShExpander(object):
         history_found = False
         for t in tokens:
             if t.ttype == ShToken._CMD and t.tok.startswith('!'):
-                t.tok = self.stash.runtime.search_history(t.tok)
+                t.tok = self.stash.runtime.history.search(t.tok)
                 history_found = True
         if history_found:
             # The line is set to the string with history replaced

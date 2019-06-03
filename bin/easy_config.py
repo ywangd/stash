@@ -112,7 +112,7 @@ OPTIONS = {
 		},
 		{
 			"display_name": "Encode Input as UTF-8",
-			"option_name": "ipython_style_history_search",
+			"option_name": "input_encoding_utf8",
 			"type": TYPE_BOOL,
 			"description": "You may or may not gain imaginary internet points if you figure out what this option does",
 		},
@@ -265,6 +265,12 @@ OPTIONS = {
 	        "option_name": None,
 	        "type": TYPE_LABEL,
 	        "value": _STASH_HISTORY_FILE,
+	    },
+	    {
+	        "display_name": "IPython-style history search",
+	        "option_name": "ipython_style_history_search",
+	        "type": TYPE_BOOL,
+	        "description": "Enable IPython-style history search",
 	    },
 	    {
 	        "display_name": "Max history length (per command)",

@@ -59,7 +59,6 @@ rcfile=.stashrc
 py_traceback=0
 py_pdb=0
 input_encoding_utf8=1
-ipython_style_history_search=1
 thread_type=ctypes
 
 [display]
@@ -78,6 +77,7 @@ enable_styles=1
 colored_errors=1
 
 [history]
+ipython_style_history_search=1
 allow_double_lines=0
 hide_whitespace_lines=1
 maxsize=50

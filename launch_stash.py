@@ -18,6 +18,7 @@ module_names = (
     'system.shruntime',
     'system.shthreads',
     'system.shuseractionproxy',
+    'system.shhistory',
 )
 
 # Attempt to reload modules when startup, does not seem to work

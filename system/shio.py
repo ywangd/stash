@@ -92,7 +92,7 @@ class ShIO(object):
         line = ''.join(ret)
         # localized history for running scripts
         # TODO: Adding to history for read as well?
-        self.stash.runtime.add_history(line)
+        self.stash.runtime.history.add(line)
 
         return line
 
@@ -112,7 +112,7 @@ class ShIO(object):
             ret = ret[:size]
 
         for line in ret.splitlines():
-            self.stash.runtime.add_history(line)
+            self.stash.runtime.history.add(line)
 
         return ret.splitlines(True)
 

@@ -285,7 +285,6 @@ class ShUI(ui.View):
     def will_close(self):
         """
         Save stuff here
-        :return:
         """
         self.stash.runtime.save_history()
         self.stash.cleanup()
@@ -299,7 +298,14 @@ class ShUI(ui.View):
             self.k_grp_0.bring_to_front()
         self.on_k_grp = 1 - self.on_k_grp
 
-    def history_present(self, listsource):
+    def history_present(self, history):
+        """
+        Present a history popover.
+        :param history: history to present
+        :type history: ShHistory
+        """
+        listsource = ui.ListDataSource(history.getlist())
+        listsource.action = self.history_popover_tapped
         table = ui.TableView()
         listsource.font = self.BUTTON_FONT
         table.data_source = listsource
@@ -309,6 +315,19 @@ class ShUI(ui.View):
         table.row_height = self.BUTTON_FONT[1] + 4
         table.present('popover')
         table.wait_modal()
+    
+    def history_popover_tapped(self, sender):
+        """
+        Called when a row in the history popover was tapped.
+        :param sender: sender of the event
+        :type sender: ui.TableView
+        """
+        if sender.selected_row >= 0:
+            # Save the unfinished line user is typing before showing entries from history
+            if self.stash.runtime.idx == -1:
+                self.stash.history.templine = self.stash.mini_buffer.modifiable_string.rstrip()
+            self.stash.mini_buffer.feed(None, sender.items[sender.selected_row])
+            self.stash.runtime.history.idx = sender.selected_row
 
     def vk_tapped(self, vk):
         if vk == self.k_tab:  # Tab completion
@@ -321,13 +340,13 @@ class ShUI(ui.View):
             self.toggle_k_grp()
 
         elif vk == self.k_hist:
-            self.history_present(self.stash.runtime.history_listsource)
+            self.history_present(self.stash.runtime.history)
 
         elif vk == self.k_hup:
-            self.stash.runtime.history_up()
+            self.stash.runtime.history.up()
 
         elif vk == self.k_hdn:
-            self.stash.runtime.history_dn()
+            self.stash.runtime.history.down()
 
         elif vk == self.k_CD:
             if self.stash.runtime.child_thread:
