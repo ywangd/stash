@@ -324,7 +324,7 @@ class ShUI(ui.View):
         """
         if sender.selected_row >= 0:
             # Save the unfinished line user is typing before showing entries from history
-            if self.stash.runtime.idx == -1:
+            if self.stash.runtime.history.idx == -1:
                 self.stash.history.templine = self.stash.mini_buffer.modifiable_string.rstrip()
             self.stash.mini_buffer.feed(None, sender.items[sender.selected_row])
             self.stash.runtime.history.idx = sender.selected_row

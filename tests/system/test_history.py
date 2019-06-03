@@ -7,7 +7,7 @@ from stash.system.shhistory import ShHistory
 from stash.tests.stashtest import StashTestCase
 
 
-class RuntimeTests(StashTestCase):
+class HistoryTests(StashTestCase):
 	
     setup_commands = ['BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH']
     
@@ -50,7 +50,7 @@ class RuntimeTests(StashTestCase):
         self.assertNotIn("b", self.history.getlist())
         self.assertNotIn(" b", self.history.getlist())
         self.assertIn("a", self.history.getlist())
-        self.assertIn("b", self.history.getlist())
+        self.assertIn("c", self.history.getlist())
         
         # clean
         self.history.clear()
