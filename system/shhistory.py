@@ -72,12 +72,14 @@ class ShHistory(object):
             s = json.dumps(self._histories)
             fout.write(u"" + s)  # ensure unicode
     
-    def clear(self, target):
+    def clear(self, target=None):
         """
         Clear the history
-        :param target: history to clear
-        :type history: str
+        :param target: history to clear or None for current
+        :type history: str or None
         """
+        if target is None:
+            target = self._current
         if target in self._histories:
             del self._histories[target]
     
