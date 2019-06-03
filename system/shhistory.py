@@ -5,6 +5,8 @@ StaSh input history
 from io import open
 import json
 
+from .shcommon import ShEventNotFound
+
 
 class ShHistory(object):
     """

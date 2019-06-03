@@ -17,10 +17,8 @@ import pyparsing as pp
 
 # Detecting environments
 try:
-    import ui
     from objc_util import on_main_thread
 except ImportError:
-    from . import dummyui as ui
     from .dummyobjc_util import on_main_thread
 
 from .shcommon import ShBadSubstitution, ShInternalError, ShIsDirectory, \
