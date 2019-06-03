@@ -47,10 +47,10 @@ class RuntimeTests(StashTestCase):
         self.history.add("c")
         # only 2 should have been added
         self.assertEqual(len(self.history.getlist()), 2)
-        self.assertNotIn(self.history.getlist(), "b")
-        self.assertNotIn(self.history.getlist(), " b")
-        self.assertIn(self.history.getlist(), "a")
-        self.assertIn(self.history.getlist(), "c")
+        self.assertNotIn("b", self.history.getlist())
+        self.assertNotIn(" b", self.history.getlist())
+        self.assertIn("a", self.history.getlist())
+        self.assertIn("b", self.history.getlist())
         
         # clean
         self.history.clear()
@@ -62,10 +62,10 @@ class RuntimeTests(StashTestCase):
         self.history.add("c")
         # only 2 should have been added
         self.assertEqual(len(self.history.getlist()), 2)
-        self.assertIn(self.history.getlist(), "b")
-        self.assertNotIn(self.history.getlist(), " b")  # whitespace should be stripped
-        self.assertIn(self.history.getlist(), "a")
-        self.assertIn(self.history.getlist(), "c")
+        self.assertIn("b", self.history.getlist())
+        self.assertNotIn(" b", self.history.getlist())  # whitespace should be stripped
+        self.assertIn("a", self.history.getlist())
+        self.assertIn("c", self.history.getlist())
     
     def test_add_doubble(self):
         """test adding a line twice in a row"""
@@ -133,8 +133,8 @@ class RuntimeTests(StashTestCase):
         l = self.history.getlist()
         self.assertEqual(len(l), 10)
         # ensure reverse order
-        for e, i in zip(l, range(len(l), 0, -1)):
-            self.assertEquals(int(e), i)
+        for e, i in zip(l, range(len(l) - 1, 0, -1)):
+            self.assertEqual(int(e), i)
     
     def test_getlist_newlist(self):
         """test to ensure that getlist() creates a new list"""
@@ -171,7 +171,7 @@ class RuntimeTests(StashTestCase):
         # and back to h2
         self.history.swap("h_2")
         new_h2_list = self.history.getlist()
-        self.assertListEquals(old_h2_list, new_h2_list)
+        self.assertListEqual(old_h2_list, new_h2_list)
     
     def test_save_load(self):
         """test saving and loading of the history"""
@@ -191,7 +191,7 @@ class RuntimeTests(StashTestCase):
         # assert unique
         self.assertIsNot(h, self.history)
         # ensure all elements were loaded
-        self.assertEqual(len(self.history.getlist()), len(self.elements))
+        self.assertEqual(len(self.history.getlist()), len(elements))
         # ensure correct order
         self.assertListEqual(self.history.getlist(), h.getlist())
     
@@ -206,6 +206,8 @@ class RuntimeTests(StashTestCase):
         """test loading old histories"""
         p = os.path.join(self.get_data_path(), "old_history.txt")
         h = ShHistory.load(p, self.stash)
+        # explicitly switch to StaSh.runtime
+        self.history.swap("StaSh.runtime")
         expected = ["4", "3", "2", "1"]
         self.assertListEqual(h.getlist(), expected)
     
