@@ -1,5 +1,12 @@
 # Change Log #
 
+### Upcomming
+* New Features
+    * more settings in `easy_config`, e.g. toggle styles
+    * colored error messages
+    * history is now per command 
+    * `pip` now supports extras
+
 ### Version 0.7.0 - 2018-05-04
 * New Features
     * Python 3 compatibility
@@ -298,6 +305,5 @@
 
 ### Version 0.1.0 - 2014-12-10
 * initial release
-
 
 
