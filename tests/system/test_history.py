@@ -22,7 +22,8 @@ class HistoryTests(StashTestCase):
     
     def setUp(self):
         StashTestCase.setUp(self)
-        self.history.clear()
+        self.history.clear_all()
+        self.history.swap("HistoryTest")
     
     def test_new_empty(self):
         """test that a new ShHistory is empty"""
@@ -107,6 +108,23 @@ class HistoryTests(StashTestCase):
             self.history.add(e)
         self.assertEqual(len(self.history.getlist()), len(elements))
         self.history.clear()
+        self.assertEqual(len(self.history.getlist()), 0)
+    
+    def test_clear_all(self):
+        """test ShHistory.clear_all()"""
+        self.assertEqual(len(self.history.getlist()), 0)
+        elements = ["a", "b", "c", "d"]
+        self.history.swap("h_1")
+        for e in elements:
+            self.history.add(e)
+        self.assertEqual(len(self.history.getlist()), len(elements))
+        self.history.swap("h_2")
+        for e in elements:
+            self.history.add(e)
+        self.assertEqual(len(self.history.getlist()), len(elements))
+        self.history.clear_all()
+        self.assertEqual(len(self.history.getlist()), 0)
+        self.history.swap("h_1")
         self.assertEqual(len(self.history.getlist()), 0)
     
     def test_getlist_base(self):
@@ -214,7 +232,7 @@ class HistoryTests(StashTestCase):
         p = os.path.join(self.get_data_path(), "old_history.txt")
         h = ShHistory.load(p, self.stash)
         # explicitly switch to StaSh.runtime
-        self.history.swap("StaSh.runtime")
+        h.swap("StaSh.runtime")
         # log a few more debug values
         self.logger.debug("h._histories: " + repr(h._histories))
         self.logger.debug("h._current: " + repr(h._current))

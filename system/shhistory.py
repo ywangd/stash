@@ -84,6 +84,12 @@ class ShHistory(object):
         if target in self._histories:
             del self._histories[target]
     
+    def clear_all(self):
+        """
+        Clear all histories.
+        """
+        self._histories = {}
+    
     def swap(self, target):
         """
         Swap the history
