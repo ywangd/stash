@@ -197,6 +197,8 @@ class HistoryTests(StashTestCase):
         """test saving and loading of the history"""
         elements = ["1", "2", "3", "4", "5"]
         filename = "history_test_s_l"
+        hname = "SaveLoadTest"
+        self.history.swap(hname)
         # add elements
         for e in elements:
             self.history.add(e)
@@ -208,6 +210,7 @@ class HistoryTests(StashTestCase):
         self.assertEqual(len(self.history.getlist()), len(elements))
         # load
         h = ShHistory.load(filename, self.stash)
+        h.swap(hname)
         # log a few more debug values
         self.logger.debug("h._histories: " + repr(h._histories))
         self.logger.debug("h._current: " + repr(h._current))
