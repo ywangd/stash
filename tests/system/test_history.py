@@ -61,9 +61,9 @@ class HistoryTests(StashTestCase):
         self.history.add("a")
         self.history.add(" b")
         self.history.add("c")
-        # only 2 should have been added
+        # all 3 should have been added
         l = self.history.getlist()
-        self.assertEqual(len(l), 2)
+        self.assertEqual(len(l), 3)
         self.assertIn("b", l)
         self.assertNotIn(" b", l)  # whitespace should be stripped
         self.assertIn("a", l)
@@ -190,9 +190,11 @@ class HistoryTests(StashTestCase):
         self.assertEqual(len(self.history.getlist()), len(elements))
         # load
         h = ShHistory.load(filename, self.stash)
-        # log a few more debut values
+        # log a few more debug values
         self.logger.debug("h._histories: " + repr(h._histories))
+        self.logger.debug("h._current: " + repr(h._current))
         self.logger.debug("self.history._histories: " + repr(self.history ._histories))
+        self.logger.debug("self.history._current: " + repr(self.history._current))
         # assert unique
         self.assertIsNot(h, self.history)
         # ensure all elements were loaded
@@ -213,6 +215,9 @@ class HistoryTests(StashTestCase):
         h = ShHistory.load(p, self.stash)
         # explicitly switch to StaSh.runtime
         self.history.swap("StaSh.runtime")
+        # log a few more debug values
+        self.logger.debug("h._histories: " + repr(h._histories))
+        self.logger.debug("h._current: " + repr(h._current))
         expected = ["4", "3", "2", "1"]
         self.assertListEqual(h.getlist(), expected)
     
