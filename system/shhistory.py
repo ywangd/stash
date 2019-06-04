@@ -16,11 +16,12 @@ class ShHistory(object):
     """
     
     ENCODING = "utf-8"
+    DEFAULT = "_default"
     
     def __init__(self, stash):
         self.stash = stash
         self._histories = {}
-        self._current = None
+        self._current = self.DEFAULT
         self.allow_double = self.stash.config.getboolean("history", "allow_double_lines")
         self.hide_whitespace = self.stash.config.getboolean("history", "hide_whitespace_lines")
         self.ipython_style_history_search = self.stash.config.getboolean(
