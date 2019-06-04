@@ -46,11 +46,12 @@ class HistoryTests(StashTestCase):
         self.history.add(" b")
         self.history.add("c")
         # only 2 should have been added
-        self.assertEqual(len(self.history.getlist()), 2)
-        self.assertNotIn("b", self.history.getlist())
-        self.assertNotIn(" b", self.history.getlist())
-        self.assertIn("a", self.history.getlist())
-        self.assertIn("c", self.history.getlist())
+        l = self.history.getlist()
+        self.assertEqual(len(l), 2)
+        self.assertNotIn("b", l)
+        self.assertNotIn(" b", l)
+        self.assertIn("a", l)
+        self.assertIn("c", l)
         
         # clean
         self.history.clear()
@@ -61,11 +62,12 @@ class HistoryTests(StashTestCase):
         self.history.add(" b")
         self.history.add("c")
         # only 2 should have been added
-        self.assertEqual(len(self.history.getlist()), 2)
-        self.assertIn("b", self.history.getlist())
-        self.assertNotIn(" b", self.history.getlist())  # whitespace should be stripped
-        self.assertIn("a", self.history.getlist())
-        self.assertIn("c", self.history.getlist())
+        l = self.history.getlist()
+        self.assertEqual(len(l), 2)
+        self.assertIn("b", l)
+        self.assertNotIn(" b", l)  # whitespace should be stripped
+        self.assertIn("a", l)
+        self.assertIn("c", l)
     
     def test_add_doubble(self):
         """test adding a line twice in a row"""
@@ -188,6 +190,9 @@ class HistoryTests(StashTestCase):
         self.assertEqual(len(self.history.getlist()), len(elements))
         # load
         h = ShHistory.load(filename, self.stash)
+        # log a few more debut values
+        logger.debug("h._histories: " + repr(h._histories))
+        logger.debug("self.history._histories: " + repr(self.history ._histories))
         # assert unique
         self.assertIsNot(h, self.history)
         # ensure all elements were loaded
