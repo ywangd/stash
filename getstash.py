@@ -90,7 +90,7 @@ try:
 
     unwanted_files = ['getstash.py', 'run_tests.py', 'testing.py', 
                       'dummyui.py', 'dummyconsole.py', 
-                      'bin/pcsm.py', 'bin/bh.py', 'bin/pythonista.py', 'bin/cls.py', 'stash.py']
+                      'bin/pcsm.py', 'bin/bh.py', 'bin/pythonista.py', 'bin/cls.py', 'stash.py', 'lib/librunner.py']
 
     for fname in unwanted_files:
         os.remove(os.path.join(TARGET_DIR, fname))
