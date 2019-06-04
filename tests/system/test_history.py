@@ -191,8 +191,8 @@ class HistoryTests(StashTestCase):
         # load
         h = ShHistory.load(filename, self.stash)
         # log a few more debut values
-        logger.debug("h._histories: " + repr(h._histories))
-        logger.debug("self.history._histories: " + repr(self.history ._histories))
+        self.logger.debug("h._histories: " + repr(h._histories))
+        self.logger.debug("self.history._histories: " + repr(self.history ._histories))
         # assert unique
         self.assertIsNot(h, self.history)
         # ensure all elements were loaded
