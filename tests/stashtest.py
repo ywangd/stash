@@ -123,10 +123,16 @@ class StashTestCase(unittest.TestCase):
         # 1 for mimicking running from console
         worker = self.stash(cmd, persistent_level=1)
 
-        assert cmp_str == self.stash.main_screen.text, 'output not identical'
+        self.assertEqual(
+            cmp_str,
+            self.stash.main_screen.text,
+            'output not identical')
 
         if exitcode is not None:
-            assert worker.state.return_value == exitcode, "unexpected exitcode"
+            self.assertEqual(
+                worker.state.return_value,
+                exitcode,
+                "unexpected exitcode")
         else:
             self.logger.info("Exitcode: " + str(worker.state.return_value))
 
@@ -168,6 +174,10 @@ class StashTestCase(unittest.TestCase):
         self.logger.debug(output)
         self.logger.debug("Exitcode: " + str(returnvalue))
         if exitcode is not None:
-            assert returnvalue == exitcode, "unexpected exitcode ({e} expected, got {g})\nOutput:\n{o}\n".format(
-                e=exitcode, g=returnvalue, o=output)
+            self.assertEqual(
+                returnvalue,
+                exitcode,
+                "unexpected exitcode ({e} expected, got {g})\nOutput:\n{o}\n".format(
+                    e=exitcode, g=returnvalue, o=output),
+            )
         return output
