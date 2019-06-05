@@ -1,7 +1,9 @@
 import os
 import json
 
-_subcmd_cfgfile = os.path.join(os.environ['STASH_ROOT'], '.completer_subcmd.json')
+_subcmd_cfgfile = os.path.join(
+    os.environ['STASH_ROOT'],
+    '.completer_subcmd.json')
 
 _subcmd_cfg = {
     "git": {
@@ -42,9 +44,9 @@ _subcmd_cfg = {
     "gci": {
         "1": {
             'candidates': [
-            	'enable', 'disable', 'status', 'collect', 'threshold',
-            	'debug', 'break',
-            	],
+                'enable', 'disable', 'status', 'collect', 'threshold',
+                'debug', 'break',
+            ],
             'blank_completion': True,
             'with_normal_completion': False,
         },
@@ -59,7 +61,7 @@ _subcmd_cfg = {
                 "enable_styles",
                 "colored_errors",
                 "enable_styles",
-                ],
+            ],
             'blank_completion': True,
             'with_normal_completion': False,
         },
@@ -88,32 +90,32 @@ _subcmd_cfg = {
         },
         "-": {
             "candidate_groups": [
-            	[None, ["-h", "--help"]],
-            	],
+                [None, ["-h", "--help"]],
+            ],
             "blank_completion": True,
             "with_normal_completion": False,
         },
     },
     "mount": {
-    	"-": {
-    		"candidate_groups": [[None, [
-    			"-h", "--help", "-l", "--show-labels", "-v", "--verbose",
-    			"-y", "--yes", "-f", "--fake", "-r", "--read-only",
-    			"-t", "--type",
-    			]]],
-    		"blank_completion": True,
-    		"with_normal_completion": False,
-    	},
+        "-": {
+            "candidate_groups": [[None, [
+                "-h", "--help", "-l", "--show-labels", "-v", "--verbose",
+                "-y", "--yes", "-f", "--fake", "-r", "--read-only",
+                "-t", "--type",
+            ]]],
+            "blank_completion": True,
+            "with_normal_completion": False,
+        },
     },
     "umount": {
-    	"-": {
-    		"candidate_groups": [[None, [
-    			"-h", "--help", "-a", "--all", "-v", "--verbose",
-    			"-f", "--force",
-    			]]],
-    		"with_normal_completion": False,
-    		"blank_completion": True,
-    	},
+        "-": {
+            "candidate_groups": [[None, [
+                "-h", "--help", "-a", "--all", "-v", "--verbose",
+                "-f", "--force",
+            ]]],
+            "with_normal_completion": False,
+            "blank_completion": True,
+        },
     },
 
 }

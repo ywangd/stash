@@ -9,14 +9,14 @@ MANAGER = None
 
 
 def get_manager():
-	"""
-	returns the current mount manager.
-	Use the function instead of the constant to prevent import problems/
-	"""
-	return MANAGER
+    """
+    returns the current mount manager.
+    Use the function instead of the constant to prevent import problems/
+    """
+    return MANAGER
 
 
 def set_manager(manager):
-	"""sets the current manager."""
-	global MANAGER
-	MANAGER = manager
+    """sets the current manager."""
+    global MANAGER
+    MANAGER = manager

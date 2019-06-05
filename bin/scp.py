@@ -134,6 +134,7 @@ class SCPClient(object):
     Since scp doesn't support symlinks, we send file symlinks as the file
     (matching scp behaviour), but we make no attempt at symlinked directories.
     """
+
     def __init__(self, transport, buff_size=16384, socket_timeout=5.0,
                  progress=None, sanitize=_sh_quote):
         """
@@ -342,7 +343,8 @@ class SCPClient(object):
             msg = self.channel.recv(512)
         except SocketTimeout:
             raise SCPException('Timout waiting for scp response')
-        # slice off the first byte, so this compare will work in python2 and python3
+        # slice off the first byte, so this compare will work in python2 and
+        # python3
         if msg and msg[0:1] == b'\x00':
             return
         elif msg and msg[0:1] == b'\x01':
@@ -382,7 +384,7 @@ class SCPClient(object):
             times = cmd.split(b' ')
             mtime = int(times[0])
             atime = int(times[2]) or mtime
-        except:
+        except BaseException:
             self.channel.send(b'\x01')
             raise SCPException('Bad time format')
         # save for later
@@ -404,7 +406,7 @@ class SCPClient(object):
             else:
                 path = os.path.join(asbytes(self._recv_dir),
                                     parts[2])
-        except:
+        except BaseException:
             chan.send('\x01')
             chan.close()
             raise SCPException('Bad file format')
@@ -465,7 +467,7 @@ class SCPClient(object):
             else:
                 path = os.path.join(asbytes(self._recv_dir),
                                     parts[2])
-        except:
+        except BaseException:
             self.channel.send(b'\x01')
             raise SCPException('Bad directory format')
         try:
@@ -496,74 +498,86 @@ class SCPClient(object):
 class SCPException(Exception):
     """SCP exception class"""
     pass
-    
+
 ############################################
+
+
 def find_ssh_keys():
     #dir = os.path.expanduser('~/Documents/.ssh/')
     files = []
     try:
-        for file in os.listdir(APP_DIR+'/.ssh'):
+        for file in os.listdir(APP_DIR + '/.ssh'):
             if '.' not in file:
-                files.append(APP_DIR+'/.ssh/'+file)
+                files.append(APP_DIR + '/.ssh/' + file)
     except OSError:
         pass
-    return files    
-    
+    return files
+
+
 def parse_host(arg):
-    user,temp = arg.split('@')
+    user, temp = arg.split('@')
     host, path = temp.split(':')
-    return host,user,path
+    return host, user, path
+
 
 def scp_callback(filename, size, sent):
     if size == sent:
         print(filename)
-    
+
 
 if __name__ == '__main__':
     files = []
-    
+
     ap = argparse.ArgumentParser()
     ap.add_argument('--password', help='login password')
     ap.add_argument('-p', '--port', action='store', default=22, type=int,
                     help='port for ssh default: 22')
     ap.add_argument('files', nargs='*', help='file or module name')
     args = ap.parse_args()
-    
-    #scp_mode 0 put 1 get
+
+    # scp_mode 0 put 1 get
     if '@' in args.files[0]:
-        scp_mode = 1   
+        scp_mode = 1
     else:
         scp_mode = 0
-        
+
     for file in args.files:
         if '@' in file:
-            host,user,host_path = parse_host(file)
+            host, user, host_path = parse_host(file)
         else:
             files.append(file)
-            
+
     ssh = paramiko.SSHClient()
-    #ssh.load_system_host_keys()
+    # ssh.load_system_host_keys()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     key_filename = find_ssh_keys()
     if args.password is not None:
-        ssh.connect(host, username=user, password=args.password, port=args.port)
+        ssh.connect(
+            host,
+            username=user,
+            password=args.password,
+            port=args.port)
 
     else:
         if len(key_filename) == 0:  # no key file found
             password = input('Enter passsword:')
             ssh.connect(host, username=user, password=password, port=args.port)
         else:
-            ssh.connect(host, username=user, key_filename=key_filename, port=args.port)
+            ssh.connect(
+                host,
+                username=user,
+                key_filename=key_filename,
+                port=args.port)
 
     # SCPCLient takes a paramiko transport as its only argument
-    scp = SCPClient(ssh.get_transport(),progress=scp_callback)
+    scp = SCPClient(ssh.get_transport(), progress=scp_callback)
 
-    #scp.put('stash',remote_path='stash/',recursive=True)
+    # scp.put('stash',remote_path='stash/',recursive=True)
     if scp_mode:
         print('Copying from server...')
         scp.get(host_path, local_path=files[0], recursive=True)
-        
+
     else:
         print('Copying to server...')
         scp.put(files, recursive=True, remote_path=host_path)

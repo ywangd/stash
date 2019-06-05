@@ -27,7 +27,6 @@ __author__ = "bones7456"
 __home_page__ = "http://li2z.cn/"
 
 
-
 class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     """Simple HTTP request handler with GET/HEAD/POST commands.
@@ -84,7 +83,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if f:
             self.copyfile(f, self.wfile)
             f.close()
-        
+
     def deal_post_data(self):
         boundary = self.headers.plisttext.split("=")[1]
         remainbytes = int(self.headers['content-length'])
@@ -94,7 +93,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return (False, "Content NOT begin with boundary")
         line = self.rfile.readline()
         remainbytes -= len(line)
-        fn = re.findall(r'Content-Disposition.*name="file"; filename="(.*)"', line)
+        fn = re.findall(
+            r'Content-Disposition.*name="file"; filename="(.*)"', line)
         if not fn:
             return (False, "Can't find out file name...")
         path = self.translate_path(self.path)
@@ -106,8 +106,9 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             out = open(fn, 'wb')
         except IOError:
-            return (False, "Can't create file to write, do you have permission to write?")
-                
+            return (
+                False, "Can't create file to write, do you have permission to write?")
+
         preline = self.rfile.readline()
         remainbytes -= len(preline)
         while remainbytes > 0:
@@ -186,7 +187,9 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         f = StringIO()
         displaypath = cgi.escape(unquote(self.path))
         f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
-        f.write("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
+        f.write(
+            "<html>\n<title>Directory listing for %s</title>\n" %
+            displaypath)
         f.write("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
         f.write("<hr>\n")
         f.write("<form ENCTYPE=\"multipart/form-data\" method=\"post\">")
@@ -223,8 +226,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         """
         # abandon query parameters
-        path = path.split('?',1)[0]
-        path = path.split('#',1)[0]
+        path = path.split('?', 1)[0]
+        path = path.split('#', 1)[0]
         path = posixpath.normpath(unquote(path))
         words = path.split('/')
         words = filter(None, words)
@@ -232,7 +235,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         for word in words:
             drive, word = os.path.splitdrive(word)
             head, word = os.path.split(word)
-            if word in (os.curdir, os.pardir): continue
+            if word in (os.curdir, os.pardir):
+                continue
             path = os.path.join(path, word)
         return path
 
@@ -277,30 +281,39 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return self.extensions_map['']
 
     if not mimetypes.inited:
-        mimetypes.init() # try to read system mime.types
+        mimetypes.init()  # try to read system mime.types
     extensions_map = mimetypes.types_map.copy()
     extensions_map.update({
-        '': 'application/octet-stream', # Default
+        '': 'application/octet-stream',  # Default
         '.py': 'text/plain',
         '.c': 'text/plain',
         '.h': 'text/plain',
-        })
+    })
+
 
 def main(port=8000):
-    server = BaseHTTPServer.HTTPServer(('0.0.0.0', port), SimpleHTTPRequestHandler)
-    
+    server = BaseHTTPServer.HTTPServer(
+        ('0.0.0.0', port), SimpleHTTPRequestHandler)
+
     try:
         print('Serving HTTP on 0.0.0.0 port %d ...' % port)
-        print('local IP address is %s' % globals()['_stash'].libcore.get_lan_ip())
+        print('local IP address is %s' %
+              globals()['_stash'].libcore.get_lan_ip())
         server.serve_forever()
 
     except KeyboardInterrupt:
         print('Server shutting down ...')
         server.server_close()
 
+
 if __name__ == '__main__':
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument('port', nargs='?', type=int, default=8000, help='port to server HTTP')
+    ap.add_argument(
+        'port',
+        nargs='?',
+        type=int,
+        default=8000,
+        help='port to server HTTP')
     ns = ap.parse_args()
     main(ns.port)

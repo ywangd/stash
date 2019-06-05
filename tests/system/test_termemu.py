@@ -2,8 +2,9 @@
 
 from stash.tests.stashtest import StashTestCase
 
+
 class TermemuTests(StashTestCase):
-	
+
     setup_commands = ['BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH']
 
     def test_201(self):

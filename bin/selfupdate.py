@@ -33,12 +33,13 @@ def get_remote_version(owner, branch):
     """
     import ast
 
-    url = '%s/%s/core.py?q=%s' % (URL_BASE.format(owner=owner), branch, randint(1, 999999))
+    url = '%s/%s/core.py?q=%s' % (URL_BASE.format(owner=owner),
+                                  branch, randint(1, 999999))
 
     try:
         req = requests.get(url)
         lines = req.text.splitlines()
-    except:
+    except BaseException:
         raise UpdateError('Network error')
     else:
         if req.status_code == 404:
@@ -78,7 +79,9 @@ def main(args):
         owner, branch = 'ywangd', fields[0]
     else:
         owner, branch = 'ywangd', 'master'
-        print('Invalid target {}, using default {}:{}'.format(target, owner, branch))
+        print(
+            'Invalid target {}, using default {}:{}'.format(
+                target, owner, branch))
 
     print(_stash.text_style('Running selfupdate ...',
                             {'color': 'yellow', 'traits': ['bold']}))
@@ -110,17 +113,20 @@ def main(args):
 
         try:
             exec(
-            	requests.get(
-                '{}?q={}'.format(url, randint(1, 999999))
+                requests.get(
+                    '{}?q={}'.format(url, randint(1, 999999))
                 ).text,
                 {'_IS_UPDATE': True, '_br': branch, '_owner': owner},
-                )
+            )
             print(_stash.text_color('Update completed.', 'green'))
             print(_stash.text_color(
                 'Please restart Pythonista to ensure changes becoming effective.', 'green'))
 
         except SystemExit:
-            print(_stash.text_color('Failed to update. Please try again.', 'red'))
+            print(
+                _stash.text_color(
+                    'Failed to update. Please try again.',
+                    'red'))
 
 
 if __name__ == '__main__':

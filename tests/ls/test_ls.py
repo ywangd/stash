@@ -6,6 +6,7 @@ from stash.tests.stashtest import StashTestCase
 
 class LsTests(StashTestCase):
     """Tests for the 'ls' command."""
+
     def setUp(self):
         """setup the tests"""
         self.cwd = self.get_data_path()
@@ -99,4 +100,3 @@ class LsTests(StashTestCase):
         self.assertIn("file2.txt", output)
         self.assertIn("otherfile.txt", output)
         self.assertIn(".hidden", output)
-

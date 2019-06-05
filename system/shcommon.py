@@ -18,7 +18,11 @@ IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 if IN_PYTHONISTA:
     import plistlib
 
-    _properties = plistlib.readPlist(os.path.join(os.path.dirname(sys.executable), 'Info.plist'))
+    _properties = plistlib.readPlist(
+        os.path.join(
+            os.path.dirname(
+                sys.executable),
+            'Info.plist'))
     PYTHONISTA_VERSION = _properties['CFBundleShortVersionString']
     PYTHONISTA_VERSION_LONG = _properties['CFBundleVersion']
 
@@ -32,13 +36,13 @@ if IN_PYTHONISTA:
              # We need to load the Python 2 API manually
             try:
                 python_capi = ctypes.PyDLL(
-                os.path.join(os.path.dirname(sys.executable),
-                             'Frameworks/Py2Kit.framework/Py2Kit'))
+                    os.path.join(os.path.dirname(sys.executable),
+                                 'Frameworks/Py2Kit.framework/Py2Kit'))
             except OSError:
                 python_capi = ctypes.PyDLL(
-                os.path.join(os.path.dirname(sys.executable),
-                             'Frameworks/PythonistaKit.framework/PythonistaKit'))
-        
+                    os.path.join(os.path.dirname(sys.executable),
+                                 'Frameworks/PythonistaKit.framework/PythonistaKit'))
+
 else:
     PYTHONISTA_VERSION = '0.0'
     PYTHONISTA_VERSION_LONG = '000000'
@@ -60,8 +64,8 @@ _STASH_HISTORY_FILE = '.stash_history'
 
 # directory for stash extensions
 _STASH_EXTENSION_PATH = os.path.abspath(
-	os.path.join(os.getenv("HOME"), "Documents", "stash_extensions"),
-	)
+    os.path.join(os.getenv("HOME"), "Documents", "stash_extensions"),
+)
 # directory for stash bin extensions
 _STASH_EXTENSION_BIN_PATH = os.path.join(_STASH_EXTENSION_PATH, "bin")
 # directory for stash man extensions
@@ -72,12 +76,12 @@ _STASH_EXTENSION_FSI_PATH = os.path.join(_STASH_EXTENSION_PATH, "fsi")
 _STASH_EXTENSION_PATCH_PATH = os.path.join(_STASH_EXTENSION_PATH, "patches")
 # list of directories outside of _STASH_ROOT, used for simple mkdir
 _EXTERNAL_DIRS = [
-	_STASH_EXTENSION_PATH,
-	_STASH_EXTENSION_BIN_PATH,
-	_STASH_EXTENSION_MAN_PATH,
-	_STASH_EXTENSION_FSI_PATH,
-	_STASH_EXTENSION_PATCH_PATH,
-	]
+    _STASH_EXTENSION_PATH,
+    _STASH_EXTENSION_BIN_PATH,
+    _STASH_EXTENSION_MAN_PATH,
+    _STASH_EXTENSION_FSI_PATH,
+    _STASH_EXTENSION_PATCH_PATH,
+]
 
 # Python 3 or not Python 3
 PY3 = six.PY3
@@ -91,11 +95,12 @@ if IN_PYTHONISTA:
         import _outputcapture
     except ImportError:
         import pykit_io
+
         class _outputcapture(object):
-            ReadStdin=pykit_io.read_stdin
-            CaptureStdout=pykit_io.write_stdout
-            CaptureStderr=pykit_io.write_stderr
-        				
+            ReadStdin = pykit_io.read_stdin
+            CaptureStdout = pykit_io.write_stdout
+            CaptureStderr = pykit_io.write_stderr
+
     if sys.stdin.__class__.__name__ == 'StdinCatcher':
         _SYS_STDIN = sys.__stdin__ = sys.stdin
     elif sys.__stdin__.__class__.__name__ == 'StdinCatcher':
@@ -110,7 +115,6 @@ if IN_PYTHONISTA:
 
             def readline(self):
                 return _outputcapture.ReadStdin()
-
 
         _SYS_STDIN = StdinCatcher()
 
@@ -134,7 +138,6 @@ if IN_PYTHONISTA:
 
             def writelines(self, lines):
                 self.write(''.join(lines))
-
 
         _SYS_STDOUT = StdoutCatcher()
 
@@ -198,7 +201,11 @@ def sh_background(name=None):
     def wrap(func):
         @functools.wraps(func)
         def wrapped_func(*args, **kwargs):
-            t = threading.Thread(name=name, target=func, args=args, kwargs=kwargs)
+            t = threading.Thread(
+                name=name,
+                target=func,
+                args=args,
+                kwargs=kwargs)
             t.start()
             return t
 
@@ -217,7 +224,9 @@ class ShIsDirectory(Exception):
 
 class ShNotExecutable(Exception):
     def __init__(self, filename):
-        super(Exception, self).__init__('{}: not executable\n'.format(filename))
+        super(
+            Exception, self).__init__(
+            '{}: not executable\n'.format(filename))
 
 
 class ShSingleExpansionRequired(Exception):

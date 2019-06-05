@@ -13,22 +13,21 @@ usage:
 """
 from __future__ import print_function
 # check for py2/3
+import __builtin__
+import code
+import argparse
+import sys
+import runpy
 _stash = globals()["_stash"]
 if _stash.PY3:
-	print(
-		_stash.text_color(
-			"You are running StaSh in python3.\nRunning python 2 from python 3 is not (yet) supported.\nPlease use the 'python3' command instead.",
-			"red",
-			)
-		)
-	import sys
-	sys.exit(1)
-
-import runpy
-import sys
-import argparse
-import code
-import __builtin__
+    print(
+        _stash.text_color(
+            "You are running StaSh in python3.\nRunning python 2 from python 3 is not (yet) supported.\nPlease use the 'python3' command instead.",
+            "red",
+        )
+    )
+    import sys
+    sys.exit(1)
 
 
 args = sys.argv[1:]

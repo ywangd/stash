@@ -9,9 +9,9 @@ import traceback
 
 from six import StringIO, text_type, binary_type, PY3
 try:
-	file
+    file
 except NameError:
-	from io import IOBase as file
+    from io import IOBase as file
 
 import pyparsing as pp
 
@@ -44,8 +44,8 @@ alias copy='pbcopy'
 alias paste='pbpaste'
 alias unmount='umount'
 """.format(
-	bin_ext=_STASH_EXTENSION_BIN_PATH,
-	)
+    bin_ext=_STASH_EXTENSION_BIN_PATH,
+)
 
 
 class ShRuntime(object):
@@ -54,7 +54,8 @@ class ShRuntime(object):
     Runtime class responsible for parsing and executing commands.
     """
 
-    def __init__(self, stash, parser, expander, no_historyfile=False, debug=False):
+    def __init__(self, stash, parser, expander,
+                 no_historyfile=False, debug=False):
         self.stash = stash
         self.parser = parser
         self.expander = expander
@@ -67,8 +68,9 @@ class ShRuntime(object):
                          STASH_ROOT=_STASH_ROOT,
                          STASH_PY_VERSION=platform.python_version(),
                          BIN_PATH=os.path.join(_STASH_ROOT, 'bin'),
-                         # Must have a placeholder because it is needed before _DEFAULT_RC is loaded
-                         PROMPT='[\W]$ ',
+                         # Must have a placeholder because it is needed before
+                         # _DEFAULT_RC is loaded
+                         PROMPT=r'[\W]$ ',
                          PYTHONISTA_ROOT=os.path.dirname(sys.executable)
                          ),
             sys_stdin=self.stash.io,
@@ -84,7 +86,8 @@ class ShRuntime(object):
 
         self.py_traceback = config.getint('system', 'py_traceback')
         self.py_pdb = config.getint('system', 'py_pdb')
-        self.input_encoding_utf8 = config.getint('system', 'input_encoding_utf8')
+        self.input_encoding_utf8 = config.getint(
+            'system', 'input_encoding_utf8')
         self.ShThread = {'traced': ShTracedThread, 'ctypes': ShCtypesThread}.get(
             config.get('system', 'thread_type'),
             ShCtypesThread
@@ -106,15 +109,17 @@ class ShRuntime(object):
                    persistent_level=1,
                    add_to_history=False, add_new_inp_line=False)
 
-        if not no_rcfile and os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
+        if not no_rcfile and os.path.exists(
+                self.rcfile) and os.path.isfile(self.rcfile):
             try:
                 with open(self.rcfile) as ins:
                     self.stash(ins.readlines(),
                                persistent_level=1,
                                add_to_history=False, add_new_inp_line=False)
             except IOError:
-                self.stash.write_error_message('%s: error reading rcfile\n' % self.rcfile)
-    
+                self.stash.write_error_message(
+                    '%s: error reading rcfile\n' % self.rcfile)
+
     def write_error_message(self, stream, msg, prefix=None, log=True):
         """
         Write/print an error message to stream.
@@ -175,7 +180,8 @@ class ShRuntime(object):
             path = os.path.expanduser(path)
             if os.path.exists(path):
                 for f in os.listdir(path):
-                    if not os.path.isdir(f) and (f.endswith('.py') or f.endswith('.sh')):
+                    if not os.path.isdir(f) and (
+                            f.endswith('.py') or f.endswith('.sh')):
                         all_names.append(f.replace(' ', '\\ '))
         return all_names
 
@@ -231,7 +237,7 @@ class ShRuntime(object):
                                            cwd=cwd)
 
                 else:
-                    if type(input_) is list:
+                    if isinstance(input_, list):
                         lines = input_
                     elif input_ == self.stash.io:
                         lines = self.stash.io.readline_no_block()
@@ -243,26 +249,31 @@ class ShRuntime(object):
                         if line.strip() == '':
                             continue
 
-                        # Parse and expand the line (note this function returns a generator object)
+                        # Parse and expand the line (note this function returns
+                        # a generator object)
                         expanded = self.expander.expand(line)
-                        # The first member is the history expanded form and number of pipe_sequence
+                        # The first member is the history expanded form and
+                        # number of pipe_sequence
                         newline, n_pipe_sequences = next(expanded)
                         # Only add history entry if:
                         #   1. It is explicitly required
                         #   2. It is the first layer thread directly spawned by the main thread
                         #      and not explicitly required to not add
                         if (add_to_history is None and is_top) or add_to_history:
-                            self.history.add(line)  # add non-expanded form to history
+                            # add non-expanded form to history
+                            self.history.add(line)
 
                         if is_top:
-                            self.history.swap(newline.split(" ")[0] if newline != "" else "")
+                            self.history.swap(
+                                newline.split(" ")[0] if newline != "" else "")
 
                         try:
                             # Subsequent members are actual commands
                             for _ in range(n_pipe_sequences):
                                 pipe_sequence = next(expanded)
                                 if pipe_sequence.in_background:
-                                    # For background command, separate worker is created
+                                    # For background command, separate worker
+                                    # is created
                                     self.run(pipe_sequence,
                                              final_ins=final_ins,
                                              final_outs=final_outs,
@@ -276,8 +287,8 @@ class ShRuntime(object):
                                                            final_ins=final_ins,
                                                            final_outs=final_outs,
                                                            final_errs=final_errs,
-                                                           
-                            environ=environ, cwd=cwd)
+
+                                                           environ=environ, cwd=cwd)
                         finally:
                             if is_top:
                                 self.history.swap("StaSh.runtime")
@@ -329,7 +340,9 @@ class ShRuntime(object):
                 if self.py_traceback or self.py_pdb:
                     # traceback.print_exception(etype, evalue, tb, file=(final_errs if final_errs is not None else None))
                     lines = traceback.format_exception(etype, evalue, tb)
-                    self.write_error_message(self.stash.text_color("".join(lines), "red"), prefix="")
+                    self.write_error_message(
+                        self.stash.text_color(
+                            "".join(lines), "red"), prefix="")
 
             finally:
                 # Housekeeping for the thread, e.g. remove itself from registry
@@ -339,7 +352,8 @@ class ShRuntime(object):
                 # if new input line is explicitly specified or when the worker
                 # thread's parent is the runtime itself and new input line is
                 # not explicitly suppressed
-                if add_new_inp_line or (is_top and add_new_inp_line is not False):
+                if add_new_inp_line or (
+                        is_top and add_new_inp_line is not False):
                     self.script_will_end()
 
                 # Saves its state to parent or if persistent is required
@@ -393,8 +407,9 @@ class ShRuntime(object):
                 current_state.temporary_environ = {}
 
             if prev_outs:
-                # If previous output has gone to a file, we use a dummy empty string as ins
-                ins = StringIO() if type(prev_outs) == file else prev_outs
+                # If previous output has gone to a file, we use a dummy empty
+                # string as ins
+                ins = StringIO() if isinstance(prev_outs, file) else prev_outs
             else:
                 ins = final_ins or current_state.sys_stdin__
 
@@ -410,7 +425,8 @@ class ShRuntime(object):
                     outs = _SYS_STDOUT
                     errs = _SYS_STDERR
                 else:
-                    errs = outs = open(simple_command.io_redirect.filename, mode)
+                    errs = outs = open(
+                        simple_command.io_redirect.filename, mode)
 
             elif idx < n_simple_commands - 1:  # before the last piped command
                 outs = StringIO()
@@ -426,7 +442,8 @@ class ShRuntime(object):
 
             try:
                 if simple_command.cmd_word != '':
-                    script_file = self.find_script_file(simple_command.cmd_word)
+                    script_file = self.find_script_file(
+                        simple_command.cmd_word)
 
                     if self.debug:
                         self.logger.debug('script is %s\n' % script_file)
@@ -435,18 +452,21 @@ class ShRuntime(object):
                         # Python 2 is not fully unicode compatible. Some modules (e.g. runpy)
                         # insist for ASCII arguments. The encoding here helps eliminates possible
                         # errors caused by unicode arguments.
-                        simple_command_args = [arg.encode('utf-8') for arg in simple_command.args]
+                        simple_command_args = [
+                            arg.encode('utf-8') for arg in simple_command.args]
                     else:
                         simple_command_args = simple_command.args
 
                     if script_file.endswith('.py'):
-                        self.exec_py_file(script_file, simple_command_args, ins, outs, errs)
+                        self.exec_py_file(
+                            script_file, simple_command_args, ins, outs, errs)
 
                     elif is_binary_file(script_file):
                         raise ShNotExecutable(script_file)
 
                     else:
-                        self.exec_sh_file(script_file, simple_command_args, ins, outs, errs)
+                        self.exec_sh_file(
+                            script_file, simple_command_args, ins, outs, errs)
 
                 else:
                     current_state.return_value = 0
@@ -455,7 +475,8 @@ class ShRuntime(object):
                     break  # break out of the pipe_sequence, but NOT pipe_sequence list
 
                 if isinstance(outs, StringIO):
-                    outs.seek(0)  # rewind for next command in the pipe sequence
+                    # rewind for next command in the pipe sequence
+                    outs.seek(0)
 
                 prev_outs = outs
 
@@ -466,12 +487,12 @@ class ShRuntime(object):
                 err_msg = '%s\n' % e.args[0]
                 if self.debug:
                     self.logger.debug(err_msg)
-                    
+
                 self.write_error_message(final_errs, err_msg)
                 # set exit code to 127
                 current_state.return_value = 127
                 break  # break out of the pipe_sequence, but NOT pipe_sequence list
-                
+
             except Exception as e:
                 err_msg = '%s\n' % e.args[0]
                 if self.debug:
@@ -481,7 +502,7 @@ class ShRuntime(object):
 
             finally:
                 if isinstance(outs, file) and not isinstance(outs, StringIO):
-                	# StringIO is subclass of IOBase in py3 but not in py2
+                        # StringIO is subclass of IOBase in py3 but not in py2
                     outs.close()
                 if isinstance(ins, StringIO):  # release the string buffer
                     ins.close()
@@ -510,7 +531,7 @@ class ShRuntime(object):
         saved_sys_argv = sys.argv[:]
         # First argument is the script name
         argv = [os.path.basename(filename)] + (args or [])
-        
+
         argv = self.encode_argv(argv)
         sys.argv = argv
 
@@ -520,7 +541,8 @@ class ShRuntime(object):
         # Honor any leading vars, e.g. A=42 echo $A
         os.environ.update(current_state.temporary_environ)
 
-        # This needs to be done after environ due to possible leading PYTHONPATH var
+        # This needs to be done after environ due to possible leading
+        # PYTHONPATH var
         saved_sys_path = sys.path
         sys.path = current_state.sys_path[:]
         self.handle_PYTHONPATH()  # Make sure PYTHONPATH is honored
@@ -530,9 +552,9 @@ class ShRuntime(object):
                 content = f.read()
                 code = compile(
                     content, file_path, "exec", dont_inherit=True
-                    )
+                )
                 exec(code, namespace, namespace)
-            
+
             current_state.return_value = 0
 
         except SystemExit as e:
@@ -544,7 +566,7 @@ class ShRuntime(object):
             etype, evalue, tb = sys.exc_info()
             err_msg = '%s: %s\n' % (repr(etype), evalue)
             self.write_error_message(errs, err_msg)
-            
+
             if self.py_traceback or self.py_pdb:
                 lines = traceback.format_exception(etype, evalue, tb)
                 self.write_error_message(errs, "".join(lines), prefix="")
@@ -576,7 +598,8 @@ class ShRuntime(object):
         current_state.temporary_environ['#'] = len(args)
         current_state.temporary_environ['@'] = '\t'.join(args)
 
-        # Enclosing variables will be merged to environ when creating new thread
+        # Enclosing variables will be merged to environ when creating new
+        # thread
         try:
             with open(filename, "rU") as fins:
                 child_worker = self.run(fins.readlines(),
@@ -595,23 +618,28 @@ class ShRuntime(object):
             self.write_error_message(errs, emsg)
             current_state.return_value = 1
 
-        except:
+        except BaseException:
             emsg = '%s: error while executing shell script\n' % filename
             self.write_error_message(errs, emsg)
             current_state.return_value = 2
-    
+
     def encode_argv(self, argv):
-    	"""
-    	Convert an argv list into the appropiate string type depending
-    	on the currently used python version.
-    	"""
-    	if PY3:
-    		# we need unicode argv
-    		argv = [c if isinstance(c, text_type) else c.decode("utf-8") for c in argv]
-    	else:
-    		# we need bytestring argv
-    		argv = [c if isinstance(c, binary_type) else c.encode("utf-8") for c in argv]
-    	return argv
+        """
+        Convert an argv list into the appropiate string type depending
+        on the currently used python version.
+        """
+        if PY3:
+                # we need unicode argv
+            argv = [
+                c if isinstance(
+                    c, text_type) else c.decode("utf-8") for c in argv]
+        else:
+            # we need bytestring argv
+            argv = [
+                c if isinstance(
+                    c,
+                    binary_type) else c.encode("utf-8") for c in argv]
+        return argv
 
     def get_prompt(self):
         """
@@ -682,7 +710,8 @@ class ShRuntime(object):
         Add any user set python paths right after the dot or at the beginning
         if dot is not in the paths.
         """
-        python_path = os.environ.get('PYTHONPATH', None)  # atomic access for check and retrieval
+        python_path = os.environ.get(
+            'PYTHONPATH', None)  # atomic access for check and retrieval
 
         if python_path:
             try:

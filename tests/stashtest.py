@@ -28,7 +28,7 @@ def network_is_available():
         "https://github.com/ywangd/stash/",  # main StaSh repo
         "https://forum.omz-software.com/",  # pythonista forums
         "https://python.org/",  # python website
-        ]
+    ]
     for url in test_sites:
         try:
             requests.get(url, timeout=5.0)
@@ -51,7 +51,8 @@ def requires_network(f):
     :rtype: callable
     """
     network_unavailable = (not network_is_available())
-    return unittest.skipIf(network_unavailable, "No network connection available.")(f)
+    return unittest.skipIf(network_unavailable,
+                           "No network connection available.")(f)
 
 
 def expected_failure_on_py3(f):
@@ -99,7 +100,7 @@ class StashTestCase(unittest.TestCase):
         self.stash("stashconf py_traceback 1")
 
         self.cwd = os.path.abspath(os.path.expandvars(self.cwd))
-        self.logger.info("Target CWD is: "+ str(self.cwd))
+        self.logger.info("Target CWD is: " + str(self.cwd))
         self.stash('cd ' + self.cwd, persistent_level=1)
         self.logger.debug("After cd, CWD is: " + os.getcwd())
 
@@ -110,14 +111,17 @@ class StashTestCase(unittest.TestCase):
 
     def tearDown(self):
         assert self.stash.runtime.child_thread is None, 'child thread is not cleared'
-        assert len(self.stash.runtime.worker_registry) == 0, 'worker registry not empty'
+        assert len(
+            self.stash.runtime.worker_registry) == 0, 'worker registry not empty'
         del self.stash
 
-    def do_test(self, cmd, cmp_str, ensure_same_cwd=True, ensure_undefined=(), ensure_defined=(), exitcode=None):
+    def do_test(self, cmd, cmp_str, ensure_same_cwd=True,
+                ensure_undefined=(), ensure_defined=(), exitcode=None):
 
         saved_cwd = os.getcwd()
         self.logger.info("executing {c} in {d}...".format(c=cmd, d=saved_cwd))
-        worker = self.stash(cmd, persistent_level=1)  # 1 for mimicking running from console
+        # 1 for mimicking running from console
+        worker = self.stash(cmd, persistent_level=1)
 
         assert cmp_str == self.stash.main_screen.text, 'output not identical'
 
@@ -130,7 +134,9 @@ class StashTestCase(unittest.TestCase):
             assert os.getcwd() == saved_cwd, 'cwd changed'
         else:
             if os.getcwd() != saved_cwd:
-                self.logger.warning("CWD changed from '{o}' to '{n}'!".format(o=saved_cwd, n=os.getcwd()))
+                self.logger.warning(
+                    "CWD changed from '{o}' to '{n}'!".format(
+                        o=saved_cwd, n=os.getcwd()))
 
         for v in ensure_undefined:
             assert v not in self.stash.runtime.state.environ.keys(), '%s should be undefined' % v
@@ -146,15 +152,22 @@ class StashTestCase(unittest.TestCase):
             scriptfile = self.stash.runtime.find_script_file(scriptname)
             self.logger.debug("Scriptfile for command: " + str(scriptfile))
         except Exception as e:
-            self.logger.warning("Could not find script for command: " + repr(e))
+            self.logger.warning(
+                "Could not find script for command: " + repr(e))
             # do NOT return here, script may be alias
         outs = StringIO()
         self.logger.info("Executing: " + repr(command))
-        worker = self.stash(command, persistent_level=1, final_outs=outs, final_errs=outs, cwd=self.cwd) #  1 for mimicking running from console
+        worker = self.stash(
+            command,
+            persistent_level=1,
+            final_outs=outs,
+            final_errs=outs,
+            cwd=self.cwd)  # 1 for mimicking running from console
         output = outs.getvalue()
         returnvalue = worker.state.return_value
         self.logger.debug(output)
         self.logger.debug("Exitcode: " + str(returnvalue))
         if exitcode is not None:
-            assert returnvalue == exitcode, "unexpected exitcode ({e} expected, got {g})\nOutput:\n{o}\n".format(e=exitcode, g=returnvalue, o=output)
+            assert returnvalue == exitcode, "unexpected exitcode ({e} expected, got {g})\nOutput:\n{o}\n".format(
+                e=exitcode, g=returnvalue, o=output)
         return output

@@ -2,6 +2,7 @@
 
 from stash.tests.stashtest import StashTestCase
 
+
 class CompleterTests(StashTestCase):
 
     def setUp(self):

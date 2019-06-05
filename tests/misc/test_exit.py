@@ -1,8 +1,10 @@
 """tests for the 'exit' command."""
 from stash.tests.stashtest import StashTestCase
 
+
 class ExitTests(StashTestCase):
     """Tests for the 'exit' command."""
+
     def test_help(self):
         """test 'exit --help'."""
         output = self.run_command("exit --help", exitcode=0)
@@ -29,5 +31,9 @@ class ExitTests(StashTestCase):
     def test_exit_0_to_255(self):
         """test 'exit {i}' where i = 0, ..., 255."""
         for i in range(256):
-            output = self.run_command("exit " + str(i), exitcode=i).replace("\n", "")
+            output = self.run_command(
+                "exit " + str(i),
+                exitcode=i).replace(
+                "\n",
+                "")
             self.assertEqual(output, "")

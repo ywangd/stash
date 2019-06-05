@@ -38,8 +38,15 @@ def get_status_string(downloaded, total):
 
 def main(args):
     ap = argparse.ArgumentParser()
-    ap.add_argument('-o', '--output-file', nargs='?', help='save content as file')
-    ap.add_argument('url', nargs='?', help='the url to read from (default to clipboard)')
+    ap.add_argument(
+        '-o',
+        '--output-file',
+        nargs='?',
+        help='save content as file')
+    ap.add_argument(
+        'url',
+        nargs='?',
+        help='the url to read from (default to clipboard)')
 
     ns = ap.parse_args(args)
     url = ns.url or clipboard.get()

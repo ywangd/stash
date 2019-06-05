@@ -6,7 +6,6 @@ import fileinput
 import argparse
 
 
-
 def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('files', nargs='*', help='files to sort')
@@ -24,7 +23,8 @@ def main(args):
     fileinput.close()  # in case it is not closed
     try:
         lines = None
-        for line in fileinput.input(ns.files, openhook=fileinput.hook_encoded("utf-8")):
+        for line in fileinput.input(
+                ns.files, openhook=fileinput.hook_encoded("utf-8")):
             if fileinput.isfirstline():
                 _print(lines)
                 lines = []

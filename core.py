@@ -82,19 +82,19 @@ allow_double_lines=0
 hide_whitespace_lines=1
 maxsize=50
 """.format(
-	font_size=(14 if ON_IPAD else 12),
-	)
+    font_size=(14 if ON_IPAD else 12),
+)
 
 
 # create directories outside STASH_ROOT
 # we should do this each time StaSh because some commands may require
 # this directories
 for p in _EXTERNAL_DIRS:
-	if not os.path.exists(p):
-		try:
-			os.mkdir(p)
-		except:
-			pass
+    if not os.path.exists(p):
+        try:
+            os.mkdir(p)
+        except BaseException:
+            pass
 
 
 class StaSh(object):
@@ -102,7 +102,7 @@ class StaSh(object):
     Main application class. It initialize and wires the components and provide
     utility interfaces to running scripts.
     """
-    
+
     PY3 = six.PY3
 
     def __init__(self, debug=(), log_setting=None,
@@ -124,7 +124,8 @@ class StaSh(object):
 
         # Wire the components
         self.main_screen = ShSequentialScreen(self,
-                                              nlines_max=self.config.getint('display', 'BUFFER_MAX'),
+                                              nlines_max=self.config.getint(
+                                                  'display', 'BUFFER_MAX'),
                                               debug=_DEBUG_MAIN_SCREEN in debug)
 
         self.mini_buffer = ShMiniBuffer(self,
@@ -153,15 +154,15 @@ class StaSh(object):
             os.chdir(self.runtime.state.environ_get('HOME2'))
         self.runtime.load_rcfile(no_rcfile=no_rcfile)
         self.io.write(
-        	self.text_style(
-        		'StaSh v%s on python %s\n' % (
-        			self.__version__,
-        			platform.python_version(),
-        			), 
-        		{'color': 'blue', 'traits': ['bold']},
-        		always=True,
-        		),
-        	)
+            self.text_style(
+                'StaSh v%s on python %s\n' % (
+                    self.__version__,
+                    platform.python_version(),
+                ),
+                {'color': 'blue', 'traits': ['bold']},
+                always=True,
+            ),
+        )
         # warn on py3
         if self.PY3:
             self.io.write(
@@ -169,15 +170,15 @@ class StaSh(object):
                     'Warning: you are running StaSh in python3. Some commands may not work correctly in python3.\n',
                     {'color': 'red'},
                     always=True,
-                    ),
-                )
+                ),
+            )
             self.io.write(
                 self.text_style(
                     'Please help us improving StaSh by reporting bugs on github.\n',
                     {'color': 'yellow', 'traits': ['italic']},
                     always=True,
-                    ),
-                )
+                ),
+            )
         # Load shared libraries
         self._load_lib()
 
@@ -186,7 +187,7 @@ class StaSh(object):
             # show tip of the day
             command = '$STASH_ROOT/bin/totd.py'
         if command:
-        	# do not run command if command is False (but not None)
+            # do not run command if command is False (but not None)
             self(command, add_to_history=False, persistent_level=0)
 
     def __call__(self, input_, persistent_level=2, *args, **kwargs):
@@ -210,7 +211,8 @@ class StaSh(object):
 
         # update from config file
         if not no_cfgfile:
-            config.read(os.path.join(_STASH_ROOT, f) for f in _STASH_CONFIG_FILES)
+            config.read(os.path.join(_STASH_ROOT, f)
+                        for f in _STASH_CONFIG_FILES)
 
         return config
 
@@ -241,7 +243,8 @@ class StaSh(object):
             if _log_setting['stdout']:
                 _log_handler = logging.StreamHandler(_SYS_STDOUT)
             else:
-                _log_handler = logging.handlers.RotatingFileHandler('stash.log', mode='w')
+                _log_handler = logging.handlers.RotatingFileHandler(
+                    'stash.log', mode='w')
             _log_handler.setLevel(level)
             _log_handler.setFormatter(logging.Formatter(
                 '[%(asctime)s] [%(levelname)s] [%(threadName)s] [%(name)s] [%(funcName)s] [%(lineno)d] - %(message)s'
@@ -262,9 +265,12 @@ class StaSh(object):
                         and os.path.isfile(os.path.join(lib_path, f)):
                     name, _ = os.path.splitext(f)
                     try:
-                        self.__dict__[name] = pyimp.load_source(name, os.path.join(lib_path, f))
+                        self.__dict__[name] = pyimp.load_source(
+                            name, os.path.join(lib_path, f))
                     except Exception as e:
-                        self.write_message('%s: failed to load library file (%s)' % (f, repr(e)), error=True)
+                        self.write_message(
+                            '%s: failed to load library file (%s)' %
+                            (f, repr(e)), error=True)
         finally:  # do not modify environ permanently
             os.environ.pop('STASH_ROOT')
 
@@ -304,13 +310,14 @@ class StaSh(object):
         """
         # No color for pipes, files and Pythonista console
         if not self.enable_styles or (not always and (
-        	isinstance(sys.stdout, (StringIO, IOBase))
-        	# or sys.stdout.write.im_self is _SYS_STDOUT
-        	or sys.stdout is _SYS_STDOUT
-        	)):
+                isinstance(sys.stdout, (StringIO, IOBase))
+                # or sys.stdout.write.im_self is _SYS_STDOUT
+                or sys.stdout is _SYS_STDOUT
+        )):
             return s
 
-        fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)
+        fmt_string = u'%s%%d%s%%s%s%%d%s' % (
+            ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)
         for style_name, style_value in style.items():
             if style_name == 'color':
                 color_id = graphics._SGR.get(style_value.lower())
@@ -324,13 +331,17 @@ class StaSh(object):
                 for val in style_value:
                     val = val.lower()
                     if val == 'bold':
-                        s = fmt_string % (graphics._SGR['+bold'], s, graphics._SGR['-bold'])
+                        s = fmt_string % (
+                            graphics._SGR['+bold'], s, graphics._SGR['-bold'])
                     elif val == 'italic':
-                        s = fmt_string % (graphics._SGR['+italics'], s, graphics._SGR['-italics'])
+                        s = fmt_string % (
+                            graphics._SGR['+italics'], s, graphics._SGR['-italics'])
                     elif val == 'underline':
-                        s = fmt_string % (graphics._SGR['+underscore'], s, graphics._SGR['-underscore'])
+                        s = fmt_string % (
+                            graphics._SGR['+underscore'], s, graphics._SGR['-underscore'])
                     elif val == 'strikethrough':
-                        s = fmt_string % (graphics._SGR['+strikethrough'], s, graphics._SGR['-strikethrough'])
+                        s = fmt_string % (
+                            graphics._SGR['+strikethrough'], s, graphics._SGR['-strikethrough'])
 
         return s
 

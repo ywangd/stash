@@ -71,7 +71,8 @@ class ShIO(object):
                 try:
                     ret.append(self._buffer.pop())
                 except IndexError:
-                    # Wait briefly when the buffer is empty to avoid taxing the CPU
+                    # Wait briefly when the buffer is empty to avoid taxing the
+                    # CPU
                     time.sleep(self.holdback)
 
             return ''.join(ret)
@@ -161,7 +162,8 @@ class ShIO(object):
             return
         idx = 0
         while True:
-            self.stash.stream.feed(s[idx: idx + self.chunk_size], no_wait=no_wait)  # main screen only
+            self.stash.stream.feed(
+                s[idx: idx + self.chunk_size], no_wait=no_wait)  # main screen only
             idx += self.chunk_size
             if idx >= len(s):
                 break

@@ -15,12 +15,16 @@ def pprint(path):
         return '~' + path.split(os.environ['HOME'], 1)[-1]
     return path
 
+
 def main(args):
     ap = argparse.ArgumentParser()
-    ap.add_argument('source', nargs='+', help='one or more files or directories to be copied')
+    ap.add_argument(
+        'source',
+        nargs='+',
+        help='one or more files or directories to be copied')
     ap.add_argument('dest', help='destination file or folder')
     ns = ap.parse_args(args)
-    
+
     files = ns.source
     dest = ns.dest
 
@@ -31,8 +35,8 @@ def main(args):
             for filef in files:
                 full_file = os.path.abspath(filef)
                 file_name = os.path.basename(full_file)
-                new_name  = os.path.join(full_dest, file_name)
-                
+                new_name = os.path.join(full_dest, file_name)
+
                 try:
                     if os.path.isdir(full_file):
                         shutil.copytree(full_file, new_name)
@@ -65,15 +69,17 @@ def main(args):
                 else:
                     # Destination does not yet exist
                     if os.path.isdir(full_file):
-                        # Source is a directory, destination should become a directory
-                        shutil.copytree(full_file,full_dest)
+                        # Source is a directory, destination should become a
+                        # directory
+                        shutil.copytree(full_file, full_dest)
                     else:
                         # Source is a file, destination should become a file
-                        shutil.copy(full_file,full_dest)
+                        shutil.copy(full_file, full_dest)
             except Exception as err:
                 print("cp: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
         else:
             print("cp: {}: No such file".format(pprint(filef)), file=sys.stderr)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

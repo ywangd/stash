@@ -3,9 +3,9 @@ import fileinput
 
 
 try:
-	unicode
+    unicode
 except NameError:
-	unicode = str
+    unicode = str
 
 
 def collapseuser(path):
@@ -16,7 +16,8 @@ def collapseuser(path):
     path = os.path.abspath(unicode(path))
     home = os.path.expanduser("~")
     if os.path.exists(os.path.expanduser("~/Pythonista.app")):
-        althome = os.path.dirname(os.path.realpath(os.path.expanduser("~/Pythonista.app")))
+        althome = os.path.dirname(os.path.realpath(
+            os.path.expanduser("~/Pythonista.app")))
     else:
         althome = home
 

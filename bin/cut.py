@@ -7,6 +7,7 @@ import argparse
 
 _stash = globals()['_stash']
 
+
 def construct_indices_from_list_spec(list_spec):
     # Note unlike python, cut's indices start from 1
     indices = []
@@ -49,8 +50,10 @@ def main(args):
             if len(fields) == 1:
                 print(fields[0])
             else:
-                out = ' '.join((' '.join(fields[sidx:eidx]) for sidx, eidx in indices))
+                out = ' '.join((' '.join(fields[sidx:eidx])
+                                for sidx, eidx in indices))
                 print(out)
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])

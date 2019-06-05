@@ -8,8 +8,10 @@ AUTOCAPITALIZE_NONE = 0
 def measure_string(*args, **kwargs):
     return 12.0
 
+
 def in_background(func):
     return func
+
 
 def get_screen_size():
     return 100, 100
@@ -55,6 +57,7 @@ class TextField(View):
         super(TextField, self).__init__(*args, **kwargs)
         self.text = ''
 
+
 class TextView(View):
     def __init__(self, *args, **kwargs):
         super(TextView, self).__init__(*args, **kwargs)
@@ -72,6 +75,7 @@ class TextView(View):
     def end_editing(self):
         pass
 
+
 class ScrollView(View):
     pass
 
@@ -84,6 +88,7 @@ class Button(View):
 class TableView(View):
     def __init__(self, *args, **kwargs):
         super(TableView, self).__init__(*args, **kwargs)
+
 
 class ListDataSource(object):
     def __init__(self, lst):

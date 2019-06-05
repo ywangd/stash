@@ -203,7 +203,8 @@ class ShBaseThread(threading.Thread):
     STARTED = 2
     STOPPED = 3
 
-    def __init__(self, registry, parent, command, target=None, is_background=False, environ={}, cwd=None):
+    def __init__(self, registry, parent, command, target=None,
+                 is_background=False, environ={}, cwd=None):
         super(ShBaseThread, self).__init__(group=None,
                                            target=target,
                                            name='_shthread',
@@ -240,7 +241,8 @@ class ShBaseThread(threading.Thread):
         command_str = str(self.command)
         return '[{}] {} {}'.format(
             self.job_id,
-            {self.CREATED: 'Created', self.STARTED: 'Started', self.STOPPED: 'Stopped'}[self.status()],
+            {self.CREATED: 'Created', self.STARTED: 'Started',
+                self.STOPPED: 'Stopped'}[self.status()],
             command_str[:20] + ('...' if len(command_str) > 20 else ''))
 
     def status(self):
@@ -275,7 +277,8 @@ class ShBaseThread(threading.Thread):
         Whether or not the thread is directly under the runtime, aka top level.
         A top level thread has the runtime as its parent
         """
-        return not isinstance(self.parent, ShBaseThread) and not self.is_background
+        return not isinstance(
+            self.parent, ShBaseThread) and not self.is_background
 
     def cleanup(self):
         """
@@ -303,7 +306,8 @@ class ShBaseThread(threading.Thread):
 class ShTracedThread(ShBaseThread):
     """ Killable thread implementation with trace """
 
-    def __init__(self, registry, parent, command, target=None, is_background=False, environ={}, cwd=None):
+    def __init__(self, registry, parent, command, target=None,
+                 is_background=False, environ={}, cwd=None):
         super(ShTracedThread, self).__init__(
             registry, parent, command, target=target, is_background=is_background, environ=environ, cwd=cwd)
 
@@ -342,7 +346,8 @@ class ShCtypesThread(ShBaseThread):
     another thread (with ctypes).
     """
 
-    def __init__(self, registry, parent, command, target=None, is_background=False, environ={}, cwd=None):
+    def __init__(self, registry, parent, command, target=None,
+                 is_background=False, environ={}, cwd=None):
         super(ShCtypesThread, self).__init__(
             registry, parent, command, target=target, is_background=is_background, environ=environ, cwd=cwd)
 

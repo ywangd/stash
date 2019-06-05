@@ -10,6 +10,7 @@ from stash.tests.stashtest import StashTestCase, requires_network, expected_fail
 
 class PipTests(StashTestCase):
     """tests for the 'pip' command."""
+
     def setUp(self):
         """setup the tests"""
         self.cwd = self.get_data_path()
@@ -41,10 +42,14 @@ class PipTests(StashTestCase):
         """reload a module."""
         reload_module(m)
 
-    def assert_did_run_setup(self, output, allow_source=True, allow_wheel=True):
+    def assert_did_run_setup(
+            self, output, allow_source=True, allow_wheel=True):
         """assert that the output shows that either setup.py was successfully executed or a wheel was installed."""
-        if not (("Running setup file" in output and allow_source) or ("Installing wheel:" in output and allow_wheel)):
-            raise AssertionError("Output '{o}' does not seem to have installed a wheel or run setup.py!".format(o=output))
+        if not (("Running setup file" in output and allow_source)
+                or ("Installing wheel:" in output and allow_wheel)):
+            raise AssertionError(
+                "Output '{o}' does not seem to have installed a wheel or run setup.py!".format(
+                    o=output))
         self.assertNotIn("Failed to run setup.py", output)
 
     def test_help(self):
@@ -85,7 +90,8 @@ class PipTests(StashTestCase):
     @requires_network
     def test_install_pypi_simple_1(self):
         """test 'pip install <pypi_package>' (Test 1)."""
-        output = self.run_command("pip --verbose install benterfaces", exitcode=0)
+        output = self.run_command(
+            "pip --verbose install benterfaces", exitcode=0)
         self.assertIn("Downloading package", output)
         self.assert_did_run_setup(output)
         self.assertIn("Package installed: benterfaces", output)
@@ -93,7 +99,8 @@ class PipTests(StashTestCase):
             import benterfaces
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
-            raise AssertionError("Could not import installed module: " + repr(e))
+            raise AssertionError(
+                "Could not import installed module: " + repr(e))
 
     @requires_network
     def test_install_pypi_simple_2(self):
@@ -106,7 +113,8 @@ class PipTests(StashTestCase):
             import nose
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
-            raise AssertionError("Could not import installed module: " + repr(e))
+            raise AssertionError(
+                "Could not import installed module: " + repr(e))
 
     @requires_network
     @expected_failure_on_py3
@@ -120,12 +128,14 @@ class PipTests(StashTestCase):
             import twisted
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
-            raise AssertionError("Could not import installed module: " + repr(e))
+            raise AssertionError(
+                "Could not import installed module: " + repr(e))
 
     @requires_network
     def test_install_pypi_nobinary(self):
         """test 'pip install --no-binary :all: <pypi_package>'."""
-        output = self.run_command("pip --verbose install --no-binary :all: rsa", exitcode=0)
+        output = self.run_command(
+            "pip --verbose install --no-binary :all: rsa", exitcode=0)
         self.assertIn("Downloading package", output)
         self.assert_did_run_setup(output, allow_wheel=False)
         self.assertIn("Package installed: rsa", output)
@@ -133,12 +143,14 @@ class PipTests(StashTestCase):
             import benterfaces
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
-            raise AssertionError("Could not import installed module: " + repr(e))
+            raise AssertionError(
+                "Could not import installed module: " + repr(e))
 
     @requires_network
     def test_install_pypi_onlybinary(self):
         """test 'pip install --only-binary :all: <pypi_package>'."""
-        output = self.run_command("pip --verbose install --only-binary :all: rsa", exitcode=0)
+        output = self.run_command(
+            "pip --verbose install --only-binary :all: rsa", exitcode=0)
         self.assertIn("Downloading package", output)
         self.assert_did_run_setup(output, allow_source=False)
         self.assertIn("Package installed: rsa", output)
@@ -146,7 +158,8 @@ class PipTests(StashTestCase):
             import benterfaces
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
-            raise AssertionError("Could not import installed module: " + repr(e))
+            raise AssertionError(
+                "Could not import installed module: " + repr(e))
 
     @requires_network
     def test_install_command(self):
@@ -171,12 +184,11 @@ class PipTests(StashTestCase):
         # 5. ensure command not found after uninstall
         self.run_command("pyrsa-keygen --help", exitcode=127)
 
-
-
     @requires_network
     def test_install_pypi_version_1(self):
         """test 'pip install <pypi_package>==<specific_version_1>' (Test 1)."""
-        output = self.run_command("pip --verbose install rsa==3.4.2", exitcode=0)
+        output = self.run_command(
+            "pip --verbose install rsa==3.4.2", exitcode=0)
         self.assertIn("Downloading package", output)
         self.assert_did_run_setup(output)
         self.assertIn("Package installed: rsa", output)
@@ -185,14 +197,16 @@ class PipTests(StashTestCase):
             self.reload_module(rsa)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
-            raise AssertionError("Could not import installed module: " + repr(e))
+            raise AssertionError(
+                "Could not import installed module: " + repr(e))
         else:
             self.assertEqual(rsa.__version__, "3.4.2")
 
     @requires_network
     def test_install_pypi_version_2(self):
         """test 'pip install <pypi_package>==<specific_version_2>' (Test 2)."""
-        output = self.run_command("pip --verbose install rsa==3.2.2", exitcode=0)
+        output = self.run_command(
+            "pip --verbose install rsa==3.2.2", exitcode=0)
         self.assertIn("Downloading package", output)
         self.assert_did_run_setup(output)
         self.assertIn("Package installed: rsa", output)
@@ -201,7 +215,8 @@ class PipTests(StashTestCase):
             self.reload_module(rsa)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
-            raise AssertionError("Could not import installed module: " + repr(e))
+            raise AssertionError(
+                "Could not import installed module: " + repr(e))
         else:
             self.assertEqual(rsa.__version__, "3.2.2")
 
@@ -209,7 +224,8 @@ class PipTests(StashTestCase):
     @requires_network
     def test_update(self):
         """test 'pip update <pypi_package>'."""
-        output = self.run_command("pip --verbose install rsa==3.2.3", exitcode=0)
+        output = self.run_command(
+            "pip --verbose install rsa==3.2.3", exitcode=0)
         self.assertIn("Downloading package", output)
         self.assert_did_run_setup(output)
         self.assertIn("Package installed: rsa", output)
@@ -218,7 +234,8 @@ class PipTests(StashTestCase):
             self.reload_module(rsa)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
-            raise AssertionError("Could not import installed module: " + repr(e))
+            raise AssertionError(
+                "Could not import installed module: " + repr(e))
         else:
             self.assertEqual(rsa.__version__, "3.2.3")
             del rsa
@@ -228,7 +245,8 @@ class PipTests(StashTestCase):
             self.reload_module(rsa)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
-            raise AssertionError("Could not import installed module: " + repr(e))
+            raise AssertionError(
+                "Could not import installed module: " + repr(e))
         else:
             self.assertNotEqual(rsa.__version__, "3.2.3")
             del rsa
@@ -236,7 +254,8 @@ class PipTests(StashTestCase):
     def test_install_local(self):
         """test 'pip install <path/to/package/>'."""
         self.run_command("zip ./stpkg.zip ./stpkg/", exitcode=0)
-        output = self.run_command("pip --verbose install stpkg.zip", exitcode=0)
+        output = self.run_command(
+            "pip --verbose install stpkg.zip", exitcode=0)
         self.assertIn("Package installed: stpkg.zip", output)
         self.assertNotIn("Downloading package", output)
         self.assert_did_run_setup(output)
@@ -245,14 +264,16 @@ class PipTests(StashTestCase):
             import stpkg
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
-            raise AssertionError("Could not import installed module: " + repr(e))
+            raise AssertionError(
+                "Could not import installed module: " + repr(e))
 
         output = self.run_command("stash_pip_test", exitcode=0)
         self.assertIn("local pip test successfull!", output)
 
     def test_install_github(self):
         """test 'pip install <owner>/<repo>'."""
-        output = self.run_command("pip --verbose install bennr01/benterfaces", exitcode=0)
+        output = self.run_command(
+            "pip --verbose install bennr01/benterfaces", exitcode=0)
         self.assertIn("Working on GitHub repository ...", output)
         self.assert_did_run_setup(output)
         self.assertIn("Package installed: benterfaces-master", output)
@@ -261,13 +282,15 @@ class PipTests(StashTestCase):
             import benterfaces
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
-            raise AssertionError("Could not import installed module: " + repr(e))
+            raise AssertionError(
+                "Could not import installed module: " + repr(e))
 
     def test_uninstall(self):
         """test 'pip uninstall <package>."""
         # 1. install package
         self.run_command("zip ./stpkg.zip ./stpkg/", exitcode=0)
-        output = self.run_command("pip --verbose install stpkg.zip", exitcode=0)
+        output = self.run_command(
+            "pip --verbose install stpkg.zip", exitcode=0)
         self.assertIn("Package installed: stpkg.zip", output)
         self.assertNotIn("Downloading package", output)
         self.assert_did_run_setup(output)
@@ -277,10 +300,12 @@ class PipTests(StashTestCase):
             import stpkg
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
-            raise AssertionError("Could not import installed module: " + repr(e))
+            raise AssertionError(
+                "Could not import installed module: " + repr(e))
 
         # 3. uninstall package
-        output = self.run_command("pip --verbose uninstall stpkg.zip", exitcode=0)
+        output = self.run_command(
+            "pip --verbose uninstall stpkg.zip", exitcode=0)
         if "stpkg" in sys.modules:
             del sys.modules["stpkg"]
 

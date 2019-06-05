@@ -8,28 +8,28 @@ from stash.tests.stashtest import StashTestCase
 
 
 class HistoryTests(StashTestCase):
-	
+
     setup_commands = ['BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH']
-    
+
     def get_data_path(self):
         """return the data/ sibling path"""
         return os.path.abspath(os.path.join(os.path.dirname(__file__), "data"))
-    
+
     @property
     def history(self):
         """quick access to history"""
         return self.stash.runtime.history
-    
+
     def setUp(self):
         StashTestCase.setUp(self)
         self.history.clear_all()
         self.history.swap("HistoryTest")
-    
+
     def test_new_empty(self):
         """test that a new ShHistory is empty"""
         h = ShHistory(self.stash)  # should not create any problems
         self.assertEqual(len(h.getlist()), 0)
-    
+
     def test_add_simple(self):
         """test ShHistory.add"""
         # 'test' should not be in history
@@ -38,7 +38,7 @@ class HistoryTests(StashTestCase):
         self.history.add("test")
         # should now be in history
         self.assertIn("test", self.history.getlist())
-    
+
     def test_add_whitespace(self):
         """test that adding lines with whitespaces at the beginning depends on the settings"""
         # test ignoring lines starting with whitespaces
@@ -53,10 +53,10 @@ class HistoryTests(StashTestCase):
         self.assertNotIn(" b", l)
         self.assertIn("a", l)
         self.assertIn("c", l)
-        
+
         # clean
         self.history.clear()
-        
+
         # test ignoring lines starting with whitespaces
         self.history.hide_whitespace = False
         self.history.add("a")
@@ -69,7 +69,7 @@ class HistoryTests(StashTestCase):
         self.assertNotIn(" b", l)  # whitespace should be stripped
         self.assertIn("a", l)
         self.assertIn("c", l)
-    
+
     def test_add_doubble(self):
         """test adding a line twice in a row"""
         l = "testline"
@@ -79,27 +79,27 @@ class HistoryTests(StashTestCase):
         self.history.add(l)
         self.assertEqual(len(self.history.getlist()), 1)
         self.assertIn(l, self.history.getlist())
-        
+
         # clean
         self.history.clear()
-        
+
         # twice, but not in a row should still be allowed
         self.assertEqual(len(self.history.getlist()), 0)
         self.history.add(l)
         self.history.add("other line")
         self.history.add(l)
         self.assertEqual(len(self.history.getlist()), 3)
-        
+
         # clear
         self.history.clear()
-        
+
         # test with allowed double lines
         self.history.allow_double = True
         self.history.add(l)
         self.history.add(l)
         self.assertEqual(len(self.history.getlist()), 2)
         self.assertIn(l, self.history.getlist())
-    
+
     def test_clear(self):
         """test ShHistory.clear()"""
         self.assertEqual(len(self.history.getlist()), 0)
@@ -109,7 +109,7 @@ class HistoryTests(StashTestCase):
         self.assertEqual(len(self.history.getlist()), len(elements))
         self.history.clear()
         self.assertEqual(len(self.history.getlist()), 0)
-    
+
     def test_clear_all(self):
         """test ShHistory.clear_all()"""
         self.assertEqual(len(self.history.getlist()), 0)
@@ -126,7 +126,7 @@ class HistoryTests(StashTestCase):
         self.assertEqual(len(self.history.getlist()), 0)
         self.history.swap("h_1")
         self.assertEqual(len(self.history.getlist()), 0)
-    
+
     def test_getlist_base(self):
         """base tests for ShHistory.getlist()"""
         # list should be empty
@@ -141,7 +141,7 @@ class HistoryTests(StashTestCase):
         for e in ["a", "b", "a"]:
             self.history.add(e)
         self.assertEqual(len(self.history.getlist()), 3)
-    
+
     def test_getlist_inversed_order(self):
         """test  to ensure that ShHistory.getlist() returns the list in inversed order"""
         # list should be empty
@@ -155,13 +155,13 @@ class HistoryTests(StashTestCase):
         # ensure reverse order
         for e, i in zip(l, range(len(l) - 1, 0, -1)):
             self.assertEqual(int(e), i)
-    
+
     def test_getlist_newlist(self):
         """test to ensure that getlist() creates a new list"""
         self.history.add("a")
         self.history.add("b")
         self.assertIsNot(self.history.getlist(), self.history.getlist())
-    
+
     def test_swap(self):
         """test ShHistory.swap()"""
         # swap somewhere
@@ -192,7 +192,7 @@ class HistoryTests(StashTestCase):
         self.history.swap("h_2")
         new_h2_list = self.history.getlist()
         self.assertListEqual(old_h2_list, new_h2_list)
-    
+
     def test_save_load(self):
         """test saving and loading of the history"""
         elements = ["1", "2", "3", "4", "5"]
@@ -214,22 +214,26 @@ class HistoryTests(StashTestCase):
         # log a few more debug values
         self.logger.debug("h._histories: " + repr(h._histories))
         self.logger.debug("h._current: " + repr(h._current))
-        self.logger.debug("self.history._histories: " + repr(self.history ._histories))
-        self.logger.debug("self.history._current: " + repr(self.history._current))
+        self.logger.debug("self.history._histories: " +
+                          repr(self.history ._histories))
+        self.logger.debug(
+            "self.history._current: " +
+            repr(
+                self.history._current))
         # assert unique
         self.assertIsNot(h, self.history)
         # ensure all elements were loaded
         self.assertEqual(len(self.history.getlist()), len(elements))
         # ensure correct order
         self.assertListEqual(self.history.getlist(), h.getlist())
-    
+
     def test_load_fail(self):
         """test that loading a nonexistent file fails"""
         p = "/does/not/exists"
         self.assertFalse(os.path.exists(p))
         with self.assertRaises(IOError):
             ShHistory.load(p, self.stash)
-    
+
     def test_load_old(self):
         """test loading old histories"""
         p = os.path.join(self.get_data_path(), "old_history.txt")
@@ -241,5 +245,5 @@ class HistoryTests(StashTestCase):
         self.logger.debug("h._current: " + repr(h._current))
         expected = ["4", "3", "2", "1"]
         self.assertListEqual(h.getlist(), expected)
-    
+
     # TODO: tests for .up(), .down() and .search()

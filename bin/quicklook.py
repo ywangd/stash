@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-########################################################################.......
+# .......
 
 """Open file in Quick Look.
 """
@@ -29,4 +29,3 @@ class ConsoleQuicklook(object):
 
 if __name__ == "__main__":
     ConsoleQuicklook(sys.argv[1:]).quicklook()
-

@@ -55,7 +55,7 @@ def list2cmdline(seq):
                 bs_buf.append(c)
             elif c == '"':
                 # Double backslashes.
-                result.append('\\' * len(bs_buf)*2)
+                result.append('\\' * len(bs_buf) * 2)
                 bs_buf = []
                 result.append('\\"')
             else:
@@ -74,5 +74,6 @@ def list2cmdline(seq):
             result.append('"')
 
     return ''.join(result)
+
 
 _get_str = list2cmdline

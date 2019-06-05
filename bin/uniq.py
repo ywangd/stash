@@ -6,9 +6,13 @@ import sys
 import fileinput
 import argparse
 
+
 def main(args):
     ap = argparse.ArgumentParser()
-    ap.add_argument('files', nargs='*', help='files to unique (must be sorted first)')
+    ap.add_argument(
+        'files',
+        nargs='*',
+        help='files to unique (must be sorted first)')
     ns = ap.parse_args(args)
 
     def _print(lines):
@@ -19,7 +23,8 @@ def main(args):
     try:
         prev_line = None
         lines = None
-        for line in fileinput.input(ns.files, openhook=fileinput.hook_encoded("utf-8")):
+        for line in fileinput.input(
+                ns.files, openhook=fileinput.hook_encoded("utf-8")):
             if fileinput.isfirstline():
                 _print(lines)
                 lines = []

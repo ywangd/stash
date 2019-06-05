@@ -22,6 +22,7 @@ class ShStdinWrapper(object):
         else:
             return getattr(_SYS_STDIN, item)
 
+
 class ShStdoutWrapper(object):
 
     def __getattribute__(self, item):
@@ -53,6 +54,7 @@ def enable():
     sys.stdin = stdinWrapper
     sys.stdout = stdoutWrapper
     sys.stderr = stderrWrapper
+
 
 def disable():
     sys.stdin = _SYS_STDIN

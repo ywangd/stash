@@ -3,6 +3,7 @@ import os
 
 from stash.tests.stashtest import StashTestCase
 
+
 class ExpanderTests(StashTestCase):
 
     def setUp(self):

@@ -54,7 +54,8 @@ def main(args):
                 filepath = os.path.join(SSH_DIR, filename)
                 k.write_private_key_file(filepath, password=ns.password)
                 with open(filepath + '.pub', 'w') as outs:
-                    outs.write('ssh-' + key_mode[ns.type] + ' ' + k.get_base64())
+                    outs.write(
+                        'ssh-' + key_mode[ns.type] + ' ' + k.get_base64())
             print('ssh keys generated with %s encryption' % ns.type)
         else:
             print('Keys not generated')

@@ -31,7 +31,8 @@ class WgetTests(StashTestCase):
     @requires_network
     def test_simple(self):
         """test 'wget <url>'."""
-        self.assertNotIn("master.zip", os.listdir(self.cwd))  # file should not already exists
+        self.assertNotIn("master.zip", os.listdir(self.cwd)
+                         )  # file should not already exists
         output = self.run_command("wget " + self.download_target, exitcode=0)
         self.assertIn("Opening: ", output)
         self.assertIn("Save as: master.zip", output)
@@ -41,8 +42,12 @@ class WgetTests(StashTestCase):
     @requires_network
     def test_outfile(self):
         """test 'wget <url> -o <f>'."""
-        self.assertNotIn("downloaded.zip", os.listdir(self.cwd))  # file should not already exists
-        output = self.run_command("wget -o downloaded.zip " + self.download_target, exitcode=0)
+        self.assertNotIn("downloaded.zip", os.listdir(
+            self.cwd))  # file should not already exists
+        output = self.run_command(
+            "wget -o downloaded.zip " +
+            self.download_target,
+            exitcode=0)
         self.assertIn("Save as: downloaded.zip", output)
         self.assertNotIn("Save as: master.zip", output)
         self.assertNotIn("Invalid url: ", output)
@@ -52,7 +57,8 @@ class WgetTests(StashTestCase):
     @requires_network
     def test_invalid_url(self):
         """test 'wget <some invalid url>'."""
-        self.assertNotIn("does_not_exist.zip", os.listdir(self.cwd))  # file should not already exists
+        self.assertNotIn("does_not_exist.zip", os.listdir(
+            self.cwd))  # file should not already exists
         output = self.run_command("wget " + self.invalid_target, exitcode=1)
         self.assertIn("Opening: ", output)
         self.assertNotIn("Save as: does_not_exist.zip", output)

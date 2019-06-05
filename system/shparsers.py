@@ -91,7 +91,8 @@ class ShSimpleCommand(object):
 
     def __repr__(self):
         if len(self.assignments) > 0:
-            s = ' '.join(str(asn) for asn in self.assignments) + ' ' + self.cmd_word
+            s = ' '.join(str(asn)
+                         for asn in self.assignments) + ' ' + self.cmd_word
         else:
             s = self.cmd_word
 
@@ -147,7 +148,11 @@ class ShToken(object):
         self.parts = parts
 
     def __repr__(self):
-        ret = '{%s %d-%d %s %s}' % (self.tok, self.spos, self.epos, self.ttype, self.parts)
+        ret = '{%s %d-%d %s %s}' % (self.tok,
+                                    self.spos,
+                                    self.epos,
+                                    self.ttype,
+                                    self.parts)
         return ret
 
 
@@ -167,47 +172,89 @@ class ShParser(object):
         self.debug = debug
         self.logger = logging.getLogger('StaSh.Parser')
 
-        escaped = pp.Combine("\\" + pp.Word(pp.printables + ' ', exact=1)).setParseAction(self.escaped_action)
+        escaped = pp.Combine(
+            "\\" +
+            pp.Word(
+                pp.printables +
+                ' ',
+                exact=1)).setParseAction(
+            self.escaped_action)
         escaped_oct = pp.Combine(
             "\\" + pp.Word('01234567', max=3)
         ).setParseAction(self.escaped_oct_action)
         escaped_hex = pp.Combine(
             "\\x" + pp.Word('0123456789abcdefABCDEF', exact=2)
         ).setParseAction(self.escaped_hex_action)
-        # Some special uq_word is needed, e.g. &3 for file descriptor of Pythonista interactive prompt
-        uq_word = (pp.Literal('&3') | pp.Word(_WORD_CHARS)).setParseAction(self.uq_word_action)
-        bq_word = pp.QuotedString('`', escChar='\\', unquoteResults=False).setParseAction(self.bq_word_action)
-        dq_word = pp.QuotedString('"', escChar='\\', unquoteResults=False).setParseAction(self.dq_word_action)
-        sq_word = pp.QuotedString("'", escChar='\\', unquoteResults=False).setParseAction(self.sq_word_action)
-        # The ^ operator means longest match (as opposed to | which means first match)
+        # Some special uq_word is needed, e.g. &3 for file descriptor of
+        # Pythonista interactive prompt
+        uq_word = (
+            pp.Literal('&3') | pp.Word(_WORD_CHARS)).setParseAction(
+            self.uq_word_action)
+        bq_word = pp.QuotedString(
+            '`',
+            escChar='\\',
+            unquoteResults=False).setParseAction(
+            self.bq_word_action)
+        dq_word = pp.QuotedString(
+            '"',
+            escChar='\\',
+            unquoteResults=False).setParseAction(
+            self.dq_word_action)
+        sq_word = pp.QuotedString(
+            "'",
+            escChar='\\',
+            unquoteResults=False).setParseAction(
+            self.sq_word_action)
+        # The ^ operator means longest match (as opposed to | which means first
+        # match)
         word = pp.Combine(pp.OneOrMore(escaped ^ escaped_oct ^ escaped_hex
                                        ^ uq_word ^ bq_word ^ dq_word ^ sq_word))\
             .setParseAction(self.word_action)
 
-        identifier = pp.Word(pp.alphas + '_', pp.alphas + pp.nums + '_').setParseAction(self.identifier_action)
+        identifier = pp.Word(
+            pp.alphas +
+            '_',
+            pp.alphas +
+            pp.nums +
+            '_').setParseAction(
+            self.identifier_action)
         assign_op = pp.Literal('=').setParseAction(self.assign_op_action)
-        assignment_word = pp.Combine(identifier + assign_op + word).setParseAction(self.assignment_word_action)
+        assignment_word = pp.Combine(
+            identifier +
+            assign_op +
+            word).setParseAction(
+            self.assignment_word_action)
 
         punctuator = pp.oneOf('; &').setParseAction(self.punctuator_action)
         pipe_op = pp.Literal('|').setParseAction(self.pipe_op_action)
-        io_redirect_op = pp.oneOf('>> >').setParseAction(self.io_redirect_op_action)
+        io_redirect_op = pp.oneOf('>> >').setParseAction(
+            self.io_redirect_op_action)
         io_redirect = (io_redirect_op + word)('io_redirect')
 
         # The optional ' ' is a workaround to a possible bug in pyparsing.
         # The position of cmd_word after cmd_prefix is always reported 1 character ahead
         # of the correct value.
-        cmd_prefix = (pp.OneOrMore(assignment_word) + pp.Optional(' '))('cmd_prefix')
-        cmd_suffix = (pp.OneOrMore(word)('args') + pp.Optional(io_redirect)) ^ io_redirect
+        cmd_prefix = (
+            pp.OneOrMore(assignment_word) +
+            pp.Optional(' '))('cmd_prefix')
+        cmd_suffix = (
+            pp.OneOrMore(word)('args') +
+            pp.Optional(io_redirect)) ^ io_redirect
 
         modifier = pp.oneOf('! \\')
-        cmd_word = (pp.Combine(pp.Optional(modifier) + word) ^ word)('cmd_word').setParseAction(self.cmd_word_action)
+        cmd_word = (
+            pp.Combine(
+                pp.Optional(modifier) +
+                word) ^ word)('cmd_word').setParseAction(
+            self.cmd_word_action)
 
         simple_command = \
             (cmd_prefix + pp.Optional(cmd_word) + pp.Optional(cmd_suffix)) \
             | (cmd_word + pp.Optional(cmd_suffix))
         simple_command = pp.Group(simple_command)
 
-        pipe_sequence = simple_command + pp.ZeroOrMore(pipe_op + simple_command)
+        pipe_sequence = simple_command + \
+            pp.ZeroOrMore(pipe_op + simple_command)
         pipe_sequence = pp.Group(pipe_sequence)
 
         complete_command = pp.Optional(pipe_sequence
@@ -217,7 +264,9 @@ class ShParser(object):
         # --- special parser for inside double quotes
         uq_word_in_dq = pp.Word(pp.printables.replace('`', ' ').replace('\\', ''))\
             .setParseAction(self.uq_word_action)
-        word_in_dq = pp.Combine(pp.OneOrMore(escaped ^ escaped_oct ^ escaped_hex ^ bq_word ^ uq_word_in_dq))
+        word_in_dq = pp.Combine(
+            pp.OneOrMore(
+                escaped ^ escaped_oct ^ escaped_hex ^ bq_word ^ uq_word_in_dq))
         # ---
 
         self.parser = complete_command.parseWithTabs().ignore(pp.pythonStyleComment)
@@ -318,7 +367,8 @@ class ShParser(object):
     def cmd_word_action(self, s, pos, toks):
         if self.debug:
             self.logger.debug(toks[0])
-        # toks[0] is the whole cmd_word while parts do not include leading modifier if any
+        # toks[0] is the whole cmd_word while parts do not include leading
+        # modifier if any
         self.add_token(toks[0], pos, ShToken._CMD, self.parts)
         self.next_word_type = None
         self.parts = []
@@ -390,7 +440,8 @@ class ShExpander(object):
         for ipseq in pseq_indices:
             pseq = parsed[ipseq]
 
-            # Due to the generator change, complete_command is redundant and removed
+            # Due to the generator change, complete_command is redundant and
+            # removed
             pipe_sequence = ShPipeSequence()
 
             for isc in range(0, len(pseq), 2):
@@ -423,13 +474,15 @@ class ShExpander(object):
                     t = tokens[idxt + 1]
                     fields = self.expand_word(t)
                     if len(fields) > 1:
-                        raise ShSingleExpansionRequired('multiple IO file: %s' % fields)
+                        raise ShSingleExpansionRequired(
+                            'multiple IO file: %s' % fields)
                     simple_command.io_redirect = ShIORedirect(io_op, fields[0])
                     idxt += 2
 
                 # Remove any empty fields after expansion.
                 if simple_command.args:
-                    simple_command.args = [arg for arg in simple_command.args if simple_command.args]
+                    simple_command.args = [
+                        arg for arg in simple_command.args if simple_command.args]
                 if simple_command.cmd_word == '' and simple_command.args:
                     simple_command.cmd_word = simple_command.args.pop(0)
                 if simple_command.io_redirect and simple_command.io_redirect.filename == '':
@@ -517,14 +570,17 @@ class ShExpander(object):
                 if len(fields) > 1:
                     words_expanded.append(w_expanded + fields[0])
                     words_expanded.extend(fields[1:-1])
-                    words_expanded_globable.append(w_expanded_globable + fields[0])
+                    words_expanded_globable.append(
+                        w_expanded_globable + fields[0])
                     words_expanded_globable.extend(fields[1:-1])
                     w_expanded = w_expanded_globable = ''
                     ex = exg = fields[-1]
                 else:
                     ex = exg = ret
             else:
-                raise ShInternalError('%s: unknown word parts to expand' % p.ttype)
+                raise ShInternalError(
+                    '%s: unknown word parts to expand' %
+                    p.ttype)
 
             w_expanded += ex
             w_expanded_globable += exg
@@ -533,7 +589,8 @@ class ShExpander(object):
         words_expanded_globable.append(w_expanded_globable)
 
         fields = []
-        for w_expanded, w_expanded_globable in zip(words_expanded, words_expanded_globable):
+        for w_expanded, w_expanded_globable in zip(
+                words_expanded, words_expanded_globable):
             w_expanded_globbed = glob.glob(w_expanded_globable)
             if w_expanded_globbed:
                 fields.extend(w_expanded_globbed)
@@ -600,7 +657,9 @@ class ShExpander(object):
                 exg1 = self.escape_wildcards(ex1)  # no glob inside dq
 
             else:
-                raise ShInternalError('%s: unknown dq_word parts to expand' % p.ttype)
+                raise ShInternalError(
+                    '%s: unknown dq_word parts to expand' %
+                    p.ttype)
 
             ex += ex1
             exg += exg1
@@ -674,7 +733,9 @@ class ShExpander(object):
                             varname += nextchar
                         else:
                             if self.debug:
-                                self.logger.debug('environ sub: %s\n' % varname)
+                                self.logger.debug(
+                                    'environ sub: %s\n' %
+                                    varname)
                             es += os.environ.get(varname, '') + nextchar
                             state = 'a'
 
@@ -691,7 +752,8 @@ class ShExpander(object):
                         raise ShBadSubstitution('bad environ substitution')
 
                 else:
-                    raise ShInternalError('syntax error in environ substitution')
+                    raise ShInternalError(
+                        'syntax error in environ substitution')
 
             if state == '$':
                 if varname != '':
@@ -708,7 +770,9 @@ class ShExpander(object):
 
         if s != es:
             if self.debug:
-                self.logger.debug('expandvars: %s -> %s\n' % (repr(s), repr(es)))
+                self.logger.debug(
+                    'expandvars: %s -> %s\n' %
+                    (repr(s), repr(es)))
 
         return es
 
@@ -726,7 +790,8 @@ class ShCompleter(object):
     def __init__(self, stash, debug=False):
         self.stash = stash
         self.debug = debug
-        self.max_possibilities = stash.config.getint('display', 'AUTO_COMPLETION_MAX')
+        self.max_possibilities = stash.config.getint(
+            'display', 'AUTO_COMPLETION_MAX')
         self.logger = logging.getLogger('StaSh.Completer')
 
     def complete(self, line):
@@ -767,7 +832,8 @@ class ShCompleter(object):
             self.logger.debug('is_cmd_word: %s, word_to_complete: %s, replace_from: %d\n' %
                               (is_cmd_word, word_to_complete, replace_from))
 
-        cands, with_normal_completion = self.stash.libcompleter.subcmd_complete(toks)
+        cands, with_normal_completion = self.stash.libcompleter.subcmd_complete(
+            toks)
 
         if cands is None or with_normal_completion:
 
@@ -779,13 +845,14 @@ class ShCompleter(object):
                 script_names = self.stash.runtime.get_all_script_names()
                 script_names.extend(current_state.aliases.keys())
                 if word_to_complete != '':
-                    script_names = [name for name in script_names if name.startswith(word_to_complete)]
+                    script_names = [
+                        name for name in script_names if name.startswith(word_to_complete)]
             else:
                 script_names = []
 
             if word_to_complete.startswith('$'):
                 environ_names = ['$' + varname for varname in current_state.environ.keys()
-                               if varname.startswith(word_to_complete[1:])]
+                                 if varname.startswith(word_to_complete[1:])]
             else:
                 environ_names = []
 
@@ -798,7 +865,8 @@ class ShCompleter(object):
 
         # Do not show hidden files when matching for an empty string
         if word_to_complete == '':
-            all_names = [name for name in all_names if not name.startswith('.')]
+            all_names = [
+                name for name in all_names if not name.startswith('.')]
 
         # Complete up to the longest common prefix of all possibilities
         prefix = os.path.commonprefix(all_names)

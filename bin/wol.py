@@ -36,18 +36,18 @@ optional arguments:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from wakeonlan import wol
+import argparse
 import sys
 import os
 import os.path
 
-if sys.platform=="win32":
-    #for tests on Windows
-    stashLibPath=os.path.join(os.environ['STASH_ROOT'] ,'lib')
-    sys.path.insert(0,stashLibPath)
+if sys.platform == "win32":
+    # for tests on Windows
+    stashLibPath = os.path.join(os.environ['STASH_ROOT'], 'lib')
+    sys.path.insert(0, stashLibPath)
     sys.path.remove(os.getcwd())
 
-import argparse
-from wakeonlan import wol
 
 parser = argparse.ArgumentParser(
     description="""Wake one or more computers using the wake on lan protocol.

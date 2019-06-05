@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-########################################################################.......
+# .......
 
 """Move (rename) a file or directory to a new name, or into a new
 directory. Multiple source files may be specified if the destination is
@@ -13,6 +13,7 @@ import os
 import shutil
 import sys
 
+
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("src", action="store", nargs="+",
@@ -20,9 +21,9 @@ def main(args):
     p.add_argument("dest", action="store",
                    help="the destination name or folder")
     ns = p.parse_args(args)
-    
+
     status = 0
-    
+
     if len(ns.src) > 1:
         # Multiple source files
         if os.path.exists(ns.dest):
@@ -32,7 +33,9 @@ def main(args):
                 for src in ns.src:
                     try:
                         # Attempt to move every source into destination
-                        shutil.move(src, os.path.join(ns.dest, os.path.basename(src)))
+                        shutil.move(
+                            src, os.path.join(
+                                ns.dest, os.path.basename(src)))
                     except Exception as err:
                         print("mv: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
                         status = 1
@@ -52,7 +55,9 @@ def main(args):
                     # ...it must be a folder
                     try:
                         # Attempt to move source into destination
-                        shutil.move(src, os.path.join(ns.dest, os.path.basename(src)))
+                        shutil.move(
+                            src, os.path.join(
+                                ns.dest, os.path.basename(src)))
                     except Exception as err:
                         print("mv: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
                         status = 1
@@ -70,8 +75,9 @@ def main(args):
         else:
             print("mv: {}: no such file or directory".format(src), file=sys.stderr)
             status = 1
-    
+
     sys.exit(status)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

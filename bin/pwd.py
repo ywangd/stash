@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-########################################################################.......
+# .......
 
 """Print the current working directory.
 """
@@ -13,6 +13,7 @@ import sys
 _stash = globals()['_stash']
 collapseuser = _stash.libcore.collapseuser
 
+
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("-b", "--basename", action="store_true",
@@ -20,9 +21,9 @@ def main(args):
     p.add_argument('-f', '--fullname', action='store_true',
                    help='show full path')
     ns = p.parse_args(args)
-    
+
     status = 0
-    
+
     try:
         if ns.fullname:
             print(os.getcwd())
@@ -33,8 +34,9 @@ def main(args):
     except Exception as err:
         print("pwd: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
         status = 1
-    
+
     sys.exit(status)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

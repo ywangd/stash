@@ -42,11 +42,12 @@ def main(args):
                     action="store_true",
                     default=False,
                     help='explain what is being done')
-    ap.add_argument('paths', action="store", nargs='+', help='files or directories to delete')
+    ap.add_argument('paths', action="store", nargs='+',
+                    help='files or directories to delete')
 
     ns = ap.parse_args(args)
 
-    #setup print function
+    # setup print function
     if ns.verbose:
         def printp(text):
             print(text)
@@ -71,7 +72,7 @@ def main(args):
                 try:
                     os.remove(path)
                     printp('%s has been deleted' % path)
-                except:
+                except BaseException:
                     if not ns.force:
                         print('%s: unable to remove' % path)
 
@@ -80,7 +81,7 @@ def main(args):
                 try:
                     shutil.rmtree(path)
                     printp('%s has been deleted' % path)
-                except:
+                except BaseException:
                     if not ns.force:
                         print('%s: unable to remove' % path)
 
