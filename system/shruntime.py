@@ -548,7 +548,7 @@ class ShRuntime(object):
         self.handle_PYTHONPATH()  # Make sure PYTHONPATH is honored
 
         try:
-            with open(file_path, "rU") as f:
+            with (open(file_path, "rU") if not self.PY3 else open(file_path, newline=None)) as f:
                 content = f.read()
                 code = compile(
                     content, file_path, "exec", dont_inherit=True
