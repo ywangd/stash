@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ Tip of the day
 """
 from __future__ import print_function

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Simulates a console call to python3 [-m module][-c cmd] [file] [args]
 

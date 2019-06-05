@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Search a regular expression pattern in one or more files"""
 
 from __future__ import print_function

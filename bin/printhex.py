@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # .......
 
 """Print the given files' content and hexadecimal byte values.

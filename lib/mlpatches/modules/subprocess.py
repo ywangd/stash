@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Subprocess management"""
 # info: parts of this module has been copied from the original
 # subprocess-module

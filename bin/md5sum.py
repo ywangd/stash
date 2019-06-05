@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Get md5 hash of a file or string.
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """This module contains a dictionary containing all patches and their name."""
 from stash.system.shcommon import _STASH_EXTENSION_PATCH_PATH
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Secure Copy - Copy files between local and remote
 

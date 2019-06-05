@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 This module contains a dictionary mapping the identifiers to the fsi-classes
 """

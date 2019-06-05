@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Bring a background job to foreground.
 """

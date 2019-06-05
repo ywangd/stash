@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """version utilities"""
 import re
 import operator

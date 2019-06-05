@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Get sha256 hash of a file or string.
 

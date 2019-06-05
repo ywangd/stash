@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """This module contains the base class for patches."""
 import sys
 import imp

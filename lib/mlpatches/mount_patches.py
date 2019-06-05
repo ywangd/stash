@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """This module contains the group definition for the mount patches."""
 from mlpatches.base import PatchGroup
 from mlpatches import mount_base

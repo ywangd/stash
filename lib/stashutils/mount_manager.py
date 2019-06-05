@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """This module coordinates the mount-system."""
 import os
 

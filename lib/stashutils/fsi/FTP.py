@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Interface to FTP-servers."""
 import ftplib
 import tempfile

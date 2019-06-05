@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Install and manage python packages
 

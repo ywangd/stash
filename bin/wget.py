@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ Download a file from a url.
 """
 from __future__ import print_function

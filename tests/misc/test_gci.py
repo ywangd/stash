@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """tests for the 'gci' command."""
 import gc
 

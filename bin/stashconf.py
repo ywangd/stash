@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ List and set StaSh configuration options """
 from __future__ import print_function
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """Simple HTTP Server With Upload (https://gist.github.com/UniIsland/3346170)
 

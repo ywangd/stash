@@ -1,4 +1,5 @@
 #! python2
+# -*- coding: utf-8 -*-
 # StaSh utility - Dutcho, 16-17 Apr 2017
 
 '''Display output one screen page at a time (optionally with numbered lines)'''

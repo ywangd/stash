@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ============================================================================
 # Copyright (C) 1988, 1989, 1992, 1993, 1994 Free Software Foundation, Inc.
 # Copyright (c) 2011-2012 University of Pennsylvania

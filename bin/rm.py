@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Remove (delete) files and directories.
 

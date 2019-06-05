@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Errors and Exceptions."""
 
 

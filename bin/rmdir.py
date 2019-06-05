@@ -1,4 +1,5 @@
 #! python2
+# -*- coding: utf-8 -*-
 # StaSh utility - Dutcho, 17 Apr 2017
 
 '''Remove empty directory'''

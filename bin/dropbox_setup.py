@@ -1,4 +1,5 @@
 #! python2
+# -*- coding: utf-8 -*-
 # StaSh utility
 
 """manage your dropbox configuration."""

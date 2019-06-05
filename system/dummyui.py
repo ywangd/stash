@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Stub ui to allow debug on PC
 """

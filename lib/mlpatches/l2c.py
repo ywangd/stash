@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """convert a list of args to a cmd; copied from subprocess"""
 # info: this replaces the _get_str() used previously by mlpatches
 

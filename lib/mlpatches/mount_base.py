@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """base patches for mount."""
 import os
 import stat as _stat

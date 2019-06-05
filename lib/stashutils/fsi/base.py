@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """helper functions and base classes."""
 from stashutils.fsi.errors import OperationFailure
 import random

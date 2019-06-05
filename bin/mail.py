@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Send messages/files from stash.
 

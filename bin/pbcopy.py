@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Copy one or more files to the system clipboard"""
 from __future__ import print_function
 

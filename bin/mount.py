@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """mount a filesystem."""
 from __future__ import print_function
 

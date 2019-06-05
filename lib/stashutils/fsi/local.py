@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """The FSI for the local filesystem."""
 import os
 import shutil

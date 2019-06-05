@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Simple FTP Server"""
 from __future__ import print_function
 from pyftpdlib.handlers import FTPHandler

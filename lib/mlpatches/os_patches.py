@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """this module contains the patches for the os module."""
 from mlpatches.base import FunctionPatch, PatchGroup
 

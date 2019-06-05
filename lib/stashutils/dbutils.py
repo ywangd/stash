@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """dropbox utilities."""
 import sys
 import base64

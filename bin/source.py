@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Read and execute commands from a shell script in the current environment.
 

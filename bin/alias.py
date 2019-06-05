@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Example of accessing the shell object from script
 # This ability completely removes the need of plugins
 """List or define shell aliases."""

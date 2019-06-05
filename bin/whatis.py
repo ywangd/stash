@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import print_function
 # by Siddharth Dushantha
 # 31 July 2017

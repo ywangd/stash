@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Subprocesses with accessible I/O streams"""
 from mlpatches import os_popen
 from mlpatches.l2c import _get_str

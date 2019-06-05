@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Copy a file or directory. Multiple source files may be specified if the destination is
 an existing directory.
 """

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Distributed version control system
 

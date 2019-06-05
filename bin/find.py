@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ Find files in specified paths
 """
 from __future__ import print_function

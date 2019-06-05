@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # .......
 
 """Move (rename) a file or directory to a new name, or into a new

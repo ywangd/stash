@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """core utilities for StaSh-scripts"""
 import threading
 import imp

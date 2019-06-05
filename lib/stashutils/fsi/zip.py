@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """The FSI for zipfiles"""
 import zipfile
 import os

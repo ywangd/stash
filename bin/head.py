@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Print the first 10 lines of the given files.
 """
 

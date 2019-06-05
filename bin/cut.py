@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ Print selected parts of lines from each FILE to standard output.
 """
 from __future__ import print_function

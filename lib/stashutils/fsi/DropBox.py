@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """The FSI for dropbox."""
 # this module is named 'DropBox' instead of 'dropbox' to avoid a
 # naming conflict.

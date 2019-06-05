@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Used to create/open and edit files.
 [-t --temp] - Opens the file as a temporary file. Allowing editing and renaming. Previous script in the pythonista editor will be restored unless a new tab is edited.

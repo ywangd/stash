@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """functions and classes related to wheels."""
 import os
 import shutil

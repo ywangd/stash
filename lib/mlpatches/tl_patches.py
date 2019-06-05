@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """patches for making some vars thread-local"""
 import threading
 import copy

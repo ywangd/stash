@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ Locate a command script in BIN_PATH. No output if command is not found.
 """
 from __future__ import print_function

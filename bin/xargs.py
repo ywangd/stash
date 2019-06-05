@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ Construct argument list(s) and execute utility
 """
 

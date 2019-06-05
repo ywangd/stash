@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """a graphical config manager for StaSh"""
 import ast
 import os

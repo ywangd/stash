@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 sqlite3 shell modeled after sqlite3 command-line.
 Created by: Chris Houser (Briarfox)

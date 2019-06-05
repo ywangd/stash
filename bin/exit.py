@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # .......
 
 """Exit the current subshell, optionally with a specific status. If no

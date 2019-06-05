@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Generates RSA/DSA SSH Keys.
 

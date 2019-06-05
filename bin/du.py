@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ Summarize disk usage of the set of FILEs, recursively for directories.
 """
 from __future__ import print_function

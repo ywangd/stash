@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ Print newline, word, and byte counts for each FILE, and a total line if
 more than one FILE is specified.
 """

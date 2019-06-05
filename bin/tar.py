@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 Create and extract tar, gzip, bz2 archives.
 

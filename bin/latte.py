@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # A package manager meant for Pythonista, built on StaSh.
 from __future__ import print_function
 

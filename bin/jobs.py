@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 List all jobs that are currently running.
 """

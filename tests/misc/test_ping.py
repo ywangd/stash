@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """tests for the ping command."""
 import time
 import unittest

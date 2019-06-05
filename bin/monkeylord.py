@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """easiliy manage monkey-patches. See 'man monkeypatching' for more help."""
 from __future__ import print_function
 from mlpatches import patches

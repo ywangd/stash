@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 File encryption for stash
 Uses AES in CBC mode.

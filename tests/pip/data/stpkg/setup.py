@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """setup.py for a local test package."""
 
 from setuptools import setup
