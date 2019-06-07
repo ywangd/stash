@@ -94,7 +94,7 @@ def main():
             print("Error: path '{}' does not exists!".format(path))
             sys.exit(1)
         elif os.path.isdir(path):
-            apply_to_dir(path, style, in_place=ns.inplace, recursive=ns.recursive, pyonly=(not ns.all))
+            apply_to_dir(path, style, in_place=ns.inplace, recursive=ns.recursive, pyonly=(not ns.all), verbose=ns.verbose)
         else:
             res = apply_to_file(path, style, in_place=ns.inplace)
             if not ns.inplace:
