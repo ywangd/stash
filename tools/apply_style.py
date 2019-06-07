@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Apply the style rules to the source.
 """
