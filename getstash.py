@@ -12,7 +12,7 @@ except KeyError:
     branch = 'master'
 try:
     repo = locals()['_owner']
-except BaseException:
+except:
     repo = 'ywangd'
 
 _IS_UPDATE = '_IS_UPDATE' in locals()
@@ -43,8 +43,7 @@ try:
 
 except Exception as e:
     sys.stderr.write('{}\n'.format(e))
-    sys.stderr.write(
-        'Download failed! Please make sure internet connection is available.\n')
+    sys.stderr.write('Download failed! Please make sure internet connection is available.\n')
     sys.exit(1)
 
 BASE_DIR = os.path.expanduser('~')
@@ -58,8 +57,7 @@ with open(TEMP_ZIPFILE, 'rb') as ins:
         zipfp = zipfile.ZipFile(ins)
         for name in zipfp.namelist():
             data = zipfp.read(name)
-            name = name.split('stash-%s/' %
-                              branch, 1)[-1]  # strip the top-level directory
+            name = name.split('stash-%s/' % branch, 1)[-1]  # strip the top-level directory
             if name == '':  # skip top-level directory
                 continue
 
@@ -73,9 +71,8 @@ with open(TEMP_ZIPFILE, 'rb') as ins:
                     fp.write(data)
                 finally:
                     fp.close()
-    except BaseException:
-        sys.stderr.write(
-            'The zip file is corrupted. Pleases re-run the script.\n')
+    except:
+        sys.stderr.write('The zip file is corrupted. Pleases re-run the script.\n')
         sys.exit(1)
 
 print('Preparing the folder structure ...')
@@ -90,16 +87,15 @@ shutil.move(os.path.join(TARGET_DIR, 'launch_stash.py'),
 try:
     os.remove(TEMP_ZIPFILE)
 
-    # shutil.rmtree(os.path.join(TARGET_DIR, 'tests'))  # TODO: maybe readd
-    # this line later
+    # shutil.rmtree(os.path.join(TARGET_DIR, 'tests'))  # TODO: maybe readd this line later
 
-    unwanted_files = ['getstash.py', 'run_tests.py', 'testing.py',
-                      'dummyui.py', 'dummyconsole.py',
+    unwanted_files = ['getstash.py', 'run_tests.py', 'testing.py', 
+                      'dummyui.py', 'dummyconsole.py', 
                       'bin/pcsm.py', 'bin/bh.py', 'bin/pythonista.py', 'bin/cls.py', 'stash.py', 'lib/librunner.py']
 
     for fname in unwanted_files:
         os.remove(os.path.join(TARGET_DIR, fname))
-except BaseException:
+except:
     pass
 
 if not _IS_UPDATE:

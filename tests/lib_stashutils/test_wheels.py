@@ -7,26 +7,20 @@ from stash.tests.stashtest import StashTestCase
 
 class WheelsTests(StashTestCase):
     """tests fpr the wheel-support."""
-
     def test_wheel_is_compatible(self):
         """test wheel_is_compatible() result"""
         from stashutils import wheels
 
         wheelnamecompatibility = [
             ("package-1.0.0-py2.py3-none-any.whl", True),  # full compatibility
-            # full compatible with build tag
-            ("package-1.0.0-2-py2.py3-none-any.whl", True),
+            ("package-1.0.0-2-py2.py3-none-any.whl", True),  # full compatible with build tag
             ("package-1.0.0-py2-none-any.whl", not six.PY3),  # only py2 compatible
             ("package-1.0.0-py3-none-any.whl", six.PY3),  # only py3 compatible
             ("package-1.0.0-py2.py3-cp33m-any.whl", False),  # incompatible abi-tag
-            # incompatible platform tag
-            ("package-1.0.0-py2.py3-none-linux_x86_64.whl", False),
-            # incompatible abi and platform tags
-            ("package-1.0.0-py2.py3-cp33m-linux_x86_64.whl", False),
-            # cpython 2 incompatibility
-            ("package-1.0.0-cpy2-none-any.whl", False),
-            # cpython 3 incompatibility
-            ("package-1.0.0-cpy3-none-any.whl", False),
+            ("package-1.0.0-py2.py3-none-linux_x86_64.whl", False),  # incompatible platform tag
+            ("package-1.0.0-py2.py3-cp33m-linux_x86_64.whl", False),  # incompatible abi and platform tags
+            ("package-1.0.0-cpy2-none-any.whl", False),  # cpython 2 incompatibility
+            ("package-1.0.0-cpy3-none-any.whl", False),  # cpython 3 incompatibility
         ]
         for wheelname, is_compatible in wheelnamecompatibility:
             ic = wheels.wheel_is_compatible(wheelname)
@@ -47,8 +41,7 @@ class WheelsTests(StashTestCase):
             except wheels.WheelError:
                 pass
             else:
-                raise AssertionError(
-                    "wheels.wheel_is_compatible() did not raise WheelError when required.")
+                raise AssertionError("wheels.wheel_is_compatible() did not raise WheelError when required.")
 
     def test_parse_wheel_name(self):
         """test parse_wheel_name()"""

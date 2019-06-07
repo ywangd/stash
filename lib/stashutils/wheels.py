@@ -62,7 +62,7 @@ def escape_filename_component(fragment):
     """
     Escape a component of the filename as specified in PEP 427.
     """
-    return re.sub(r"[^\w\d.]+", "_", fragment, re.UNICODE)
+    return re.sub("[^\w\d.]+", "_", fragment, re.UNICODE)
 
 
 def generate_filename(
@@ -72,7 +72,7 @@ def generate_filename(
     python_tag=None,
     abi_tag=None,
     platform_tag=None,
-):
+    ):
     """
     Generate a filename for the wheel and return it.
     """
@@ -88,12 +88,11 @@ def generate_filename(
     return "{d}-{v}{b}-{py}-{a}-{p}.whl".format(
         d=escape_filename_component(distribution),
         v=escape_filename_component(version),
-        b=("-" + escape_filename_component(build_tag)
-           if build_tag is not None else ""),
+        b=("-" + escape_filename_component(build_tag) if build_tag is not None else ""),
         py=escape_filename_component(python_tag),
         a=escape_filename_component(abi_tag),
         p=escape_filename_component(platform_tag),
-    )
+        )
 
 
 def wheel_is_compatible(filename):
@@ -153,7 +152,7 @@ class BaseHandler(object):
                 dest,
                 # os.path.basename(os.path.normpath(src)),
                 packagepath,
-            )
+                )
             if os.path.exists(target) and remove:
                 shutil.rmtree(target)
             shutil.copytree(src, target)
@@ -166,7 +165,7 @@ class BaseHandler(object):
         return "{pkg}-{v}.dist-info".format(
             pkg=data["distribution"],
             v=data["version"],
-        )
+            )
 
 
 class TopLevelHandler(BaseHandler):
@@ -178,8 +177,7 @@ class TopLevelHandler(BaseHandler):
         files_installed = []
         if not os.path.exists(tltxtp):
             files = os.listdir(src)
-            fin = [file_name for file_name in files if file_name !=
-                   self.distinfo_name]
+            fin = [file_name for file_name in files if file_name != self.distinfo_name]
             print('No top_level.txt, try to fix this.', fin)
         else:
             with open(tltxtp, "r") as f:
@@ -193,9 +191,7 @@ class TopLevelHandler(BaseHandler):
                 dp = os.path.join(dest, pure + ".py")
                 p = self.copytree(pure, sp + ".py", dp, remove=True)
             else:
-                raise WheelError(
-                    "top_level.txt entry '{e}' not found in toplevel directory!".format(
-                        e=pure))
+                raise WheelError("top_level.txt entry '{e}' not found in toplevel directory!".format(e=pure))
             files_installed.append(p)
         return files_installed
 
@@ -267,18 +263,15 @@ class WheelInfoHandler(BaseHandler):
                 line = line.replace("\r", "").replace("\n", "")
                 ki = line.find(":")
                 key = line[:ki]
-                value = line[ki + 2:]
+                value = line[ki+2:]
 
                 if key.lower() == "wheel-version":
                     major, minor = value.split(".")
                     major, minor = int(major), int(minor)
                     if major not in self.supported_major_versions:
-                        raise WheelError(
-                            "Wheel major version is incompatible!")
+                        raise WheelError("Wheel major version is incompatible!")
                     if value not in self.supported_versions:
-                        print(
-                            "WARNING: unsupported minor version: " +
-                            str(value))
+                        print("WARNING: unsupported minor version: " + str(value))
                     self.wheel.version = (major, minor)
 
                 elif key.lower() == "generator":
@@ -303,8 +296,7 @@ class DependencyHandler(BaseHandler):
                 dependencies = self.read_dependencies_from_METADATA(metadatap)
             else:
                 if self.verbose:
-                    print(
-                        "Warning: could find neither 'metadata.json' nor `METADATA`, can not detect dependencies!")
+                    print("Warning: could find neither 'metadata.json' nor `METADATA`, can not detect dependencies!")
                 return
         else:
             if self.verbose:
@@ -321,9 +313,7 @@ class DependencyHandler(BaseHandler):
                         continue
                     else:
                         if self.verbose:
-                            print(
-                                "Adding dependencies for extra '{e}'...".format(
-                                    e=ex))
+                            print("Adding dependencies for extra '{e}'...".format(e=ex))
                         dependencies += dep
                 else:
                     dependencies += dep
@@ -338,17 +328,14 @@ class DependencyHandler(BaseHandler):
                 if line.startswith("Requires-Dist: "):
                     t = line[len("Requires-Dist: "):]
                     if ";" in t:
-                        es = t[t.find(";") +
-                               1:].replace('"', "").replace("'", "")
+                        es = t[t.find(";") + 1:].replace('"', "").replace("'", "")
                         t = t[:t.find(";")].strip()
                         if VersionSpecifier is None:
                             # libversion not found
-                            print(
-                                "Warning: could not import libversion.VersionSpecifier! Ignoring version and extra dependencies.")
+                            print("Warning: could not import libversion.VersionSpecifier! Ignoring version and extra dependencies.")
                             rq, v, extras = "<libversion not found>", "???", []
                         else:
-                            rq, v, extras = VersionSpecifier.parse_requirement(
-                                es)
+                            rq, v, extras = VersionSpecifier.parse_requirement(es)
                         if rq == "python_version":
                             # handle python version dependencies
                             if not v.match(platform.python_version()):
@@ -356,8 +343,7 @@ class DependencyHandler(BaseHandler):
                                 continue
                         elif rq == "extra":
                             # handle extra dependencies
-                            matched = any([v.match(e)
-                                           for e in self.wheel.extras])
+                            matched = any([v.match(e) for e in self.wheel.extras])
                             if not matched:
                                 # dependency NOT required
                                 continue
@@ -367,13 +353,9 @@ class DependencyHandler(BaseHandler):
                         else:
                             # unknown requirement for dependency
                             # warn user and register the dependency
-                            print(
-                                "Warning: unknown dependency requirement: '{}'".format(rq))
-                            print(
-                                "Warning: Adding dependency '{}', ignoring requirements for dependency.".format(t))
-                            # do not do anything here- As long as we dont use
-                            # 'continue', 'break', ... the dependency will be
-                            # added.
+                            print("Warning: unknown dependency requirement: '{}'".format(rq))
+                            print("Warning: Adding dependency '{}', ignoring requirements for dependency.".format(t))
+                            # do not do anything here- As long as we dont use 'continue', 'break', ... the dependency will be added.
                     dependencies.append(t)
         return dependencies
 
@@ -384,14 +366,12 @@ DEFAULT_HANDLERS = [
     DependencyHandler,
     TopLevelHandler,
     ConsoleScriptsHandler,
-]
+    ]
 
 
 class Wheel(object):
     """class for installing python wheels."""
-
-    def __init__(self, path, handlers=DEFAULT_HANDLERS,
-                 extras=[], verbose=False):
+    def __init__(self, path, handlers=DEFAULT_HANDLERS, extras=[], verbose=False):
         self.path = path
         self.extras = extras
         self.verbose = verbose
@@ -401,9 +381,7 @@ class Wheel(object):
         self.dependencies = []  # to be set by handler
 
         if not wheel_is_compatible(self.filename):
-            raise WheelError(
-                "Incompatible wheel: {p}!".format(
-                    p=self.filename))
+            raise WheelError("Incompatible wheel: {p}!".format(p=self.filename))
 
     def install(self, targetdir):
         """
@@ -422,7 +400,7 @@ class Wheel(object):
                     if self.verbose:
                         print("Running handler '{h}'...".format(
                             h=getattr(handler, "name", "<unknown>"))
-                        )
+                            )
                     tfi = handler.handle_install(tp, targetdir)
                     if tfi is not None:
                         files_installed += tfi
@@ -454,21 +432,11 @@ if __name__ == "__main__":
     import sys
     parser = argparse.ArgumentParser(description="Wheel debug installer")
     parser.add_argument("path", help="path to .whl", action="store")
-    parser.add_argument(
-        "-q",
-        help="be less verbose",
-        action="store_false",
-        dest="verbose")
-    parser.add_argument(
-        "extras",
-        action="store",
-        nargs="*",
-        help="extras to install")
+    parser.add_argument("-q", help="be less verbose", action="store_false", dest="verbose")
+    parser.add_argument("extras", action="store", nargs="*", help="extras to install")
     ns = parser.parse_args()
     print("Installing {} with extras {}...".format(ns.path, ns.extras))
-    fi, dep = Wheel(
-        ns.path, verbose=ns.verbose, extras=ns.extras).install(
-        os.path.expanduser("~/Documents/site-packages/"))
+    fi, dep = Wheel(ns.path, verbose=ns.verbose, extras=ns.extras).install(os.path.expanduser("~/Documents/site-packages/"))
     print("files installed: ")
     print(fi)
     print("dependencies:")

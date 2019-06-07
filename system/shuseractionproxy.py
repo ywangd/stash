@@ -24,8 +24,6 @@ class ShNullResponder(object):
 NULL_RESPONDER = ShNullResponder()
 
 # noinspection PyAttributeOutsideInit,PyDocstring
-
-
 class ShUserActionProxy(object):
     """
     This proxy object provides a central place to register handlers for
@@ -52,8 +50,7 @@ class ShUserActionProxy(object):
 
             @staticmethod
             def textview_should_change(sender, rng, replacement):
-                return self.tv_responder.textview_should_change(
-                    sender, rng, replacement)
+                return self.tv_responder.textview_should_change(sender, rng, replacement)
 
             @staticmethod
             def textview_did_change(sender):
@@ -131,3 +128,4 @@ class ShUserActionProxy(object):
     # Keyboard shortcuts
     def kc_pressed(self, key, modifierFlags):
         self.kc_responder(key, modifierFlags)
+

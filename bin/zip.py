@@ -7,7 +7,6 @@ import sys
 import argparse
 import zipfile
 
-
 def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('zipfile', help='')

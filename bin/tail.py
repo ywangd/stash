@@ -9,7 +9,6 @@ import time
 import sys
 import fileinput
 
-
 def tail_f(f, wait_sec):
     while True:
         l = f.readline()
@@ -19,10 +18,7 @@ def tail_f(f, wait_sec):
             # print('!!READ NOTHING!!')
             time.sleep(wait_sec)
 
-
 _first_file = True
-
-
 def write_header(fname):
     global _first_file
     header_fmt = '{}==> {} <==\n'
@@ -30,7 +26,6 @@ def write_header(fname):
                             fname),
           end='')
     _first_file = False
-
 
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)
@@ -65,14 +60,14 @@ def main(args):
             from_start = True
         else:
             from_start = False
-        count = abs(int(ns.bytes))  # '-n -3' is equivalent to '-n 3'
+        count = abs(int(ns.bytes)) # '-n -3' is equivalent to '-n 3'
     else:
         use_bytes = False
         if ns.lines[0] == '+':
             from_start = True
         else:
             from_start = False
-        count = abs(int(ns.lines))  # '-n -3' is equivalent to '-n 3'
+        count = abs(int(ns.lines)) # '-n -3' is equivalent to '-n 3'
 
     try:
         for i, fname in enumerate(ns.files):
@@ -98,8 +93,7 @@ def main(args):
 
                     buf.append(l)
                     if from_start:
-                        if j >= count - 1:
-                            break
+                        if j >= count - 1: break
                     elif len(buf) > count:
                         del buf[0]
 
@@ -121,7 +115,6 @@ def main(args):
         fileinput.close()
 
     sys.exit(status)
-
 
 if __name__ == "__main__":
     main(sys.argv[1:])

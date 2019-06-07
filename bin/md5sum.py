@@ -47,11 +47,11 @@ def check_list(fileobj):
         try:
             with open(match.group(2), 'rb') as f1:
                 if match.group(1) == get_hash(f1):
-                    print(match.group(2) + ': Pass')
+                    print(match.group(2)+': Pass')
                 else:
-                    print(match.group(2) + ': Fail')
+                    print(match.group(2)+': Fail')
                     correct = False
-        except BaseException:
+        except:
             print('Invalid format.')
             correct = False
     return correct
@@ -69,12 +69,8 @@ def make_file(txt):
 
 ap = argparse.ArgumentParser()
 ap.add_argument('-c', '--check', action='store_true', default=False,
-                help='''Check a file with md5 hashes and file names for a match. format: hash filename''')
-ap.add_argument(
-    'file',
-    action='store',
-    nargs='*',
-    help='String or file to hash.')
+                 help='''Check a file with md5 hashes and file names for a match. format: hash filename''')
+ap.add_argument('file', action='store', nargs='*', help='String or file to hash.')
 args = ap.parse_args(sys.argv[1:])
 
 if args.check:
@@ -94,14 +90,13 @@ else:
             if os.path.isfile(arg):
                 # hash file
                 with open(arg, 'rb') as f:
-                    print(get_hash(f) + ' ' + arg)
+                    print(get_hash(f)+' '+arg)
             elif arg == "-":
                 # read from stdin
                 print(get_hash(make_file(sys.stdin.read())))
             else:
                 # hash arg
-                # TODO: should we realy do this? It does not seem like normal
-                # md5sum behavior
+                # TODO: should we realy do this? It does not seem like normal md5sum behavior
                 print(get_hash(make_file(arg)))
     else:
         print(get_hash(make_file(sys.stdin.read())))

@@ -29,8 +29,7 @@ class FilePredicate(object):
                         break
                 if root is not None:
                     names.extend(os.path.join(root, f) for f in files)
-                    names.extend(os.path.join(root, d + os.path.sep)
-                                 for d in dirs)
+                    names.extend(os.path.join(root, d + os.path.sep) for d in dirs)
 
         return names
 
@@ -69,7 +68,6 @@ def filter_name(pattern, root, dirs, files, pth):
         return None, None, None
     return root, dirs, files
 
-
 def filter_mtime(oldest_time, newest_time, root, dirs, files, pth):
     fnames = []
     for f in files:
@@ -90,13 +88,9 @@ def filter_mtime(oldest_time, newest_time, root, dirs, files, pth):
 
     return root, dnames, fnames
 
-
 def main(args):
     ap = argparse.ArgumentParser()
-    ap.add_argument(
-        'paths',
-        nargs='+',
-        help='specify a file hierarchy for find to traverse')
+    ap.add_argument('paths', nargs='+', help='specify a file hierarchy for find to traverse')
     ap.add_argument('-n', '-name', '--name', dest='pattern',
                     nargs='?',
                     default='*',
@@ -127,12 +121,7 @@ def main(args):
 
     file_predicate = FilePredicate()
 
-    file_predicate.add_filter(
-        partial(
-            filter_depth_and_type,
-            ns.mindepth,
-            ns.maxdepth,
-            ns.type))
+    file_predicate.add_filter(partial(filter_depth_and_type, ns.mindepth, ns.maxdepth, ns.type))
 
     file_predicate.add_filter(partial(filter_name, ns.pattern))
 
@@ -149,11 +138,7 @@ def main(args):
             ndays = int(ns.mtime)
             oldest_time = tnow - (ndays + 1) * 86400.0
             newest_time = tnow - ndays * 86400.0
-        file_predicate.add_filter(
-            partial(
-                filter_mtime,
-                oldest_time,
-                newest_time))
+        file_predicate.add_filter(partial(filter_mtime, oldest_time, newest_time))
 
     names = file_predicate.run(ns.paths)
 

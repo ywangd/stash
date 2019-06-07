@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Usage:
+Usage: 
     ping [-c <count>] [-i <interval>] [-W <timeout>] <destination>
 
 Options:
@@ -35,14 +35,14 @@ Options:
 
     Rewrite by Jens Diemer:
       -> http://www.python-forum.de/post-69122.html#69122
-
+    
 
     Revision history
     ~~~~~~~~~~~~~~~~
     August 18, 2016
     changes by J. Bain
       - implemented interface for pythonista stash
-
+      
     March 11, 2010
     changes by Samuel Stauffer:
     - replaced time.clock with default_timer which is set to
@@ -106,9 +106,9 @@ def checksum(source_string):
     to suggest that it gives the same answers as in_cksum in ping.c
     """
     sum = 0
-    countTo = (len(source_string) / 2) * 2
+    countTo = (len(source_string)/2)*2
     count = 0
-    while count < countTo:
+    while count<countTo:
         v1 = source_string[count + 1]
         if not isinstance(v1, int):
             v1 = ord(v1)
@@ -117,14 +117,14 @@ def checksum(source_string):
             v2 = ord(v2)
         thisVal = v1 * 256 + v2
         sum = sum + thisVal
-        sum = sum & 0xffffffff  # Necessary?
+        sum = sum & 0xffffffff # Necessary?
         count = count + 2
 
-    if countTo < len(source_string):
+    if countTo<len(source_string):
         sum = sum + ord(source_string[len(source_string) - 1])
-        sum = sum & 0xffffffff  # Necessary?
+        sum = sum & 0xffffffff # Necessary?
 
-    sum = (sum >> 16) + (sum & 0xffff)
+    sum = (sum >> 16)  +  (sum & 0xffff)
     sum = sum + (sum >> 16)
     answer = ~sum
     answer = answer & 0xffff
@@ -144,7 +144,7 @@ def receive_one_ping(my_socket, ID, timeout):
         startedSelect = default_timer()
         whatReady = select.select([my_socket], [], [], timeLeft)
         howLongInSelect = (default_timer() - startedSelect)
-        if whatReady[0] == []:  # Timeout
+        if whatReady[0] == []: # Timeout
             return
 
         timeReceived = default_timer()
@@ -153,8 +153,8 @@ def receive_one_ping(my_socket, ID, timeout):
         type, code, checksum, packetID, sequence = struct.unpack(
             b"bbHHh", icmpHeader
         )
-        # Filters out the echo request itself.
-        # This can be tested by pinging 127.0.0.1
+        # Filters out the echo request itself. 
+        # This can be tested by pinging 127.0.0.1 
         # You'll see your own request
         if type != 8 and packetID == ID:
             bytesInDouble = struct.calcsize(b"d")
@@ -170,7 +170,7 @@ def send_one_ping(my_socket, dest_addr, ID):
     """
     Send one ping to the given >dest_addr<.
     """
-    dest_addr = socket.gethostbyname(dest_addr)
+    dest_addr  =  socket.gethostbyname(dest_addr)
 
     # Header is type (8), code (8), checksum (16), id (16), sequence (16)
     my_checksum = 0
@@ -190,7 +190,7 @@ def send_one_ping(my_socket, dest_addr, ID):
         b"bbHHh", ICMP_ECHO_REQUEST, 0, socket.htons(my_checksum), ID, 1
     )
     packet = header + data
-    my_socket.sendto(packet, (dest_addr, 1))  # Don't know about the 1
+    my_socket.sendto(packet, (dest_addr, 1)) # Don't know about the 1
 
 
 def do_one(dest_addr, timeout):
@@ -209,7 +209,7 @@ def do_one(dest_addr, timeout):
     return delay
 
 
-def verbose_ping(dest_addr, timeout=2, count=4, interval=1.0):
+def verbose_ping(dest_addr, timeout = 2, count = 4,interval=1.0):
     """
     Send >count< ping to >dest_addr< with the given >timeout< and display
     the result.
@@ -223,42 +223,26 @@ def verbose_ping(dest_addr, timeout=2, count=4, interval=1.0):
             print("failed. (socket error: '%s')" % e[1])
             break
 
-        if delay is None:
+        if delay == None:
             print("failed. (timeout within %ssec.)" % timeout)
         else:
-            time.sleep(min(0, interval - delay))
-            print("got ping in %0.4fms\n" % (delay * 1000))
+            time.sleep(min(0,interval-delay))
+            print("got ping in %0.4fms\n" % (delay*1000))
             ping_succeeded = True
     return ping_succeeded
 
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(
-        description="send ICMP ECHO_REQUEST to network hosts")
+    parser = argparse.ArgumentParser(description="send ICMP ECHO_REQUEST to network hosts")
     parser.add_argument("destination", help="host to ping")
-    parser.add_argument(
-        "-W",
-        "--timeout",
-        help="specify a timeout",
-        type=float,
-        default=2)
-    parser.add_argument(
-        "-c",
-        "--count",
-        help="stop after sending this much ECHO_REQUEST packkets",
-        type=int,
-        default=5)
-    parser.add_argument(
-        "-i",
-        "--interval",
-        help="Wait the specified time between each ping",
-        type=float,
-        default=1.0)
-
+    parser.add_argument("-W", "--timeout", help="specify a timeout", type=float, default=2)
+    parser.add_argument("-c", "--count", help="stop after sending this much ECHO_REQUEST packkets", type=int, default=5)
+    parser.add_argument("-i", "--interval", help="Wait the specified time between each ping", type=float, default=1.0)
+    
     ns = parser.parse_args()
 
-    s = verbose_ping(ns.destination, ns.timeout, ns.count, ns.interval)
+    s = verbose_ping(ns.destination, ns.timeout, ns.count ,ns.interval)
     if s:
         sys.exit(0)
     else:

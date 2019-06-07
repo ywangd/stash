@@ -46,7 +46,7 @@ def diff3(yourtext, origtext, theirtext):
     # diff result => [(cmd, loA, hiA, loB, hiB), ...]
     d2 = (diff(origtext, yourtext), diff(origtext, theirtext))
     d3 = []
-    r3 = [None, 0, 0, 0, 0, 0, 0]
+    r3 = [None,  0, 0,  0, 0,  0, 0]
     while d2[0] or d2[1]:
         # find a continual range in origtext lo2..hi2
         # changed by yourtext or by theirtext.
@@ -55,18 +55,14 @@ def diff3(yourtext, origtext, theirtext):
         #  origtext     ...L!!!!!!!!!!!!!!!!!!!!H...
         #     d2[1]          222222   22  2222222
         r2 = ([], [])
-        if not d2[0]:
-            i = 1
+        if not d2[0]: i = 1
         else:
-            if not d2[1]:
-                i = 0
-            else:
-                if d2[0][0][1] <= d2[1][0][1]:
-                    i = 0
-                else:
-                    i = 1
-        j = i
-        k = xor(i, 1)
+            if not d2[1]: i = 0
+            else: 
+                if d2[0][0][1] <= d2[1][0][1]: i = 0
+                else: i = 1
+        j  = i
+        k  = xor(i, 1)
         hi = d2[j][0][2]
         r2[j].append(d2[j].pop(0))
         while d2[k] and d2[k][0][1] <= hi + 1:
@@ -74,9 +70,9 @@ def diff3(yourtext, origtext, theirtext):
             r2[k].append(d2[k].pop(0))
             if hi < hi_k:
                 hi = hi_k
-                j = k
-                k = xor(k, 1)
-        lo2 = r2[i][0][1]
+                j  = k
+                k  = xor(k, 1)
+        lo2 = r2[i][ 0][1]
         hi2 = r2[j][-1][2]
         # take the corresponding ranges in yourtext lo0..hi0
         # and in theirtext lo1..hi1.
@@ -87,13 +83,13 @@ def diff3(yourtext, origtext, theirtext):
         #      d2[1]          222222   22  2222222
         #  theirtext          ...L!!!!!!!!!!!!!!!!H...
         if r2[0]:
-            lo0 = r2[0][0][3] - r2[0][0][1] + lo2
+            lo0 = r2[0][ 0][3] - r2[0][ 0][1] + lo2
             hi0 = r2[0][-1][4] - r2[0][-1][2] + hi2
         else:
             lo0 = r3[2] - r3[6] + lo2
             hi0 = r3[2] - r3[6] + hi2
         if r2[1]:
-            lo1 = r2[1][0][3] - r2[1][0][1] + lo2
+            lo1 = r2[1][ 0][3] - r2[1][ 0][1] + lo2
             hi1 = r2[1][-1][4] - r2[1][-1][2] + hi2
         else:
             lo1 = r3[4] - r3[6] + lo2
@@ -114,12 +110,10 @@ def diff3(yourtext, origtext, theirtext):
                 if xor(ok0, ok1) or (ok0 and yourtext[i0] != theirtext[i1]):
                     cmd = 'A'
                     break
-        d3.append((cmd, lo0, hi0, lo1, hi1, lo2, hi2))
+        d3.append((cmd,  lo0, hi0,  lo1, hi1,  lo2, hi2))
     return d3
 
 # ----------------------------------------------------------------------------
-
-
 def merge(yourtext, origtext, theirtext):
     res = {'conflict': 0, 'body': []}
     d3 = diff3(yourtext, origtext, theirtext)
@@ -142,13 +136,11 @@ def merge(yourtext, origtext, theirtext):
     return res
 
 # ----------------------------------------------------------------------------
-
-
 def _conflict_range(text3, r3, res):
-    text_a = []  # their text
+    text_a = [] # their text
     for i in range(r3[3], r3[4] + 1):
         text_a.append(text3[1][i - 1])
-    text_b = []  # your text
+    text_b = [] # your text
     for i in range(r3[1], r3[2] + 1):
         text_b.append(text3[0][i - 1])
     d = diff(text_a, text_b)
@@ -187,17 +179,12 @@ def _conflict_range(text3, r3, res):
     return res
 
 # ----------------------------------------------------------------------------
-
-
 def _assoc_range(diff, diff_type):
     for d in diff:
-        if d[0] == diff_type:
-            return d
+        if d[0] == diff_type: return d
     return None
 
 # ----------------------------------------------------------------------------
-
-
 def _diff_heckel(text_a, text_b):
     """Two-way diff based on the algorithm by P. Heckel.
 
@@ -207,36 +194,32 @@ def _diff_heckel(text_a, text_b):
     @returns TODO
 
     """
-    d = []
+    d    = [];
     uniq = [(len(text_a), len(text_b))]
     (freq, ap, bp) = ({}, {}, {})
     for i in range(len(text_a)):
         s = text_a[i]
-        freq[s] = freq.get(s, 0) + 2
-        ap[s] = i
+        freq[s] = freq.get(s, 0) + 2;
+        ap  [s] = i;
     for i in range(len(text_b)):
         s = text_b[i]
-        freq[s] = freq.get(s, 0) + 3
-        bp[s] = i
+        freq[s] = freq.get(s, 0) + 3;
+        bp  [s] = i;
     for s, x in freq.items():
-        if x == 5:
-            uniq.append((ap[s], bp[s]))
+        if x == 5: uniq.append((ap[s], bp[s]))
     (freq, ap, bp) = ({}, {}, {})
     uniq.sort(key=lambda x: x[0])
     (a1, b1) = (0, 0)
     while a1 < len(text_a) and b1 < len(text_b):
-        if text_a[a1] != text_b[b1]:
-            break
+        if text_a[a1] != text_b[b1]: break
         a1 += 1
         b1 += 1
     for a_uniq, b_uniq in uniq:
-        if a_uniq < a1 or b_uniq < b1:
-            continue
+        if a_uniq < a1 or b_uniq < b1: continue
         (a0, b0) = (a1, b1)
         (a1, b1) = (a_uniq - 1, b_uniq - 1)
         while a0 <= a1 and b0 <= b1:
-            if text_a[a1] != text_b[b1]:
-                break
+            if text_a[a1] != text_b[b1]: break
             a1 -= 1
             b1 -= 1
         if a0 <= a1 and b0 <= b1:
@@ -247,12 +230,10 @@ def _diff_heckel(text_a, text_b):
             d.append(('a', a0 + 1, a0, b0 + 1, b1 + 1))
         (a1, b1) = (a_uniq + 1, b_uniq + 1)
         while a1 < len(text_a) and b1 < len(text_b):
-            if text_a[a1] != text_b[b1]:
-                break
+            if text_a[a1] != text_b[b1]: break
             a1 += 1
             b1 += 1
     return d
 
-
 # ----------------------------------------------------------------------------
-diff = _diff_heckel  # default two-way diff function used by diff3()
+diff = _diff_heckel # default two-way diff function used by diff3()

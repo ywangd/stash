@@ -7,7 +7,7 @@ from stash.tests.stashtest import StashTestCase
 
 
 class ThreadsTests(StashTestCase):
-
+	
     setup_commands = ['BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH']
 
     def test_101(self):
@@ -35,12 +35,12 @@ sleeping ... 1
         change_cnt = 0
         prev_line = None
         for cur_line in outs.getvalue().splitlines():
-            if prev_line is None:
+            if prev_line is None: 
                 prev_line = cur_line
             elif prev_line != cur_line:
                 change_cnt += 1
                 prev_line = cur_line
-
+        
         self.assertTrue(change_cnt > 2, 'Output do not interleave')
 
     def test_103(self):

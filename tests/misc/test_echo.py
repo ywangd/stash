@@ -7,7 +7,6 @@ from stash.tests.stashtest import StashTestCase
 
 class EchoTests(StashTestCase):
     """tests for the 'echo' command."""
-
     def do_echo(self, s):
         """echo a string and return the echoed output."""
         return self.run_command("echo " + s, exitcode=0)

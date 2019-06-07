@@ -107,7 +107,7 @@ def _parse_version(vs):
         "subversion": rsubpriority,
         "postrelease": (subpriority if is_post else None),
         "devrelease": (devnum if isdev else None),
-    }
+        }
 
 
 def sort_versions(versionlist):
@@ -118,8 +118,7 @@ def sort_versions(versionlist):
     :return: the sorted list
     :rtype: list of str
     """
-    return sorted(versionlist, key=lambda s: Version.parse(s)
-                  if isinstance(s, str) else s, reverse=True)
+    return sorted(versionlist, key=lambda s: Version.parse(s) if isinstance(s, str) else s, reverse=True)
 
 
 class Version(object):
@@ -139,8 +138,7 @@ class Version(object):
         TYPE_RELEASE_CANDIDATE: 2,   # release candidate
     }
 
-    def __init__(self, epoch=0, versiontuple=(), rtype=None,
-                 subversion=0, postrelease=None, devrelease=None):
+    def __init__(self, epoch=0, versiontuple=(), rtype=None, subversion=0, postrelease=None, devrelease=None):
         assert isinstance(epoch, int)
         assert isinstance(versiontuple, tuple)
         assert isinstance(rtype, str) or rtype is None
@@ -194,8 +192,7 @@ class Version(object):
         :rtype: tuple
         """
         rpriority = self.RELEASE_TYPE_PRIORITIES.get(self.rtype, 0)
-        return (self.epoch, self.versiontuple, rpriority, self.subversion,
-                self.is_postrelease, self.postrelease, not self.is_devrelease, self.devrelease)
+        return (self.epoch, self.versiontuple, rpriority, self.subversion, self.is_postrelease, self.postrelease, not self.is_devrelease, self.devrelease)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -226,6 +223,8 @@ class Version(object):
             return self._get_sortkey() <= other._get_sortkey()
         else:
             return False
+
+
 
     def __str__(self):
         """return a string representation of this version"""
@@ -264,11 +263,10 @@ class VersionSpecifier(object):
         '>': operator.gt,
         '==': operator.eq,
         '~=': operator.ge,
-    }
+        }
 
     def __init__(self, version_specs):
-        self.specs = [(VersionSpecifier.OPS[op], version)
-                      for (op, version) in version_specs]
+        self.specs = [(VersionSpecifier.OPS[op], version) for (op, version) in version_specs]
         self.str = str(version_specs)
 
     def __str__(self):
@@ -287,32 +285,20 @@ class VersionSpecifier(object):
             if len(requirement) == 1:
                 requirement = requirement[0]
             else:
-                raise ValueError(
-                    "Unknown requirement format: " +
-                    repr(requirement))
+                raise ValueError("Unknown requirement format: " + repr(requirement))
         # remove all whitespaces and '()'
         requirement = requirement.replace(' ', '')
         requirement = requirement.replace("(", "").replace(")", "")
         if requirement.startswith("#"):
             # ignore
             return None, None, []
-
-        def PAREN(x): return '(' + x + ')'
-        version_cmp = PAREN(
-            '?:' +
-            '|'.join(
-                ('<=',
-                 '<',
-                 '!=',
-                 '>=',
-                 '>',
-                 '~=',
-                 '==')))
+        PAREN = lambda x: '(' + x + ')'
+        version_cmp = PAREN('?:' + '|'.join(('<=', '<', '!=', '>=', '>', '~=', '==')))
         name_end_res = re.search(version_cmp, requirement)
         if name_end_res is None:
             if "[" in requirement:
                 si = requirement.find("[")
-                extra_s = requirement[si + 1:-1]
+                extra_s = requirement[si+1:-1]
                 requirement = requirement[:si]
                 if len(extra_s) == 0:
                     extras = []
@@ -325,7 +311,7 @@ class VersionSpecifier(object):
         name, specs_s = requirement[:name_end], requirement[name_end:]
         if "[" in specs_s:
             si = specs_s.find("[")
-            extra_s = specs_s[si + 1:-1]
+            extra_s = specs_s[si+1:-1]
             specs_s = specs_s[:si]
             if len(extra_s) == 0:
                 extras = []
@@ -350,14 +336,13 @@ class VersionSpecifier(object):
         :return: whether the version is allowed or not
         :rtype: boolean
         """
-        # return all([op(Version.parse(version), Version.parse(ver)) for op,
-        # ver in self.specs])
+        # return all([op(Version.parse(version), Version.parse(ver)) for op, ver in self.specs])
         matches = True
         for op, ver in self.specs:
             try:
                 vi = Version.parse(version)
                 evi = Version.parse(ver)
-            except BaseException:
+            except:
                 # warning: wildcard except!
                 # fallback to old, string-based comparsion
                 if not op(version, ver):

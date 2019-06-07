@@ -34,3 +34,4 @@ class PwdTests(StashTestCase):
         """tests 'pwd --basename'."""
         output = self.run_command("pwd --basename").replace("\n", "")
         self.assertEqual(output, os.path.basename(os.getcwd()))
+

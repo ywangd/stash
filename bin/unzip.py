@@ -6,15 +6,10 @@ import sys
 import zipfile
 import argparse
 
-
 def main(args):
     ap = argparse.ArgumentParser()
 
-    ap.add_argument(
-        '-d',
-        '--exdir',
-        nargs='?',
-        help='extract files into exdir')
+    ap.add_argument('-d', '--exdir', nargs='?', help='extract files into exdir')
     ap.add_argument('-v', '--verbose',
                     action='store_true',
                     help='be more chatty')
@@ -33,7 +28,7 @@ def main(args):
         with open(ns.zipfile, "rb") as f:
             try:
                 pk_check = f.read(2)
-            except BaseException:
+            except:
                 pk_check = ''
 
         if pk_check != b'PK':
@@ -58,13 +53,10 @@ def main(args):
         with open(ns.zipfile, 'rb') as zipfp:
             try:
                 zipf = zipfile.ZipFile(zipfp)
-                # check for a leading directory common to all files and remove
-                # it
-                dirnames = [os.path.join(os.path.dirname(x), '')
-                            for x in zipf.namelist()]
+                # check for a leading directory common to all files and remove it
+                dirnames = [os.path.join(os.path.dirname(x), '') for x in zipf.namelist()]
                 common_dir = os.path.commonprefix(dirnames or ['/'])
-                # Check to make sure there aren't 2 or more sub directories
-                # with the same prefix
+                # Check to make sure there aren't 2 or more sub directories with the same prefix
                 if not common_dir.endswith('/'):
                     common_dir = os.path.join(os.path.dirname(common_dir), '')
                 for name in zipf.namelist():
@@ -95,7 +87,7 @@ def main(args):
 
                     if ns.verbose or ns.list:
                         print(fn)
-            except BaseException:
+            except:
                 print("%s: zip file is corrupt" % ns.zipfile)
 
 

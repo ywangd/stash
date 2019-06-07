@@ -41,13 +41,13 @@ def get_hash(fileobj):
 def check_list(fileobj):
     correct = True
     for line in fileobj:
-        match = re.match(r'(\w+)[ \t]+(.+)', line)
+        match = re.match(r'(\w+)[ \t]+(.+)',line)
         try:
-            with open(match.group(2), 'rb') as f1:
+            with open(match.group(2),'rb') as f1:
                 if match.group(1) == get_hash(f1):
-                    print(match.group(2) + ': Pass')
+                    print(match.group(2)+': Pass')
                 else:
-                    print(match.group(2) + ': Fail')
+                    print(match.group(2)+': Fail')
                     correct = False
         except Exception:
             print('Invalid format.')
@@ -66,13 +66,9 @@ def make_file(txt):
 
 
 ap = argparse.ArgumentParser()
-ap.add_argument('-c', '--check', action='store_true', default=False,
+ap.add_argument('-c','--check',action='store_true',default=False,
                 help='''Check a file with sha1 hashes and file names for a match. format: hash filename''')
-ap.add_argument(
-    'file',
-    action='store',
-    nargs='*',
-    help='String or file to hash.')
+ap.add_argument('file',action='store',nargs='*',help='String or file to hash.')
 args = ap.parse_args(sys.argv[1:])
 
 if args.check:
@@ -93,7 +89,7 @@ else:
         for arg in args.file:
             if os.path.isfile(arg):
                 with open(arg, 'rb') as f:
-                    print(get_hash(f) + ' ' + arg)
+                    print(get_hash(f)+' '+arg)
             elif arg == "-":
                 print(get_hash(make_file(sys.stdin.read())))
             else:

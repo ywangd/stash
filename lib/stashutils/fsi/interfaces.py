@@ -11,28 +11,28 @@ from stashutils.core import load_from_dir
 
 # map type -> FSI_class
 FILESYSTEM_TYPES = {
-    "local": LocalFSI,
-    "Local": LocalFSI,
-    "FTP": FTPFSI,
-    "ftp": FTPFSI,
-    "dropbox": DropboxFSI,
-    "DropBox": DropboxFSI,
-    "Dropbox": DropboxFSI,
-    "zip": ZipfileFSI,
-    "Zip": ZipfileFSI,
-    "ZIP": ZipfileFSI,
-    "zipfile": ZipfileFSI,
+	"local": LocalFSI,
+	"Local": LocalFSI,
+	"FTP": FTPFSI,
+	"ftp": FTPFSI,
+	"dropbox": DropboxFSI,
+	"DropBox": DropboxFSI,
+	"Dropbox": DropboxFSI,
+	"zip": ZipfileFSI,
+	"Zip": ZipfileFSI,
+	"ZIP": ZipfileFSI,
+	"zipfile": ZipfileFSI,
 }
 
 # update with extensions
 extensions = load_from_dir(
-    dirpath=_STASH_EXTENSION_FSI_PATH, varname="FSIS",
-)
+	dirpath=_STASH_EXTENSION_FSI_PATH, varname="FSIS",
+	)
 for ext in extensions:
-    if not isinstance(ext, dict):
-        continue
-    else:
-        FILESYSTEM_TYPES.update(ext)
+	if not isinstance(ext, dict):
+		continue
+	else:
+		FILESYSTEM_TYPES.update(ext)
 
 # alias used by mc
 INTERFACES = FILESYSTEM_TYPES

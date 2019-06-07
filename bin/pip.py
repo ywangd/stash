@@ -19,7 +19,6 @@ List of sub-commands:
         update      update an installed package
 """
 from __future__ import print_function
-from six.moves.configparser import SafeConfigParser, NoSectionError
 import sys
 import os
 import ast
@@ -68,10 +67,8 @@ if IN_PYTHONISTA:
     else:
         SITE_PACKAGES_DIR_NAME = 'site-packages-2'
     OLD_SITE_PACKAGES_DIR_NAME = 'site-packages'
-    SITE_PACKAGES_FOLDER = os.path.expanduser(
-        '~/Documents/{}'.format(SITE_PACKAGES_DIR_NAME))
-    OLD_SITE_PACKAGES_FOLDER = os.path.expanduser(
-        '~/Documents/{}'.format(OLD_SITE_PACKAGES_DIR_NAME))
+    SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(SITE_PACKAGES_DIR_NAME))
+    OLD_SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(OLD_SITE_PACKAGES_DIR_NAME))
 
 else:
     PYTHONISTA_BUNDLED_MODULES = []
@@ -95,7 +92,6 @@ DIST_ALLOW_WHL = 2
 DIST_PREFER_SRC = 4
 DIST_PREFER_WHL = 8
 DIST_DEFAULT = DIST_ALLOW_SRC | DIST_ALLOW_WHL | DIST_PREFER_WHL
-
 
 def _setup_stub_(*args, **kwargs):
     setuptools = sys.modules['setuptools']
@@ -177,7 +173,7 @@ class PackageFinder(object):
         """
         Return all dirs in base_path that might be packages.
         """
-        def has_dot(name): return '.' in name
+        has_dot = lambda name: '.' in name
         for root, dirs, files in os.walk(base_path, followlinks=True):
             # Exclude directories that contain a period, as they cannot be
             #  packages. Mutate the list to avoid traversal.
@@ -189,9 +185,9 @@ class PackageFinder(object):
     def _find_packages_iter(cls, base_path):
         candidates = cls._candidate_dirs(base_path)
         return (
-            path.replace(os.path.sep, '.')
-            for path in candidates
-            if cls._looks_like_package(os.path.join(base_path, path))
+        path.replace(os.path.sep, '.')
+        for path in candidates
+        if cls._looks_like_package(os.path.join(base_path, path))
         )
 
     @staticmethod
@@ -255,48 +251,48 @@ def fake_setuptools_modules():
     Created a bunch of stub setuptools modules
     """
     setuptools_modules = [
-        'setuptools',
-        'setuptools.command',
-        'setuptools.command.alias',
-        'setuptools.command.bdist_egg',
-        'setuptools.command.bdist_rpm',
-        'setuptools.command.bdist_wininst',
-        'setuptools.command.build_ext',
-        'setuptools.command.build_py',
-        'setuptools.command.develop',
-        'setuptools.command.easy_install',
-        'setuptools.command.egg_info',
-        'setuptools.command.install',
-        'setuptools.depends.install_egg_info',
-        'setuptools.command.install_lib',
-        'setuptools.command.install_scripts',
-        'setuptools.command.register',
-        'setuptools.command.rotate',
-        'setuptools.command.saveopts',
-        'setuptools.command.sdist',
-        'setuptools.command.setopt',
-        'setuptools.command.test',
-        'setuptools.command.upload',
-        'setuptools.command.upload_docs',
-        'setuptools.extern',
-        'setuptools.dist',
-        'setuptools.extension',
-        'setuptools.launch',
-        'setuptools.lib2to3_ex',
-        'setuptools.msvc9_support',
-        'setuptools.package_index',
-        'setuptools.py26compat',
-        'setuptools.py27compat',
-        'setuptools.py31compat',
-        'setuptools.sandbox',
-        'setuptools.site-patch',
-        'setuptools.ssl_support',
-        'setuptools.unicode_utils',
-        'setuptools.utils',
-        'setuptools.version',
-        'setuptools.windows_support',
-        # 'pkg_resources',
-        # 'pkg_resources.extern',
+    'setuptools',
+    'setuptools.command',
+    'setuptools.command.alias',
+    'setuptools.command.bdist_egg',
+    'setuptools.command.bdist_rpm',
+    'setuptools.command.bdist_wininst',
+    'setuptools.command.build_ext',
+    'setuptools.command.build_py',
+    'setuptools.command.develop',
+    'setuptools.command.easy_install',
+    'setuptools.command.egg_info',
+    'setuptools.command.install',
+    'setuptools.depends.install_egg_info',
+    'setuptools.command.install_lib',
+    'setuptools.command.install_scripts',
+    'setuptools.command.register',
+    'setuptools.command.rotate',
+    'setuptools.command.saveopts',
+    'setuptools.command.sdist',
+    'setuptools.command.setopt',
+    'setuptools.command.test',
+    'setuptools.command.upload',
+    'setuptools.command.upload_docs',
+    'setuptools.extern',
+    'setuptools.dist',
+    'setuptools.extension',
+    'setuptools.launch',
+    'setuptools.lib2to3_ex',
+    'setuptools.msvc9_support',
+    'setuptools.package_index',
+    'setuptools.py26compat',
+    'setuptools.py27compat',
+    'setuptools.py31compat',
+    'setuptools.sandbox',
+    'setuptools.site-patch',
+    'setuptools.ssl_support',
+    'setuptools.unicode_utils',
+    'setuptools.utils',
+    'setuptools.version',
+    'setuptools.windows_support',
+    # 'pkg_resources',
+    # 'pkg_resources.extern',
     ]
 
     for m in setuptools_modules:
@@ -307,16 +303,16 @@ def fake_setuptools_modules():
     import distutils.core
     import distutils.util
     distutils_command_modules = [
-        'distutils.command.bdist'
-        'distutils.command.bdist_dumb',
-        'distutils.command.bdist_msi',
-        'distutils.command.bdist_rpm',
-        'distutils.command.bdist_wininst',
-        'distutils.command.build',
-        'distutils.command.build_clib',
-        'distutils.command.build_ext',
-        'distutils.command.build_py',
-        'distutils.command.build_scripts',
+    'distutils.command.bdist'
+    'distutils.command.bdist_dumb',
+    'distutils.command.bdist_msi',
+    'distutils.command.bdist_rpm',
+    'distutils.command.bdist_wininst',
+    'distutils.command.build',
+    'distutils.command.build_clib',
+    'distutils.command.build_ext',
+    'distutils.command.build_py',
+    'distutils.command.build_scripts',
     ]
     for m in distutils_command_modules:
         fake_module(m)
@@ -333,7 +329,7 @@ def ensure_pkg_resources():
         try:
             print('Approximating pkg_resources ...')
             GitHubRepository().install('ywangd/pkg_resources', None)
-        except BaseException:  # silently fail as it may not be important or necessary
+        except:  # silently fail as it may not be important or necessary
             pass
 
 
@@ -359,6 +355,7 @@ def save_current_sys_modules():
 
 
 # noinspection PyUnresolvedReferences
+from six.moves.configparser import SafeConfigParser, NoSectionError
 
 
 class CIConfigParer(SafeConfigParser):
@@ -388,13 +385,11 @@ class CIConfigParer(SafeConfigParser):
 
     def get(self, name, option_name, *args, **kwargs):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.get(
-            self, section_name, option_name, *args, **kwargs)
+        return SafeConfigParser.get(self, section_name, option_name, *args, **kwargs)
 
     def set(self, name, option_name, value):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.set(
-            self, section_name, option_name, value.replace('%', '%%'))
+        return SafeConfigParser.set(self, section_name, option_name, value.replace('%', '%%'))
 
     def remove_section(self, name):
         section_name = self._get_section_name(name)
@@ -464,18 +459,15 @@ class PackageConfigHandler(object):
     def get_dependencies(self, section_name):
         if self.parser.has_option(section_name, 'dependency'):
             dependencies = self.parser.get(section_name, 'dependency').strip()
-            return set(dependencies.split(',')
-                       ) if dependencies != '' else set()
+            return set(dependencies.split(',')) if dependencies != '' else set()
         else:
             return None
 
     def get_all_dependencies(self, exclude_module=()):
         all_dependencies = set()
         for section_name in self.parser.sections():
-            if section_name not in exclude_module and self.parser.has_option(
-                    section_name, 'dependency'):
-                dependencies = self.parser.get(
-                    section_name, 'dependency').strip()
+            if section_name not in exclude_module and self.parser.has_option(section_name, 'dependency'):
+                dependencies = self.parser.get(section_name, 'dependency').strip()
                 if dependencies != '':
                     for dep in dependencies.split(','):
                         all_dependencies.add(dep)
@@ -509,10 +501,10 @@ class ArchiveFileInstaller(object):
         def visit_Call(self, node):
             func_name = self._get_possible_setup_name(node)
             if func_name is not None and \
-                    (func_name == 'setup' or func_name.endswith('.setup')):
+            (func_name == 'setup' or func_name.endswith('.setup')):
                 node.func = ast.copy_location(
-                    ast.Name('_setup_stub_', ast.Load()),
-                    node.func)
+                ast.Name('_setup_stub_', ast.Load()),
+                node.func)
             return node
 
         def _get_possible_setup_name(self, node):
@@ -548,9 +540,7 @@ class ArchiveFileInstaller(object):
         extracted_folder = self._unzip(pkg_name, archive_filename)
         try:
             # locate the setup file
-            src_dir = os.path.join(
-                extracted_folder,
-                os.listdir(extracted_folder)[0])
+            src_dir = os.path.join(extracted_folder, os.listdir(extracted_folder)[0])
             setup_filename = os.path.join(src_dir, 'setup.py')
 
             try:
@@ -571,29 +561,27 @@ class ArchiveFileInstaller(object):
 
                 if os.path.isdir(os.path.join(src_dir, pkg_name)):
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(src_dir, pkg_name),
-                        os.path.join(self.site_packages, pkg_name)
+                    os.path.join(src_dir, pkg_name),
+                    os.path.join(self.site_packages, pkg_name)
                     )
                     return [os.path.join(self.site_packages, pkg_name)], []
 
                 elif os.path.isfile(os.path.join(src_dir, pkg_name + '.py')):
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(src_dir, pkg_name + '.py'),
-                        os.path.join(self.site_packages, pkg_name + '.py')
+                    os.path.join(src_dir, pkg_name + '.py'),
+                    os.path.join(self.site_packages, pkg_name + '.py')
                     )
-                    return [os.path.join(
-                        self.site_packages, pkg_name + '.py')], []
+                    return [os.path.join(self.site_packages, pkg_name + '.py')], []
 
                 elif os.path.isdir(os.path.join(src_dir, 'src', pkg_name)):
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(src_dir, 'src', pkg_name),
-                        os.path.join(self.site_packages, pkg_name)
+                    os.path.join(src_dir, 'src', pkg_name),
+                    os.path.join(self.site_packages, pkg_name)
                     )
                     return [os.path.join(self.site_packages, pkg_name)], []
 
                 else:
-                    raise PipError(
-                        'Cannot locate packages. Manual installation required.')
+                    raise PipError('Cannot locate packages. Manual installation required.')
 
         finally:
             shutil.rmtree(extracted_folder)
@@ -633,11 +621,11 @@ class ArchiveFileInstaller(object):
             pkg_resources = None
 
         namespace = {
-            '_setup_stub_': _setup_stub_,
-            '__file__': filename,
-            '__name__': '__main__',
-            'setup_args': None,
-            'setup_kwargs': None,
+        '_setup_stub_': _setup_stub_,
+        '__file__': filename,
+        '__name__': '__main__',
+        'setup_args': None,
+        'setup_kwargs': None,
         }
 
         source_folder = os.path.dirname(filename)
@@ -646,8 +634,7 @@ class ArchiveFileInstaller(object):
         codeobj = compile(tree, filename, 'exec')
 
         # Some setup files import the package to be installed and sometimes opens a file
-        # in the source folder. So we modify sys.path and change directory into
-        # source folder.
+        # in the source folder. So we modify sys.path and change directory into source folder.
         saved_cwd = os.getcwd()
         saved_sys_path = sys.path[:]
         os.chdir(source_folder)
@@ -670,8 +657,7 @@ class ArchiveFileInstaller(object):
         py_modules = kwargs['py_modules'] if 'py_modules' in kwargs else []
 
         if not packages and not py_modules:
-            raise PipError(
-                'failed to find packages or py_modules arguments in setup call')
+            raise PipError('failed to find packages or py_modules arguments in setup call')
 
         package_dirs = kwargs.get('package_dir', {})
         use_2to3 = kwargs.get('use_2to3', False) and six.PY3
@@ -685,11 +671,7 @@ class ArchiveFileInstaller(object):
         for script in scripts:
             if self.verbose:
                 print("Handling commandline script: {s}".format(s=script))
-            cmdname = script.replace(
-                os.path.dirname(script),
-                "").replace(
-                "/",
-                "")
+            cmdname = script.replace(os.path.dirname(script), "").replace("/", "")
             if not "." in cmdname:
                 cmdname += ".py"
             scriptpath = os.path.join(source_folder, script)
@@ -702,13 +684,12 @@ class ArchiveFileInstaller(object):
         for p in sorted(packages):  # folders or files under source root
 
             if p == '':  # no packages just files
-                from_folder = os.path.join(
-                    source_folder, package_dirs.get(p, ''))
+                from_folder = os.path.join(source_folder, package_dirs.get(p, ''))
                 for f in ArchiveFileInstaller._find_package_files(from_folder):
                     target_file = os.path.join(self.site_packages, f)
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(from_folder, f),
-                        target_file
+                    os.path.join(from_folder, f),
+                    target_file
                     )
                     files_installed.append(target_file)
                     if use_2to3:
@@ -718,29 +699,27 @@ class ArchiveFileInstaller(object):
                 target_dir = os.path.join(self.site_packages, p)
                 if p in package_dirs:
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(source_folder, package_dirs[p]),
-                        target_dir
+                    os.path.join(source_folder, package_dirs[p]),
+                    target_dir
                     )
 
                 elif '' in package_dirs:
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(source_folder, package_dirs[''], p),
-                        target_dir
+                    os.path.join(source_folder, package_dirs[''], p),
+                    target_dir
                     )
 
                 else:
                     ArchiveFileInstaller._safe_move(
-                        os.path.join(source_folder, p),
-                        target_dir
+                    os.path.join(source_folder, p),
+                    target_dir
                     )
                 files_installed.append(target_dir)
                 if use_2to3:
-                    _stash(
-                        """find {} --name '.py' | xargs -n 1 -I %% 2to3 -w %% > /dev/null""".format(target_dir))
+                    _stash("""find {} --name '.py' | xargs -n 1 -I %% 2to3 -w %% > /dev/null""".format(target_dir))
 
         py_modules = ArchiveFileInstaller._consolidated_packages(py_modules)
-        for p in sorted(
-                py_modules):  # files or folders where the file resides, e.g. ['file', 'folder.file']
+        for p in sorted(py_modules):  # files or folders where the file resides, e.g. ['file', 'folder.file']
 
             if '' in package_dirs:
                 p = os.path.join(package_dirs[''], p)
@@ -748,19 +727,18 @@ class ArchiveFileInstaller(object):
             if os.path.isdir(os.path.join(source_folder, p)):  # folder
                 target_dir = os.path.join(self.site_packages, p)
                 ArchiveFileInstaller._safe_move(
-                    os.path.join(source_folder, p),
-                    target_dir
+                os.path.join(source_folder, p),
+                target_dir
                 )
                 files_installed.append(target_dir)
                 if use_2to3:
-                    _stash(
-                        """find {} --name '.py' | xargs -n 1 -I %% 2to3 -w %% > /dev/null""".format(target_dir))
+                    _stash("""find {} --name '.py' | xargs -n 1 -I %% 2to3 -w %% > /dev/null""".format(target_dir))
 
             else:  # file
                 target_file = os.path.join(self.site_packages, p + '.py')
                 ArchiveFileInstaller._safe_move(
-                    os.path.join(source_folder, p + '.py'),
-                    target_file
+                os.path.join(source_folder, p + '.py'),
+                target_file
                 )
                 files_installed.append(target_file)
                 if use_2to3:
@@ -770,11 +748,9 @@ class ArchiveFileInstaller(object):
         entry_points = kwargs.get("entry_points", {})
         if isinstance(entry_points, (str, unicode)):
             if pkg_resources is not None:
-                entry_points = {
-                    s: c for s, c in pkg_resources.split_sections(entry_points)}
+                entry_points = {s: c for s, c in pkg_resources.split_sections(entry_points)}
             else:
-                print(
-                    "Warning: pkg_resources not available, skipping entry_points definitions.")
+                print("Warning: pkg_resources not available, skipping entry_points definitions.")
                 entry_points = {}
         for epn in entry_points:
             if self.verbose:
@@ -790,8 +766,8 @@ class ArchiveFileInstaller(object):
                         name += ".py"
                     desc = kwargs.get("description", "")
                     path = create_command(
-                        name,
-                        (u"""'''%s'''
+                    name,
+                    (u"""'''%s'''
 from %s import %s
 
 if __name__ == "__main__":
@@ -851,8 +827,7 @@ if __name__ == "__main__":
             raise PipError('cannot locate source folder/file: {}'.format(src))
         if os.path.exists(dest):
             if NO_OVERWRITE:
-                raise PipError(
-                    'cannot overwrite existing target, manual removal required: {}'.format(dest))
+                raise PipError('cannot overwrite existing target, manual removal required: {}'.format(dest))
             else:
                 if os.path.isdir(dest):
                     shutil.rmtree(dest)
@@ -875,11 +850,8 @@ class PackageRepository(object):
     def __init__(self, site_packages=SITE_PACKAGES_FOLDER, verbose=False):
         self.site_packages = site_packages
         self.verbose = verbose
-        self.config = PackageConfigHandler(
-            site_packages=self.site_packages,
-            verbose=self.verbose)
-        self.installer = ArchiveFileInstaller(
-            site_packages=self.site_packages, verbose=self.verbose)
+        self.config = PackageConfigHandler(site_packages=self.site_packages, verbose=self.verbose)
+        self.installer = ArchiveFileInstaller(site_packages=self.site_packages, verbose=self.verbose)
 
     def versions(self, pkg_name):
         raise PipError('versions only available for PyPI packages')
@@ -890,30 +862,22 @@ class PackageRepository(object):
     def install(self, pkg_name, ver_spec, dist=DIST_DEFAULT, extras=[]):
         raise PipError('Action Not Available: install')
 
-    def _install(self, pkg_name, pkg_info, archive_filename,
-                 dependency_dist=DIST_DEFAULT, extras=[]):
+    def _install(self, pkg_name, pkg_info, archive_filename, dependency_dist=DIST_DEFAULT, extras=[]):
         if archive_filename.endswith(".whl"):
-            print("Installing wheel: {}...".format(
-                os.path.basename(archive_filename)))
-            wheel = Wheel(
-                archive_filename,
-                verbose=self.verbose,
-                extras=extras)
+            print("Installing wheel: {}...".format(os.path.basename(archive_filename)))
+            wheel = Wheel(archive_filename, verbose=self.verbose, extras=extras)
             files_installed, dependencies = wheel.install(self.site_packages)
         else:
-            files_installed, dependencies = self.installer.run(
-                pkg_name, archive_filename, extras=extras)
+            files_installed, dependencies = self.installer.run(pkg_name, archive_filename, extras=extras)
         # never install setuptools as dependency
-        dependencies = [
-            dependency for dependency in dependencies if dependency != 'setuptools']
+        dependencies = [dependency for dependency in dependencies if dependency != 'setuptools']
         name_versions = [VersionSpecifier.parse_requirement(requirement)
-                         for requirement in dependencies]
+        for requirement in dependencies]
         # filter (None, ...)
         name_versions = list(filter(lambda e: e[0] is not None, name_versions))
         sys.modules['setuptools']._installed_requirements_.append(pkg_name)
         pkg_info['files'] = ','.join(files_installed)
-        pkg_info['dependency'] = ','.join(
-            name_version[0] for name_version in name_versions)
+        pkg_info['dependency'] = ','.join(name_version[0] for name_version in name_versions)
         self.config.add_module(pkg_info)
         print('Package installed: {}'.format(pkg_name))
 
@@ -932,19 +896,13 @@ class PackageRepository(object):
                 continue
 
             if dep_name in PYTHONISTA_BUNDLED_MODULES:
-                print(
-                    'Dependency available in Pythonista bundle : {}'.format(dep_name))
+                print('Dependency available in Pythonista bundle : {}'.format(dep_name))
                 continue
 
-            print('Installing dependency: {} (required by: {})'.format(
-                '{}{}'.format(dep_name, ver_spec if ver_spec else ''), pkg_name))
+            print('Installing dependency: {} (required by: {})'.format('{}{}'.format(dep_name, ver_spec if ver_spec else ''), pkg_name))
             repository = get_repository(dep_name, verbose=self.verbose)
             try:
-                repository.install(
-                    dep_name,
-                    ver_spec,
-                    dist=dependency_dist,
-                    extras=extras)
+                repository.install(dep_name, ver_spec, dist=dependency_dist, extras=extras)
             except PackageAlreadyInstalled:
                 # well, it is already installed...
                 # TODO: maybe update package if required?
@@ -960,8 +918,7 @@ class PackageRepository(object):
     def remove(self, pkg_name):
         if self.config.module_exists(pkg_name):
             dependencies = self.config.get_dependencies(pkg_name)
-            other_dependencies = self.config.get_all_dependencies(
-                exclude_module=(pkg_name,))
+            other_dependencies = self.config.get_all_dependencies(exclude_module=(pkg_name,))
             files_installed = self.config.get_files_installed(pkg_name)
 
             if files_installed:
@@ -971,27 +928,21 @@ class PackageRepository(object):
                     elif os.path.isfile(f):
                         os.remove(f)
                     else:
-                        print(
-                            'Package may have been removed externally without using pip. Deleting from registry ...')
+                        print('Package may have been removed externally without using pip. Deleting from registry ...')
             else:
-                if os.path.isdir(os.path.expanduser(
-                        '~/Documents/site-packages/{}'.format(pkg_name.lower()))):
-                    shutil.rmtree(os.path.expanduser(
-                        '~/Documents/site-packages/{}'.format(pkg_name.lower())))
+                if os.path.isdir(os.path.expanduser('~/Documents/site-packages/{}'.format(pkg_name.lower()))):
+                    shutil.rmtree(os.path.expanduser('~/Documents/site-packages/{}'.format(pkg_name.lower())))
                 elif os.path.isfile(os.path.expanduser('~/Documents/site-packages/{}.py'.format(pkg_name.lower()))):
-                    os.remove(os.path.expanduser(
-                        '~/Documents/site-packages/{}.py'.format(pkg_name.lower())))
+                    os.remove(os.path.expanduser('~/Documents/site-packages/{}.py'.format(pkg_name.lower())))
                 else:
-                    print(
-                        'Package may have been removed externally without using pip. Deleting from registry ...')
+                    print('Package may have been removed externally without using pip. Deleting from registry ...')
 
             self.config.remove_module(pkg_name)
             print('Package removed.')
 
             if dependencies:
                 for dependency in dependencies:
-                    # If not other packages depend on it, it may be subject to
-                    # removal
+                    # If not other packages depend on it, it may be subject to removal
                     if dependency not in other_dependencies:
                         # Only remove the module if it exists in the registry. Otherwise
                         # it is possibly a builtin module.
@@ -999,7 +950,7 @@ class PackageRepository(object):
                         # that do not have a dependency option (since they are manually
                         # installed before).
                         if self.config.module_exists(dependency) \
-                                and self.config.get_dependencies(dependency) is not None:
+                        and self.config.get_dependencies(dependency) is not None:
                             print('Removing dependency: {}'.format(dependency))
                             self.remove(dependency)
 
@@ -1008,8 +959,7 @@ class PackageRepository(object):
 
     def update(self, pkg_name):
         if self.config.module_exists(pkg_name):
-            raise PipError(
-                'update only available for packages installed from PyPI')
+            raise PipError('update only available for packages installed from PyPI')
         else:
             PipError('package not installed: {}'.format(pkg_name))
 
@@ -1026,19 +976,16 @@ class PyPIRepository(PackageRepository):
         except ImportError:
             # py3
             import xmlrpc.client as xmlrpclib
-        # DO NOT USE self.pypi, it's there just for search, it's
-        # obsolete/legacy
+        # DO NOT USE self.pypi, it's there just for search, it's obsolete/legacy
         self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
         self.standard_package_names = {}
 
     def get_standard_package_name(self, pkg_name):
         if pkg_name not in self.standard_package_names:
             try:
-                r = requests.get(
-                    'https://pypi.python.org/pypi/{}/json'.format(pkg_name))
-                self.standard_package_names[pkg_name] = r.json()[
-                    'info']['name']
-            except BaseException:
+                r = requests.get('https://pypi.python.org/pypi/{}/json'.format(pkg_name))
+                self.standard_package_names[pkg_name] = r.json()['info']['name']
+            except:
                 return pkg_name
 
         return self.standard_package_names[pkg_name]
@@ -1052,15 +999,11 @@ class PyPIRepository(PackageRepository):
         if not hits:
             raise PipError('No matches found: {}'.format(pkg_name))
 
-        hits = sorted(
-            hits,
-            key=lambda pkg: pkg['_pypi_ordering'],
-            reverse=True)
+        hits = sorted(hits, key=lambda pkg: pkg['_pypi_ordering'], reverse=True)
         return hits
 
     def _package_data(self, pkg_name):
-        r = requests.get(
-            'https://pypi.python.org/pypi/{}/json'.format(pkg_name))
+        r = requests.get('https://pypi.python.org/pypi/{}/json'.format(pkg_name))
         if not r.status_code == requests.codes.ok:
             raise PipError('Failed to fetch package release urls')
 
@@ -1100,27 +1043,23 @@ class PyPIRepository(PackageRepository):
         downloads = self._package_downloads(pkg_data, hit)
 
         if not downloads:
-            raise PipError(
-                'No download available for {}: {}'.format(
-                    pkg_name, hit))
+            raise PipError('No download available for {}: {}'.format(pkg_name, hit))
 
         source = None
         wheel = None
         for download in downloads:
-            if any((suffix in download['url'])
-                   for suffix in ('.zip', '.bz2', '.gz')):
+            if any((suffix in download['url']) for suffix in ('.zip', '.bz2', '.gz')):
                 source = download
                 # break
             if ".whl" in download["url"]:
-                fn = download["url"][download["url"].rfind("/") + 1:]
+                fn = download["url"][download["url"].rfind("/")+1:]
                 if wheel_is_compatible(fn):
                     wheel = download
 
         target = None
         if source is not None and (dist & DIST_ALLOW_SRC > 0):
             # source is available and allowed
-            if (wheel is None or (dist & DIST_ALLOW_WHL == 0)) or (
-                    dist & DIST_PREFER_SRC > 0):
+            if (wheel is None or (dist & DIST_ALLOW_WHL == 0)) or (dist & DIST_PREFER_SRC > 0):
                 # no wheel is available or source is prefered
                 # use source
                 if self.verbose:
@@ -1136,49 +1075,35 @@ class PyPIRepository(PackageRepository):
             # source is not available or allowed, but a wheel is available and allowed
             # use wheel
             if self.verbose:
-                print(
-                    "No source distribution found, but a binary distribution was found and will be used.")
+                print("No source distribution found, but a binary distribution was found and will be used.")
             target = wheel
 
         if target is None:
             if self.verbose:
                 print("No allowed distribution found!")
                 if wheel is not None and (dist & DIST_ALLOW_WHL == 0):
-                    print(
-                        "However, a wheel is available. Maybe try without '--no-binary' or with '--only-binary :all:'?")
+                    print("However, a wheel is available. Maybe try without '--no-binary' or with '--only-binary :all:'?")
                 if source is not None and (dist & DIST_ALLOW_SRC == 0):
-                    print(
-                        "However, a source distribution is available. Maybe try with '--no-binary :all:'?")
-            raise PipError(
-                "No allowed distribution found for '{}': {}!".format(
-                    pkg_name, hit))
+                    print("However, a source distribution is available. Maybe try with '--no-binary :all:'?")
+            raise PipError("No allowed distribution found for '{}': {}!".format(pkg_name, hit))
 
         pkg_info = self._package_info(pkg_data)
         pkg_info['url'] = 'pypi'
 
         print('Downloading package ...')
 
-        worker = _stash(
-            'wget {} -o $TMPDIR/{}'.format(target['url'], target['filename']))
+        worker = _stash('wget {} -o $TMPDIR/{}'.format(target['url'], target['filename']))
 
         if worker.state.return_value != 0:
-            raise PipError(
-                'failed to download package from {}'.format(
-                    target['url']))
+            raise PipError('failed to download package from {}'.format(target['url']))
 
         return os.path.join(os.getenv('TMPDIR'), target['filename']), pkg_info
 
     def install(self, pkg_name, ver_spec, dist=DIST_DEFAULT, extras=[]):
         pkg_name = self.get_standard_package_name(pkg_name)
         if not self.config.module_exists(pkg_name):
-            archive_filename, pkg_info = self.download(
-                pkg_name, ver_spec, dist=dist)
-            self._install(
-                pkg_name,
-                pkg_info,
-                archive_filename,
-                dependency_dist=dist,
-                extras=extras)
+            archive_filename, pkg_info = self.download(pkg_name, ver_spec, dist=dist)
+            self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist, extras=extras)
         else:
             # todo: maybe update package?
             raise PackageAlreadyInstalled('Package already installed')
@@ -1215,13 +1140,10 @@ class PyPIRepository(PackageRepository):
         # create a sorted list of versions, newest fist.
         # we manualle  add the  latest release in front to improve the chances of finding
         # the most recent compatible version
-        versions = [
-            latest] + _stash.libversion.sort_versions(self._package_releases(pkg_data))
+        versions = [latest] + _stash.libversion.sort_versions(self._package_releases(pkg_data))
         for hit in versions:
-            # we return the fist matching hit, so we should sort the hits by
-            # descending version
-            if (dist is not None) and not self._dist_allows_release(
-                    dist, pkg_data, hit):
+            # we return the fist matching hit, so we should sort the hits by descending version
+            if (dist is not None) and not self._dist_allows_release(dist, pkg_data, hit):
                 # hit has no source/binary release and is not allowed by dis
                 continue
             if not self._release_matches_py_version(pkg_data, hit):
@@ -1231,10 +1153,7 @@ class PyPIRepository(PackageRepository):
                 # version is allowed
                 return hit
         else:
-            raise PipError(
-                'Version not found: {}{}'.format(
-                    pkg_name,
-                    ver_spec if ver_spec is not None else ""))
+            raise PipError('Version not found: {}{}'.format(pkg_name, ver_spec if ver_spec is not None else ""))
 
     def _release_matches_py_version(self, pkg_data, release):
         """
@@ -1253,10 +1172,8 @@ class PyPIRepository(PackageRepository):
             requires_python = download.get("requires_python", None)
             if requires_python is not None:
                 reqs = "python" + requires_python
-                name, ver_spec, extras = VersionSpecifier.parse_requirement(
-                    reqs)
-                # if this if False some large bug happened...
-                assert name == "python"
+                name, ver_spec, extras = VersionSpecifier.parse_requirement(reqs)
+                assert name == "python"  # if this if False some large bug happened...
                 if ver_spec.match(platform.python_version()):
                     # compatible
                     return True
@@ -1280,8 +1197,7 @@ class PyPIRepository(PackageRepository):
                 elif pv == "source":
                     # i honestly have no idea what this means
                     # i first assumed it means "this source is compatible with both", so just return True
-                    # however, this seems to be wrong. Instead, we use this as
-                    # a fallback yes
+                    # however, this seems to be wrong. Instead, we use this as a fallback yes
                     has_source = True
             had_v = True
         if had_v:
@@ -1290,8 +1206,7 @@ class PyPIRepository(PackageRepository):
         else:
             # none found, maybe pypi changed
             # in this case, just return True
-            # we did it before without these checks and it worked *most* of the
-            # time, so missing this check is not horrible...
+            # we did it before without these checks and it worked *most* of the time, so missing this check is not horrible...
             return True
 
     def _dist_allows_release(self, dist, pkg_data, release):
@@ -1323,6 +1238,7 @@ class PyPIRepository(PackageRepository):
         return False
 
 
+
 class GitHubRepository(PackageRepository):
     """
     This repository performs actions using GitHub as a backend store.
@@ -1335,15 +1251,14 @@ class GitHubRepository(PackageRepository):
                     if op == operator.eq:
                         return ver
             except ValueError:
-                raise PipError(
-                    'GitHub repository requires exact version match')
+                raise PipError('GitHub repository requires exact version match')
         else:
             return ver_spec if ver_spec is not None else 'master'
 
     def versions(self, owner_repo):
         owner, repo = owner_repo.split('/')
         data = requests.get('https://api.github.com/repos/{}/{}/releases'.format(
-            owner, repo
+        owner, repo
         )).json()
         return [entry['name'] for entry in data]
 
@@ -1352,17 +1267,17 @@ class GitHubRepository(PackageRepository):
 
         owner, repo = owner_repo.split('/')
         metadata = requests.get('https://api.github.com/repos/{}/{}'.format(
-            owner, repo
+        owner, repo
         )).json()
 
         _stash('wget https://github.com/{0}/{1}/archive/{2}.zip -o $TMPDIR/{2}.zip'.format(
-            owner, repo, release
+        owner, repo, release
         ))
         return os.path.join(os.getenv('TMPDIR'), release + '.zip'), {
-            'name': owner_repo,
-            'url': 'github',
-            'version': release,
-            'summary': metadata.get('description', ''),
+        'name': owner_repo,
+        'url': 'github',
+        'version': release,
+        'summary': metadata.get('description', ''),
         }
 
     def install(self, owner_repo, ver_spec, dist=DIST_DEFAULT, extras=[]):
@@ -1370,8 +1285,7 @@ class GitHubRepository(PackageRepository):
             owner, repo = owner_repo.split('/')
             release = self._get_release_from_version_specifier(ver_spec)
             archive_filename, pkg_info = self.download(owner_repo, release)
-            self._install('-'.join([repo, release]), pkg_info,
-                          archive_filename, dependency_dist=dist, extras=extras)
+            self._install('-'.join([repo, release]), pkg_info, archive_filename, dependency_dist=dist, extras=extras)
         else:
             raise PipError('Package already installed')
 
@@ -1383,29 +1297,22 @@ class UrlRepository(PackageRepository):
 
     def download(self, url, ver_spec):
         archive_filename = os.path.basename(url)
-        if os.path.splitext(archive_filename)[
-                1] not in ('.zip', '.gz', '.bz2'):
-            raise PipError(
-                'cannot find a valid archive file at url: {}'.format(url))
+        if os.path.splitext(archive_filename)[1] not in ('.zip', '.gz', '.bz2'):
+            raise PipError('cannot find a valid archive file at url: {}'.format(url))
         _stash('wget {} -o $TMPDIR/{}'.format(url, archive_filename))
 
         return os.path.join(os.getenv('TMPDIR'), archive_filename), {
-            'name': url,
-            'url': 'url',
-            'version': '',
-            'summary': '',
+        'name': url,
+        'url': 'url',
+        'version': '',
+        'summary': '',
         }
 
     def install(self, url, ver_spec, dist=DIST_DEFAULT, extras=[]):
         if not self.config.module_exists(url):
             archive_filename, pkg_info = self.download(url, ver_spec)
             pkg_name = os.path.splitext(os.path.basename(archive_filename))[0]
-            self._install(
-                pkg_name,
-                pkg_info,
-                archive_filename,
-                dependency_dist=dist,
-                extras=extras)
+            self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist, extras=extras)
         else:
             raise PipError('Package already installed')
 
@@ -1415,20 +1322,14 @@ class LocalRepository(PackageRepository):
     This repository deals with a local archive file.
     """
 
-    def install(self, archive_filename, ver_spec,
-                dist=DIST_DEFAULT, extras=[]):
+    def install(self, archive_filename, ver_spec, dist=DIST_DEFAULT, extras=[]):
         pkg_info = {
-            'name': archive_filename,
-            'url': 'local',
-            'version': '',
-            'summary': ''
+        'name': archive_filename,
+        'url': 'local',
+        'version': '',
+        'summary': ''
         }
-        self._install(
-            pkg_name,
-            pkg_info,
-            archive_filename,
-            dependency_dist=dist,
-            extras=extras)
+        self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist, extras=extras)
 
 
 # url_repository = UrlRepository()
@@ -1437,8 +1338,7 @@ class LocalRepository(PackageRepository):
 # pypi_repository = PyPIRepository()
 
 
-def get_repository(
-        pkg_name, site_packages=SITE_PACKAGES_FOLDER, verbose=False):
+def get_repository(pkg_name, site_packages=SITE_PACKAGES_FOLDER, verbose=False):
     """
     The corresponding repository based on the given package name.
     :param pkg_name: It can be one of the four following options:
@@ -1453,14 +1353,14 @@ def get_repository(
     """
 
     if pkg_name.startswith('http://') \
-            or pkg_name.startswith('https://') \
-            or pkg_name.startswith('ftp://'):  # remote archive file
+    or pkg_name.startswith('https://') \
+    or pkg_name.startswith('ftp://'):  # remote archive file
         print('Working on URL repository ...')
         return UrlRepository(site_packages=site_packages, verbose=verbose)
 
     # local archive file
     elif os.path.isfile(pkg_name) and \
-            (pkg_name.endswith('.zip') or pkg_name.endswith('.gz') or pkg_name.endswith('.bz2')):
+    (pkg_name.endswith('.zip') or pkg_name.endswith('.gz') or pkg_name.endswith('.bz2')):
         print('Working on Local repository ...')
         return LocalRepository(site_packages=site_packages, verbose=verbose)
 
@@ -1478,18 +1378,12 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
 
     ap.add_argument('--verbose', action='store_true', help='be more chatty')
-    ap.add_argument(
-        "-6",
-        action='store_const',
-        help='manage packages for py2 and py3',
-        dest='site_packages',
-        const=OLD_SITE_PACKAGES_FOLDER,
-        default=SITE_PACKAGES_FOLDER)
+    ap.add_argument("-6", action='store_const', help='manage packages for py2 and py3', dest='site_packages', const=OLD_SITE_PACKAGES_FOLDER, default=SITE_PACKAGES_FOLDER)
 
     subparsers = ap.add_subparsers(dest='sub_command',
-                                   title='List of sub-commands',
-                                   metavar='sub-command',
-                                   help='"pip sub-command -h" for more help on a sub-command')
+    title='List of sub-commands',
+    metavar='sub-command',
+    help='"pip sub-command -h" for more help on a sub-command')
 
     list_parser = subparsers.add_parser('list', help='list packages installed')
 
@@ -1498,19 +1392,19 @@ if __name__ == '__main__':
         'requirements',
         help='the requirement specifier for installation',
         nargs="+",
-    )
+        )
     install_parser.add_argument(
         '-N',
         '--no-overwrite',
         action='store_true',
         default=False,
         help='Do not overwrite existing folder/files',
-    )
+        )
     install_parser.add_argument(
         '-d',
         '--directory',
         help='target directory for installation',
-    )
+        )
     install_parser.add_argument(
         "--no-binary",
         action="store",
@@ -1526,55 +1420,47 @@ if __name__ == '__main__':
     install_parser.add_argument(
         "--prefer-binary",
         action="store_true",
-        # TODO: do we actually check older sources/wheels?
-        help="Prefer older binary packages over newer source packages",
+        help="Prefer older binary packages over newer source packages",  # TODO: do we actually check older sources/wheels?
         dest="preferbinary",
     )
 
-    download_parser = subparsers.add_parser(
-        'download', help='download packages')
+    download_parser = subparsers.add_parser('download', help='download packages')
     download_parser.add_argument(
         'requirements',
         help='the requirement specifier for download',
         nargs="+",
-    )
+        )
     download_parser.add_argument(
         '-d',
         '--directory',
         help='the directory to save the downloaded file',
-    )
+        )
 
-    search_parser = subparsers.add_parser(
-        'search', help='search with the given word fragment')
+    search_parser = subparsers.add_parser('search', help='search with the given word fragment')
     search_parser.add_argument('term', help='the word fragment to search')
 
-    versions_parser = subparsers.add_parser(
-        'versions', help='find versions available for given package')
+    versions_parser = subparsers.add_parser('versions', help='find versions available for given package')
     versions_parser.add_argument('package_name', help='the package name')
 
-    remove_parser = subparsers.add_parser(
-        'uninstall', help='uninstall packages')
+    remove_parser = subparsers.add_parser('uninstall', help='uninstall packages')
     remove_parser.add_argument(
         'packages',
         nargs="+",
         metavar="package",
         help='packages to uninstall',
-    )
+        )
 
-    update_parser = subparsers.add_parser(
-        'update', help='update an installed package')
+    update_parser = subparsers.add_parser('update', help='update an installed package')
     update_parser.add_argument('packages', nargs="+", help='the package name')
 
     ns = ap.parse_args()
 
     try:
         if ns.sub_command == 'list':
-            repository = get_repository(
-                'pypi', site_packages=ns.site_packages, verbose=ns.verbose)
+            repository = get_repository('pypi', site_packages=ns.site_packages, verbose=ns.verbose)
             info_list = repository.list()
             for module, info in info_list:
-                print('{} ({}) - {}'.format(module,
-                                            info['version'], info['summary']))
+                print('{} ({}) - {}'.format(module, info['version'], info['summary']))
 
         elif ns.sub_command == 'install':
             if ns.directory is not None:
@@ -1593,8 +1479,7 @@ if __name__ == '__main__':
                     dist = dist | DIST_ALLOW_WHL
                 else:
                     # TODO: implement this
-                    print(
-                        "Error: --no-binary does currently only support :all: or :none:")
+                    print("Error: --no-binary does currently only support :all: or :none:")
 
             if ns.onlybinary is not None:
                 if ns.onlybinary == ":all:":
@@ -1607,8 +1492,7 @@ if __name__ == '__main__':
                     dist = dist | DIST_ALLOW_SRC
                 else:
                     # TODO: implement this
-                    print(
-                        "Error: --only-binary does currently only support :all: or :none:")
+                    print("Error: --only-binary does currently only support :all: or :none:")
 
             if ns.preferbinary:
                 # set preference to wheels
@@ -1616,82 +1500,56 @@ if __name__ == '__main__':
                 dist = dist & ~DIST_PREFER_SRC
 
             for requirement in ns.requirements:
-                repository = get_repository(
-                    requirement, site_packages=site_packages, verbose=ns.verbose)
+                repository = get_repository(requirement, site_packages=site_packages, verbose=ns.verbose)
                 NO_OVERWRITE = ns.no_overwrite
 
-                pkg_name, ver_spec, extras = VersionSpecifier.parse_requirement(
-                    requirement)
+                pkg_name, ver_spec, extras = VersionSpecifier.parse_requirement(requirement)
 
                 with save_current_sys_modules():
                     fake_setuptools_modules()
                     ensure_pkg_resources()  # install pkg_resources if needed
-                    # start with what we have installed (i.e. in the config
-                    # file)
-                    sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules(
-                    )
-                    repository.install(
-                        pkg_name, ver_spec, dist=dist, extras=extras)
+                    # start with what we have installed (i.e. in the config file)
+                    sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
+                    repository.install(pkg_name, ver_spec, dist=dist, extras=extras)
 
         elif ns.sub_command == 'download':
             for requirement in ns.requirements:
-                repository = get_repository(
-                    requirement,
-                    site_packages=ns.site_packages,
-                    verbose=ns.verbose)
+                repository = get_repository(requirement, site_packages=ns.site_packages, verbose=ns.verbose)
                 try:
-                    pkg_name, ver_spec, extras = VersionSpecifier.parse_requirement(
-                        requirement)
+                    pkg_name, ver_spec, extras = VersionSpecifier.parse_requirement(requirement)
                 except ValueError as e:
-                    print(
-                        "Error during parsing of the requirement : {e}".format(
-                            e=e))
-                archive_filename, pkg_info = repository.download(
-                    pkg_name, ver_spec)
+                    print("Error during parsing of the requirement : {e}".format(e=e))
+                archive_filename, pkg_info = repository.download(pkg_name, ver_spec)
                 directory = ns.directory or os.getcwd()
                 shutil.move(archive_filename, directory)
 
         elif ns.sub_command == 'search':
-            repository = get_repository(
-                'pypi', site_packages=ns.site_packages, verbose=ns.verbose)
+            repository = get_repository('pypi', site_packages=ns.site_packages, verbose=ns.verbose)
             search_hits = repository.search(ns.term)
-            search_hits = sorted(
-                search_hits,
-                key=lambda pkg: pkg['_pypi_ordering'],
-                reverse=True)
+            search_hits = sorted(search_hits, key=lambda pkg: pkg['_pypi_ordering'], reverse=True)
             for hit in search_hits:
-                print('{} {} - {}'.format(hit['name'],
-                                          hit['version'], hit['summary']))
+                print('{} {} - {}'.format(hit['name'], hit['version'], hit['summary']))
 
         elif ns.sub_command == 'versions':
-            repository = get_repository(
-                ns.package_name,
-                site_packages=ns.site_packages,
-                verbose=ns.verbose)
+            repository = get_repository(ns.package_name, site_packages=ns.site_packages, verbose=ns.verbose)
             version_hits = repository.versions(ns.package_name)
             for hit in version_hits:
                 print('{} - {}'.format(ns.package_name, hit))
 
         elif ns.sub_command == 'uninstall':
             for package_name in ns.packages:
-                repository = get_repository(
-                    'pypi', site_packages=ns.site_packages, verbose=ns.verbose)
+                repository = get_repository('pypi', site_packages=ns.site_packages, verbose=ns.verbose)
                 repository.remove(package_name)
 
         elif ns.sub_command == 'update':
             for package_name in ns.packages:
-                repository = get_repository(
-                    package_name,
-                    site_packages=ns.site_packages,
-                    verbose=ns.verbose)
+                repository = get_repository(package_name, site_packages=ns.site_packages, verbose=ns.verbose)
 
                 with save_current_sys_modules():
                     fake_setuptools_modules()
                     ensure_pkg_resources()  # install pkg_resources if needed
-                    # start with what we have installed (i.e. in the config
-                    # file)
-                    sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules(
-                    )
+                    # start with what we have installed (i.e. in the config file)
+                    sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
                     repository.update(package_name)
         else:
             raise PipError('unknown command: {}'.format(ns.sub_command))

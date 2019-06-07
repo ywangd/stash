@@ -22,6 +22,7 @@ except ImportError:
     from .dummyobjc_util import *
 
 
+
 NSMutableAttributedString = ObjCClass('NSMutableAttributedString')
 UIFont = ObjCClass('UIFont')
 
@@ -58,9 +59,8 @@ _Char = namedtuple("_Char", [
     "reverse",
 ])
 
-
 class ShChar(_Char):
-
+    
     """
     Class of attributed character.
     :param str data: The actual character
@@ -85,13 +85,10 @@ class ShChar(_Char):
 DEFAULT_CHAR = ShChar(data=' ', fg='default', bg='default')
 DEFAULT_LINE = itertools.repeat(DEFAULT_CHAR)
 
-
 def take(n, iterable):
     return list(itertools.islice(iterable, n))
 
 # noinspection PyAttributeOutsideInit
-
-
 class ShSequentialScreen(object):
 
     """
@@ -215,8 +212,7 @@ class ShSequentialScreen(object):
         A string represents the characters that are in the modifiable range.
         :rtype: str
         """
-        return ''.join(self._buffer[idx].data for idx in xrange(
-            *self.modifiable_range))
+        return ''.join(self._buffer[idx].data for idx in xrange(*self.modifiable_range))
 
     @modifiable_string.setter
     def modifiable_string(self, s):
@@ -273,8 +269,7 @@ class ShSequentialScreen(object):
         self.intact_right_bound = len(self._buffer)
 
     # noinspection PyProtectedMember
-    def replace_in_range(
-            self, rng, s, relative_to_x_modifiable=False, set_drawend=False):
+    def replace_in_range(self, rng, s, relative_to_x_modifiable=False, set_drawend=False):
         """
         Replace the buffer content in the given range. This method should
         ONLY be called from the UI delegation side, i.e. NOT running
@@ -296,8 +291,7 @@ class ShSequentialScreen(object):
             self.intact_right_bound = rng[0]
 
         rotate_n = max(len(self._buffer) - rng[1], 0)
-        # rotate buffer first so deletion is possible
-        self._buffer.rotate(rotate_n)
+        self._buffer.rotate(rotate_n)  # rotate buffer first so deletion is possible
         try:
             if rng[0] != rng[1]:  # delete chars if necessary
                 self._pop_chars(rng[1] - rng[0])
@@ -357,9 +351,7 @@ class ShSequentialScreen(object):
         if from_x is None:
             from_x = self.cursor_xs
         for idx in xrange(from_x, -1, -1):
-            # try for when from_x is equal to buffer length (i.e. at the end of
-            # the buffer)
-            try:
+            try:  # try for when from_x is equal to buffer length (i.e. at the end of the buffer)
                 if self._buffer[idx].data == '\n':
                     n -= 1
                     if n == 0:
@@ -368,7 +360,7 @@ class ShSequentialScreen(object):
                 pass
         else:
             return default
-
+                
     def _find_nth_nl(self, from_x=None, n=1, default=None):
         if from_x is None:
             from_x = self.cursor_xs
@@ -475,8 +467,7 @@ class ShSequentialScreen(object):
                 pass
 
         elif mode == 1:  # erase form beginning of line to cursor, including cursor
-            rng = [self._rfind_nth_nl(default=-1) + 1,
-                   min(self.cursor_xs + 1, self.text_length)]
+            rng = [self._rfind_nth_nl(default=-1) + 1, min(self.cursor_xs + 1, self.text_length)]
             try:
                 if self._buffer[rng[1] - 1] == '\n':
                     rng[1] -= 1
@@ -484,11 +475,7 @@ class ShSequentialScreen(object):
                 pass
 
         else:  # mode == 2:  # erase the complete line
-            rng = [
-                self._rfind_nth_nl(
-                    default=-1) + 1,
-                self._find_nth_nl(
-                    default=self.text_length)]
+            rng = [self._rfind_nth_nl(default=-1) + 1, self._find_nth_nl(default=self.text_length)]
 
         # fast fail when there is nothing to erase
         if rng[0] >= rng[1]:
@@ -524,7 +511,7 @@ class ShSequentialScreen(object):
                 replace = DEFAULT_CHAR._asdict()
 
         self.attrs = self.attrs._replace(**replace)
-
+        
     def load_pyte_screen(self, pyte_screen):
         """
         This method is for command script only, e.g. ssh.
@@ -544,11 +531,9 @@ class ShSequentialScreen(object):
                     break
                 line_count += 1
 
-            nchars_pyte_screen = (nlines - line_count - 1) * \
-                (ncolumns + 1) + column_count
+            nchars_pyte_screen = (nlines - line_count - 1) * (ncolumns + 1) + column_count
 
-            idx_cursor_pyte_screen = pyte_screen.cursor.x + \
-                pyte_screen.cursor.y * (ncolumns + 1)
+            idx_cursor_pyte_screen = pyte_screen.cursor.x + pyte_screen.cursor.y * (ncolumns + 1)
 
             if nchars_pyte_screen < idx_cursor_pyte_screen:
                 nchars_pyte_screen = idx_cursor_pyte_screen
@@ -569,14 +554,12 @@ class ShSequentialScreen(object):
             if idx_dirty_char > self.text_length - 1:
                 self.intact_right_bound = self.text_length
             else:
-                self.intact_right_bound = min(
-                    self.text_length, nchars_pyte_screen)
+                self.intact_right_bound = min(self.text_length, nchars_pyte_screen)
                 for idx in xrange(idx_dirty_char, nchars_pyte_screen):
                     # self.logger.info('idx = %s' % idx)
                     if idx >= self.text_length:
                         break
-                    idx_line, idx_column = idx / \
-                        (ncolumns + 1), idx % (ncolumns + 1)
+                    idx_line, idx_column = idx / (ncolumns + 1), idx % (ncolumns + 1)
                     if idx_column == ncolumns:
                         continue
                     pyte_char = pyte_screen.buffer[idx_line][idx_column]
@@ -591,8 +574,7 @@ class ShSequentialScreen(object):
                 self._buffer.pop()
 
             for idx in xrange(self.intact_right_bound, nchars_pyte_screen):
-                idx_line, idx_column = idx / \
-                    (ncolumns + 1), idx % (ncolumns + 1)
+                idx_line, idx_column = idx / (ncolumns + 1), idx % (ncolumns + 1)
                 if idx_column != ncolumns:
                     c = pyte_screen.buffer[idx_line][idx_column]
                     self._buffer.append(ShChar(**c._asdict()))
@@ -656,21 +638,19 @@ class ShSequentialRenderer(object):
         self.logger = logging.getLogger('StaSh.SequentialRenderer')
         self.last_rendered_time = 0
         self.render_thread = None
-
+        
         # update default colors to match terminal
-        self.FG_COLORS["default"] = self.FG_COLORS.get(
-            self.terminal.text_color, WhiteColor)
-        self.BG_COLORS["default"] = self.BG_COLORS.get(
-            self.terminal.background_color, BlackColor)
+        self.FG_COLORS["default"] = self.FG_COLORS.get(self.terminal.text_color, WhiteColor)
+        self.BG_COLORS["default"] = self.BG_COLORS.get(self.terminal.background_color, BlackColor)
 
     @staticmethod
     def _same_style(char1, char2):
         return char1.fg == char2.fg \
-            and char1.bg == char2.bg \
-            and char1.bold is char2.bold \
-            and char1.italics is char2.italics \
-            and char1.underscore is char2.underscore \
-            and char1.strikethrough is char2.strikethrough
+               and char1.bg == char2.bg \
+               and char1.bold is char2.bold \
+               and char1.italics is char2.italics \
+               and char1.underscore is char2.underscore \
+               and char1.strikethrough is char2.strikethrough
 
     def _get_font(self, attrs):
         if attrs.bold and attrs.italics:
@@ -710,8 +690,7 @@ class ShSequentialRenderer(object):
         for idx, curr_char in enumerate(chars):
             length += 1
             if not self._same_style(prev_char, curr_char):  # a group is found
-                if not self._same_style(
-                        prev_char, DEFAULT_CHAR):  # skip default attrs
+                if not self._same_style(prev_char, DEFAULT_CHAR):  # skip default attrs
                     attributed_text.setAttributes_range_(
                         self._build_attributes(prev_char),
                         (location, length - 1)
@@ -743,8 +722,7 @@ class ShSequentialRenderer(object):
             self._render()
         else:  # delayed rendering
             if self.render_thread is None or not self.render_thread.isAlive():
-                self.render_thread = sh_delay(
-                    self._render, self.RENDER_INTERVAL)
+                self.render_thread = sh_delay(self._render, self.RENDER_INTERVAL)
             # Do nothing if there is already a delayed rendering thread waiting
 
     @on_main_thread
@@ -802,8 +780,7 @@ class ShSequentialRenderer(object):
             else:
                 tvo_texts.endEditing()  # end of batched changes
 
-            # Set the cursor position. This makes terminal and main screen
-            # cursors in sync
+            # Set the cursor position. This makes terminal and main screen cursors in sync
             self.terminal.selected_range = (cursor_xs, cursor_xe)
 
             # Ensure cursor line is visible by scroll to the end of the text

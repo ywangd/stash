@@ -7,7 +7,6 @@ import sys
 import argparse
 import threading
 
-
 def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('job_id', nargs='?', type=int,
@@ -23,7 +22,7 @@ def main(args):
         worker = worker_registry.get_worker(ns.job_id)
 
     if worker is None:
-        print('no background job running'
+        print('no background job running' \
               + (' with id {}'.format(ns.job_id) if ns.job_id else ''))
         return
 
@@ -33,7 +32,6 @@ def main(args):
     t = threading.Timer(1.0, f)
     print('pushing job {} to foreground ...'.format(worker.job_id))
     t.start()
-
 
 if __name__ == '__main__':
     main(sys.argv[1:])

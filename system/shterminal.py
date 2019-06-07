@@ -16,9 +16,9 @@ from .shcommon import CTRL_KEY_FLAG
 
 
 try:
-    unicode
+	unicode
 except NameError:
-    unicode = str
+	unicode = str
 
 # ObjC related stuff
 UIFont = ObjCClass('UIFont')
@@ -55,14 +55,11 @@ class ShTVDelegate(object):
         x_modifiable = self.main_screen.x_modifiable
         if rng[0] == rng[1] and main_screen_text[rng[0]:] != terminal_text[rng[0]:]:
             if rng[0] >= x_modifiable:
-                self.mini_buffer.feed(
-                    None, main_screen_text[x_modifiable: rng[0]] + terminal_text[rng[0]:])
-                self.mini_buffer.set_cursor(
-                    -len(terminal_text[rng[0]:]), whence=2)
+                self.mini_buffer.feed(None, main_screen_text[x_modifiable: rng[0]] + terminal_text[rng[0]:])
+                self.mini_buffer.set_cursor(-len(terminal_text[rng[0]:]), whence=2)
             else:
                 s = terminal_text[rng[0]:]
-                # mark the buffer to be re-rendered
-                self.main_screen.intact_right_bound = rng[0]
+                self.main_screen.intact_right_bound = rng[0]  # mark the buffer to be re-rendered
                 # If the trailing string is shorter than the modifiable chars,
                 # this means there are valid deletion for the modifiable chars
                 # and we should keep it.
@@ -83,8 +80,7 @@ class ShTVDelegate(object):
             self.terminal.cursor_synced = False
         else:
             # Sync the cursor position on terminal to main screen
-            # Mainly used for when user touches and changes the terminal cursor
-            # position.
+            # Mainly used for when user touches and changes the terminal cursor position.
             self.mini_buffer.sync_cursor(self.terminal.selected_range)
 
 
@@ -113,37 +109,23 @@ class ShTerminal(object):
 
         def kcDispatcher_(_self, _cmd, _sender):
             key_cmd = ObjCInstance(_sender)
-            stash.user_action_proxy.kc_pressed(
-                str(key_cmd.input()), key_cmd.modifierFlags())
+            stash.user_action_proxy.kc_pressed(str(key_cmd.input()), key_cmd.modifierFlags())
 
         def keyCommands(_self, _cmd):
             key_commands = [
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
-                    'C', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
-                    'D', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
-                    'P', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
-                    'N', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
-                    'K', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
-                    'U', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
-                    'A', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
-                    'E', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
-                    'W', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
-                    'L', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
-                    'Z', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
-                    '[', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
-                    ']', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('C', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('D', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('P', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('N', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('K', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('U', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('A', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('E', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('L', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('Z', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('[', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(']', CTRL_KEY_FLAG, 'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputUpArrow',
                                                                        0,
                                                                        'kcDispatcher:'),
@@ -196,10 +178,7 @@ class ShTerminal(object):
             stash.mini_buffer.delete_word(self.selected_range)
 
         def controlLAction():  # delete one word backwards
-            stash.stream.feed(
-                u'\u009bc%s' %
-                stash.runtime.get_prompt(),
-                no_wait=True)
+            stash.stream.feed(u'\u009bc%s' % stash.runtime.get_prompt(), no_wait=True)
 
         def controlZAction():
             stash.runtime.push_to_background()
@@ -247,28 +226,21 @@ class ShTerminal(object):
 
         self._delegate_view = ui.TextView()
         self._delegate_view.delegate = stash.user_action_proxy.tv_delegate
-        self.tv_delegate = ShTVDelegate(
-            stash, self, stash.mini_buffer, stash.main_screen)
+        self.tv_delegate = ShTVDelegate(stash, self, stash.mini_buffer, stash.main_screen)
 
-        self.tvo = _ShTerminal.alloc().initWithFrame_(
-            ((0, 0), (width, height))).autorelease()
+        self.tvo = _ShTerminal.alloc().initWithFrame_(((0, 0), (width, height))).autorelease()
         self.tvo.setAutoresizingMask_(1 << 1 | 1 << 4)  # flex Width and Height
         self.content_inset = (0, 0, 0, 0)
         self.auto_content_inset = False
 
-        self.background_color = ast.literal_eval(
-            stash.config.get('display', 'BACKGROUND_COLOR'))
+        self.background_color = ast.literal_eval(stash.config.get('display', 'BACKGROUND_COLOR'))
         font_size = stash.config.getint('display', 'TEXT_FONT_SIZE')
-        self.default_font = UIFont.fontWithName_size_(
-            'Menlo-Regular', font_size)
+        self.default_font = UIFont.fontWithName_size_('Menlo-Regular', font_size)
         self.bold_font = UIFont.fontWithName_size_('Menlo-Bold', font_size)
         self.italic_font = UIFont.fontWithName_size_('Menlo-Italic', font_size)
-        self.bold_italic_font = UIFont.fontWithName_size_(
-            'Menlo-BoldItalic', font_size)
-        self.text_color = ast.literal_eval(
-            stash.config.get('display', 'TEXT_COLOR'))
-        self.tint_color = ast.literal_eval(
-            stash.config.get('display', 'TINT_COLOR'))
+        self.bold_italic_font = UIFont.fontWithName_size_('Menlo-BoldItalic', font_size)
+        self.text_color = ast.literal_eval(stash.config.get('display', 'TEXT_COLOR'))
+        self.tint_color = ast.literal_eval(stash.config.get('display', 'TINT_COLOR'))
 
         self.indicator_style = stash.config.get('display', 'INDICATOR_STYLE')
         self.autocapitalization_type = ui.AUTOCAPITALIZE_NONE
@@ -305,9 +277,7 @@ class ShTerminal(object):
     def background_color(self, value):
         self._background_color = value
         r, g, b, a = ui.parse_color(value)
-        self.tvo.setBackgroundColor_(
-            UIColor.colorWithRed_green_blue_alpha_(
-                r, g, b, 1))
+        self.tvo.setBackgroundColor_(UIColor.colorWithRed_green_blue_alpha_(r, g, b, 1))
 
     @property
     def text_font(self):
@@ -342,9 +312,7 @@ class ShTerminal(object):
     def text_color(self, value):
         self._text_color = value
         r, g, b, a = ui.parse_color(value)
-        self.tvo.setTextColor_(
-            UIColor.colorWithRed_green_blue_alpha_(
-                r, g, b, 1))
+        self.tvo.setTextColor_(UIColor.colorWithRed_green_blue_alpha_(r, g, b, 1))
 
     @property
     def tint_color(self):
@@ -355,9 +323,7 @@ class ShTerminal(object):
     def tint_color(self, value):
         self._tint_color = value
         r, g, b, a = ui.parse_color(value)
-        self.tvo.setTintColor_(
-            UIColor.colorWithRed_green_blue_alpha_(
-                r, g, b, 1))
+        self.tvo.setTintColor_(UIColor.colorWithRed_green_blue_alpha_(r, g, b, 1))
 
     @property
     def text(self):
@@ -409,8 +375,7 @@ class ShTerminal(object):
     @on_main_thread
     def autocapitalization_type(self, value):
         self._autocapitalization_type = value
-        self.tvo.performSelector_withObject_(
-            'setAutocapitalizationType:', value)
+        self.tvo.performSelector_withObject_('setAutocapitalizationType:', value)
 
     @property
     def autocorrection_type(self):

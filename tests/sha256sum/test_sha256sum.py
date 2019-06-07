@@ -6,7 +6,6 @@ from stash.tests.stashtest import StashTestCase
 
 class Sha256sumTests(StashTestCase):
     """tests for the sha256sum command."""
-
     def setUp(self):
         """setup the tests"""
         self.cwd = self.get_data_path()
@@ -45,28 +44,18 @@ class Sha256sumTests(StashTestCase):
 
     def test_checkhash_fail(self):
         """test failure sha256sum -c with invalid data"""
-        output = self.run_command(
-            "sha256sum -c wrong_results.sha256sum", exitcode=1)
-        # some files should have the correct hash
-        self.assertIn("Pass", output)
+        output = self.run_command("sha256sum -c wrong_results.sha256sum", exitcode=1)
+        self.assertIn("Pass", output)  # some files should have the correct hash
         self.assertIn("Fail", output)
 
     def test_hash_stdin_implicit(self):
         """test hashing of stdin without arg"""
-        output = self.run_command(
-            "echo test | sha256sum",
-            exitcode=0).replace(
-            "\n",
-            "")
+        output = self.run_command("echo test | sha256sum", exitcode=0).replace("\n", "")
         expected = "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2"
         self.assertEqual(output, expected)
 
     def test_hash_stdin_explicit(self):
         """test hashing of stdin with '-' arg"""
-        output = self.run_command(
-            "echo test | sha256sum -",
-            exitcode=0).replace(
-            "\n",
-            "")
+        output = self.run_command("echo test | sha256sum -", exitcode=0).replace("\n", "")
         expected = "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2"
         self.assertEqual(output, expected)

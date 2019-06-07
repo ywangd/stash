@@ -13,73 +13,67 @@ from stashutils.mount_ctrl import get_manager
 
 
 def is_mounted(path):
-    """checks if path is on a mounted path."""
-    manager = get_manager()
-    if not manager:
-        return False
-    fsi = manager.get_fsi(path)[0]
-    return (fsi is not None)
+	"""checks if path is on a mounted path."""
+	manager = get_manager()
+	if not manager:
+		return False
+	fsi = manager.get_fsi(path)[0]
+	return (fsi is not None)
 
 
 def get_file_extension(path):
-    """returns the file extension of path"""
-    if "." not in path:
-        return ""
-    else:
-        return path.split(".")[-1].lower()
+	"""returns the file extension of path"""
+	if "." not in path:
+		return ""
+	else:
+		return path.split(".")[-1].lower()
 
 
 def is_archive(path):
-    """checks if path points to an archive"""
-    if not is_mounted(path):
-        arch = False
-        try:
-            arch = tarfile.is_tarfile(path)
-        except BaseException:
-            # not found
-            pass
-        try:
-            arch = (arch or zipfile.is_zipfile(path))
-        except BaseException:
-            pass
-        return arch
-    else:
-        fe = get_file_extension(path)
-        if fe in ("zip", "rar", "tar", "bz2", "gz"):
-            return True
-        else:
-            return False
+	"""checks if path points to an archive"""
+	if not is_mounted(path):
+		arch = False
+		try:
+			arch = tarfile.is_tarfile(path)
+		except:
+			# not found
+			pass
+		try:
+			arch = (arch or zipfile.is_zipfile(path))
+		except:
+			pass
+		return arch
+	else:
+		fe = get_file_extension(path)
+		if fe in ("zip", "rar", "tar", "bz2", "gz"):
+			return True
+		else:
+			return False
 
 
 def is_image(path):
-    """checks wether path points to an image."""
-    if not is_mounted(path):
-        try:
-            return (imghdr.what(path) is not None)
-        except BaseException:
-            # continue execution outside of the if-statement
-            pass
-    fe = get_file_extension(path)
-    if fe in (
-            "rgb", "gif", "pbm", "pgm", "ppm", "tiff", "rast", "xbm",
-            "jpeg", "jpg", "bmp", "png",
-    ):
-        return True
-    else:
-        return False
+	"""checks wether path points to an image."""
+	if not is_mounted(path):
+		try:
+			return (imghdr.what(path) is not None)
+		except:
+			# continue execution outside of the if-statement
+			pass
+	fe = get_file_extension(path)
+	if fe in (
+		"rgb", "gif", "pbm", "pgm", "ppm", "tiff", "rast", "xbm",
+		"jpeg", "jpg", "bmp", "png",
+		):
+		return True
+	else:
+		return False
 
 
 def main(args):
     ap = ArgumentParser()
-    ap.add_argument(
-        '-1',
-        '--one-line',
-        action='store_true',
-        help='List one file per line')
-    ap.add_argument('-a', '--all', action='store_true',
-                    help='do not ignore entries starting with .')
-    ap.add_argument('-l', '--long', action='store_true',
-                    help='use a long listing format')
+    ap.add_argument('-1', '--one-line', action='store_true', help='List one file per line')
+    ap.add_argument('-a', '--all', action='store_true', help='do not ignore entries starting with .')
+    ap.add_argument('-l', '--long', action='store_true', help='use a long listing format')
     ap.add_argument('files', nargs='*', help='files to be listed')
     ns = ap.parse_args(args)
 
@@ -131,7 +125,7 @@ def main(args):
                 return filename
 
     if len(ns.files) == 0:
-        filenames = [".", ".."] + os.listdir('.')
+        filenames =  [".", ".."] + os.listdir('.')
         out = joiner.join(_fmt(f) for f in filenames if _filter(f))
         print(out)
 

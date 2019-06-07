@@ -7,7 +7,6 @@ import sys
 import argparse
 import time
 
-
 def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('job_ids', nargs='+', type=int, help='ID of a running job')

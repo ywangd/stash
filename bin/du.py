@@ -54,19 +54,15 @@ def main(args):
             # We need to walk the tree from the bottom up so that a directory can have easy
             # access to the size of its subdirectories.
             for root, dirs, files in os.walk(path, topdown=False):
-                # This is to make sure the directory is not exclude from its
-                # ancestor
-                if is_excluded(os.path.relpath(root, path_base),
-                               exclude_pattern):
+                # This is to make sure the directory is not exclude from its ancestor
+                if is_excluded(os.path.relpath(root, path_base), exclude_pattern):
                     continue
 
-                # Loop through every non directory file in this directory and
-                # sum their sizes
+                # Loop through every non directory file in this directory and sum their sizes
                 size = sum(os.path.getsize(os.path.join(root, name))
                            for name in files if not is_excluded(name, exclude_pattern))
 
-                # Look at all of the subdirectories and add up their sizes from
-                # the `dirs_dict`
+                # Look at all of the subdirectories and add up their sizes from the `dirs_dict`
                 subdir_size = sum(dirs_dict[os.path.join(root, d)]
                                   for d in dirs if not is_excluded(d, exclude_pattern))
 

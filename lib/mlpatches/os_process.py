@@ -7,37 +7,34 @@ from mlpatches import base, os_popen
 
 _stash = base._stash
 
-
 def getpid(patch):
-    """Return the current process id."""
-    ct = threading.current_thread()
-    if isinstance(ct, _stash.runtime.ShThread):
-        return ct.job_id
-    else:
-        return -1
-
+	"""Return the current process id."""
+	ct = threading.current_thread()
+	if isinstance(ct, _stash.runtime.ShThread):
+		return ct.job_id
+	else:
+		return -1
 
 def getppid(patch):
-    """Return the parents process id."""
-    ct = threading.current_thread()
-    if isinstance(ct, _stash.runtime.ShThread):
-        pt = ct.parent
-    else:
-        return -1
-    if hasattr(pt, "job_id"):
-        return pt.job_id
-    else:
-        # ShRuntime
-        return 0
-
+	"""Return the parents process id."""
+	ct = threading.current_thread()
+	if isinstance(ct, _stash.runtime.ShThread):
+		pt = ct.parent
+	else:
+		return -1
+	if hasattr(pt, "job_id"):
+		return pt.job_id
+	else:
+		# ShRuntime
+		return 0
 
 def kill(patch, pid, sig):
-    """Send signal sig to the process pid. Constants for the specific signals available on the host platform are defined in the signal module"""
-    io = os_popen.VoidIO()
-    _stash(
-        "kill {pid}".format(pid=pid),
-        add_to_history=False,
-        final_errs=io,
-        final_outs=io,
-        final_ins=io,
-    )
+	"""Send signal sig to the process pid. Constants for the specific signals available on the host platform are defined in the signal module"""
+	io = os_popen.VoidIO()
+	_stash(
+		"kill {pid}".format(pid=pid),
+		add_to_history=False,
+		final_errs=io,
+		final_outs=io,
+		final_ins=io,
+		)

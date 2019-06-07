@@ -6,7 +6,6 @@ from stash.tests.stashtest import StashTestCase
 
 class Md5sumTests(StashTestCase):
     """tests for the md5sum command."""
-
     def setUp(self):
         """setup the tests"""
         self.cwd = self.get_data_path()
@@ -46,26 +45,17 @@ class Md5sumTests(StashTestCase):
     def test_checkhash_fail(self):
         """test failure md5sum -c with invalid data"""
         output = self.run_command("md5sum -c wrong_results.md5sum", exitcode=1)
-        # some files should have the correct hash
-        self.assertIn("Pass", output)
+        self.assertIn("Pass", output)  # some files should have the correct hash
         self.assertIn("Fail", output)
 
     def test_hash_stdin_implicit(self):
         """test hashing of stdin without arg"""
-        output = self.run_command(
-            "echo test | md5sum",
-            exitcode=0).replace(
-            "\n",
-            "")
+        output = self.run_command("echo test | md5sum", exitcode=0).replace("\n", "")
         expected = "d8e8fca2dc0f896fd7cb4cb0031ba249"
         self.assertEqual(output, expected)
 
     def test_hash_stdin_explicit(self):
         """test hashing of stdin with '-' arg"""
-        output = self.run_command(
-            "echo test | md5sum -",
-            exitcode=0).replace(
-            "\n",
-            "")
+        output = self.run_command("echo test | md5sum -", exitcode=0).replace("\n", "")
         expected = "d8e8fca2dc0f896fd7cb4cb0031ba249"
         self.assertEqual(output, expected)

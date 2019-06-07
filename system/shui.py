@@ -11,14 +11,12 @@ except ImportError:
 from .shcommon import IN_PYTHONISTA, ON_IPAD, PYTHONISTA_VERSION_LONG
 from .shterminal import ShTerminal, StubTerminal
 
-
 class ShVk(ui.View):
     """
     The virtual keyboard container, which implements a swipe cursor positioning gesture
 
     :type stash : StaSh
     """
-
     def __init__(self, stash, name='vks', flex='wh'):
 
         if not IN_PYTHONISTA:
@@ -43,8 +41,7 @@ class ShVk(ui.View):
         self.sv.remove_subview(subview)
 
     def scrollview_did_scroll(self, scrollview):
-        # integrate small scroll motions, but keep scrollview from actually
-        # moving
+        # integrate small scroll motions, but keep scrollview from actually moving
         if not scrollview.decelerating:
             self.dx -= scrollview.content_offset[0] / self.SCROLL_PER_CHAR
         scrollview.content_offset = (0.0, 0.0)
@@ -59,7 +56,6 @@ class ShUI(ui.View):
     """
     :type stash : StaSh
     """
-
     def __init__(self, stash, debug=False):
 
         self.stash = stash
@@ -72,16 +68,8 @@ class ShUI(ui.View):
         self.is_editing = False
 
         self.BUFFER_MAX = stash.config.getint('display', 'BUFFER_MAX')
-        self.TEXT_FONT = (
-            'Menlo-Regular',
-            stash.config.get(
-                'display',
-                'TEXT_FONT_SIZE'))
-        self.BUTTON_FONT = (
-            'Menlo-Regular',
-            stash.config.getint(
-                'display',
-                'BUTTON_FONT_SIZE'))
+        self.TEXT_FONT = ('Menlo-Regular', stash.config.get('display', 'TEXT_FONT_SIZE'))
+        self.BUTTON_FONT = ('Menlo-Regular', stash.config.getint('display', 'BUTTON_FONT_SIZE'))
 
         self.vk_symbols = stash.config.get('display', 'VK_SYMBOLS')
 
@@ -90,8 +78,7 @@ class ShUI(ui.View):
         self.flex = 'WH'
         self.background_color = 0.0
 
-        # Wrapper view of output and input areas
-        self.txts = ui.View(name='txts', flex='WH')
+        self.txts = ui.View(name='txts', flex='WH')  # Wrapper view of output and input areas
         self.add_subview(self.txts)
         self.txts.background_color = 0.7
 
@@ -257,10 +244,8 @@ class ShUI(ui.View):
             k_sym.x = offset + k_hspacing * i
             offset += k_sym.width
 
-        self.k_grp_0.width = self.vks.width - \
-            self.k_tab.width - self.k_swap.width - 2 * k_hspacing
-        self.k_grp_1.width = self.vks.width - \
-            self.k_tab.width - self.k_swap.width - 2 * k_hspacing
+        self.k_grp_0.width = self.vks.width - self.k_tab.width - self.k_swap.width - 2 * k_hspacing
+        self.k_grp_1.width = self.vks.width - self.k_tab.width - self.k_swap.width - 2 * k_hspacing
 
         self.vks.height = self.k_hist.height
         self.vks.y = self.vks.superview.height - (self.vks.height + 4)
@@ -288,8 +273,7 @@ class ShUI(ui.View):
                 self.vks.hidden = False
                 self.txts.height = self.height - frame[3]
                 # Leave space for the virtual key row
-                self.terminal.size = self.txts.width, self.txts.height - \
-                    (self.vks.height + 8)
+                self.terminal.size = self.txts.width, self.txts.height - (self.vks.height + 8)
             else:  # when keyboard goes away
                 # hide the virtual key row as well
                 self.vks.hidden = True
@@ -331,7 +315,7 @@ class ShUI(ui.View):
         table.row_height = self.BUTTON_FONT[1] + 4
         table.present('popover')
         table.wait_modal()
-
+    
     def history_popover_tapped(self, sender):
         """
         Called when a row in the history popover was tapped.
@@ -339,19 +323,16 @@ class ShUI(ui.View):
         :type sender: ui.TableView
         """
         if sender.selected_row >= 0:
-            # Save the unfinished line user is typing before showing entries
-            # from history
+            # Save the unfinished line user is typing before showing entries from history
             if self.stash.runtime.history.idx == -1:
                 self.stash.history.templine = self.stash.mini_buffer.modifiable_string.rstrip()
-            self.stash.mini_buffer.feed(
-                None, sender.items[sender.selected_row])
+            self.stash.mini_buffer.feed(None, sender.items[sender.selected_row])
             self.stash.runtime.history.idx = sender.selected_row
 
     def vk_tapped(self, vk):
         if vk == self.k_tab:  # Tab completion
             rng = self.terminal.selected_range
-            # Valid cursor positions are only when non-selection and after the
-            # modifiable position
+            # Valid cursor positions are only when non-selection and after the modifiable position
             if rng[0] == rng[1] and rng[0] >= self.stash.main_screen.x_modifiable:
                 self.stash.mini_buffer.feed(rng, '\t')
 
@@ -369,8 +350,7 @@ class ShUI(ui.View):
 
         elif vk == self.k_CD:
             if self.stash.runtime.child_thread:
-                self.stash.mini_buffer.feed(
-                    self.stash.mini_buffer.RANGE_BUFFER_END, '\0')
+                self.stash.mini_buffer.feed(self.stash.mini_buffer.RANGE_BUFFER_END, '\0')
 
         elif vk == self.k_CC:
             if not self.stash.runtime.child_thread:
@@ -378,8 +358,7 @@ class ShUI(ui.View):
                 self.stash.io.write(self.stash.runtime.get_prompt())
 
             else:  # ctrl-c terminates the entire stack of threads
-                # this recursively kill any nested child threads
-                self.stash.runtime.child_thread.kill()
+                self.stash.runtime.child_thread.kill()  # this recursively kill any nested child threads
                 time.sleep(0.5)  # wait a moment for the thread to terminate
 
         elif vk == self.k_CZ:
@@ -392,9 +371,7 @@ class ShUI(ui.View):
                 self.terminal.begin_editing()
 
         elif vk == self.k_CU:
-            self.stash.mini_buffer.feed(
-                self.stash.mini_buffer.RANGE_MODIFIABLE_CHARS, '')
+            self.stash.mini_buffer.feed(self.stash.mini_buffer.RANGE_MODIFIABLE_CHARS, '')
 
         elif vk.name == 'k_sym':
-            self.stash.mini_buffer.feed(
-                self.terminal.selected_range, vk.title.strip())
+            self.stash.mini_buffer.feed(self.terminal.selected_range, vk.title.strip())

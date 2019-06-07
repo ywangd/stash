@@ -28,7 +28,7 @@ def network_is_available():
         "https://github.com/ywangd/stash/",  # main StaSh repo
         "https://forum.omz-software.com/",  # pythonista forums
         "https://python.org/",  # python website
-    ]
+        ]
     for url in test_sites:
         try:
             requests.get(url, timeout=5.0)
@@ -51,8 +51,7 @@ def requires_network(f):
     :rtype: callable
     """
     network_unavailable = (not network_is_available())
-    return unittest.skipIf(network_unavailable,
-                           "No network connection available.")(f)
+    return unittest.skipIf(network_unavailable, "No network connection available.")(f)
 
 
 def expected_failure_on_py3(f):
@@ -115,8 +114,7 @@ class StashTestCase(unittest.TestCase):
             self.stash.runtime.worker_registry) == 0, u'worker registry not empty'
         del self.stash
 
-    def do_test(self, cmd, cmp_str, ensure_same_cwd=True,
-                ensure_undefined=(), ensure_defined=(), exitcode=None):
+    def do_test(self, cmd, cmp_str, ensure_same_cwd=True, ensure_undefined=(), ensure_defined=(), exitcode=None):
 
         saved_cwd = os.getcwd()
         self.logger.info(u"executing {c} in {d}...".format(c=cmd, d=saved_cwd))

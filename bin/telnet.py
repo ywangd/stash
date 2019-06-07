@@ -52,16 +52,15 @@ class StashTelnet(object):
         try:
             self.client = telnetlib.Telnet(host, port, timeout)
             return True
-        except BaseException:
+        except:
             return False
 
     def stdout_thread(self):
         while self.running:
             # Get the list sockets which are readable
             try:
-                read_sockets, write_sockets, error_sockets = select.select(
-                    [self.client], [], [])
-            except BaseException:
+                read_sockets, write_sockets, error_sockets = select.select([self.client], [], [])
+            except:
                 break
 
             for sock in read_sockets:  # incoming message from remote server
@@ -95,13 +94,11 @@ class SshUserActionDelegate(object):
     """
     Substitute the default user actions delegates
     """
-
     def __init__(self, telnet):
         self.telnet = telnet
 
     def send(self, s):
-        self.telnet.stream.feed(
-            s.decode('utf-8') if hasattr(s, "decode") else s)
+        self.telnet.stream.feed(s.decode('utf-8') if hasattr(s, "decode") else s)
         self.telnet.client.write(s.encode('utf-8'))
 
 
@@ -109,7 +106,6 @@ class SshTvVkKcDelegate(SshUserActionDelegate):
     """
     Delegate for TextView, Virtual keys and Key command
     """
-
     def textview_did_begin_editing(self, tv):
         _stash.terminal.is_editing = True
 
@@ -189,11 +185,9 @@ class SshSVDelegate(SshUserActionDelegate):
     SCROLL_PER_CHAR = 20.0  # Number of pixels to scroll to move 1 character
 
     def scrollview_did_scroll(self, scrollview):
-        # integrate small scroll motions, but keep scrollview from actually
-        # moving
+        # integrate small scroll motions, but keep scrollview from actually moving
         if not scrollview.decelerating:
-            scrollview.superview.dx -= scrollview.content_offset[0] / \
-                SshSVDelegate.SCROLL_PER_CHAR
+            scrollview.superview.dx -= scrollview.content_offset[0] / SshSVDelegate.SCROLL_PER_CHAR
         scrollview.content_offset = (0.0, 0.0)
 
         offset = int(scrollview.superview.dx)

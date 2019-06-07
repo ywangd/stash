@@ -8,7 +8,6 @@ from stash.tests.stashtest import StashTestCase
 
 class CatTests(StashTestCase):
     """Tests for the 'cat' command."""
-
     def setUp(self):
         """setup the tests"""
         self.cwd = self.get_data_path()
@@ -42,8 +41,7 @@ class CatTests(StashTestCase):
     def test_cat_multi_files(self):
         """test 'cat <somefile> <otherfile>'."""
         output = self.run_command("cat somefile.txt otherfile.txt", exitcode=0)
-        expected = self.read_data_file(
-            "somefile.txt") + self.read_data_file("otherfile.txt")
+        expected = self.read_data_file("somefile.txt") + self.read_data_file("otherfile.txt")
         self.assertEqual(output, expected)
 
     def test_cat_stdin(self):
@@ -62,9 +60,5 @@ class CatTests(StashTestCase):
 
     def test_cat_nonascii(self):
         """test 'cat <some file containing non-ascii characters.>'."""
-        output = self.run_command(
-            "cat nonascii.txt",
-            exitcode=0).replace(
-            "\n",
-            "")
+        output = self.run_command("cat nonascii.txt", exitcode=0).replace("\n", "")
         self.assertEqual(output, u"äöüß")

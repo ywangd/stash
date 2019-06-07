@@ -8,7 +8,6 @@ import argparse
 
 _stash = globals()['_stash']
 
-
 def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('-n',

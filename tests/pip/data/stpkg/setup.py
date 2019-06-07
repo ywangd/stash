@@ -13,13 +13,13 @@ setup(
     url="https://github.com/ywangd/stash/",
     classifiers=[
         "Topic :: Test",
-    ],
+        ],
     py_modules=[
         "stpkg",
-    ],
+        ],
     entry_points={
         "console_scripts": [
             "stash_pip_test = stpkg:main"
-        ],
-    },
-)
+            ],
+        },
+    )
