@@ -176,10 +176,54 @@ def set_file_encoding(p, encoding):
                 lines.insert(0, to_add)
 
 
+def remove_all_encodings(p, recursive=False, ignore_nonpy=True):
+    """
+    Set the encoding for all files in a directory.
+    :param p: path to directory
+    :type p: str
+    :param recursive: whether to descend into subdirectories or not
+    :type recursive: bool
+    :param ignore_nonpy: skip files not ending with .py
+    :type ignore_nonpy: bool
+    """
+    for fn in os.listdir(p):
+        fp = os.path.join(p, fn)
+        if os.path.isdir(fp):
+            if recursive:
+                remove_all_encodings(fp, recursive=recursive, ignore_nonpy=ignore_nonpy)
+        else:
+            if (not fn.endswith(".py") and ignore_nonpy):
+                # skip
+                continue
+            if (get_encoding_of_file(fp) is None):
+                # skip
+                print("Skipping '{}', it has no encoding.".format(fp))
+                continue
+            remove_file_encoding(fp)
+
+
+def remove_file_encoding(path):
+    """
+    Remove the encoding line from the given file.
+    :param path: path to remove from
+    :type path: str
+    """
+    with open(path, "r") as fin:
+        lines = fin.readlines()
+        if len(lines) >= 1 and is_encoding_line(lines[0]):
+            lines.pop(0)
+        elif len(lines) >= 2 and is_encoding_line(lines[1]):
+            lines.pop(1)
+        else:
+            print("No encoding line found in '{}'!".format(path))
+            return
+    with open(path, "w") as fout:
+        fout.write("".join(lines))
+
 def main():
     """the main function"""
     parser = argparse.ArgumentParser(description="encoding tool")
-    parser.add_argument("action", action="store", help="what to do", choices=["show", "set"])
+    parser.add_argument("action", action="store", help="what to do", choices=["show", "set", "remove"])
     parser.add_argument("-p", "--path", action="store", help="path to file(s), defaults to StaSh root")
     parser.add_argument("-r", "--recursive", action="store_true", help="descend into subdirectories")
     parser.add_argument("--py-only", dest="pyonly", action="store_true", help="ignore non .py files")
@@ -213,6 +257,14 @@ def main():
             set_all_encodings(path, encoding, recursive=ns.recursive, ignore_nonpy=ns.pyonly, force=ns.force)
         else:
             set_file_encoding(path, encoding)
+    elif ns.action == "remove":
+        if not os.path.exists(path):
+            print("Path '{p}' does not exists!".format(p=path))
+            sys.exit(1)
+        elif os.path.isdir(path):
+            remove_all_encodings(path, recursive=ns.recursive, ignore_nonpy=ns.pyonly)
+        else:
+            remove_file_encoding(path)
     else:
         print("Unknown action: '{}'!".format(ns.action))
         sys.exit(2)
