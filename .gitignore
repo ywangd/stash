@@ -73,3 +73,5 @@ debug
 .pcsm.json
 .pypi_packages
 
+# from tests
+history_test_s_l
