@@ -11,8 +11,7 @@ import argparse
 
 def main(args):
     ap = argparse.ArgumentParser()
-    ap.add_argument('-n', '--count', action='store_true',
-                    help='show total number of tips')
+    ap.add_argument('-n', '--count', action='store_true', help='show total number of tips')
 
     ns = ap.parse_args(args)
 
@@ -29,8 +28,7 @@ def main(args):
             print('Total available tips: %s' % len(tips))
         else:
             idx = random.randint(0, len(tips) - 1)
-            print('%s: %s' % (_stash.text_bold('Tip'),
-                              _stash.text_italic(tips[idx])))
+            print('%s: %s' % (_stash.text_bold('Tip'), _stash.text_italic(tips[idx])))
 
 
 if __name__ == '__main__':

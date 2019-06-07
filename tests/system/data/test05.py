@@ -18,4 +18,3 @@ print()
 s('test05_1.sh')
 
 s('test05_2.sh')
-

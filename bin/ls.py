@@ -13,60 +13,70 @@ from stashutils.mount_ctrl import get_manager
 
 
 def is_mounted(path):
-	"""checks if path is on a mounted path."""
-	manager = get_manager()
-	if not manager:
-		return False
-	fsi = manager.get_fsi(path)[0]
-	return (fsi is not None)
+    """checks if path is on a mounted path."""
+    manager = get_manager()
+    if not manager:
+        return False
+    fsi = manager.get_fsi(path)[0]
+    return (fsi is not None)
 
 
 def get_file_extension(path):
-	"""returns the file extension of path"""
-	if "." not in path:
-		return ""
-	else:
-		return path.split(".")[-1].lower()
+    """returns the file extension of path"""
+    if "." not in path:
+        return ""
+    else:
+        return path.split(".")[-1].lower()
 
 
 def is_archive(path):
-	"""checks if path points to an archive"""
-	if not is_mounted(path):
-		arch = False
-		try:
-			arch = tarfile.is_tarfile(path)
-		except:
-			# not found
-			pass
-		try:
-			arch = (arch or zipfile.is_zipfile(path))
-		except:
-			pass
-		return arch
-	else:
-		fe = get_file_extension(path)
-		if fe in ("zip", "rar", "tar", "bz2", "gz"):
-			return True
-		else:
-			return False
+    """checks if path points to an archive"""
+    if not is_mounted(path):
+        arch = False
+        try:
+            arch = tarfile.is_tarfile(path)
+        except:
+            # not found
+            pass
+        try:
+            arch = (arch or zipfile.is_zipfile(path))
+        except:
+            pass
+        return arch
+    else:
+        fe = get_file_extension(path)
+        if fe in ("zip", "rar", "tar", "bz2", "gz"):
+            return True
+        else:
+            return False
 
 
 def is_image(path):
-	"""checks wether path points to an image."""
-	if not is_mounted(path):
-		try:
-			return (imghdr.what(path) is not None)
-		except:
-			# continue execution outside of the if-statement
-			pass
-	fe = get_file_extension(path)
-	if fe in (
-		"rgb", "gif", "pbm", "pgm", "ppm", "tiff", "rast", "xbm",
-		"jpeg", "jpg", "bmp", "png",
-		):
-		return True
-	else:
-		return False
+    """checks wether path points to an image."""
+    if not is_mounted(path):
+        try:
+            return (imghdr.what(path) is not None)
+        except:
+            # continue execution outside of the if-statement
+            pass
+    fe = get_file_extension(path)
+    if fe in (
+            "rgb",
+            "gif",
+            "pbm",
+            "pgm",
+            "ppm",
+            "tiff",
+            "rast",
+            "xbm",
+            "jpeg",
+            "jpg",
+            "bmp",
+            "png",
+    ):
+        return True
+    else:
+        return False
 
 
 def main(args):
@@ -84,13 +94,16 @@ def main(args):
     joiner = '\n' if ns.one_line or ns.long else ' '
 
     if ns.all:
+
         def _filter(filename):
             return True
     else:
+
         def _filter(filename):
             return False if filename.startswith('.') else True
 
     if ns.long:
+
         def _fmt(filename, dirname=''):
             _stat = os.stat(os.path.join(dirname, filename))
 
@@ -106,11 +119,14 @@ def main(args):
 
             ret = filename + _stash.text_color(
                 ' (%s) %s' % (sizeof_fmt(_stat.st_size),
-                              time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(_stat.st_mtime))),
-                'gray')
+                              time.strftime("%Y-%m-%d %H:%M:%S",
+                                            time.localtime(_stat.st_mtime))),
+                'gray'
+            )
 
             return ret
     else:
+
         def _fmt(filename, dirname=''):
             fullpath = os.path.join(dirname, filename)
             if os.path.isdir(fullpath):
@@ -125,7 +141,7 @@ def main(args):
                 return filename
 
     if len(ns.files) == 0:
-        filenames =  [".", ".."] + os.listdir('.')
+        filenames = [".", ".."] + os.listdir('.')
         out = joiner.join(_fmt(f) for f in filenames if _filter(f))
         print(out)
 
@@ -140,9 +156,7 @@ def main(args):
             elif os.path.isdir(f):
                 filenames = [".", ".."] + os.listdir(f)
                 fn = (f[:-1] if f.endswith("/") else f)
-                out_dir.append('%s/:\n%s\n' %
-                               (fn,
-                                joiner.join(_fmt(sf, f) for sf in filenames if _filter(sf))))
+                out_dir.append('%s/:\n%s\n' % (fn, joiner.join(_fmt(sf, f) for sf in filenames if _filter(sf))))
             else:
                 out_file.append(_fmt(f))
 

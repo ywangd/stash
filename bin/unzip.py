@@ -6,18 +6,14 @@ import sys
 import zipfile
 import argparse
 
+
 def main(args):
     ap = argparse.ArgumentParser()
 
     ap.add_argument('-d', '--exdir', nargs='?', help='extract files into exdir')
-    ap.add_argument('-v', '--verbose',
-                    action='store_true',
-                    help='be more chatty')
-    ap.add_argument('-t', '--list',
-                    action='store_true',
-                    help='list the contents of an archive')
-    ap.add_argument('zipfile',
-                    help='zip file to be extracted')
+    ap.add_argument('-v', '--verbose', action='store_true', help='be more chatty')
+    ap.add_argument('-t', '--list', action='store_true', help='list the contents of an archive')
+    ap.add_argument('zipfile', help='zip file to be extracted')
     ns = ap.parse_args(args)
 
     if not os.path.isfile(ns.zipfile):

@@ -7,10 +7,10 @@ import sys
 import argparse
 import threading
 
+
 def main(args):
     ap = argparse.ArgumentParser()
-    ap.add_argument('job_id', nargs='?', type=int,
-                    help='ID of a running background job')
+    ap.add_argument('job_id', nargs='?', type=int, help='ID of a running background job')
     ns = ap.parse_args(args)
 
     _stash = globals()['_stash']
@@ -32,6 +32,7 @@ def main(args):
     t = threading.Timer(1.0, f)
     print('pushing job {} to foreground ...'.format(worker.job_id))
     t.start()
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])

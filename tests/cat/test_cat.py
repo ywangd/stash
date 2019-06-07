@@ -8,6 +8,7 @@ from stash.tests.stashtest import StashTestCase
 
 class CatTests(StashTestCase):
     """Tests for the 'cat' command."""
+
     def setUp(self):
         """setup the tests"""
         self.cwd = self.get_data_path()

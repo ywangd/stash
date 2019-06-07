@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """Simple HTTP Server With Upload (https://gist.github.com/UniIsland/3346170)
 
 (StaSh) Recommend to run this command as background job, i.e. "httpserver [port] &"
@@ -28,9 +27,7 @@ __author__ = "bones7456"
 __home_page__ = "http://li2z.cn/"
 
 
-
 class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-
     """Simple HTTP request handler with GET/HEAD/POST commands.
 
     This serves files from the current directory and any of its
@@ -85,7 +82,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if f:
             self.copyfile(f, self.wfile)
             f.close()
-        
+
     def deal_post_data(self):
         boundary = self.headers.plisttext.split("=")[1]
         remainbytes = int(self.headers['content-length'])
@@ -108,7 +105,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             out = open(fn, 'wb')
         except IOError:
             return (False, "Can't create file to write, do you have permission to write?")
-                
+
         preline = self.rfile.readline()
         remainbytes -= len(preline)
         while remainbytes > 0:
@@ -204,8 +201,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             if os.path.islink(fullname):
                 displayname = name + "@"
                 # Note: a link to a directory displays with @ and links with /
-            f.write('<li><a href="%s">%s</a>\n'
-                    % (quote(linkname), cgi.escape(displayname)))
+            f.write('<li><a href="%s">%s</a>\n' % (quote(linkname), cgi.escape(displayname)))
         f.write("</ul>\n<hr>\n</body>\n</html>\n")
         length = f.tell()
         f.seek(0)
@@ -224,8 +220,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         """
         # abandon query parameters
-        path = path.split('?',1)[0]
-        path = path.split('#',1)[0]
+        path = path.split('?', 1)[0]
+        path = path.split('#', 1)[0]
         path = posixpath.normpath(unquote(path))
         words = path.split('/')
         words = filter(None, words)
@@ -278,7 +274,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return self.extensions_map['']
 
     if not mimetypes.inited:
-        mimetypes.init() # try to read system mime.types
+        mimetypes.init()  # try to read system mime.types
     extensions_map = mimetypes.types_map.copy()
     extensions_map.update({
         '': 'application/octet-stream', # Default
@@ -287,9 +283,10 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         '.h': 'text/plain',
         })
 
+
 def main(port=8000):
     server = BaseHTTPServer.HTTPServer(('0.0.0.0', port), SimpleHTTPRequestHandler)
-    
+
     try:
         print('Serving HTTP on 0.0.0.0 port %d ...' % port)
         print('local IP address is %s' % globals()['_stash'].libcore.get_lan_ip())
@@ -298,6 +295,7 @@ def main(port=8000):
     except KeyboardInterrupt:
         print('Server shutting down ...')
         server.server_close()
+
 
 if __name__ == '__main__':
     import argparse

@@ -6,6 +6,7 @@ from stash.tests.stashtest import StashTestCase
 
 class Sha256sumTests(StashTestCase):
     """tests for the sha256sum command."""
+
     def setUp(self):
         """setup the tests"""
         self.cwd = self.get_data_path()

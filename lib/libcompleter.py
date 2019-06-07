@@ -5,118 +5,206 @@ import json
 _subcmd_cfgfile = os.path.join(os.environ['STASH_ROOT'], '.completer_subcmd.json')
 
 _subcmd_cfg = {
-    "git": {
-        "1": {
-            'candidates': ['branch', 'checkout', 'clone', 'commit', 'help',
-                           'log', 'modified', 'pull', 'push', 'remote', 'reset',
-                           'rm', 'status', 'add', 'diff', 'merge', 'init', 'fetch'],
-            'blank_completion': True,
-            'with_normal_completion': False,
+    "git":
+        {
+            "1":
+                {
+                    'candidates':
+                        [
+                            'branch',
+                            'checkout',
+                            'clone',
+                            'commit',
+                            'help',
+                            'log',
+                            'modified',
+                            'pull',
+                            'push',
+                            'remote',
+                            'reset',
+                            'rm',
+                            'status',
+                            'add',
+                            'diff',
+                            'merge',
+                            'init',
+                            'fetch'
+                        ],
+                    'blank_completion': True,
+                    'with_normal_completion': False,
+                },
+            '-':
+                {
+                    'blank_completion': False,
+                    'with_normal_completion': False,
+                    'candidate_groups': [['log',
+                                          ['-l',
+                                           '--length',
+                                           '-f',
+                                           '--format',
+                                           '-o',
+                                           '--output']]],
+                }
         },
-        '-': {
-            'blank_completion': False,
-            'with_normal_completion': False,
-            'candidate_groups': [
-                ['log', ['-l', '--length', '-f', '--format', '-o', '--output']]
-            ],
-        }
-    },
-
-    "ls": {
-        '-': {
-            'blank_completion': False,
-            'with_normal_completion': False,
-            'candidate_groups': [
-                [None, ['-1', '--one-line', '-a', '--all', '-l', '--long']],
-            ]
-        }
-    },
-
-    "pip": {
-        "1": {
-            'candidates': ['install', 'list', 'download', 'search', 'update', 'versions', 'uninstall'],
-            'blank_completion': True,
-            'with_normal_completion': False,
+    "ls":
+        {
+            '-':
+                {
+                    'blank_completion': False,
+                    'with_normal_completion': False,
+                    'candidate_groups': [[None,
+                                          ['-1',
+                                           '--one-line',
+                                           '-a',
+                                           '--all',
+                                           '-l',
+                                           '--long']],
+                                         ]
+                }
         },
-
-    },
-    "gci": {
-        "1": {
-            'candidates': [
-            	'enable', 'disable', 'status', 'collect', 'threshold',
-            	'debug', 'break',
-            	],
-            'blank_completion': True,
-            'with_normal_completion': False,
+    "pip":
+        {
+            "1":
+                {
+                    'candidates': ['install',
+                                   'list',
+                                   'download',
+                                   'search',
+                                   'update',
+                                   'versions',
+                                   'uninstall'],
+                    'blank_completion': True,
+                    'with_normal_completion': False,
+                },
         },
-    },
-    "stashconf": {
-        "1": {
-            'candidates': [
-                'input_encoding_utf8',
-                'ipython_style_history_search',
-                'py_pdb',
-                'py_traceback',
-                "enable_styles",
-                "colored_errors",
-                "enable_styles",
-                ],
-            'blank_completion': True,
-            'with_normal_completion': False,
+    "gci":
+        {
+            "1":
+                {
+                    'candidates': [
+                        'enable',
+                        'disable',
+                        'status',
+                        'collect',
+                        'threshold',
+                        'debug',
+                        'break',
+                    ],
+                    'blank_completion': True,
+                    'with_normal_completion': False,
+                },
         },
-        "-": {
-            'candidate_groups': [
-                [None, ['-l', '--list', '-h', '--help']],
-            ],
-            'blank_completion': False,
-            'with_normal_completion': False,
+    "stashconf":
+        {
+            "1":
+                {
+                    'candidates':
+                        [
+                            'input_encoding_utf8',
+                            'ipython_style_history_search',
+                            'py_pdb',
+                            'py_traceback',
+                            "enable_styles",
+                            "colored_errors",
+                            "enable_styles",
+                        ],
+                    'blank_completion': True,
+                    'with_normal_completion': False,
+                },
+            "-":
+                {
+                    'candidate_groups': [[None,
+                                          ['-l',
+                                           '--list',
+                                           '-h',
+                                           '--help']],
+                                         ],
+                    'blank_completion': False,
+                    'with_normal_completion': False,
+                },
         },
-    },
-    "webviewer": {
-        "-": {
-            'candidate_groups': [
-                [None, ['-i', '--insecure', '-h', '--help']],
-            ],
-            'blank_completion': True,
-            'with_normal_completion': False,
+    "webviewer":
+        {
+            "-":
+                {
+                    'candidate_groups': [[None,
+                                          ['-i',
+                                           '--insecure',
+                                           '-h',
+                                           '--help']],
+                                         ],
+                    'blank_completion': True,
+                    'with_normal_completion': False,
+                },
         },
-    },
-    "monkeylord": {
-        "1": {
-            "candidates": ["list", "enable", "disable"],
-            "blank_completion": True,
-            "with_normal_completion": False,
+    "monkeylord":
+        {
+            "1": {
+                "candidates": ["list",
+                               "enable",
+                               "disable"],
+                "blank_completion": True,
+                "with_normal_completion": False,
+            },
+            "-":
+                {
+                    "candidate_groups": [[None,
+                                          ["-h",
+                                           "--help"]],
+                                         ],
+                    "blank_completion": True,
+                    "with_normal_completion": False,
+                },
         },
-        "-": {
-            "candidate_groups": [
-            	[None, ["-h", "--help"]],
-            	],
-            "blank_completion": True,
-            "with_normal_completion": False,
+    "mount":
+        {
+            "-":
+                {
+                    "candidate_groups":
+                        [
+                            [
+                                None,
+                                [
+                                    "-h",
+                                    "--help",
+                                    "-l",
+                                    "--show-labels",
+                                    "-v",
+                                    "--verbose",
+                                    "-y",
+                                    "--yes",
+                                    "-f",
+                                    "--fake",
+                                    "-r",
+                                    "--read-only",
+                                    "-t",
+                                    "--type",
+                                ]
+                            ]
+                        ],
+                    "blank_completion": True,
+                    "with_normal_completion": False,
+                },
         },
-    },
-    "mount": {
-    	"-": {
-    		"candidate_groups": [[None, [
-    			"-h", "--help", "-l", "--show-labels", "-v", "--verbose",
-    			"-y", "--yes", "-f", "--fake", "-r", "--read-only",
-    			"-t", "--type",
-    			]]],
-    		"blank_completion": True,
-    		"with_normal_completion": False,
-    	},
-    },
-    "umount": {
-    	"-": {
-    		"candidate_groups": [[None, [
-    			"-h", "--help", "-a", "--all", "-v", "--verbose",
-    			"-f", "--force",
-    			]]],
-    		"with_normal_completion": False,
-    		"blank_completion": True,
-    	},
-    },
-
+    "umount":
+        {
+            "-":
+                {
+                    "candidate_groups": [[None,
+                                          [
+                                              "-h",
+                                              "--help",
+                                              "-a",
+                                              "--all",
+                                              "-v",
+                                              "--verbose",
+                                              "-f",
+                                              "--force",
+                                          ]]],
+                    "with_normal_completion": False,
+                    "blank_completion": True,
+                },
+        },
 }
 
 if os.path.exists(_subcmd_cfgfile) and os.path.isfile(_subcmd_cfgfile):
@@ -158,8 +246,7 @@ def subcmd_complete(toks):
         if pos in cfg.keys() \
                 and (not is_blank_completion
                      or (is_blank_completion and cfg[pos]['blank_completion'])):
-            cands = _select_from_candidates(cfg[pos]['candidates'],
-                                            '' if is_blank_completion else word_to_complete)
+            cands = _select_from_candidates(cfg[pos]['candidates'], '' if is_blank_completion else word_to_complete)
             return cands, cfg[pos]['with_normal_completion']
 
         elif '-' in cfg.keys() \
@@ -170,9 +257,11 @@ def subcmd_complete(toks):
                 if not t.startswith('-'):
                     subcmd = t
                     break
-            cands = _select_from_candidate_groups(cfg['-']['candidate_groups'],
-                                                  '' if is_blank_completion else word_to_complete,
-                                                  subcmd)
+            cands = _select_from_candidate_groups(
+                cfg['-']['candidate_groups'],
+                '' if is_blank_completion else word_to_complete,
+                subcmd
+            )
             if cands is not None:
                 return cands, cfg['-']['with_normal_completion']
 

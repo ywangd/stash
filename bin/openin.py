@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """Open file in an external app.
 """
 
@@ -13,7 +12,6 @@ import ui
 
 
 class ConsoleOpenin(object):
-
     def __init__(self, args):
         p = argparse.ArgumentParser(description=__doc__)
         p.add_argument("file", action="store", help="file to open")

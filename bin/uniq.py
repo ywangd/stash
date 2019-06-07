@@ -7,6 +7,7 @@ import sys
 import fileinput
 import argparse
 
+
 def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('files', nargs='*', help='files to unique (must be sorted first)')

@@ -12,11 +12,13 @@ import os
 import cmd
 import sys
 
+
 class SqliteCMD(cmd.Cmd):
     '''
     Simple sqlite3 shell
     '''
     prompt = 'sqlite3>'
+
     def __init__(self, db=None):
         cmd.Cmd.__init__(self)
         self.database = db or ':memory:'
@@ -38,7 +40,7 @@ class SqliteCMD(cmd.Cmd):
         else:
             print('Using databasse: %s' % self.database)
 
-    def do_exit(self,*args):
+    def do_exit(self, *args):
         '''Exit shell'''
         return True
 
@@ -62,7 +64,7 @@ class SqliteCMD(cmd.Cmd):
             print(line)
         else:
             with open(self.output, 'a+') as f:
-                f.write(line+'\n')
+                f.write(line + '\n')
 
     def do_output(self, line):
         '''.output ?file?
@@ -73,7 +75,7 @@ Set output to a file default: stdout'''
         """Set the separator, default: |"""
         self.separator = separator
 
-    def do_headers(self,state):
+    def do_headers(self, state):
         '''.headers ?on|off?
 Turn headers on or off, default: on'''
         self.headers = state.lower() == 'on'
@@ -88,15 +90,13 @@ If table is specified, dump that table.
                 for row in self.conn.iterdump():
                     self.display(row)
             else:
-                conn = sqlite3.connect(':memory:')    
+                conn = sqlite3.connect(':memory:')
                 cu = conn.cursor()
                 cu.execute("attach database '" + self.database + "' as attached_db")
-                cu.execute("select sql from attached_db.sqlite_master "
-                            "where type='table' and name='" + line + "'")
+                cu.execute("select sql from attached_db.sqlite_master " "where type='table' and name='" + line + "'")
                 sql_create_table = cu.fetchone()[0]
-                cu.execute(sql_create_table);
-                cu.execute("insert into " + line +
-                    " select * from attached_db." + line)
+                cu.execute(sql_create_table)
+                cu.execute("insert into " + line + " select * from attached_db." + line)
                 conn.commit()
                 cu.execute("detach database attached_db")
                 self.display("\n".join(conn.iterdump()))
@@ -140,7 +140,7 @@ Execute SQL in FILENAME
 '''
         if line:
             if os.path.isfile(line):
-                with open(line,'r') as f:
+                with open(line, 'r') as f:
                     self.cur.executescript(f.read())
                     self.conn.commit()
 
@@ -210,6 +210,7 @@ List names of tables
 
     def do_EOF(self, line):
         return True
+
 
 if __name__ == '__main__':
     #sqlitedb = SqliteCMD()

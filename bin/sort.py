@@ -7,12 +7,10 @@ import fileinput
 import argparse
 
 
-
 def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('files', nargs='*', help='files to sort')
-    ap.add_argument('-r', '--reverse', action='store_true', default=False,
-                    help='reverse the result of comparisons')
+    ap.add_argument('-r', '--reverse', action='store_true', default=False, help='reverse the result of comparisons')
     ns = ap.parse_args(args)
 
     def _print(lines):

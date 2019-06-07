@@ -16,24 +16,17 @@ import sys
 import argparse
 import paramiko
 
-SSH_DIRS = [os.path.expanduser('~/.ssh'),
-            os.path.join(os.environ['STASH_ROOT'], '.ssh')]
+SSH_DIRS = [os.path.expanduser('~/.ssh'), os.path.join(os.environ['STASH_ROOT'], '.ssh')]
 
-key_mode = {'rsa': 'rsa',
-            'dsa': 'dss'}
+key_mode = {'rsa': 'rsa', 'dsa': 'dss'}
 
 
 def main(args):
     ap = argparse.ArgumentParser(args)
-    ap.add_argument('-t', choices=('rsa', 'dsa'), default='rsa',
-                    action='store', dest='type',
-                    help='Key Type: (rsa,dsa)')
-    ap.add_argument('-b', action='store', dest='bits', default=1024, type=int,
-                    help='bits for key gen. default: 1024')
-    ap.add_argument('-N', dest='password', default=None, action='store',
-                    help='password default: None')
-    ap.add_argument('-f', dest='filename', default=False, action='store',
-                    help='Filename default: id_rsa/dsa')
+    ap.add_argument('-t', choices=('rsa', 'dsa'), default='rsa', action='store', dest='type', help='Key Type: (rsa,dsa)')
+    ap.add_argument('-b', action='store', dest='bits', default=1024, type=int, help='bits for key gen. default: 1024')
+    ap.add_argument('-N', dest='password', default=None, action='store', help='password default: None')
+    ap.add_argument('-f', dest='filename', default=False, action='store', help='Filename default: id_rsa/dsa')
     ns = ap.parse_args()
 
     # Keygen for keypair

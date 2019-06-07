@@ -2,8 +2,10 @@
 """tests for the 'exit' command."""
 from stash.tests.stashtest import StashTestCase
 
+
 class ExitTests(StashTestCase):
     """Tests for the 'exit' command."""
+
     def test_help(self):
         """test 'exit --help'."""
         output = self.run_command("exit --help", exitcode=0)

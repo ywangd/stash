@@ -45,7 +45,6 @@ try:
 except ImportError:
     _stash('pip install pyte==0.4.10')
 
-
 if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
     _stash('pip install paramiko==1.16.0')
@@ -64,10 +63,7 @@ class StashSSH(object):
             'a',
             font=('Menlo-Regular', _stash.config.getint('display', 'TEXT_FONT_SIZE')))
         # noinspection PyUnresolvedReferences
-        self.screen = pyte.screens.DiffScreen(
-            int(_stash.ui.width / font_width),
-            int(_stash.ui.height / font_height)
-        )
+        self.screen = pyte.screens.DiffScreen(int(_stash.ui.width / font_width), int(_stash.ui.height / font_height))
         self.stream = pyte.Stream()
         self.stream.attach(self.screen)
 
@@ -86,11 +82,7 @@ class StashSSH(object):
             key_filename = self.find_ssh_keys()
             if len(key_filename) > 0:
                 try:
-                    self.client.connect(host,
-                                        username=username,
-                                        password=passwd,
-                                        port=port,
-                                        key_filename=key_filename)
+                    self.client.connect(host, username=username, password=passwd, port=port, key_filename=key_filename)
                     return True
                 except paramiko.SSHException as e:
                     print('Failed to login with SSH Keys: {}'.format(repr(e)))
@@ -108,10 +100,7 @@ class StashSSH(object):
 
     def _connect_with_passwd(self, host, username, passwd, port):
         try:
-            self.client.connect(host,
-                                username=username,
-                                password=passwd,
-                                port=port)
+            self.client.connect(host, username=username, password=passwd, port=port)
             return True
         except Exception as e:
             print('Error: {}'.format(e))
@@ -119,8 +108,7 @@ class StashSSH(object):
 
     def find_ssh_keys(self):
         ssh_dir = os.path.join(os.environ['STASH_ROOT'], '.ssh')
-        return [os.path.join(ssh_dir, filename) for filename
-                in os.listdir(ssh_dir) if '.' not in filename]
+        return [os.path.join(ssh_dir, filename) for filename in os.listdir(ssh_dir) if '.' not in filename]
 
     def stdout_thread(self):
         while True:
@@ -168,6 +156,7 @@ class SshUserActionDelegate(object):
     """
     Substitute the default user actions delegates
     """
+
     def __init__(self, ssh):
         self.ssh = ssh
 
@@ -185,6 +174,7 @@ class SshTvVkKcDelegate(SshUserActionDelegate):
     """
     Delegate for TextView, Virtual keys and Key command
     """
+
     def textview_did_begin_editing(self, tv):
         _stash.terminal.is_editing = True
 
@@ -279,13 +269,10 @@ class SshSVDelegate(SshUserActionDelegate):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument('--password', action='store', default=None,
-                    help='Password for rsa/dsa key or password login')
-    ap.add_argument('-p', '--port', action='store', default=22, type=int,
-                    help='port for ssh default: 22')
+    ap.add_argument('--password', action='store', default=None, help='Password for rsa/dsa key or password login')
+    ap.add_argument('-p', '--port', action='store', default=22, type=int, help='port for ssh default: 22')
     ap.add_argument('host', help='host ex. user@host.com')
-    ap.add_argument('command', nargs='?', default=False,
-                    help='Command to send as a quoted string')
+    ap.add_argument('command', nargs='?', default=False, help='Command to send as a quoted string')
     args = ap.parse_args()
 
     ssh = StashSSH()

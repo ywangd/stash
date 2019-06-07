@@ -14,22 +14,21 @@ class ShHistory(object):
     :param stash: the StaSh core
     :type stash: StaSh
     """
-    
+
     ENCODING = "utf-8"
     DEFAULT = "_default"
-    
+
     def __init__(self, stash):
         self.stash = stash
         self._histories = {}
         self._current = self.DEFAULT
         self.allow_double = self.stash.config.getboolean("history", "allow_double_lines")
         self.hide_whitespace = self.stash.config.getboolean("history", "hide_whitespace_lines")
-        self.ipython_style_history_search = self.stash.config.getboolean(
-            'history', 'ipython_style_history_search')
+        self.ipython_style_history_search = self.stash.config.getboolean('history', 'ipython_style_history_search')
         self.maxsize = self.stash.config.getint("history", "maxsize")
         self.templine = ""
         self.idx = -1
-    
+
     @classmethod
     def load(cls, path, stash):
         """
@@ -49,7 +48,7 @@ class ShHistory(object):
             h = {"StaSh.runtime": cls.load_old_format(path)}
         shh._histories = h
         return shh
-    
+
     @classmethod
     def load_old_format(cls, path):
         """
@@ -62,7 +61,7 @@ class ShHistory(object):
         with open(path, "r", encoding=cls.ENCODING) as fin:
             lines = [line.strip() for line in fin.readlines()]
         return lines
-    
+
     def save(self, path):
         """
         Save the history to a path.
@@ -72,7 +71,7 @@ class ShHistory(object):
         with open(path, "w", encoding=self.ENCODING) as fout:
             s = json.dumps(self._histories)
             fout.write(u"" + s)  # ensure unicode
-    
+
     def clear(self, target=None):
         """
         Clear the history
@@ -83,13 +82,13 @@ class ShHistory(object):
             target = self._current
         if target in self._histories:
             del self._histories[target]
-    
+
     def clear_all(self):
         """
         Clear all histories.
         """
         self._histories = {}
-    
+
     def swap(self, target):
         """
         Swap the history
@@ -97,7 +96,7 @@ class ShHistory(object):
         :type target: str or None
         """
         self._current = target
-    
+
     def add(self, line, always=False):
         """
         Add a line to the history.
@@ -122,10 +121,10 @@ class ShHistory(object):
         # ensure maxsize
         while len(self._histories[self._current]) > max(0, self.maxsize):
             self._histories[self._current].pop(0)
-        
+
         # reset index
         self.reset_idx()
-    
+
     def getlist(self):
         """
         Return a list of the current history.
@@ -135,7 +134,7 @@ class ShHistory(object):
         if self._current not in self._histories:
             self._histories[self._current] = []
         return self._histories[self._current][::-1]
-    
+
     def search(self, tok):
         """
         Search the history.
@@ -161,13 +160,13 @@ class ShHistory(object):
                 if entry.startswith(search_string):
                     return entry
             raise ShEventNotFound(tok)
-    
+
     def reset_idx(self):
         """
         Reset the index of the current position in the history
         """
         self.idx = -1
-    
+
     def up(self):
         """
         Move upwards in the history.

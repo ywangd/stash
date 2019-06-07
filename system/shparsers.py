@@ -12,7 +12,6 @@ import pyparsing as pp
 
 from .shcommon import ShSingleExpansionRequired, ShBadSubstitution, ShInternalError
 
-
 _GRAMMAR = r"""
 -----------------------------------------------------------------------------
     Shell Grammar Simplified
@@ -153,7 +152,6 @@ class ShToken(object):
 
 # noinspection PyProtectedMember
 class ShParser(object):
-
     """
     Parse the command line input to provide basic semantic analysis.
     The results will be further expanded by `ShExpander`.
@@ -168,12 +166,8 @@ class ShParser(object):
         self.logger = logging.getLogger('StaSh.Parser')
 
         escaped = pp.Combine("\\" + pp.Word(pp.printables + ' ', exact=1)).setParseAction(self.escaped_action)
-        escaped_oct = pp.Combine(
-            "\\" + pp.Word('01234567', max=3)
-        ).setParseAction(self.escaped_oct_action)
-        escaped_hex = pp.Combine(
-            "\\x" + pp.Word('0123456789abcdefABCDEF', exact=2)
-        ).setParseAction(self.escaped_hex_action)
+        escaped_oct = pp.Combine("\\" + pp.Word('01234567', max=3)).setParseAction(self.escaped_oct_action)
+        escaped_hex = pp.Combine("\\x" + pp.Word('0123456789abcdefABCDEF', exact=2)).setParseAction(self.escaped_hex_action)
         # Some special uq_word is needed, e.g. &3 for file descriptor of Pythonista interactive prompt
         uq_word = (pp.Literal('&3') | pp.Word(_WORD_CHARS)).setParseAction(self.uq_word_action)
         bq_word = pp.QuotedString('`', escChar='\\', unquoteResults=False).setParseAction(self.bq_word_action)
@@ -210,9 +204,7 @@ class ShParser(object):
         pipe_sequence = simple_command + pp.ZeroOrMore(pipe_op + simple_command)
         pipe_sequence = pp.Group(pipe_sequence)
 
-        complete_command = pp.Optional(pipe_sequence
-                                       + pp.ZeroOrMore(punctuator + pipe_sequence)
-                                       + pp.Optional(punctuator))
+        complete_command = pp.Optional(pipe_sequence + pp.ZeroOrMore(punctuator + pipe_sequence) + pp.Optional(punctuator))
 
         # --- special parser for inside double quotes
         uq_word_in_dq = pp.Word(pp.printables.replace('`', ' ').replace('\\', ''))\
@@ -351,7 +343,6 @@ class ShParser(object):
 
 # noinspection PyProtectedMember
 class ShExpander(object):
-
     """
     Expand variables, wildcards, escapes, quotes etc. based on parsed results.
 
@@ -399,7 +390,7 @@ class ShExpander(object):
 
                 for _ in sc.cmd_prefix:
                     t = tokens[idxt]
-                    ident = t.tok[0: len(t.tok) - len(t.parts.tok) - 1]
+                    ident = t.tok[0:len(t.tok) - len(t.parts.tok) - 1]
                     val = ' '.join(self.expand_word(t.parts))
                     simple_command.assignments.append(ShAssignment(ident, val))
                     idxt += 1
@@ -718,7 +709,6 @@ class ShExpander(object):
 
 # noinspection PyProtectedMember
 class ShCompleter(object):
-
     """
     This class provides command line auto-completion for the shell.
     """
@@ -764,8 +754,11 @@ class ShCompleter(object):
         toks.append(word_to_complete)
 
         if self.debug:
-            self.logger.debug('is_cmd_word: %s, word_to_complete: %s, replace_from: %d\n' %
-                              (is_cmd_word, word_to_complete, replace_from))
+            self.logger.debug(
+                'is_cmd_word: %s, word_to_complete: %s, replace_from: %d\n' % (is_cmd_word,
+                                                                               word_to_complete,
+                                                                               replace_from)
+            )
 
         cands, with_normal_completion = self.stash.libcompleter.subcmd_complete(toks)
 
@@ -774,8 +767,7 @@ class ShCompleter(object):
             path_names = self.path_match(word_to_complete)
 
             if is_cmd_word:
-                path_names = [p for p in path_names
-                              if p.endswith('/') or p.endswith('.py') or p.endswith('.sh')]
+                path_names = [p for p in path_names if p.endswith('/') or p.endswith('.py') or p.endswith('.sh')]
                 script_names = self.stash.runtime.get_all_script_names()
                 script_names.extend(current_state.aliases.keys())
                 if word_to_complete != '':
@@ -784,8 +776,9 @@ class ShCompleter(object):
                 script_names = []
 
             if word_to_complete.startswith('$'):
-                environ_names = ['$' + varname for varname in current_state.environ.keys()
-                               if varname.startswith(word_to_complete[1:])]
+                environ_names = [
+                    '$' + varname for varname in current_state.environ.keys() if varname.startswith(word_to_complete[1:])
+                ]
             else:
                 environ_names = []
 
@@ -830,8 +823,7 @@ class ShCompleter(object):
             for fname in os.listdir(full_path):
                 if os.path.isdir(os.path.join(full_path, fname)):
                     fname += '/'
-                path_names.append(
-                    os.path.join(os.path.dirname(word_to_complete), fname.replace(' ', '\\ ')))
+                path_names.append(os.path.join(os.path.dirname(word_to_complete), fname.replace(' ', '\\ ')))
 
         else:
             d = os.path.dirname(full_path) or '.'
@@ -841,13 +833,13 @@ class ShCompleter(object):
                     if fname.startswith(f):
                         if os.path.isdir(os.path.join(d, fname)):
                             fname += '/'
-                        path_names.append(
-                            os.path.join(os.path.dirname(word_to_complete), fname.replace(' ', '\\ ')))
+                        path_names.append(os.path.join(os.path.dirname(word_to_complete), fname.replace(' ', '\\ ')))
 
         return path_names
 
     def format_all_names(self, all_names):
         # only show the last component to be completed in a directory path
-        return '  '.join(os.path.basename(os.path.dirname(name)) + '/' if name.endswith('/')
-                         else os.path.basename(name)
-                         for name in all_names) + '\n'
+        return '  '.join(
+            os.path.basename(os.path.dirname(name)) + '/' if name.endswith('/') else os.path.basename(name)
+            for name in all_names
+        ) + '\n'

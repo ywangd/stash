@@ -21,8 +21,6 @@ try:
 except ImportError:
     from .dummyobjc_util import *
 
-
-
 NSMutableAttributedString = ObjCClass('NSMutableAttributedString')
 UIFont = ObjCClass('UIFont')
 
@@ -48,19 +46,20 @@ class ShScreenNotLocked(Exception):
 
 #: A container for a single character, field names are *hopefully*
 #: self-explanatory.
-_Char = namedtuple("_Char", [
-    "data",
-    "fg",
-    "bg",
-    "bold",
-    "italics",
-    "underscore",
-    "strikethrough",
-    "reverse",
-])
+_Char = namedtuple("_Char",
+                   [
+                       "data",
+                       "fg",
+                       "bg",
+                       "bold",
+                       "italics",
+                       "underscore",
+                       "strikethrough",
+                       "reverse",
+                   ])
+
 
 class ShChar(_Char):
-    
     """
     Class of attributed character.
     :param str data: The actual character
@@ -75,22 +74,30 @@ class ShChar(_Char):
     __slots__ = ()
 
     # noinspection PyInitNewSignature
-    def __new__(cls, data, fg="default", bg="default", bold=False,
-                italics=False, underscore=False, reverse=False,
-                strikethrough=False):
-        return _Char.__new__(cls, data, fg, bg, bold, italics, underscore,
-                             strikethrough, reverse)
+    def __new__(
+            cls,
+            data,
+            fg="default",
+            bg="default",
+            bold=False,
+            italics=False,
+            underscore=False,
+            reverse=False,
+            strikethrough=False
+    ):
+        return _Char.__new__(cls, data, fg, bg, bold, italics, underscore, strikethrough, reverse)
 
 
 DEFAULT_CHAR = ShChar(data=' ', fg='default', bg='default')
 DEFAULT_LINE = itertools.repeat(DEFAULT_CHAR)
 
+
 def take(n, iterable):
     return list(itertools.islice(iterable, n))
 
+
 # noinspection PyAttributeOutsideInit
 class ShSequentialScreen(object):
-
     """
     The sequential type in-memory screen. Running scripts can only
     add characters at the end of the screen buffer, no backspace or
@@ -360,7 +367,7 @@ class ShSequentialScreen(object):
                 pass
         else:
             return default
-                
+
     def _find_nth_nl(self, from_x=None, n=1, default=None):
         if from_x is None:
             from_x = self.cursor_xs
@@ -511,7 +518,7 @@ class ShSequentialScreen(object):
                 replace = DEFAULT_CHAR._asdict()
 
         self.attrs = self.attrs._replace(**replace)
-        
+
     def load_pyte_screen(self, pyte_screen):
         """
         This method is for command script only, e.g. ssh.
@@ -590,7 +597,6 @@ class ShSequentialScreen(object):
 
 
 class ShSequentialRenderer(object):
-
     """
     A specific renderer for `ShSequentialScreen`. It does its job by
     building texts from the in-memory screen and insert them to the
@@ -638,7 +644,7 @@ class ShSequentialRenderer(object):
         self.logger = logging.getLogger('StaSh.SequentialRenderer')
         self.last_rendered_time = 0
         self.render_thread = None
-        
+
         # update default colors to match terminal
         self.FG_COLORS["default"] = self.FG_COLORS.get(self.terminal.text_color, WhiteColor)
         self.BG_COLORS["default"] = self.BG_COLORS.get(self.terminal.background_color, BlackColor)
@@ -664,8 +670,10 @@ class ShSequentialRenderer(object):
 
     def _build_attributes(self, attrs):
         return {
-            'NSColor': self.FG_COLORS.get(attrs.fg, WhiteColor),
-            'NSBackgroundColor': self.BG_COLORS.get(attrs.bg, BlackColor),
+            'NSColor': self.FG_COLORS.get(attrs.fg,
+                                          WhiteColor),
+            'NSBackgroundColor': self.BG_COLORS.get(attrs.bg,
+                                                    BlackColor),
             'NSFont': self._get_font(attrs),
             'NSUnderline': 1 if attrs.underscore else 0,
             'NSStrikethrough': 1 if attrs.strikethrough else 0,
@@ -691,20 +699,14 @@ class ShSequentialRenderer(object):
             length += 1
             if not self._same_style(prev_char, curr_char):  # a group is found
                 if not self._same_style(prev_char, DEFAULT_CHAR):  # skip default attrs
-                    attributed_text.setAttributes_range_(
-                        self._build_attributes(prev_char),
-                        (location, length - 1)
-                    )
+                    attributed_text.setAttributes_range_(self._build_attributes(prev_char), (location, length - 1))
                 length = 1
                 location = idx
                 prev_char = curr_char
 
             if idx == len(chars) - 1:  # last char
                 if not self._same_style(prev_char, DEFAULT_CHAR):
-                    attributed_text.setAttributes_range_(
-                        self._build_attributes(prev_char),
-                        (location, length)
-                    )
+                    attributed_text.setAttributes_range_(self._build_attributes(prev_char), (location, length))
 
         return attributed_text
 
@@ -743,18 +745,15 @@ class ShSequentialRenderer(object):
 
             # Specific code for ios 8 to fix possible crash
             if ON_IOS_8:
-                tvo_texts = NSMutableAttributedString.alloc().initWithAttributedString_(
-                    self.terminal.tvo.attributedText()).autorelease()
+                tvo_texts = NSMutableAttributedString.alloc().initWithAttributedString_(self.terminal.tvo.attributedText()
+                                                                                        ).autorelease()
             else:
                 tvo_texts = self.terminal.tso
                 tvo_texts.beginEditing()  # batch the changes
 
             # First remove any leading texts that are rotated out
             if intact_left_bound > 0:
-                tvo_texts.replaceCharactersInRange_withString_(
-                    (0, intact_left_bound),
-                    ''
-                )
+                tvo_texts.replaceCharactersInRange_withString_((0, intact_left_bound), '')
 
             tv_text_length = tvo_texts.length()
 

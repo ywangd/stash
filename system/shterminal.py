@@ -14,18 +14,16 @@ except ImportError:
 
 from .shcommon import CTRL_KEY_FLAG
 
-
 try:
-	unicode
+    unicode
 except NameError:
-	unicode = str
+    unicode = str
 
 # ObjC related stuff
 UIFont = ObjCClass('UIFont')
 
 
 class ShTVDelegate(object):
-
     def __init__(self, stash, terminal, mini_buffer, main_screen):
         self.stash = stash
         self.terminal = terminal
@@ -55,7 +53,7 @@ class ShTVDelegate(object):
         x_modifiable = self.main_screen.x_modifiable
         if rng[0] == rng[1] and main_screen_text[rng[0]:] != terminal_text[rng[0]:]:
             if rng[0] >= x_modifiable:
-                self.mini_buffer.feed(None, main_screen_text[x_modifiable: rng[0]] + terminal_text[rng[0]:])
+                self.mini_buffer.feed(None, main_screen_text[x_modifiable:rng[0]] + terminal_text[rng[0]:])
                 self.mini_buffer.set_cursor(-len(terminal_text[rng[0]:]), whence=2)
             else:
                 s = terminal_text[rng[0]:]
@@ -86,7 +84,6 @@ class ShTVDelegate(object):
 
 # noinspection PyAttributeOutsideInit,PyUnusedLocal,PyPep8Naming
 class ShTerminal(object):
-
     """
     This is a wrapper class of the actual TextView that subclass the SUITextView.
     The wrapper is used to encapsulate the objc calls so that it behaves more like
@@ -113,19 +110,45 @@ class ShTerminal(object):
 
         def keyCommands(_self, _cmd):
             key_commands = [
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('C', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('D', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('P', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('N', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('K', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('U', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('A', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('E', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('L', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('Z', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('[', CTRL_KEY_FLAG, 'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(']', CTRL_KEY_FLAG, 'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('C',
+                                                                       CTRL_KEY_FLAG,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('D',
+                                                                       CTRL_KEY_FLAG,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('P',
+                                                                       CTRL_KEY_FLAG,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('N',
+                                                                       CTRL_KEY_FLAG,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('K',
+                                                                       CTRL_KEY_FLAG,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('U',
+                                                                       CTRL_KEY_FLAG,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('A',
+                                                                       CTRL_KEY_FLAG,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('E',
+                                                                       CTRL_KEY_FLAG,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W',
+                                                                       CTRL_KEY_FLAG,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('L',
+                                                                       CTRL_KEY_FLAG,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('Z',
+                                                                       CTRL_KEY_FLAG,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('[',
+                                                                       CTRL_KEY_FLAG,
+                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(']',
+                                                                       CTRL_KEY_FLAG,
+                                                                       'kcDispatcher:'),
                 UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputUpArrow',
                                                                        0,
                                                                        'kcDispatcher:'),
@@ -198,27 +221,43 @@ class ShTerminal(object):
             stash.mini_buffer.set_cursor(1, whence=1)
 
         self.kc_handlers = {
-            ('C', CTRL_KEY_FLAG): controlCAction,
-            ('D', CTRL_KEY_FLAG): controlDAction,
-            ('P', CTRL_KEY_FLAG): controlPAction,
-            ('N', CTRL_KEY_FLAG): controlNAction,
-            ('K', CTRL_KEY_FLAG): controlKAction,
-            ('U', CTRL_KEY_FLAG): controlUAction,
-            ('A', CTRL_KEY_FLAG): controlAAction,
-            ('E', CTRL_KEY_FLAG): controlEAction,
-            ('W', CTRL_KEY_FLAG): controlWAction,
-            ('L', CTRL_KEY_FLAG): controlLAction,
-            ('Z', CTRL_KEY_FLAG): controlZAction,
-            ('[', CTRL_KEY_FLAG): dummyAction,
-            (']', CTRL_KEY_FLAG): dummyAction,
-            ('UIKeyInputUpArrow', 0): arrowUpAction,
-            ('UIKeyInputDownArrow', 0): arrowDownAction,
-            ('UIKeyInputLeftArrow', 0): arrowLeftAction,
-            ('UIKeyInputRightArrow', 0): arrowRightAction,
+            ('C',
+             CTRL_KEY_FLAG): controlCAction,
+            ('D',
+             CTRL_KEY_FLAG): controlDAction,
+            ('P',
+             CTRL_KEY_FLAG): controlPAction,
+            ('N',
+             CTRL_KEY_FLAG): controlNAction,
+            ('K',
+             CTRL_KEY_FLAG): controlKAction,
+            ('U',
+             CTRL_KEY_FLAG): controlUAction,
+            ('A',
+             CTRL_KEY_FLAG): controlAAction,
+            ('E',
+             CTRL_KEY_FLAG): controlEAction,
+            ('W',
+             CTRL_KEY_FLAG): controlWAction,
+            ('L',
+             CTRL_KEY_FLAG): controlLAction,
+            ('Z',
+             CTRL_KEY_FLAG): controlZAction,
+            ('[',
+             CTRL_KEY_FLAG): dummyAction,
+            (']',
+             CTRL_KEY_FLAG): dummyAction,
+            ('UIKeyInputUpArrow',
+             0): arrowUpAction,
+            ('UIKeyInputDownArrow',
+             0): arrowDownAction,
+            ('UIKeyInputLeftArrow',
+             0): arrowLeftAction,
+            ('UIKeyInputRightArrow',
+             0): arrowRightAction,
         }
 
-        _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView'),
-                                        [keyCommands, kcDispatcher_])
+        _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView'), [keyCommands, kcDispatcher_])
 
         self.is_editing = False
 
@@ -500,7 +539,6 @@ class ShTerminal(object):
 
 
 class StubTerminal(ObjCClass):
-
     def __init__(self, stash, *args, **kwargs):
         self.stash = stash
         stash.terminal = self

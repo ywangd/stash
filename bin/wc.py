@@ -9,20 +9,20 @@ import argparse
 
 _stash = globals()['_stash']
 
+
 def main(args):
     ap = argparse.ArgumentParser()
 
-    ap.add_argument('-l', '--lines',
-                    action='store_true',
-                    default=False,
-                    help='print the newline counts')
+    ap.add_argument('-l', '--lines', action='store_true', default=False, help='print the newline counts')
     ap.add_argument('files', nargs='*', help='files to count')
     ns = ap.parse_args(args)
 
     if ns.lines:
+
         def _print_res(res):
             print('%6d %s' % (res[0], res[-1]))
     else:
+
         def _print_res(res):
             print('%6d %8d %8d %s' % res)
 

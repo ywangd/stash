@@ -6,6 +6,7 @@ from stash.tests.stashtest import StashTestCase
 
 class Md5sumTests(StashTestCase):
     """tests for the md5sum command."""
+
     def setUp(self):
         """setup the tests"""
         self.cwd = self.get_data_path()

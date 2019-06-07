@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """Print the contents of the given files.
 """
 
@@ -18,16 +17,14 @@ def filter_non_printable(s):
 
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("files", action="store", nargs="*",
-                   help="files to print")
+    p.add_argument("files", action="store", nargs="*", help="files to print")
     ns = p.parse_args(args)
 
     status = 0
 
     fileinput.close()  # in case it is not closed
     try:
-        for line in fileinput.input(ns.files, 
-                                    openhook=fileinput.hook_encoded("utf-8")):
+        for line in fileinput.input(ns.files, openhook=fileinput.hook_encoded("utf-8")):
             print(filter_non_printable(line), end='')
     except Exception as e:
         print('cat: %s' % str(e))

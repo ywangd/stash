@@ -11,7 +11,6 @@ try:
 except (ImportError, ValueError):
     from common import get_stash_dir
 
-
 DEFAULT_ENCODING = "utf-8"  # encoding to use to set encoding
 
 
@@ -160,12 +159,12 @@ def set_file_encoding(p, encoding):
             lines = fin.readlines()
         was_set = False
         for i in range(len(lines)):
-             line = lines[i]
-             if is_encoding_line(line):
-                 # replace line
-                 lines[i] = line
-                 was_set = True
-                 break
+            line = lines[i]
+            if is_encoding_line(line):
+                # replace line
+                lines[i] = line
+                was_set = True
+                break
         if not was_set:
             # we should still set the encoding
             if lines[0].startswith("#!"):

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """Change the current working directory.
 """
 
@@ -13,9 +12,7 @@ import sys
 
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("dir", action="store", nargs="?",
-                   default=os.environ["HOME2"],
-                   help="the new working directory")
+    p.add_argument("dir", action="store", nargs="?", default=os.environ["HOME2"], help="the new working directory")
     ns = p.parse_args(args)
 
     status = 0
@@ -31,7 +28,7 @@ def main(args):
             else:
                 print('cd: %s: Not a directory' % ns.dir)
         else:
-            print ('cd: %s: No such file or directory' % ns.dir)
+            print('cd: %s: No such file or directory' % ns.dir)
     except Exception as err:
         print("cd: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
         status = 1

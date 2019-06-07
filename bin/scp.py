@@ -49,8 +49,7 @@ def install_module_from_github(username, package_name, version):
         echo Done
         """.format(username,
                    package_name,
-                   version
-                   )
+                   version)
     globals()['_stash'](cmd_string)
 
 
@@ -59,7 +58,6 @@ if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
     install_module_from_github('paramiko', 'paramiko', 'v1.16.0')
     print('Please restart Pythonista for changes to take full effect')
     sys.exit(0)
-
 
 DEBUG = False
 
@@ -82,6 +80,7 @@ def _sh_quote(s):
 
 
 # Unicode conversion functions; assume UTF-8
+
 
 def asbytes(s):
     """Turns unicode into bytes, if needed.
@@ -108,9 +107,9 @@ def asunicode(s):
 # os.path.sep is unicode on Python 3, no matter the platform
 bytes_sep = asbytes(os.path.sep)
 
-
 # Unicode conversion function for Windows
 # Used to convert local paths if the local machine is Windows
+
 
 def asunicode_win(s):
     """Turns bytes into unicode, if needed.
@@ -135,8 +134,8 @@ class SCPClient(object):
     Since scp doesn't support symlinks, we send file symlinks as the file
     (matching scp behaviour), but we make no attempt at symlinked directories.
     """
-    def __init__(self, transport, buff_size=16384, socket_timeout=5.0,
-                 progress=None, sanitize=_sh_quote):
+
+    def __init__(self, transport, buff_size=16384, socket_timeout=5.0, progress=None, sanitize=_sh_quote):
         """
         Create an scp1 client.
 
@@ -164,8 +163,7 @@ class SCPClient(object):
         self.sanitize = sanitize
         self._dirtimes = {}
 
-    def put(self, files, remote_path=b'.',
-            recursive=False, preserve_times=False):
+    def put(self, files, remote_path=b'.', recursive=False, preserve_times=False):
         """
         Transfer files to remote host.
 
@@ -185,8 +183,7 @@ class SCPClient(object):
         self.channel = self.transport.open_session()
         self.channel.settimeout(self.socket_timeout)
         scp_command = (b'scp -t ', b'scp -r -t ')[recursive]
-        self.channel.exec_command(scp_command +
-                                  self.sanitize(asbytes(remote_path)))
+        self.channel.exec_command(scp_command + self.sanitize(asbytes(remote_path)))
         self._recv_confirm()
 
         if not isinstance(files, (list, tuple)):
@@ -200,8 +197,7 @@ class SCPClient(object):
         if self.channel:
             self.channel.close()
 
-    def get(self, remote_path, local_path='',
-            recursive=False, preserve_times=False):
+    def get(self, remote_path, local_path='', recursive=False, preserve_times=False):
         """
         Transfer files from remote host to localhost
 
@@ -221,24 +217,17 @@ class SCPClient(object):
             remote_path = [remote_path]
         remote_path = [self.sanitize(asbytes(r)) for r in remote_path]
         self._recv_dir = local_path or os.getcwd()
-        self._rename = (len(remote_path) == 1 and
-                        not os.path.isdir(os.path.abspath(local_path)))
+        self._rename = (len(remote_path) == 1 and not os.path.isdir(os.path.abspath(local_path)))
         if len(remote_path) > 1:
             if not os.path.exists(self._recv_dir):
-                raise SCPException("Local path '%s' does not exist" %
-                                   asunicode(self._recv_dir))
+                raise SCPException("Local path '%s' does not exist" % asunicode(self._recv_dir))
             elif not os.path.isdir(self._recv_dir):
-                raise SCPException("Local path '%s' is not a directory" %
-                                   asunicode(self._recv_dir))
+                raise SCPException("Local path '%s' is not a directory" % asunicode(self._recv_dir))
         rcsv = (b'', b' -r')[recursive]
         prsv = (b'', b' -p')[preserve_times]
         self.channel = self.transport.open_session()
         self.channel.settimeout(self.socket_timeout)
-        self.channel.exec_command(b"scp" +
-                                  rcsv +
-                                  prsv +
-                                  b" -f " +
-                                  b' '.join(remote_path))
+        self.channel.exec_command(b"scp" + rcsv + prsv + b" -f " + b' '.join(remote_path))
         self._recv_all()
 
         if self.channel:
@@ -264,8 +253,7 @@ class SCPClient(object):
             # The protocol can't handle \n in the filename.
             # Quote them as the control sequence \^J for now,
             # which is how openssh handles it.
-            self.channel.sendall(("C%s %d " % (mode, size)).encode('ascii') +
-                                 basename.replace(b'\n', b'\\^J') + b"\n")
+            self.channel.sendall(("C%s %d " % (mode, size)).encode('ascii') + basename.replace(b'\n', b'\\^J') + b"\n")
             self._recv_confirm()
             file_pos = 0
             if self._progress:
@@ -292,8 +280,7 @@ class SCPClient(object):
 
         # add path.sep to each when checking the prefix, so we can use
         # path.dirname after
-        common = os.path.commonprefix([from_dir + bytes_sep,
-                                       to_dir + bytes_sep])
+        common = os.path.commonprefix([from_dir + bytes_sep, to_dir + bytes_sep])
         # now take the dirname, since commonprefix is character based,
         # and we either have a seperator, or a partial name
         common = os.path.dirname(common)
@@ -324,8 +311,7 @@ class SCPClient(object):
         basename = asbytes(os.path.basename(directory))
         if self.preserve_times:
             self._send_time(mtime, atime)
-        self.channel.sendall(('D%s 0 ' % mode).encode('ascii') +
-                             basename.replace(b'\n', b'\\^J') + b'\n')
+        self.channel.sendall(('D%s 0 ' % mode).encode('ascii') + basename.replace(b'\n', b'\\^J') + b'\n')
         self._recv_confirm()
 
     def _send_popd(self):
@@ -358,10 +344,7 @@ class SCPClient(object):
 
     def _recv_all(self):
         # loop over scp commands, and receive as necessary
-        command = {b'C': self._recv_file,
-                   b'T': self._set_time,
-                   b'D': self._recv_pushd,
-                   b'E': self._recv_popd}
+        command = {b'C': self._recv_file, b'T': self._set_time, b'D': self._recv_pushd, b'E': self._recv_popd}
         while not self.channel.closed:
             # wait for command as long as we're open
             self.channel.sendall('\x00')
@@ -400,11 +383,9 @@ class SCPClient(object):
                 path = self._recv_dir
                 self._rename = False
             elif os.name == 'nt':
-                path = os.path.join(asunicode_win(self._recv_dir),
-                                    parts[2].decode('utf-8'))
+                path = os.path.join(asunicode_win(self._recv_dir), parts[2].decode('utf-8'))
             else:
-                path = os.path.join(asbytes(self._recv_dir),
-                                    parts[2])
+                path = os.path.join(asbytes(self._recv_dir), parts[2])
         except:
             chan.send('\x01')
             chan.close()
@@ -461,11 +442,9 @@ class SCPClient(object):
                 path = self._recv_dir
                 self._rename = False
             elif os.name == 'nt':
-                path = os.path.join(asunicode_win(self._recv_dir),
-                                    parts[2].decode('utf-8'))
+                path = os.path.join(asunicode_win(self._recv_dir), parts[2].decode('utf-8'))
             else:
-                path = os.path.join(asbytes(self._recv_dir),
-                                    parts[2])
+                path = os.path.join(asbytes(self._recv_dir), parts[2])
         except:
             self.channel.send(b'\x01')
             raise SCPException('Bad directory format')
@@ -497,51 +476,53 @@ class SCPClient(object):
 class SCPException(Exception):
     """SCP exception class"""
     pass
-    
+
+
 ############################################
 def find_ssh_keys():
     #dir = os.path.expanduser('~/Documents/.ssh/')
     files = []
     try:
-        for file in os.listdir(APP_DIR+'/.ssh'):
+        for file in os.listdir(APP_DIR + '/.ssh'):
             if '.' not in file:
-                files.append(APP_DIR+'/.ssh/'+file)
+                files.append(APP_DIR + '/.ssh/' + file)
     except OSError:
         pass
-    return files    
-    
+    return files
+
+
 def parse_host(arg):
-    user,temp = arg.split('@')
+    user, temp = arg.split('@')
     host, path = temp.split(':')
-    return host,user,path
+    return host, user, path
+
 
 def scp_callback(filename, size, sent):
     if size == sent:
         print(filename)
-    
+
 
 if __name__ == '__main__':
     files = []
-    
+
     ap = argparse.ArgumentParser()
     ap.add_argument('--password', help='login password')
-    ap.add_argument('-p', '--port', action='store', default=22, type=int,
-                    help='port for ssh default: 22')
+    ap.add_argument('-p', '--port', action='store', default=22, type=int, help='port for ssh default: 22')
     ap.add_argument('files', nargs='*', help='file or module name')
     args = ap.parse_args()
-    
+
     #scp_mode 0 put 1 get
     if '@' in args.files[0]:
-        scp_mode = 1   
+        scp_mode = 1
     else:
         scp_mode = 0
-        
+
     for file in args.files:
         if '@' in file:
-            host,user,host_path = parse_host(file)
+            host, user, host_path = parse_host(file)
         else:
             files.append(file)
-            
+
     ssh = paramiko.SSHClient()
     #ssh.load_system_host_keys()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -558,13 +539,13 @@ if __name__ == '__main__':
             ssh.connect(host, username=user, key_filename=key_filename, port=args.port)
 
     # SCPCLient takes a paramiko transport as its only argument
-    scp = SCPClient(ssh.get_transport(),progress=scp_callback)
+    scp = SCPClient(ssh.get_transport(), progress=scp_callback)
 
     #scp.put('stash',remote_path='stash/',recursive=True)
     if scp_mode:
         print('Copying from server...')
         scp.get(host_path, local_path=files[0], recursive=True)
-        
+
     else:
         print('Copying to server...')
         scp.put(files, recursive=True, remote_path=host_path)

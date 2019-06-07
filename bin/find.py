@@ -12,7 +12,6 @@ from functools import partial
 
 
 class FilePredicate(object):
-
     def __init__(self):
         self.funclist = []
 
@@ -68,6 +67,7 @@ def filter_name(pattern, root, dirs, files, pth):
         return None, None, None
     return root, dirs, files
 
+
 def filter_mtime(oldest_time, newest_time, root, dirs, files, pth):
     fnames = []
     for f in files:
@@ -88,35 +88,42 @@ def filter_mtime(oldest_time, newest_time, root, dirs, files, pth):
 
     return root, dnames, fnames
 
+
 def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('paths', nargs='+', help='specify a file hierarchy for find to traverse')
-    ap.add_argument('-n', '-name', '--name', dest='pattern',
-                    nargs='?',
-                    default='*',
-                    help='pattern to match file names')
-    ap.add_argument('-t', '-type', '--type',
-                    nargs='?',
-                    default='f',
-                    choices=('a', 'f', 'd'),
-                    help='specify the file type to match')
-    ap.add_argument('-d', '-mtime', '--mtime',
-                    metavar='n',
-                    nargs='?',
-                    help='specify modification time range')
+    ap.add_argument('-n', '-name', '--name', dest='pattern', nargs='?', default='*', help='pattern to match file names')
+    ap.add_argument(
+        '-t',
+        '-type',
+        '--type',
+        nargs='?',
+        default='f',
+        choices=('a',
+                 'f',
+                 'd'),
+        help='specify the file type to match'
+    )
+    ap.add_argument('-d', '-mtime', '--mtime', metavar='n', nargs='?', help='specify modification time range')
 
-    ap.add_argument('-mindepth', '--mindepth',
-                    metavar='n',
-                    nargs='?',
-                    default=0,
-                    type=int,
-                    help='descend at most n directory levels below command line arguments')
-    ap.add_argument('-maxdepth', '--maxdepth',
-                    metavar='n',
-                    nargs='?',
-                    default=sys.maxsize,
-                    type=int,
-                    help='descend at most n directory levels below command line arguments')
+    ap.add_argument(
+        '-mindepth',
+        '--mindepth',
+        metavar='n',
+        nargs='?',
+        default=0,
+        type=int,
+        help='descend at most n directory levels below command line arguments'
+    )
+    ap.add_argument(
+        '-maxdepth',
+        '--maxdepth',
+        metavar='n',
+        nargs='?',
+        default=sys.maxsize,
+        type=int,
+        help='descend at most n directory levels below command line arguments'
+    )
     ns = ap.parse_args(args)
 
     file_predicate = FilePredicate()

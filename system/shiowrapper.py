@@ -13,7 +13,6 @@ from .shthreads import ShBaseThread
 
 
 class ShStdinWrapper(object):
-
     def __getattribute__(self, item):
         thread = threading.currentThread()
 
@@ -22,8 +21,8 @@ class ShStdinWrapper(object):
         else:
             return getattr(_SYS_STDIN, item)
 
-class ShStdoutWrapper(object):
 
+class ShStdoutWrapper(object):
     def __getattribute__(self, item):
         thread = threading.currentThread()
 
@@ -34,7 +33,6 @@ class ShStdoutWrapper(object):
 
 
 class ShStderrWrapper(object):
-
     def __getattribute__(self, item):
         thread = threading.currentThread()
 
@@ -53,6 +51,7 @@ def enable():
     sys.stdin = stdinWrapper
     sys.stdout = stdoutWrapper
     sys.stderr = stderrWrapper
+
 
 def disable():
     sys.stdin = _SYS_STDIN

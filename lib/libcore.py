@@ -2,11 +2,10 @@
 import os
 import fileinput
 
-
 try:
-	unicode
+    unicode
 except NameError:
-	unicode = str
+    unicode = str
 
 
 def collapseuser(path):

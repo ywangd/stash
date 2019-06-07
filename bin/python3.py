@@ -16,21 +16,20 @@ from __future__ import print_function
 # check for py2/3
 _stash = globals()["_stash"]
 if not _stash.PY3:
-	print(
-		_stash.text_color(
-			"You are running StaSh in python 2.\nRunning python3 from python 2 is not (yet) supported.\nPlease use the 'python' command instead.",
-			"red",
-			)
-		)
-	import sys
-	sys.exit(1)
+    print(
+        _stash.text_color(
+            "You are running StaSh in python 2.\nRunning python3 from python 2 is not (yet) supported.\nPlease use the 'python' command instead.",
+            "red",
+        )
+    )
+    import sys
+    sys.exit(1)
 
 import runpy
 import sys
 import argparse
 import code
 import builtins
-
 
 args = sys.argv[1:]
 
@@ -42,18 +41,16 @@ if '-h' in args and len(args) > 1:
 ap = argparse.ArgumentParser()
 
 group = ap.add_mutually_exclusive_group()
-group.add_argument('-m', '--module',
-                   action='store', default=None,
-                   help='run module')
-group.add_argument('-c', '--cmd',
-                   action='store', default=None,
-                   help='program passed in as string (terminates option list)')
+group.add_argument('-m', '--module', action='store', default=None, help='run module')
+group.add_argument('-c', '--cmd', action='store', default=None, help='program passed in as string (terminates option list)')
 
-ap.add_argument('args_to_pass',
-                metavar='[file] args_to_pass',
-                default=[],
-                nargs=argparse.REMAINDER,
-                help='Python script and arguments')
+ap.add_argument(
+    'args_to_pass',
+    metavar='[file] args_to_pass',
+    default=[],
+    nargs=argparse.REMAINDER,
+    help='Python script and arguments'
+)
 
 ns = ap.parse_args(args)
 if passing_h:
@@ -69,7 +66,7 @@ if ns.module:
     sys.exit(0)
 
 elif ns.cmd:
-    exec(ns.cmd)
+    exec (ns.cmd)
     sys.exit(0)
 
 else:

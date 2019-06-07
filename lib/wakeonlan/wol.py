@@ -1,5 +1,4 @@
 # -*- encoding: utf-8 -*-
-
 """
 Small module for use with the wake on lan protocol.
 
@@ -10,7 +9,6 @@ from __future__ import unicode_literals
 
 import socket
 import struct
-
 
 BROADCAST_IP = '255.255.255.255'
 DEFAULT_PORT = 9
@@ -40,7 +38,7 @@ def create_magic_packet(macaddress):
 
     # Split up the hex values in pack
     for i in range(0, len(data), 2):
-        send_data += struct.pack(b'B', int(data[i: i + 2], 16))
+        send_data += struct.pack(b'B', int(data[i:i + 2], 16))
     return send_data
 
 
@@ -61,8 +59,7 @@ def send_magic_packet(*macs, **kwargs):
     ip = kwargs.pop('ip_address', BROADCAST_IP)
     port = kwargs.pop('port', DEFAULT_PORT)
     for k in kwargs:
-        raise TypeError('send_magic_packet() got an unexpected keyword '
-                        'argument {!r}'.format(k))
+        raise TypeError('send_magic_packet() got an unexpected keyword ' 'argument {!r}'.format(k))
 
     for mac in macs:
         packet = create_magic_packet(mac)

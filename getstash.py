@@ -80,8 +80,7 @@ print('Preparing the folder structure ...')
 shutil.move(TEMP_PTI, os.path.join(TARGET_DIR, 'bin/ptinstaller.py'))
 
 # Move launch script to Documents for easy access
-shutil.move(os.path.join(TARGET_DIR, 'launch_stash.py'),
-            os.path.join(BASE_DIR, 'Documents/launch_stash.py'))
+shutil.move(os.path.join(TARGET_DIR, 'launch_stash.py'), os.path.join(BASE_DIR, 'Documents/launch_stash.py'))
 
 # Remove setup files and possible legacy files
 try:
@@ -89,9 +88,19 @@ try:
 
     # shutil.rmtree(os.path.join(TARGET_DIR, 'tests'))  # TODO: maybe readd this line later
 
-    unwanted_files = ['getstash.py', 'run_tests.py', 'testing.py', 
-                      'dummyui.py', 'dummyconsole.py', 
-                      'bin/pcsm.py', 'bin/bh.py', 'bin/pythonista.py', 'bin/cls.py', 'stash.py', 'lib/librunner.py']
+    unwanted_files = [
+        'getstash.py',
+        'run_tests.py',
+        'testing.py',
+        'dummyui.py',
+        'dummyconsole.py',
+        'bin/pcsm.py',
+        'bin/bh.py',
+        'bin/pythonista.py',
+        'bin/cls.py',
+        'stash.py',
+        'lib/librunner.py'
+    ]
 
     for fname in unwanted_files:
         os.remove(os.path.join(TARGET_DIR, fname))

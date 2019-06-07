@@ -102,7 +102,8 @@ def main():
                 print(res)
         end = time.time()
         if ns.verbose:
-            print("Done. Style applied in {}s".format(end-start))
+            print("Done. Style applied in {}s".format(end - start))
+
 
 if __name__ == "__main__":
     main()

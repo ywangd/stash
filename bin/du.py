@@ -22,16 +22,10 @@ def is_excluded(path, pattern):
 
 
 def main(args):
-    ap = ArgumentParser(
-        description='Summarize disk usage of the set of FILEs, recursively for directories.'
-    )
-    ap.add_argument('-s', '--summarize', action='store_true',
-                    help='display only a total for each argument')
-    ap.add_argument('--exclude', dest='exclude_pattern',
-                    metavar='PATTERN',
-                    help='exclude files that match PATTERN')
-    ap.add_argument('FILEs', nargs='*', default=['.'],
-                    help='files to summarize (default to current working directory')
+    ap = ArgumentParser(description='Summarize disk usage of the set of FILEs, recursively for directories.')
+    ap.add_argument('-s', '--summarize', action='store_true', help='display only a total for each argument')
+    ap.add_argument('--exclude', dest='exclude_pattern', metavar='PATTERN', help='exclude files that match PATTERN')
+    ap.add_argument('FILEs', nargs='*', default=['.'], help='files to summarize (default to current working directory')
 
     ns = ap.parse_args(args)
 
@@ -59,12 +53,14 @@ def main(args):
                     continue
 
                 # Loop through every non directory file in this directory and sum their sizes
-                size = sum(os.path.getsize(os.path.join(root, name))
-                           for name in files if not is_excluded(name, exclude_pattern))
+                size = sum(
+                    os.path.getsize(os.path.join(root,
+                                                 name)) for name in files if not is_excluded(name,
+                                                                                             exclude_pattern)
+                )
 
                 # Look at all of the subdirectories and add up their sizes from the `dirs_dict`
-                subdir_size = sum(dirs_dict[os.path.join(root, d)]
-                                  for d in dirs if not is_excluded(d, exclude_pattern))
+                subdir_size = sum(dirs_dict[os.path.join(root, d)] for d in dirs if not is_excluded(d, exclude_pattern))
 
                 # store the size of this directory (plus subdirectories) in a dict so we
                 # can access it later

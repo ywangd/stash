@@ -41,10 +41,8 @@ from stashutils.wheels import Wheel, wheel_is_compatible
 
 from stash.system.shcommon import IN_PYTHONISTA
 
-
 _stash = globals()['_stash']
 VersionSpecifier = _stash.libversion.VersionSpecifier  # alias for readability
-
 
 try:
     unicode
@@ -53,13 +51,53 @@ except NameError:
 
 if IN_PYTHONISTA:
     PYTHONISTA_BUNDLED_MODULES = [
-        'bottle', 'beautifulsoup4', 'pycrypto', 'py-dateutil',
-        'dropbox', 'ecdsa', 'evernote', 'Faker', 'feedparser', 'flask', 'html2text',
-        'html5lib', 'httplib2', 'itsdangerous', 'jedi', 'jinja2', 'markdown', 'markdown2',
-        'matplotlib', 'mechanize', 'midiutil', 'mpmath', 'numpy', 'oauth2', 'paramiko',
-        'parsedatetime', 'Pillow', 'pycparser', 'pyflakes', 'pygments', 'pyparsing',
-        'PyPDF2', 'pytz', 'qrcode', 'reportlab', 'requests', 'simpy', 'six', 'sqlalchemy',
-        'pysqlite', 'sympy', 'thrift', 'werkzeug', 'wsgiref', 'pisa', 'xmltodict', 'PyYAML',
+        'bottle',
+        'beautifulsoup4',
+        'pycrypto',
+        'py-dateutil',
+        'dropbox',
+        'ecdsa',
+        'evernote',
+        'Faker',
+        'feedparser',
+        'flask',
+        'html2text',
+        'html5lib',
+        'httplib2',
+        'itsdangerous',
+        'jedi',
+        'jinja2',
+        'markdown',
+        'markdown2',
+        'matplotlib',
+        'mechanize',
+        'midiutil',
+        'mpmath',
+        'numpy',
+        'oauth2',
+        'paramiko',
+        'parsedatetime',
+        'Pillow',
+        'pycparser',
+        'pyflakes',
+        'pygments',
+        'pyparsing',
+        'PyPDF2',
+        'pytz',
+        'qrcode',
+        'reportlab',
+        'requests',
+        'simpy',
+        'six',
+        'sqlalchemy',
+        'pysqlite',
+        'sympy',
+        'thrift',
+        'werkzeug',
+        'wsgiref',
+        'pisa',
+        'xmltodict',
+        'PyYAML',
     ]
 
     if _stash.PY3:
@@ -77,7 +115,6 @@ else:
     SITE_PACKAGES_DIR_NAME = os.path.basename(SITE_PACKAGES_FOLDER)
     OLD_SITE_PACKAGES_DIR_NAME = os.path.basename(OLD_SITE_PACKAGES_FOLDER)
 
-
 # Some packages use wrong name for their dependencies
 PACKAGE_NAME_FIXER = {
     'lazy_object_proxy': 'lazy-object-proxy',
@@ -85,13 +122,13 @@ PACKAGE_NAME_FIXER = {
 
 NO_OVERWRITE = False
 
-
 # Utility constants
 DIST_ALLOW_SRC = 1
 DIST_ALLOW_WHL = 2
 DIST_PREFER_SRC = 4
 DIST_PREFER_WHL = 8
 DIST_DEFAULT = DIST_ALLOW_SRC | DIST_ALLOW_WHL | DIST_PREFER_WHL
+
 
 def _setup_stub_(*args, **kwargs):
     setuptools = sys.modules['setuptools']
@@ -127,7 +164,7 @@ class PackageFinder(object):
     """
 
     @classmethod
-    def find(cls, where='.', exclude=(), include=('*',)):
+    def find(cls, where='.', exclude=(), include=('*', )):
         """Return a list all Python packages found within directory 'where'
 
         'where' should be supplied as a "cross-platform" (i.e. URL-style)
@@ -185,9 +222,9 @@ class PackageFinder(object):
     def _find_packages_iter(cls, base_path):
         candidates = cls._candidate_dirs(base_path)
         return (
-        path.replace(os.path.sep, '.')
-        for path in candidates
-        if cls._looks_like_package(os.path.join(base_path, path))
+            path.replace(os.path.sep,
+                         '.') for path in candidates if cls._looks_like_package(os.path.join(base_path,
+                                                                                             path))
         )
 
     @staticmethod
@@ -251,48 +288,48 @@ def fake_setuptools_modules():
     Created a bunch of stub setuptools modules
     """
     setuptools_modules = [
-    'setuptools',
-    'setuptools.command',
-    'setuptools.command.alias',
-    'setuptools.command.bdist_egg',
-    'setuptools.command.bdist_rpm',
-    'setuptools.command.bdist_wininst',
-    'setuptools.command.build_ext',
-    'setuptools.command.build_py',
-    'setuptools.command.develop',
-    'setuptools.command.easy_install',
-    'setuptools.command.egg_info',
-    'setuptools.command.install',
-    'setuptools.depends.install_egg_info',
-    'setuptools.command.install_lib',
-    'setuptools.command.install_scripts',
-    'setuptools.command.register',
-    'setuptools.command.rotate',
-    'setuptools.command.saveopts',
-    'setuptools.command.sdist',
-    'setuptools.command.setopt',
-    'setuptools.command.test',
-    'setuptools.command.upload',
-    'setuptools.command.upload_docs',
-    'setuptools.extern',
-    'setuptools.dist',
-    'setuptools.extension',
-    'setuptools.launch',
-    'setuptools.lib2to3_ex',
-    'setuptools.msvc9_support',
-    'setuptools.package_index',
-    'setuptools.py26compat',
-    'setuptools.py27compat',
-    'setuptools.py31compat',
-    'setuptools.sandbox',
-    'setuptools.site-patch',
-    'setuptools.ssl_support',
-    'setuptools.unicode_utils',
-    'setuptools.utils',
-    'setuptools.version',
-    'setuptools.windows_support',
-    # 'pkg_resources',
-    # 'pkg_resources.extern',
+        'setuptools',
+        'setuptools.command',
+        'setuptools.command.alias',
+        'setuptools.command.bdist_egg',
+        'setuptools.command.bdist_rpm',
+        'setuptools.command.bdist_wininst',
+        'setuptools.command.build_ext',
+        'setuptools.command.build_py',
+        'setuptools.command.develop',
+        'setuptools.command.easy_install',
+        'setuptools.command.egg_info',
+        'setuptools.command.install',
+        'setuptools.depends.install_egg_info',
+        'setuptools.command.install_lib',
+        'setuptools.command.install_scripts',
+        'setuptools.command.register',
+        'setuptools.command.rotate',
+        'setuptools.command.saveopts',
+        'setuptools.command.sdist',
+        'setuptools.command.setopt',
+        'setuptools.command.test',
+        'setuptools.command.upload',
+        'setuptools.command.upload_docs',
+        'setuptools.extern',
+        'setuptools.dist',
+        'setuptools.extension',
+        'setuptools.launch',
+        'setuptools.lib2to3_ex',
+        'setuptools.msvc9_support',
+        'setuptools.package_index',
+        'setuptools.py26compat',
+        'setuptools.py27compat',
+        'setuptools.py31compat',
+        'setuptools.sandbox',
+        'setuptools.site-patch',
+        'setuptools.ssl_support',
+        'setuptools.unicode_utils',
+        'setuptools.utils',
+        'setuptools.version',
+        'setuptools.windows_support',
+        # 'pkg_resources',
+        # 'pkg_resources.extern',
     ]
 
     for m in setuptools_modules:
@@ -303,16 +340,16 @@ def fake_setuptools_modules():
     import distutils.core
     import distutils.util
     distutils_command_modules = [
-    'distutils.command.bdist'
-    'distutils.command.bdist_dumb',
-    'distutils.command.bdist_msi',
-    'distutils.command.bdist_rpm',
-    'distutils.command.bdist_wininst',
-    'distutils.command.build',
-    'distutils.command.build_clib',
-    'distutils.command.build_ext',
-    'distutils.command.build_py',
-    'distutils.command.build_scripts',
+        'distutils.command.bdist'
+        'distutils.command.bdist_dumb',
+        'distutils.command.bdist_msi',
+        'distutils.command.bdist_rpm',
+        'distutils.command.bdist_wininst',
+        'distutils.command.build',
+        'distutils.command.build_clib',
+        'distutils.command.build_ext',
+        'distutils.command.build_py',
+        'distutils.command.build_scripts',
     ]
     for m in distutils_command_modules:
         fake_module(m)
@@ -502,9 +539,7 @@ class ArchiveFileInstaller(object):
             func_name = self._get_possible_setup_name(node)
             if func_name is not None and \
             (func_name == 'setup' or func_name.endswith('.setup')):
-                node.func = ast.copy_location(
-                ast.Name('_setup_stub_', ast.Load()),
-                node.func)
+                node.func = ast.copy_location(ast.Name('_setup_stub_', ast.Load()), node.func)
             return node
 
         def _get_possible_setup_name(self, node):
@@ -561,22 +596,29 @@ class ArchiveFileInstaller(object):
 
                 if os.path.isdir(os.path.join(src_dir, pkg_name)):
                     ArchiveFileInstaller._safe_move(
-                    os.path.join(src_dir, pkg_name),
-                    os.path.join(self.site_packages, pkg_name)
+                        os.path.join(src_dir,
+                                     pkg_name),
+                        os.path.join(self.site_packages,
+                                     pkg_name)
                     )
                     return [os.path.join(self.site_packages, pkg_name)], []
 
                 elif os.path.isfile(os.path.join(src_dir, pkg_name + '.py')):
                     ArchiveFileInstaller._safe_move(
-                    os.path.join(src_dir, pkg_name + '.py'),
-                    os.path.join(self.site_packages, pkg_name + '.py')
+                        os.path.join(src_dir,
+                                     pkg_name + '.py'),
+                        os.path.join(self.site_packages,
+                                     pkg_name + '.py')
                     )
                     return [os.path.join(self.site_packages, pkg_name + '.py')], []
 
                 elif os.path.isdir(os.path.join(src_dir, 'src', pkg_name)):
                     ArchiveFileInstaller._safe_move(
-                    os.path.join(src_dir, 'src', pkg_name),
-                    os.path.join(self.site_packages, pkg_name)
+                        os.path.join(src_dir,
+                                     'src',
+                                     pkg_name),
+                        os.path.join(self.site_packages,
+                                     pkg_name)
                     )
                     return [os.path.join(self.site_packages, pkg_name)], []
 
@@ -621,11 +663,11 @@ class ArchiveFileInstaller(object):
             pkg_resources = None
 
         namespace = {
-        '_setup_stub_': _setup_stub_,
-        '__file__': filename,
-        '__name__': '__main__',
-        'setup_args': None,
-        'setup_kwargs': None,
+            '_setup_stub_': _setup_stub_,
+            '__file__': filename,
+            '__name__': '__main__',
+            'setup_args': None,
+            'setup_kwargs': None,
         }
 
         source_folder = os.path.dirname(filename)
@@ -640,7 +682,7 @@ class ArchiveFileInstaller(object):
         os.chdir(source_folder)
         sys.path.insert(0, source_folder)
         try:
-            exec(codeobj, namespace, namespace)
+            exec (codeobj, namespace, namespace)
         finally:
             os.chdir(saved_cwd)
             sys.path = saved_sys_path
@@ -687,10 +729,7 @@ class ArchiveFileInstaller(object):
                 from_folder = os.path.join(source_folder, package_dirs.get(p, ''))
                 for f in ArchiveFileInstaller._find_package_files(from_folder):
                     target_file = os.path.join(self.site_packages, f)
-                    ArchiveFileInstaller._safe_move(
-                    os.path.join(from_folder, f),
-                    target_file
-                    )
+                    ArchiveFileInstaller._safe_move(os.path.join(from_folder, f), target_file)
                     files_installed.append(target_file)
                     if use_2to3:
                         _stash('2to3 -w {} > /dev/null'.format(target_file))
@@ -698,22 +737,13 @@ class ArchiveFileInstaller(object):
             else:  # packages
                 target_dir = os.path.join(self.site_packages, p)
                 if p in package_dirs:
-                    ArchiveFileInstaller._safe_move(
-                    os.path.join(source_folder, package_dirs[p]),
-                    target_dir
-                    )
+                    ArchiveFileInstaller._safe_move(os.path.join(source_folder, package_dirs[p]), target_dir)
 
                 elif '' in package_dirs:
-                    ArchiveFileInstaller._safe_move(
-                    os.path.join(source_folder, package_dirs[''], p),
-                    target_dir
-                    )
+                    ArchiveFileInstaller._safe_move(os.path.join(source_folder, package_dirs[''], p), target_dir)
 
                 else:
-                    ArchiveFileInstaller._safe_move(
-                    os.path.join(source_folder, p),
-                    target_dir
-                    )
+                    ArchiveFileInstaller._safe_move(os.path.join(source_folder, p), target_dir)
                 files_installed.append(target_dir)
                 if use_2to3:
                     _stash("""find {} --name '.py' | xargs -n 1 -I %% 2to3 -w %% > /dev/null""".format(target_dir))
@@ -726,20 +756,14 @@ class ArchiveFileInstaller(object):
 
             if os.path.isdir(os.path.join(source_folder, p)):  # folder
                 target_dir = os.path.join(self.site_packages, p)
-                ArchiveFileInstaller._safe_move(
-                os.path.join(source_folder, p),
-                target_dir
-                )
+                ArchiveFileInstaller._safe_move(os.path.join(source_folder, p), target_dir)
                 files_installed.append(target_dir)
                 if use_2to3:
                     _stash("""find {} --name '.py' | xargs -n 1 -I %% 2to3 -w %% > /dev/null""".format(target_dir))
 
             else:  # file
                 target_file = os.path.join(self.site_packages, p + '.py')
-                ArchiveFileInstaller._safe_move(
-                os.path.join(source_folder, p + '.py'),
-                target_file
-                )
+                ArchiveFileInstaller._safe_move(os.path.join(source_folder, p + '.py'), target_file)
                 files_installed.append(target_file)
                 if use_2to3:
                     _stash('2to3 -w {} > /dev/null'.format(target_file))
@@ -766,13 +790,19 @@ class ArchiveFileInstaller(object):
                         name += ".py"
                     desc = kwargs.get("description", "")
                     path = create_command(
-                    name,
-                    (u"""'''%s'''
+                        name,
+                        (
+                            u"""'''%s'''
 from %s import %s
 
 if __name__ == "__main__":
     %s()
-""" % (desc, modname, funcname, funcname)).encode("utf-8"))
+""" % (desc,
+                    modname,
+                    funcname,
+                    funcname)
+                        ).encode("utf-8")
+                    )
                     files_installed.append(path)
             else:
                 print("Warning: passing entry points for '{n}'.".format(n=epn))
@@ -871,8 +901,7 @@ class PackageRepository(object):
             files_installed, dependencies = self.installer.run(pkg_name, archive_filename, extras=extras)
         # never install setuptools as dependency
         dependencies = [dependency for dependency in dependencies if dependency != 'setuptools']
-        name_versions = [VersionSpecifier.parse_requirement(requirement)
-        for requirement in dependencies]
+        name_versions = [VersionSpecifier.parse_requirement(requirement) for requirement in dependencies]
         # filter (None, ...)
         name_versions = list(filter(lambda e: e[0] is not None, name_versions))
         sys.modules['setuptools']._installed_requirements_.append(pkg_name)
@@ -899,7 +928,13 @@ class PackageRepository(object):
                 print('Dependency available in Pythonista bundle : {}'.format(dep_name))
                 continue
 
-            print('Installing dependency: {} (required by: {})'.format('{}{}'.format(dep_name, ver_spec if ver_spec else ''), pkg_name))
+            print(
+                'Installing dependency: {} (required by: {})'.format(
+                    '{}{}'.format(dep_name,
+                                  ver_spec if ver_spec else ''),
+                    pkg_name
+                )
+            )
             repository = get_repository(dep_name, verbose=self.verbose)
             try:
                 repository.install(dep_name, ver_spec, dist=dependency_dist, extras=extras)
@@ -918,7 +953,7 @@ class PackageRepository(object):
     def remove(self, pkg_name):
         if self.config.module_exists(pkg_name):
             dependencies = self.config.get_dependencies(pkg_name)
-            other_dependencies = self.config.get_all_dependencies(exclude_module=(pkg_name,))
+            other_dependencies = self.config.get_all_dependencies(exclude_module=(pkg_name, ))
             files_installed = self.config.get_files_installed(pkg_name)
 
             if files_installed:
@@ -1052,7 +1087,7 @@ class PyPIRepository(PackageRepository):
                 source = download
                 # break
             if ".whl" in download["url"]:
-                fn = download["url"][download["url"].rfind("/")+1:]
+                fn = download["url"][download["url"].rfind("/") + 1:]
                 if wheel_is_compatible(fn):
                     wheel = download
 
@@ -1117,7 +1152,7 @@ class PyPIRepository(PackageRepository):
             if not current['version'] == hit:
                 print('Updating {}'.format(pkg_name))
                 self.remove(pkg_name)
-                self.install(pkg_name, VersionSpecifier((('==', hit),)))
+                self.install(pkg_name, VersionSpecifier((('==', hit), )))
             else:
                 print('Package already up-to-date.')
         else:
@@ -1238,7 +1273,6 @@ class PyPIRepository(PackageRepository):
         return False
 
 
-
 class GitHubRepository(PackageRepository):
     """
     This repository performs actions using GitHub as a backend store.
@@ -1257,22 +1291,16 @@ class GitHubRepository(PackageRepository):
 
     def versions(self, owner_repo):
         owner, repo = owner_repo.split('/')
-        data = requests.get('https://api.github.com/repos/{}/{}/releases'.format(
-        owner, repo
-        )).json()
+        data = requests.get('https://api.github.com/repos/{}/{}/releases'.format(owner, repo)).json()
         return [entry['name'] for entry in data]
 
     def download(self, owner_repo, ver_spec):
         release = self._get_release_from_version_specifier(ver_spec)
 
         owner, repo = owner_repo.split('/')
-        metadata = requests.get('https://api.github.com/repos/{}/{}'.format(
-        owner, repo
-        )).json()
+        metadata = requests.get('https://api.github.com/repos/{}/{}'.format(owner, repo)).json()
 
-        _stash('wget https://github.com/{0}/{1}/archive/{2}.zip -o $TMPDIR/{2}.zip'.format(
-        owner, repo, release
-        ))
+        _stash('wget https://github.com/{0}/{1}/archive/{2}.zip -o $TMPDIR/{2}.zip'.format(owner, repo, release))
         return os.path.join(os.getenv('TMPDIR'), release + '.zip'), {
         'name': owner_repo,
         'url': 'github',
@@ -1323,12 +1351,7 @@ class LocalRepository(PackageRepository):
     """
 
     def install(self, archive_filename, ver_spec, dist=DIST_DEFAULT, extras=[]):
-        pkg_info = {
-        'name': archive_filename,
-        'url': 'local',
-        'version': '',
-        'summary': ''
-        }
+        pkg_info = {'name': archive_filename, 'url': 'local', 'version': '', 'summary': ''}
         self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist, extras=extras)
 
 
@@ -1378,12 +1401,21 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
 
     ap.add_argument('--verbose', action='store_true', help='be more chatty')
-    ap.add_argument("-6", action='store_const', help='manage packages for py2 and py3', dest='site_packages', const=OLD_SITE_PACKAGES_FOLDER, default=SITE_PACKAGES_FOLDER)
+    ap.add_argument(
+        "-6",
+        action='store_const',
+        help='manage packages for py2 and py3',
+        dest='site_packages',
+        const=OLD_SITE_PACKAGES_FOLDER,
+        default=SITE_PACKAGES_FOLDER
+    )
 
-    subparsers = ap.add_subparsers(dest='sub_command',
-    title='List of sub-commands',
-    metavar='sub-command',
-    help='"pip sub-command -h" for more help on a sub-command')
+    subparsers = ap.add_subparsers(
+        dest='sub_command',
+        title='List of sub-commands',
+        metavar='sub-command',
+        help='"pip sub-command -h" for more help on a sub-command'
+    )
 
     list_parser = subparsers.add_parser('list', help='list packages installed')
 
@@ -1392,31 +1424,21 @@ if __name__ == '__main__':
         'requirements',
         help='the requirement specifier for installation',
         nargs="+",
-        )
+    )
     install_parser.add_argument(
         '-N',
         '--no-overwrite',
         action='store_true',
         default=False,
         help='Do not overwrite existing folder/files',
-        )
+    )
     install_parser.add_argument(
         '-d',
         '--directory',
         help='target directory for installation',
-        )
-    install_parser.add_argument(
-        "--no-binary",
-        action="store",
-        help="Do not use binary packages",
-        dest="nobinary"
     )
-    install_parser.add_argument(
-        "--only-binary",
-        action="store",
-        help="Do not use binary packages",
-        dest="onlybinary"
-    )
+    install_parser.add_argument("--no-binary", action="store", help="Do not use binary packages", dest="nobinary")
+    install_parser.add_argument("--only-binary", action="store", help="Do not use binary packages", dest="onlybinary")
     install_parser.add_argument(
         "--prefer-binary",
         action="store_true",
@@ -1429,12 +1451,12 @@ if __name__ == '__main__':
         'requirements',
         help='the requirement specifier for download',
         nargs="+",
-        )
+    )
     download_parser.add_argument(
         '-d',
         '--directory',
         help='the directory to save the downloaded file',
-        )
+    )
 
     search_parser = subparsers.add_parser('search', help='search with the given word fragment')
     search_parser.add_argument('term', help='the word fragment to search')
@@ -1448,7 +1470,7 @@ if __name__ == '__main__':
         nargs="+",
         metavar="package",
         help='packages to uninstall',
-        )
+    )
 
     update_parser = subparsers.add_parser('update', help='update an installed package')
     update_parser.add_argument('packages', nargs="+", help='the package name')

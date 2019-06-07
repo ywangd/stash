@@ -5,7 +5,6 @@ from __future__ import print_function
 import sys
 import argparse
 
-
 _stash = globals()['_stash']
 
 
@@ -13,8 +12,7 @@ def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('name', nargs='?', help='variable name')
     ap.add_argument('value', nargs='?', type=int, help='variable value')
-    ap.add_argument('-l', '--list', action='store_true',
-                    help='list all config variables and their values')
+    ap.add_argument('-l', '--list', action='store_true', help='list all config variables and their values')
     ns = ap.parse_args(args)
 
     config = {

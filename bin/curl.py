@@ -11,12 +11,20 @@ try:
 except ImportError:
     pass
 
+
 def main(args):
     ap = argparse.ArgumentParser()
     ap.add_argument('url', nargs='?', help='the url to read (default to clipboard')
     ap.add_argument('-o', '--output-file', help='write output to file instead of stdout')
-    ap.add_argument('-X', '--request-method', default='GET', choices=['GET', 'POST', 'HEAD'],
-                    help='specify request method to use (default to GET)')
+    ap.add_argument(
+        '-X',
+        '--request-method',
+        default='GET',
+        choices=['GET',
+                 'POST',
+                 'HEAD'],
+        help='specify request method to use (default to GET)'
+    )
     ap.add_argument('-H', '--header', help='Custom header to pass to server (H)')
     ap.add_argument('-d', '--data', help='HTTP POST data (H)')
 

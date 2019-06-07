@@ -8,6 +8,7 @@ from stash.tests.stashtest import StashTestCase, requires_network
 
 class PingTests(StashTestCase):
     """tests for the 'ping' command."""
+
     def test_help(self):
         """test 'ping --help'"""
         output = self.run_command("ping --help", exitcode=0)
@@ -18,7 +19,7 @@ class PingTests(StashTestCase):
         self.assertIn("--count", output)
         self.assertIn("-W", output)
         self.assertIn("--timeout", output)
-    
+
     @unittest.expectedFailure
     @requires_network
     def test_ping_normal(self):
@@ -27,7 +28,7 @@ class PingTests(StashTestCase):
         output = self.run_command("ping " + target, exitcode=0)
         self.assertIn("got ping in " + target, output)
         self.assertNotIn("failed", output)
-    
+
     @unittest.expectedFailure
     @requires_network
     def test_count(self):
@@ -39,7 +40,7 @@ class PingTests(StashTestCase):
             self.assertNotIn("failed", output)
             c = output.count("got ping in")
             self.assertEqaual(n, c)
-    
+
     @unittest.expectedFailure
     @requires_network
     def test_interval(self):
@@ -59,7 +60,7 @@ class PingTests(StashTestCase):
             maxtime = c * t + 5
             self.assertGreaterEqual(dt, mintime)
             self.assertLessEqual(dt, maxtime)
-    
+
     @unittest.expectedFailure
     @unittest.skip("Test not implemented")
     def test_timeout():

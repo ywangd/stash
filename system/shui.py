@@ -2,7 +2,6 @@
 import time
 import logging
 
-
 try:
     import ui
 except ImportError:
@@ -11,12 +10,14 @@ except ImportError:
 from .shcommon import IN_PYTHONISTA, ON_IPAD, PYTHONISTA_VERSION_LONG
 from .shterminal import ShTerminal, StubTerminal
 
+
 class ShVk(ui.View):
     """
     The virtual keyboard container, which implements a swipe cursor positioning gesture
 
     :type stash : StaSh
     """
+
     def __init__(self, stash, name='vks', flex='wh'):
 
         if not IN_PYTHONISTA:
@@ -56,6 +57,7 @@ class ShUI(ui.View):
     """
     :type stash : StaSh
     """
+
     def __init__(self, stash, debug=False):
 
         self.stash = stash
@@ -254,10 +256,12 @@ class ShUI(ui.View):
         self.on_k_grp = 0
 
         if IN_PYTHONISTA:
-            self.terminal = ShTerminal(stash,
-                                       self.txts,
-                                       width=self.txts.width,
-                                       height=self.txts.height - (self.vks.height + 8))
+            self.terminal = ShTerminal(
+                stash,
+                self.txts,
+                width=self.txts.width,
+                height=self.txts.height - (self.vks.height + 8)
+            )
         else:
             self.terminal = StubTerminal(stash)
 
@@ -315,7 +319,7 @@ class ShUI(ui.View):
         table.row_height = self.BUTTON_FONT[1] + 4
         table.present('popover')
         table.wait_modal()
-    
+
     def history_popover_tapped(self, sender):
         """
         Called when a row in the history popover was tapped.

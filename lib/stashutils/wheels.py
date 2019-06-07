@@ -66,13 +66,13 @@ def escape_filename_component(fragment):
 
 
 def generate_filename(
-    distribution,
-    version,
-    build_tag=None,
-    python_tag=None,
-    abi_tag=None,
-    platform_tag=None,
-    ):
+        distribution,
+        version,
+        build_tag=None,
+        python_tag=None,
+        abi_tag=None,
+        platform_tag=None,
+):
     """
     Generate a filename for the wheel and return it.
     """
@@ -92,7 +92,7 @@ def generate_filename(
         py=escape_filename_component(python_tag),
         a=escape_filename_component(abi_tag),
         p=escape_filename_component(platform_tag),
-        )
+    )
 
 
 def wheel_is_compatible(filename):
@@ -152,7 +152,7 @@ class BaseHandler(object):
                 dest,
                 # os.path.basename(os.path.normpath(src)),
                 packagepath,
-                )
+            )
             if os.path.exists(target) and remove:
                 shutil.rmtree(target)
             shutil.copytree(src, target)
@@ -165,7 +165,7 @@ class BaseHandler(object):
         return "{pkg}-{v}.dist-info".format(
             pkg=data["distribution"],
             v=data["version"],
-            )
+        )
 
 
 class TopLevelHandler(BaseHandler):
@@ -240,12 +240,18 @@ class ConsoleScriptsHandler(BaseHandler):
                 command += ".py"
             path = create_command(
                 command,
-                (u"""'''%s'''
+                (
+                    u"""'''%s'''
 from %s import %s
 
 if __name__ == "__main__":
     %s()
-""" % (desc, modname, funcname, funcname)).encode("utf-8"))
+""" % (desc,
+            modname,
+            funcname,
+            funcname)
+                ).encode("utf-8")
+            )
             files_installed.append(path)
         return files_installed
 
@@ -263,7 +269,7 @@ class WheelInfoHandler(BaseHandler):
                 line = line.replace("\r", "").replace("\n", "")
                 ki = line.find(":")
                 key = line[:ki]
-                value = line[ki+2:]
+                value = line[ki + 2:]
 
                 if key.lower() == "wheel-version":
                     major, minor = value.split(".")
@@ -332,7 +338,9 @@ class DependencyHandler(BaseHandler):
                         t = t[:t.find(";")].strip()
                         if VersionSpecifier is None:
                             # libversion not found
-                            print("Warning: could not import libversion.VersionSpecifier! Ignoring version and extra dependencies.")
+                            print(
+                                "Warning: could not import libversion.VersionSpecifier! Ignoring version and extra dependencies."
+                            )
                             rq, v, extras = "<libversion not found>", "???", []
                         else:
                             rq, v, extras = VersionSpecifier.parse_requirement(es)
@@ -366,11 +374,12 @@ DEFAULT_HANDLERS = [
     DependencyHandler,
     TopLevelHandler,
     ConsoleScriptsHandler,
-    ]
+]
 
 
 class Wheel(object):
     """class for installing python wheels."""
+
     def __init__(self, path, handlers=DEFAULT_HANDLERS, extras=[], verbose=False):
         self.path = path
         self.extras = extras
@@ -398,9 +407,7 @@ class Wheel(object):
             for handler in self.handlers:
                 if hasattr(handler, "handle_install"):
                     if self.verbose:
-                        print("Running handler '{h}'...".format(
-                            h=getattr(handler, "name", "<unknown>"))
-                            )
+                        print("Running handler '{h}'...".format(h=getattr(handler, "name", "<unknown>")))
                     tfi = handler.handle_install(tp, targetdir)
                     if tfi is not None:
                         files_installed += tfi

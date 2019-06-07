@@ -3,8 +3,8 @@ import os
 
 from stash.tests.stashtest import StashTestCase
 
-class ExpanderTests(StashTestCase):
 
+class ExpanderTests(StashTestCase):
     def setUp(self):
         StashTestCase.setUp(self)
         self.expand = self.stash.runtime.expander.expand

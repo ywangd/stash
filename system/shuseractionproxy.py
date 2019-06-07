@@ -7,7 +7,6 @@ from contextlib import contextmanager
 
 
 class ShNullResponder(object):
-
     def handle(self, *args, **kwargs):
         pass
 
@@ -22,6 +21,7 @@ class ShNullResponder(object):
 
 
 NULL_RESPONDER = ShNullResponder()
+
 
 # noinspection PyAttributeOutsideInit,PyDocstring
 class ShUserActionProxy(object):
@@ -99,11 +99,7 @@ class ShUserActionProxy(object):
         self._kc_responder = value
 
     @contextmanager
-    def config(self,
-               vk_responder=False,
-               tv_responder=False,
-               sv_responder=False,
-               kc_responder=False):
+    def config(self, vk_responder=False, tv_responder=False, sv_responder=False, kc_responder=False):
 
         try:
             self._vk_responder = NULL_RESPONDER if vk_responder is False else vk_responder
@@ -128,4 +124,3 @@ class ShUserActionProxy(object):
     # Keyboard shortcuts
     def kc_pressed(self, key, modifierFlags):
         self.kc_responder(key, modifierFlags)
-

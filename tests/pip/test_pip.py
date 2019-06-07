@@ -11,6 +11,7 @@ from stash.tests.stashtest import StashTestCase, requires_network, expected_fail
 
 class PipTests(StashTestCase):
     """tests for the 'pip' command."""
+
     def setUp(self):
         """setup the tests"""
         self.cwd = self.get_data_path()
@@ -171,8 +172,6 @@ class PipTests(StashTestCase):
 
         # 5. ensure command not found after uninstall
         self.run_command("pyrsa-keygen --help", exitcode=127)
-
-
 
     @requires_network
     def test_install_pypi_version_1(self):

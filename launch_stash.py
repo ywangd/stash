@@ -28,25 +28,22 @@ if 'stash.stash' in sys.modules:
 from stash import stash
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--no-cfgfile', action='store_true',
-                help='do not load external config files')
-ap.add_argument('--no-rcfile', action='store_true',
-                help='do not load external resource file')
-ap.add_argument('--no-historyfile', action='store_true',
-                help='do not load history file from last session')
-ap.add_argument('--log-level',
-                choices=['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'],
-                default='INFO',
-                help='the logging level')
-ap.add_argument('--log-file',
-                help='the file to send logging messages')
-ap.add_argument('--debug-switch',
-                default='',
-                help='a comma separate list to turn on debug switch for components')
-ap.add_argument('-c', '--command',
-                default=None,
-                dest='command',
-                help='command to run')
+ap.add_argument('--no-cfgfile', action='store_true', help='do not load external config files')
+ap.add_argument('--no-rcfile', action='store_true', help='do not load external resource file')
+ap.add_argument('--no-historyfile', action='store_true', help='do not load history file from last session')
+ap.add_argument(
+    '--log-level',
+    choices=['DEBUG',
+             'INFO',
+             'WARN',
+             'ERROR',
+             'CRITICAL'],
+    default='INFO',
+    help='the logging level'
+)
+ap.add_argument('--log-file', help='the file to send logging messages')
+ap.add_argument('--debug-switch', default='', help='a comma separate list to turn on debug switch for components')
+ap.add_argument('-c', '--command', default=None, dest='command', help='command to run')
 ap.add_argument('args',  # the editor shortcuts may pass additional arguments
                 nargs='*',
                 help='additional arguments (ignored)')
@@ -87,10 +84,14 @@ else:
     # tell StaSh to run the default command (totd.py)
     ctp = None
 
-
-_stash = stash.StaSh(debug=debug, log_setting=log_setting,
-                     no_cfgfile=ns.no_cfgfile, no_rcfile=ns.no_rcfile,
-                     no_historyfile=ns.no_historyfile, command=ctp)
+_stash = stash.StaSh(
+    debug=debug,
+    log_setting=log_setting,
+    no_cfgfile=ns.no_cfgfile,
+    no_rcfile=ns.no_rcfile,
+    no_historyfile=ns.no_historyfile,
+    command=ctp
+)
 
 _stash.launch()
 

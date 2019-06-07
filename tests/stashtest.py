@@ -110,8 +110,7 @@ class StashTestCase(unittest.TestCase):
 
     def tearDown(self):
         assert self.stash.runtime.child_thread is None, u'child thread is not cleared'
-        assert len(
-            self.stash.runtime.worker_registry) == 0, u'worker registry not empty'
+        assert len(self.stash.runtime.worker_registry) == 0, u'worker registry not empty'
         del self.stash
 
     def do_test(self, cmd, cmp_str, ensure_same_cwd=True, ensure_undefined=(), ensure_defined=(), exitcode=None):
@@ -121,16 +120,10 @@ class StashTestCase(unittest.TestCase):
         # 1 for mimicking running from console
         worker = self.stash(cmd, persistent_level=1)
 
-        self.assertEqual(
-            cmp_str,
-            self.stash.main_screen.text,
-            u'output not identical')
+        self.assertEqual(cmp_str, self.stash.main_screen.text, u'output not identical')
 
         if exitcode is not None:
-            self.assertEqual(
-                worker.state.return_value,
-                exitcode,
-                u"unexpected exitcode")
+            self.assertEqual(worker.state.return_value, exitcode, u"unexpected exitcode")
         else:
             self.logger.info(u"Exitcode: " + str(worker.state.return_value))
 
@@ -138,9 +131,7 @@ class StashTestCase(unittest.TestCase):
             assert os.getcwd() == saved_cwd, 'cwd changed'
         else:
             if os.getcwd() != saved_cwd:
-                self.logger.warning(
-                    u"CWD changed from '{o}' to '{n}'!".format(
-                        o=saved_cwd, n=os.getcwd()))
+                self.logger.warning(u"CWD changed from '{o}' to '{n}'!".format(o=saved_cwd, n=os.getcwd()))
 
         for v in ensure_undefined:
             assert v not in self.stash.runtime.state.environ.keys(), u'%s should be undefined' % v
@@ -156,8 +147,7 @@ class StashTestCase(unittest.TestCase):
             scriptfile = self.stash.runtime.find_script_file(scriptname)
             self.logger.debug(u"Scriptfile for command: " + str(scriptfile))
         except Exception as e:
-            self.logger.warning(
-                u"Could not find script for command: " + repr(e))
+            self.logger.warning(u"Could not find script for command: " + repr(e))
             # do NOT return here, script may be alias
         outs = StringIO()
         self.logger.info(u"Executing: " + repr(command))
@@ -166,7 +156,8 @@ class StashTestCase(unittest.TestCase):
             persistent_level=1,
             final_outs=outs,
             final_errs=outs,
-            cwd=self.cwd)  # 1 for mimicking running from console
+            cwd=self.cwd
+        )  # 1 for mimicking running from console
         output = outs.getvalue()
         returnvalue = worker.state.return_value
         self.logger.debug(output)
@@ -175,7 +166,8 @@ class StashTestCase(unittest.TestCase):
             self.assertEqual(
                 returnvalue,
                 exitcode,
-                u"unexpected exitcode ({e} expected, got {g})\nOutput:\n{o}\n".format(
-                    e=exitcode, g=returnvalue, o=output),
+                u"unexpected exitcode ({e} expected, got {g})\nOutput:\n{o}\n".format(e=exitcode,
+                                                                                      g=returnvalue,
+                                                                                      o=output),
             )
         return output

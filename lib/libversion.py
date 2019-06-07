@@ -3,7 +3,6 @@
 import re
 import operator
 
-
 # release type identifier -> release type priority (higher == better)
 RELEASE_TYPE_PRIORITIES = {
     None: 4,   # no release type
@@ -107,7 +106,7 @@ def _parse_version(vs):
         "subversion": rsubpriority,
         "postrelease": (subpriority if is_post else None),
         "devrelease": (devnum if isdev else None),
-        }
+    }
 
 
 def sort_versions(versionlist):
@@ -192,7 +191,16 @@ class Version(object):
         :rtype: tuple
         """
         rpriority = self.RELEASE_TYPE_PRIORITIES.get(self.rtype, 0)
-        return (self.epoch, self.versiontuple, rpriority, self.subversion, self.is_postrelease, self.postrelease, not self.is_devrelease, self.devrelease)
+        return (
+            self.epoch,
+            self.versiontuple,
+            rpriority,
+            self.subversion,
+            self.is_postrelease,
+            self.postrelease,
+            not self.is_devrelease,
+            self.devrelease
+        )
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -223,8 +231,6 @@ class Version(object):
             return self._get_sortkey() <= other._get_sortkey()
         else:
             return False
-
-
 
     def __str__(self):
         """return a string representation of this version"""
@@ -263,7 +269,7 @@ class VersionSpecifier(object):
         '>': operator.gt,
         '==': operator.eq,
         '~=': operator.ge,
-        }
+    }
 
     def __init__(self, version_specs):
         self.specs = [(VersionSpecifier.OPS[op], version) for (op, version) in version_specs]
@@ -298,7 +304,7 @@ class VersionSpecifier(object):
         if name_end_res is None:
             if "[" in requirement:
                 si = requirement.find("[")
-                extra_s = requirement[si+1:-1]
+                extra_s = requirement[si + 1:-1]
                 requirement = requirement[:si]
                 if len(extra_s) == 0:
                     extras = []
@@ -311,7 +317,7 @@ class VersionSpecifier(object):
         name, specs_s = requirement[:name_end], requirement[name_end:]
         if "[" in specs_s:
             si = specs_s.find("[")
-            extra_s = specs_s[si+1:-1]
+            extra_s = specs_s[si + 1:-1]
             specs_s = specs_s[:si]
             if len(extra_s) == 0:
                 extras = []

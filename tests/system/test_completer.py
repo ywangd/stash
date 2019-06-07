@@ -2,8 +2,8 @@
 
 from stash.tests.stashtest import StashTestCase
 
-class CompleterTests(StashTestCase):
 
+class CompleterTests(StashTestCase):
     def setUp(self):
         StashTestCase.setUp(self)
         self.complete = self.stash.completer.complete

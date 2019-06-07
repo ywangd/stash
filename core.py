@@ -20,8 +20,7 @@ from six import BytesIO, StringIO
 from six.moves.configparser import ConfigParser
 
 # noinspection PyPep8Naming
-from .system.shcommon import (_EXTERNAL_DIRS, _STASH_CONFIG_FILES, _STASH_ROOT,
-                              _SYS_STDOUT, IN_PYTHONISTA, ON_IPAD)
+from .system.shcommon import (_EXTERNAL_DIRS, _STASH_CONFIG_FILES, _STASH_ROOT, _SYS_STDOUT, IN_PYTHONISTA, ON_IPAD)
 from .system.shcommon import Control as ctrl
 from .system.shcommon import Escape as esc
 from .system.shcommon import Graphics as graphics
@@ -52,7 +51,6 @@ _DEBUG_PARSER = 401
 _DEBUG_EXPANDER = 402
 _DEBUG_COMPLETER = 403
 
-
 # Default configuration (can be overridden by external configuration file)
 _DEFAULT_CONFIG = """[system]
 rcfile=.stashrc
@@ -82,19 +80,18 @@ allow_double_lines=0
 hide_whitespace_lines=1
 maxsize=50
 """.format(
-	font_size=(14 if ON_IPAD else 12),
-	)
-
+    font_size=(14 if ON_IPAD else 12),
+)
 
 # create directories outside STASH_ROOT
 # we should do this each time StaSh because some commands may require
 # this directories
 for p in _EXTERNAL_DIRS:
-	if not os.path.exists(p):
-		try:
-			os.mkdir(p)
-		except:
-			pass
+    if not os.path.exists(p):
+        try:
+            os.mkdir(p)
+        except:
+            pass
 
 
 class StaSh(object):
@@ -102,12 +99,10 @@ class StaSh(object):
     Main application class. It initialize and wires the components and provide
     utility interfaces to running scripts.
     """
-    
+
     PY3 = six.PY3
 
-    def __init__(self, debug=(), log_setting=None,
-                 no_cfgfile=False, no_rcfile=False, no_historyfile=False,
-                 command=None):
+    def __init__(self, debug=(), log_setting=None, no_cfgfile=False, no_rcfile=False, no_historyfile=False, command=None):
         self.__version__ = __version__
 
         # Intercept IO
@@ -123,29 +118,26 @@ class StaSh(object):
         self.external_tab_handler = None
 
         # Wire the components
-        self.main_screen = ShSequentialScreen(self,
-                                              nlines_max=self.config.getint('display', 'BUFFER_MAX'),
-                                              debug=_DEBUG_MAIN_SCREEN in debug)
+        self.main_screen = ShSequentialScreen(
+            self,
+            nlines_max=self.config.getint('display',
+                                          'BUFFER_MAX'),
+            debug=_DEBUG_MAIN_SCREEN in debug
+        )
 
-        self.mini_buffer = ShMiniBuffer(self,
-                                        self.main_screen,
-                                        debug=_DEBUG_MINI_BUFFER in debug)
+        self.mini_buffer = ShMiniBuffer(self, self.main_screen, debug=_DEBUG_MINI_BUFFER in debug)
 
-        self.stream = ShStream(self,
-                               self.main_screen,
-                               debug=_DEBUG_STREAM in debug)
+        self.stream = ShStream(self, self.main_screen, debug=_DEBUG_STREAM in debug)
 
         self.io = ShIO(self, debug=_DEBUG_IO in debug)
 
         self.terminal = None  # will be set during UI initialisation
         self.ui = ShUI(self, debug=_DEBUG_UI in debug)
-        self.renderer = ShSequentialRenderer(self.main_screen, self.terminal,
-                                             debug=_DEBUG_RENDERER in debug)
+        self.renderer = ShSequentialRenderer(self.main_screen, self.terminal, debug=_DEBUG_RENDERER in debug)
 
         parser = ShParser(debug=_DEBUG_PARSER in debug)
         expander = ShExpander(self, debug=_DEBUG_EXPANDER in debug)
-        self.runtime = ShRuntime(self, parser, expander, no_historyfile=no_historyfile,
-                                 debug=_DEBUG_RUNTIME in debug)
+        self.runtime = ShRuntime(self, parser, expander, no_historyfile=no_historyfile, debug=_DEBUG_RUNTIME in debug)
         self.completer = ShCompleter(self, debug=_DEBUG_COMPLETER in debug)
 
         # Navigate to the startup folder
@@ -153,15 +145,18 @@ class StaSh(object):
             os.chdir(self.runtime.state.environ_get('HOME2'))
         self.runtime.load_rcfile(no_rcfile=no_rcfile)
         self.io.write(
-        	self.text_style(
-        		'StaSh v%s on python %s\n' % (
-        			self.__version__,
-        			platform.python_version(),
-        			), 
-        		{'color': 'blue', 'traits': ['bold']},
-        		always=True,
-        		),
-        	)
+            self.text_style(
+                'StaSh v%s on python %s\n' % (
+                    self.__version__,
+                    platform.python_version(),
+                ),
+                {
+                    'color': 'blue',
+                    'traits': ['bold']
+                },
+                always=True,
+            ),
+        )
         # warn on py3
         if self.PY3:
             self.io.write(
@@ -169,15 +164,18 @@ class StaSh(object):
                     'Warning: you are running StaSh in python3. Some commands may not work correctly in python3.\n',
                     {'color': 'red'},
                     always=True,
-                    ),
-                )
+                ),
+            )
             self.io.write(
                 self.text_style(
                     'Please help us improving StaSh by reporting bugs on github.\n',
-                    {'color': 'yellow', 'traits': ['italic']},
+                    {
+                        'color': 'yellow',
+                        'traits': ['italic']
+                    },
                     always=True,
-                    ),
-                )
+                ),
+            )
         # Load shared libraries
         self._load_lib()
 
@@ -186,14 +184,13 @@ class StaSh(object):
             # show tip of the day
             command = '$STASH_ROOT/bin/totd.py'
         if command:
-        	# do not run command if command is False (but not None)
+            # do not run command if command is False (but not None)
             self(command, add_to_history=False, persistent_level=0)
 
     def __call__(self, input_, persistent_level=2, *args, **kwargs):
         """ This function is to be called by external script for
          executing shell commands """
-        worker = self.runtime.run(
-            input_, persistent_level=persistent_level, *args, **kwargs)
+        worker = self.runtime.run(input_, persistent_level=persistent_level, *args, **kwargs)
         worker.join()
         return worker
 
@@ -233,7 +230,8 @@ class StaSh(object):
             'INFO': logging.INFO,
             'DEBUG': logging.DEBUG,
             'NOTEST': logging.NOTSET,
-        }.get(_log_setting['level'], logging.DEBUG)
+        }.get(_log_setting['level'],
+              logging.DEBUG)
 
         logger.setLevel(level)
 
@@ -243,9 +241,11 @@ class StaSh(object):
             else:
                 _log_handler = logging.handlers.RotatingFileHandler('stash.log', mode='w')
             _log_handler.setLevel(level)
-            _log_handler.setFormatter(logging.Formatter(
-                '[%(asctime)s] [%(levelname)s] [%(threadName)s] [%(name)s] [%(funcName)s] [%(lineno)d] - %(message)s'
-            ))
+            _log_handler.setFormatter(
+                logging.Formatter(
+                    '[%(asctime)s] [%(levelname)s] [%(threadName)s] [%(name)s] [%(funcName)s] [%(lineno)d] - %(message)s'
+                )
+            )
             logger.addHandler(_log_handler)
 
         return logger
@@ -303,11 +303,10 @@ class StaSh(object):
         :return:
         """
         # No color for pipes, files and Pythonista console
-        if not self.enable_styles or (not always and (
-        	isinstance(sys.stdout, (StringIO, IOBase))
-        	# or sys.stdout.write.im_self is _SYS_STDOUT
-        	or sys.stdout is _SYS_STDOUT
-        	)):
+        if not self.enable_styles or (not always and (isinstance(sys.stdout,
+                                                                 (StringIO,
+                                                                  IOBase))  # or sys.stdout.write.im_self is _SYS_STDOUT
+                                                      or sys.stdout is _SYS_STDOUT)):
             return s
 
         fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)

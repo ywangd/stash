@@ -161,7 +161,7 @@ class ShIO(object):
             return
         idx = 0
         while True:
-            self.stash.stream.feed(s[idx: idx + self.chunk_size], no_wait=no_wait)  # main screen only
+            self.stash.stream.feed(s[idx:idx + self.chunk_size], no_wait=no_wait)  # main screen only
             idx += self.chunk_size
             if idx >= len(s):
                 break

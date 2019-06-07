@@ -11,15 +11,13 @@ import re
 # noinspection PyPep8Naming
 from .shcommon import Control as ctrl, Escape as esc, PY3
 
-
 if PY3:
-	# rename str, unicode and bytes
-	unicode = str
-	str = bytes
+    # rename str, unicode and bytes
+    unicode = str
+    str = bytes
 
 
 class ShMiniBuffer(object):
-
     """
     This class process user inputs (as opposed to running scripts I/O). It is
     called by the UI delegate to process the text_view_should_change event.
@@ -67,7 +65,7 @@ class ShMiniBuffer(object):
         """
         :param str value: New value for the modifiable chars
         """
-        self.chars = self.chars[: self.x_modifiable] + value
+        self.chars = self.chars[:self.x_modifiable] + value
 
     def feed(self, rng, replacement):
         """
@@ -99,9 +97,11 @@ class ShMiniBuffer(object):
                     self.logger.debug('DELETING %s' % str(rng_adjusted))
                 self.chars = self.chars[:rng_adjusted[0]] + self.chars[rng_adjusted[1]:]
                 self.main_screen.replace_in_range(
-                    (rng_adjusted[0] - self.x_modifiable, rng_adjusted[1] - self.x_modifiable),
+                    (rng_adjusted[0] - self.x_modifiable,
+                     rng_adjusted[1] - self.x_modifiable),
                     '',
-                    relative_to_x_modifiable=True)
+                    relative_to_x_modifiable=True
+                )
         # Lock is now released
 
         if replacement == '':  # pure deletion
@@ -110,11 +110,12 @@ class ShMiniBuffer(object):
         elif replacement == '\t':  # TODO: Separate tab manager
 
             # When no foreground script is running, default tab handler is to auto-complete commands
-            tab_handler = (self.stash.completer.complete if not self.stash.runtime.child_thread
-                           else self.stash.external_tab_handler)
+            tab_handler = (
+                self.stash.completer.complete if not self.stash.runtime.child_thread else self.stash.external_tab_handler
+            )
 
             if callable(tab_handler):
-                incomplete = self.chars[self.x_modifiable: rng_adjusted[0]]
+                incomplete = self.chars[self.x_modifiable:rng_adjusted[0]]
                 try:
                     completed, possibilities = tab_handler(incomplete)
 
@@ -127,7 +128,8 @@ class ShMiniBuffer(object):
                     elif len(possibilities) > 0:  # TODO: handle max possibilities checking
                         # Run through stream feed to allow attributed texts to be processed
                         self.stash.stream.feed(
-                            u'\n%s\n%s' % ('  '.join(possibilities), self.stash.runtime.get_prompt()),
+                            u'\n%s\n%s' % ('  '.join(possibilities),
+                                           self.stash.runtime.get_prompt()),
                             render_it=False  # do not render to avoid dead lock on UI thread
                         )
                         with self.main_screen.acquire_lock():
@@ -141,8 +143,10 @@ class ShMiniBuffer(object):
 
                 except Exception as e:  # TODO: better error handling
                     self.stash.stream.feed(
-                        u'\nauto-completion error: %s\n%s' % (repr(e), self.stash.runtime.get_prompt()),
-                        render_it=False)
+                        u'\nauto-completion error: %s\n%s' % (repr(e),
+                                                              self.stash.runtime.get_prompt()),
+                        render_it=False
+                    )
                     with self.main_screen.acquire_lock():
                         self.main_screen.modifiable_string = self.modifiable_string
                         self.main_screen.cursor_x = self.main_screen.x_modifiable + len(incomplete)
@@ -165,21 +169,22 @@ class ShMiniBuffer(object):
                     if rpln.endswith('\n'):  # LF is always added to the end of the line
                         if len(rpln) > 1:  # not a pure return char
                             self.main_screen.replace_in_range(
-                                (x - self.x_modifiable, x - self.x_modifiable),
+                                (x - self.x_modifiable,
+                                 x - self.x_modifiable),
                                 rpln[:-1],
-                                relative_to_x_modifiable=True)
-                        self.main_screen.replace_in_range(
-                            None,
-                            u'\n',
-                            relative_to_x_modifiable=False)
+                                relative_to_x_modifiable=True
+                            )
+                        self.main_screen.replace_in_range(None, u'\n', relative_to_x_modifiable=False)
                         self.chars = self.chars[:x] + rpln[:-1] + self.chars[x:] + '\n'
                     else:
                         # Do not send NULL char to main screen, it crashes the app
                         if rpln != '\0':
                             self.main_screen.replace_in_range(
-                                (x - self.x_modifiable, x - self.x_modifiable),
+                                (x - self.x_modifiable,
+                                 x - self.x_modifiable),
                                 rpln,
-                                relative_to_x_modifiable=True)
+                                relative_to_x_modifiable=True
+                            )
                         self.chars = self.chars[:x] + rpln + self.chars[x:]
                 # Lock is now released
 
@@ -252,7 +257,7 @@ class ShMiniBuffer(object):
             return
 
         rng_adjusted = self._adjust_range(rng)
-        deletable_chars = modifiable_string[: rng_adjusted[0]]
+        deletable_chars = modifiable_string[:rng_adjusted[0]]
         left_chars = ''.join(self._pattern_word_split.findall(deletable_chars)[:-1])
         self.modifiable_string = left_chars + modifiable_string[rng_adjusted[0]:]
         self.main_screen.modifiable_string = self.modifiable_string
@@ -301,8 +306,11 @@ class ShMiniBuffer(object):
         # NOTE this must be called inside a main screen locking session
         if self.modifiable_string != self.main_screen.modifiable_string:
             if self.debug:
-                self.logger.debug('Inconsistent mini_buffer [%s] main_screen [%s]' %
-                                  (self.modifiable_string, self.main_screen.modifiable_string))
+                self.logger.debug(
+                    'Inconsistent mini_buffer [%s] main_screen [%s]' %
+                    (self.modifiable_string,
+                     self.main_screen.modifiable_string)
+                )
             self.main_screen.modifiable_string = self.modifiable_string
 
     def config_runtime_callback(self, callback):

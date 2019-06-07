@@ -56,13 +56,14 @@ def main(args):
     from distutils.version import StrictVersion
 
     ap = ArgumentParser()
-    ap.add_argument('target', nargs='?',
-                    help='target of update in the format of [owner]:branch. '
-                         'Default to ywangd:master or simply master')
-    ap.add_argument('-n', '--check', action='store_true',
-                    help='check for update only')
-    ap.add_argument('-f', '--force', action='store_true',
-                    help='update without checking for new version')
+    ap.add_argument(
+        'target',
+        nargs='?',
+        help='target of update in the format of [owner]:branch. '
+        'Default to ywangd:master or simply master'
+    )
+    ap.add_argument('-n', '--check', action='store_true', help='check for update only')
+    ap.add_argument('-f', '--force', action='store_true', help='update without checking for new version')
     ns = ap.parse_args(args)
 
     if ns.target is not None:
@@ -80,8 +81,7 @@ def main(args):
         owner, branch = 'ywangd', 'master'
         print('Invalid target {}, using default {}:{}'.format(target, owner, branch))
 
-    print(_stash.text_style('Running selfupdate ...',
-                            {'color': 'yellow', 'traits': ['bold']}))
+    print(_stash.text_style('Running selfupdate ...', {'color': 'yellow', 'traits': ['bold']}))
     print(u'%s: %s:%s' % (_stash.text_bold('Target'), owner, branch))
 
     has_update = True
@@ -105,19 +105,21 @@ def main(args):
     # Perform update if new version is available and not just checking only
     if not ns.check and has_update:
         url = '%s/%s/getstash.py' % (URL_BASE.format(owner=owner), branch)
-        print(u'%s: %s' % (_stash.text_bold('Url'),
-                           _stash.text_style(url, {'color': 'blue', 'traits': ['underline']})))
+        print(u'%s: %s' % (_stash.text_bold('Url'), _stash.text_style(url, {'color': 'blue', 'traits': ['underline']})))
 
         try:
-            exec(
-            	requests.get(
-                '{}?q={}'.format(url, randint(1, 999999))
-                ).text,
-                {'_IS_UPDATE': True, '_br': branch, '_owner': owner},
-                )
+            exec (
+                requests.get('{}?q={}'.format(url,
+                                              randint(1,
+                                                      999999))).text,
+                {
+                    '_IS_UPDATE': True,
+                    '_br': branch,
+                    '_owner': owner
+                },
+            )
             print(_stash.text_color('Update completed.', 'green'))
-            print(_stash.text_color(
-                'Please restart Pythonista to ensure changes becoming effective.', 'green'))
+            print(_stash.text_color('Please restart Pythonista to ensure changes becoming effective.', 'green'))
 
         except SystemExit:
             print(_stash.text_color('Failed to update. Please try again.', 'red'))

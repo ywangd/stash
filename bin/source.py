@@ -16,6 +16,7 @@ from __future__ import print_function
 import sys
 from argparse import ArgumentParser
 
+
 def main(args):
     ap = ArgumentParser(description="Read and execute commands from a shell script in the current environment")
     ap.add_argument('file', action="store", help='file to be sourced')
@@ -40,6 +41,6 @@ def main(args):
     finally:
         pass
 
+
 if __name__ == '__main__':
     main(sys.argv[1:])
-

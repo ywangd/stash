@@ -9,6 +9,7 @@ class SelfupdateTests(StashTestCase):
     I have no idea how to test the actual selfupdate, so the tests
     currently only test 'selfupdate --check' and 'selfupdate --help'.
     """
+
     def test_help(self):
         """tests 'selfupdate --help'"""
         output = self.run_command("selfupdate --help", exitcode=0)
@@ -91,4 +92,3 @@ class SelfupdateTests(StashTestCase):
         self.assertNotIn("Already at latest version", output)
         self.assertNotIn("New version available", output)
         self.assertIn("Error: ", output)
-

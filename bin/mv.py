@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """Move (rename) a file or directory to a new name, or into a new
 directory. Multiple source files may be specified if the destination is
 an existing directory.
@@ -13,16 +12,15 @@ import os
 import shutil
 import sys
 
+
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("src", action="store", nargs="+",
-                   help="one or more source files or folders")
-    p.add_argument("dest", action="store",
-                   help="the destination name or folder")
+    p.add_argument("src", action="store", nargs="+", help="one or more source files or folders")
+    p.add_argument("dest", action="store", help="the destination name or folder")
     ns = p.parse_args(args)
-    
+
     status = 0
-    
+
     if len(ns.src) > 1:
         # Multiple source files
         if os.path.exists(ns.dest):
@@ -70,8 +68,9 @@ def main(args):
         else:
             print("mv: {}: no such file or directory".format(src), file=sys.stderr)
             status = 1
-    
+
     sys.exit(status)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

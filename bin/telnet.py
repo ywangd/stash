@@ -38,10 +38,7 @@ class StashTelnet(object):
             'a',
             font=('Menlo-Regular', _stash.config.getint('display', 'TEXT_FONT_SIZE')))
         # noinspection PyUnresolvedReferences
-        self.screen = pyte.screens.DiffScreen(
-            int(_stash.ui.width / font_width),
-            int(_stash.ui.height / font_height)
-        )
+        self.screen = pyte.screens.DiffScreen(int(_stash.ui.width / font_width), int(_stash.ui.height / font_height))
         self.stream = pyte.Stream()
         self.stream.attach(self.screen)
 
@@ -94,6 +91,7 @@ class SshUserActionDelegate(object):
     """
     Substitute the default user actions delegates
     """
+
     def __init__(self, telnet):
         self.telnet = telnet
 
@@ -106,6 +104,7 @@ class SshTvVkKcDelegate(SshUserActionDelegate):
     """
     Delegate for TextView, Virtual keys and Key command
     """
+
     def textview_did_begin_editing(self, tv):
         _stash.terminal.is_editing = True
 
@@ -202,10 +201,8 @@ class SshSVDelegate(SshUserActionDelegate):
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('host', help='host to connect')
-    ap.add_argument('-p', '--port', action='store', default=23, type=int,
-                    help='port for telnet default: 23')
-    ap.add_argument('--timeout', type=int, default=2,
-                    help='timeout')
+    ap.add_argument('-p', '--port', action='store', default=23, type=int, help='port for telnet default: 23')
+    ap.add_argument('--timeout', type=int, default=2, help='timeout')
     args = ap.parse_args()
 
     telnet = StashTelnet()

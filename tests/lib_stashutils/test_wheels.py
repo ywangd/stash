@@ -7,6 +7,7 @@ from stash.tests.stashtest import StashTestCase
 
 class WheelsTests(StashTestCase):
     """tests fpr the wheel-support."""
+
     def test_wheel_is_compatible(self):
         """test wheel_is_compatible() result"""
         from stashutils import wheels

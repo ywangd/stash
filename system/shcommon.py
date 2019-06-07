@@ -12,7 +12,6 @@ from itertools import chain
 
 import six
 
-
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 
 if IN_PYTHONISTA:
@@ -29,16 +28,15 @@ if IN_PYTHONISTA:
         if six.PY3:
             python_capi = ctypes.pythonapi
         else:
-             # We need to load the Python 2 API manually
+            # We need to load the Python 2 API manually
             try:
-                python_capi = ctypes.PyDLL(
-                os.path.join(os.path.dirname(sys.executable),
-                             'Frameworks/Py2Kit.framework/Py2Kit'))
+                python_capi = ctypes.PyDLL(os.path.join(os.path.dirname(sys.executable), 'Frameworks/Py2Kit.framework/Py2Kit'))
             except OSError:
                 python_capi = ctypes.PyDLL(
-                os.path.join(os.path.dirname(sys.executable),
-                             'Frameworks/PythonistaKit.framework/PythonistaKit'))
-        
+                    os.path.join(os.path.dirname(sys.executable),
+                                 'Frameworks/PythonistaKit.framework/PythonistaKit')
+                )
+
 else:
     PYTHONISTA_VERSION = '0.0'
     PYTHONISTA_VERSION_LONG = '000000'
@@ -53,15 +51,12 @@ M_64 = platform_string.find('64bit') != -1
 CTRL_KEY_FLAG = (1 << 18)  # Control key for keyCommands
 CMD_KEY_FLAG = (1 << 20)  # Command key
 
-_STASH_ROOT = os.path.realpath(os.path.abspath(
-    os.path.dirname(os.path.dirname(__file__))))
+_STASH_ROOT = os.path.realpath(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 _STASH_CONFIG_FILES = ('.stash_config', 'stash.cfg')
 _STASH_HISTORY_FILE = '.stash_history'
 
 # directory for stash extensions
-_STASH_EXTENSION_PATH = os.path.abspath(
-	os.path.join(os.getenv("HOME"), "Documents", "stash_extensions"),
-	)
+_STASH_EXTENSION_PATH = os.path.abspath(os.path.join(os.getenv("HOME"), "Documents", "stash_extensions"), )
 # directory for stash bin extensions
 _STASH_EXTENSION_BIN_PATH = os.path.join(_STASH_EXTENSION_PATH, "bin")
 # directory for stash man extensions
@@ -72,12 +67,12 @@ _STASH_EXTENSION_FSI_PATH = os.path.join(_STASH_EXTENSION_PATH, "fsi")
 _STASH_EXTENSION_PATCH_PATH = os.path.join(_STASH_EXTENSION_PATH, "patches")
 # list of directories outside of _STASH_ROOT, used for simple mkdir
 _EXTERNAL_DIRS = [
-	_STASH_EXTENSION_PATH,
-	_STASH_EXTENSION_BIN_PATH,
-	_STASH_EXTENSION_MAN_PATH,
-	_STASH_EXTENSION_FSI_PATH,
-	_STASH_EXTENSION_PATCH_PATH,
-	]
+    _STASH_EXTENSION_PATH,
+    _STASH_EXTENSION_BIN_PATH,
+    _STASH_EXTENSION_MAN_PATH,
+    _STASH_EXTENSION_FSI_PATH,
+    _STASH_EXTENSION_PATCH_PATH,
+]
 
 # Python 3 or not Python 3
 PY3 = six.PY3
@@ -91,16 +86,18 @@ if IN_PYTHONISTA:
         import _outputcapture
     except ImportError:
         import pykit_io
+
         class _outputcapture(object):
-            ReadStdin=pykit_io.read_stdin
-            CaptureStdout=pykit_io.write_stdout
-            CaptureStderr=pykit_io.write_stderr
-        				
+            ReadStdin = pykit_io.read_stdin
+            CaptureStdout = pykit_io.write_stdout
+            CaptureStderr = pykit_io.write_stderr
+
     if sys.stdin.__class__.__name__ == 'StdinCatcher':
         _SYS_STDIN = sys.__stdin__ = sys.stdin
     elif sys.__stdin__.__class__.__name__ == 'StdinCatcher':
         _SYS_STDIN = sys.__stdin__
     else:
+
         class StdinCatcher(object):
             def __init__(self):
                 self.encoding = 'utf8'
@@ -111,7 +108,6 @@ if IN_PYTHONISTA:
             def readline(self):
                 return _outputcapture.ReadStdin()
 
-
         _SYS_STDIN = StdinCatcher()
 
     if sys.stdout.__class__.__name__ == 'StdoutCatcher':
@@ -119,6 +115,7 @@ if IN_PYTHONISTA:
     elif sys.__stdout__.__class__.__name__ == 'StdoutCatcher':
         _SYS_STDOUT = sys.__stdout__
     else:
+
         class StdoutCatcher(object):
             def __init__(self):
                 self.encoding = 'utf8'
@@ -135,7 +132,6 @@ if IN_PYTHONISTA:
             def writelines(self, lines):
                 self.write(''.join(lines))
 
-
         _SYS_STDOUT = StdoutCatcher()
 
     if sys.stderr.__class__.__name__ == 'StderrCatcher':
@@ -143,6 +139,7 @@ if IN_PYTHONISTA:
     elif sys.stderr.__class__.__name__ == 'StderrCatcher':
         _SYS_STDERR = sys.__stderr__
     else:
+
         class StderrCatcher(object):
             def __init__(self):
                 self.encoding = 'utf8'
@@ -539,6 +536,5 @@ class Graphics(object):
     }
 
     # Reverse mapping of all available attributes -- keep this private!
-    _SGR = {v: k for k, v in chain(FG.items(),
-                                   TEXT.items())}
+    _SGR = {v: k for k, v in chain(FG.items(), TEXT.items())}
     _SGR.update({'bg-' + v: k for k, v in BG.items()})
