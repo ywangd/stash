@@ -44,10 +44,6 @@ from stash.system.shcommon import IN_PYTHONISTA
 _stash = globals()['_stash']
 VersionSpecifier = _stash.libversion.VersionSpecifier  # alias for readability
 
-try:
-    unicode
-except NameError:
-    unicode = str
 
 if IN_PYTHONISTA:
     PYTHONISTA_BUNDLED_MODULES = [
@@ -770,7 +766,7 @@ class ArchiveFileInstaller(object):
 
         # handle entry points
         entry_points = kwargs.get("entry_points", {})
-        if isinstance(entry_points, (str, unicode)):
+        if isinstance(entry_points, (six.binary_type, six.text_type)):
             if pkg_resources is not None:
                 entry_points = {s: c for s, c in pkg_resources.split_sections(entry_points)}
             else:
@@ -780,7 +776,7 @@ class ArchiveFileInstaller(object):
             if self.verbose:
                 print("Handling entrypoints for: " + epn)
             ep = entry_points[epn]
-            if isinstance(ep, (str, unicode)):
+            if isinstance(ep, (six.binary_type, six.text_type)):
                 ep = [ep]
             if epn == "console_scripts":
                 for dec in ep:

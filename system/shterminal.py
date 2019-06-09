@@ -5,6 +5,8 @@ Physical terminal is what an user sees.
 import ast
 import logging
 
+import six
+
 try:
     import ui
     from objc_util import *
@@ -14,10 +16,6 @@ except ImportError:
 
 from .shcommon import CTRL_KEY_FLAG
 
-try:
-    unicode
-except NameError:
-    unicode = str
 
 # ObjC related stuff
 UIFont = ObjCClass('UIFont')
@@ -366,7 +364,7 @@ class ShTerminal(object):
 
     @property
     def text(self):
-        return unicode(self.tvo.text())
+        return six.text_type(self.tvo.text())
 
     @text.setter
     @on_main_thread
