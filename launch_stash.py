@@ -69,6 +69,13 @@ if ns.debug_switch == '':
         # stash._DEBUG_EXPANDER,
         # stash._DEBUG_COMPLETER,
     )
+elif ns.debug_switch == "all":
+    debug = []
+    for key in dir(stash):
+        if key.startswith("_DEBUG_"):
+            value = getattr(stash, key, None)
+            if value is not None:
+                debug.append(value)
 else:
     debug = []
     for ds in ns.debug_switch.split(','):
@@ -90,7 +97,7 @@ _stash = stash.StaSh(
     no_cfgfile=ns.no_cfgfile,
     no_rcfile=ns.no_rcfile,
     no_historyfile=ns.no_historyfile,
-    command=ctp
+    command=ctp,
 )
 
 _stash.launch()
