@@ -132,7 +132,7 @@ class StaSh(object):
         self.io = ShIO(self, debug=_DEBUG_IO in debug)
 
         self.terminal = None  # will be set during UI initialisation
-        self.ui = ShUI(self, debug=_DEBUG_UI in debug)
+        self.ui = ShUI(self, debug=(_DEBUG_UI in debug), debug_terminal=(_DEBUG_TERMINAL in debug))
         self.renderer = ShSequentialRenderer(self.main_screen, self.terminal, debug=_DEBUG_RENDERER in debug)
 
         parser = ShParser(debug=_DEBUG_PARSER in debug)
@@ -281,14 +281,34 @@ class StaSh(object):
             s = self.text_color(s, "red")
         self.io.write(s)
 
-    def launch(self, style='panel'):
-        self.ui.present(style)
-        self.terminal.begin_editing()
+    def launch(self):
+        """
+        Launch StaSh, presenting the UI.
+        """
+        self.ui.show()
+        # self.terminal.set_focus()
+    
+    def on_exit(self):
+        """
+        This method will be called when StaSh is about the be closed.
+        """
+        self.runtime.save_history()
+        self.cleanup()
+        # Clear the stack or the stdout becomes unusable for interactive prompt
+        self.runtime.worker_registry.purge()
 
     def cleanup(self):
+        """
+        Perform cleanup here.
+        """
         disable_io_wrapper()
 
     def get_workers(self):
+        """
+        Return a list of all workers..
+        :return: a list of all workers
+        :rtype: list of [stash.system.shtreads.BaseThread]
+        """
         return [worker for worker in self.runtime.worker_registry]
 
     # noinspection PyProtectedMember

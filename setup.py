@@ -82,6 +82,7 @@ setup(
         "stash",
         "stash.system",
         "stash.system.shui",
+        "stash.lib",
     ],
     package_data={
         "": get_package_data_files("stash"),
