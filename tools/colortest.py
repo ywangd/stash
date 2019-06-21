@@ -2,6 +2,8 @@
 Test color support
 """
 
+_stash = globals()["_stash"]
+
 def get_all_bg_colors():
     """
     Return a list of all known bg colors
@@ -27,8 +29,8 @@ def main():
     print("Known FG colors: " + ", ".join(fg_colors))
     print("Known BG colors: " + ", ".join(bg_colors))
     print("------- showing all combinations ----------")
-    for fg in self.stash.renderer.FG_COLORS:
-        for bg in self.stash.renderer.BG_COLORS:
+    for fg in stash.renderer.FG_COLORS:
+        for bg in stash.renderer.BG_COLORS:
             for bold in (False, True):
                 for italics in (False, True):
                     for underscore in (False, True):

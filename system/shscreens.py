@@ -12,6 +12,7 @@ from six.moves import xrange
 
 # noinspection PyPep8Naming
 from .shcommon import Graphics as graphics
+from .shui.base import ShBaseSequentialRenderer
 
 
 class ShScreenNotLocked(Exception):
@@ -546,7 +547,7 @@ class ShSequentialScreen(object):
                     pyte_char = pyte_screen.buffer[idx_line][idx_column]
                     # self.logger.info('HERE = %s' % idx)
                     if self._buffer[idx].data != pyte_char.data \
-                            or not ShSequentialRenderer._same_style(self._buffer[idx], pyte_char):
+                            or not ShBaseSequentialRenderer._same_style(self._buffer[idx], pyte_char):
                         # self.logger.info('breaking %s' % idx)
                         self.intact_right_bound = idx
                         break
