@@ -32,7 +32,7 @@ class ShTerminal(ShBaseTerminal):
     
     @text.setter
     def text(self, value):
-        assert isinstance(value, (ix.text_type, six.binary_type))
+        assert isinstance(value, (six.text_type, six.binary_type))
         self._text = value
     
     @property
