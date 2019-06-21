@@ -29,9 +29,9 @@ from .system.shiowrapper import disable as disable_io_wrapper
 from .system.shiowrapper import enable as enable_io_wrapper
 from .system.shparsers import ShCompleter, ShExpander, ShParser
 from .system.shruntime import ShRuntime
-from .system.shscreens import ShSequentialRenderer, ShSequentialScreen
+from .system.shscreens import ShSequentialScreen
 from .system.shstreams import ShMiniBuffer, ShStream
-from .system.shui import ShUI
+from .system.shui import ShUI, ShSequentialRenderer
 from .system.shuseractionproxy import ShUserActionProxy
 
 # Setup logging
@@ -133,7 +133,7 @@ class StaSh(object):
 
         self.terminal = None  # will be set during UI initialisation
         self.ui = ShUI(self, debug=(_DEBUG_UI in debug), debug_terminal=(_DEBUG_TERMINAL in debug))
-        self.renderer = ShSequentialRenderer(self.main_screen, self.terminal, debug=_DEBUG_RENDERER in debug)
+        self.renderer = ShSequentialRenderer(self, self.main_screen, self.terminal, debug=_DEBUG_RENDERER in debug)
 
         parser = ShParser(debug=_DEBUG_PARSER in debug)
         expander = ShExpander(self, debug=_DEBUG_EXPANDER in debug)
@@ -185,6 +185,7 @@ class StaSh(object):
             command = '$STASH_ROOT/bin/totd.py'
         if command:
             # do not run command if command is False (but not None)
+            self.logger.debug("Running command: {!r}".format(command))
             self(command, add_to_history=False, persistent_level=0)
 
     def __call__(self, input_, persistent_level=2, *args, **kwargs):

@@ -1,11 +1,40 @@
 # coding: utf-8
+from time import time
+
 import six
 
 import ui
 from objc_util import on_main_thread, ObjCInstanceMethod, UIColor, create_objc_class, ObjCClass, ObjCInstance, ns
 
-from ..shcommon import ON_IPAD, K_CC, K_CD, K_HUP, K_HDN, K_CU, K_TAB, K_HIST, K_CZ, K_KB, CTRL_KEY_FLAG
-from .base import ShBaseUI, ShBaseTerminal
+from ..shcommon import ON_IPAD, ON_IOS_8, sh_delay
+from ..shcommon import K_CC, K_CD, K_HUP, K_HDN, K_CU, K_TAB, K_HIST, K_CZ, K_KB, CTRL_KEY_FLAG
+from ..shscreens import DEFAULT_CHAR
+from .base import ShBaseUI, ShBaseTerminal, ShBaseSequentialRenderer
+
+try:
+    from objc_util import *
+except ImportError:
+    from .dummyobjc_util import *
+
+
+NSMutableAttributedString = ObjCClass('NSMutableAttributedString')
+UIFont = ObjCClass('UIFont')
+
+BlackColor = UIColor.blackColor()
+RedColor = UIColor.redColor()
+GreenColor = UIColor.greenColor()
+BrownColor = UIColor.brownColor()
+BlueColor = UIColor.blueColor()
+# BlueColor = UIColor.colorWithRed_green_blue_alpha_(0.3, 0.3, 1.0, 1.0)
+MagentaColor = UIColor.magentaColor()
+CyanColor = UIColor.cyanColor()
+WhiteColor = UIColor.whiteColor()
+GrayColor = UIColor.grayColor()
+# GrayColor = UIColor.colorWithRed_green_blue_alpha_(0.5, 0.5, 0.5, 1.0)
+YellowColor = UIColor.yellowColor()
+# SmokeColor = UIColor.smokeColor()
+SmokeColor = UIColor.colorWithRed_green_blue_alpha_(0.8, 0.8, 0.8, 1.0)
+
 
 class ShVk(ui.View):
     """
@@ -341,65 +370,6 @@ class ShUI(ShBaseUI, ui.View):
 UIFont = ObjCClass('UIFont')
 
 
-class ShTVDelegate(object):
-    def __init__(self, stash, terminal, mini_buffer, main_screen):
-        self.stash = stash
-        self.terminal = terminal
-        self.mini_buffer = mini_buffer
-        self.main_screen = main_screen
-
-    def textview_did_begin_editing(self, tv):
-        self.terminal.is_editing = True
-
-    def textview_did_end_editing(self, tv):
-        self.terminal.is_editing = False
-
-    def textview_should_change(self, tv, rng, replacement):
-        self.mini_buffer.feed(rng, replacement)
-        return False  # always false
-
-    def textview_did_change(self, tv):
-        """
-        The code is a fix to a possible UI system bug:
-            Some key-combos that delete texts, e.g. alt-delete, cmd-delete, from external
-        keyboard do not trigger textview_should_change event. So following checks
-        are added to ensure consistency between in-memory and actual UI.
-        """
-        rng = self.terminal.selected_range
-        main_screen_text = self.main_screen.text
-        terminal_text = self.terminal.text
-        x_modifiable = self.main_screen.x_modifiable
-        if rng[0] == rng[1] and main_screen_text[rng[0]:] != terminal_text[rng[0]:]:
-            if rng[0] >= x_modifiable:
-                self.mini_buffer.feed(None, main_screen_text[x_modifiable:rng[0]] + terminal_text[rng[0]:])
-                self.mini_buffer.set_cursor(-len(terminal_text[rng[0]:]), whence=2)
-            else:
-                s = terminal_text[rng[0]:]
-                self.main_screen.intact_right_bound = rng[0]  # mark the buffer to be re-rendered
-                # If the trailing string is shorter than the modifiable chars,
-                # this means there are valid deletion for the modifiable chars
-                # and we should keep it.
-                if len(s) < len(self.mini_buffer.modifiable_string):
-                    self.mini_buffer.feed(None, s)
-                    self.mini_buffer.set_cursor(0, whence=0)
-                else:  # nothing should be deleted
-                    self.mini_buffer.set_cursor(0, whence=2)
-
-    def textview_did_change_selection(self, tv):
-        # This callback was used to provide approximated support for H-Up/Dn
-        # shortcuts from an external keyboard. It is no longer necessary as
-        # proper external keyboard support is now possible with objc_util.
-
-        # If cursor is in sync already, as a result of renderer call, flag it
-        # to False for future checking.
-        if self.terminal.cursor_synced:
-            self.terminal.cursor_synced = False
-        else:
-            # Sync the cursor position on terminal to main screen
-            # Mainly used for when user touches and changes the terminal cursor position.
-            self.mini_buffer.sync_cursor(self.terminal.selected_range)
-
-
 # noinspection PyAttributeOutsideInit,PyUnusedLocal,PyPep8Naming
 class ShTerminal(ShBaseTerminal):
     """
@@ -531,7 +501,6 @@ class ShTerminal(ShBaseTerminal):
 
         self._delegate_view = ui.TextView()
         self._delegate_view.delegate = stash.user_action_proxy.tv_delegate
-        self.tv_delegate = ShTVDelegate(stash, self, stash.mini_buffer, stash.main_screen)
 
         self.tvo = _ShTerminal.alloc().initWithFrame_(((0, 0), (width, height))).autorelease()
         self.tvo.setAutoresizingMask_(1 << 1 | 1 << 4)  # flex Width and Height
@@ -794,3 +763,175 @@ class ShTerminal(ShBaseTerminal):
         handler = self.kc_handlers.get((key, modifierFlags), None)
         if handler:
             handler()
+
+
+class ShSequentialRenderer(ShBaseSequentialRenderer):
+    """
+    A specific renderer for `ShSequentialScreen`. It does its job by
+    building texts from the in-memory screen and insert them to the
+    UI terminal.
+
+    :param ShSequentialScreen screen: In memory screen
+    :param ShTerminal terminal: The real UI terminal
+    """
+    FG_COLORS = {
+        'black': BlackColor,
+        'red': RedColor,
+        'green': GreenColor,
+        'brown': BrownColor,
+        'blue': BlueColor,
+        'magenta': MagentaColor,
+        'cyan': CyanColor,
+        'white': WhiteColor,
+        'gray': GrayColor,
+        'yellow': YellowColor,
+        'smoke': SmokeColor,
+        'default': WhiteColor,
+    }
+
+    BG_COLORS = {
+        'black': BlackColor,
+        'red': RedColor,
+        'green': GreenColor,
+        'brown': BrownColor,
+        'blue': BlueColor,
+        'magenta': MagentaColor,
+        'cyan': CyanColor,
+        'white': WhiteColor,
+        'gray': GrayColor,
+        'yellow': YellowColor,
+        'smoke': SmokeColor,
+        'default': BlackColor,
+    }
+
+    RENDER_INTERVAL = 0.1
+    
+    def __init__(self, *args, **kwargs):
+        ShBaseSequentialRenderer.__init__(self, *args, **kwargs)
+        self.last_rendered_time = 0
+        self.render_thread = None
+
+    def _get_font(self, attrs):
+        if attrs.bold and attrs.italics:
+            return self.terminal.bold_italic_font
+        elif attrs.bold:
+            return self.terminal.bold_font
+        elif attrs.italics:
+            return self.terminal.italic_font
+        else:
+            return self.terminal.default_font
+
+    def _build_attributes(self, attrs):
+        return {
+            'NSColor': self.FG_COLORS.get(attrs.fg,
+                                          WhiteColor),
+            'NSBackgroundColor': self.BG_COLORS.get(attrs.bg,
+                                                    BlackColor),
+            'NSFont': self._get_font(attrs),
+            'NSUnderline': 1 if attrs.underscore else 0,
+            'NSStrikethrough': 1 if attrs.strikethrough else 0,
+        }
+
+    def _build_attributed_string(self, chars):
+        """
+        Build attributed text in a more efficient way than char by char.
+        It groups characters with the same attributes and apply the attributes
+        to them at once.
+        :param [ShChar] chars: A list of ShChar upon which the attributed text is built.
+        :rtype: object
+        """
+        # Initialize a string with default attributes
+        attributed_text = NSMutableAttributedString.alloc().initWithString_attributes_(
+            ''.join(char.data for char in chars),
+            self._build_attributes(DEFAULT_CHAR),
+        ).autorelease()
+
+        prev_char = chars[0]
+        location = length = 0
+        for idx, curr_char in enumerate(chars):
+            length += 1
+            if not self._same_style(prev_char, curr_char):  # a group is found
+                if not self._same_style(prev_char, DEFAULT_CHAR):  # skip default attrs
+                    attributed_text.setAttributes_range_(self._build_attributes(prev_char), (location, length - 1))
+                length = 1
+                location = idx
+                prev_char = curr_char
+
+            if idx == len(chars) - 1:  # last char
+                if not self._same_style(prev_char, DEFAULT_CHAR):
+                    attributed_text.setAttributes_range_(self._build_attributes(prev_char), (location, length))
+
+        return attributed_text
+
+    def render(self, no_wait=False):
+        """
+        Render the screen buffer to the UITextView. Normally the rendering process
+        is delayed to throttle the total attempts of rendering.
+        :param bool no_wait: Immediately render the screen without delay.
+        """
+        # The last_rendered_time is useful to ensure that the first rendering
+        # is not delayed.
+        if time() - self.last_rendered_time > self.RENDER_INTERVAL or no_wait:
+            if self.render_thread is not None:
+                self.render_thread.cancel()
+            self._render()
+        else:  # delayed rendering
+            if self.render_thread is None or not self.render_thread.isAlive():
+                self.render_thread = sh_delay(self._render, self.RENDER_INTERVAL)
+            # Do nothing if there is already a delayed rendering thread waiting
+
+    @on_main_thread
+    def _render(self):
+        # This must run on the main UI thread. Otherwise it crashes.
+
+        self.last_rendered_time = time()
+
+        # Lock screen to get atomic information
+        with self.screen.acquire_lock():
+            intact_left_bound, intact_right_bound = self.screen.get_bounds()
+            screen_buffer_length = self.screen.text_length
+            cursor_xs, cursor_xe = self.screen.cursor_x
+            renderable_chars = self.screen.renderable_chars
+            self.screen.clean()
+
+        # Specific code for ios 8 to fix possible crash
+        if ON_IOS_8:
+            tvo_texts = NSMutableAttributedString.alloc().initWithAttributedString_(self.terminal.tvo.attributedText()
+                                                                                    ).autorelease()
+        else:
+            tvo_texts = self.terminal.tso
+            tvo_texts.beginEditing()  # batch the changes
+
+        # First remove any leading texts that are rotated out
+        if intact_left_bound > 0:
+            tvo_texts.replaceCharactersInRange_withString_((0, intact_left_bound), '')
+
+        tv_text_length = tvo_texts.length()
+
+        # Second (re)render any modified trailing texts
+        # When there are contents beyond the right bound, either on screen
+        # or on terminal, the contents need to be re-rendered.
+        if intact_right_bound < max(tv_text_length, screen_buffer_length):
+            if len(renderable_chars) > 0:
+                tvo_texts.replaceCharactersInRange_withAttributedString_(
+                    (intact_right_bound,
+                     tv_text_length - intact_right_bound),
+                    self._build_attributed_string(renderable_chars)
+                )
+            else:  # empty string, pure deletion
+                tvo_texts.replaceCharactersInRange_withString_(
+                    (intact_right_bound,
+                     tv_text_length - intact_right_bound),
+                    ''
+                )
+
+        if ON_IOS_8:
+            self.terminal.tvo.setAttributedText_(tvo_texts)  # set the text
+        else:
+            tvo_texts.endEditing()  # end of batched changes
+
+        # Set the cursor position. This makes terminal and main screen cursors in sync
+        self.terminal.selected_range = (cursor_xs, cursor_xe)
+
+        # Ensure cursor line is visible by scroll to the end of the text
+        self.terminal.scroll_to_end()

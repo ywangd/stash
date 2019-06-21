@@ -3,7 +3,7 @@ Stub ui and terminal for testing.
 """
 import six
 
-from .base import ShBaseUI, ShBaseTerminal
+from .base import ShBaseUI, ShBaseTerminal, ShBaseSequentialRenderer
 
 
 class ShUI(ShBaseUI):
@@ -56,3 +56,19 @@ class ShTerminal(ShBaseTerminal):
     
     def lose_focus(self):
         pass
+
+
+class ShSequentialRenderer(ShBaseSequentialRenderer):
+    """
+    Stub renderer for testing
+    """
+    def render(self, no_wait=False):
+        # Lock screen to get atomic information
+        with self.screen.acquire_lock():
+            intact_left_bound, intact_right_bound = self.screen.get_bounds()
+            screen_buffer_length = self.screen.text_length
+            cursor_xs, cursor_xe = self.screen.cursor_x
+            renderable_chars = self.screen.renderable_chars
+            self.screen.clean()
+        
+        self.terminal.text = self.screen.text

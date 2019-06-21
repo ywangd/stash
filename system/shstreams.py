@@ -279,9 +279,9 @@ class ShMiniBuffer(object):
         # after the event. In this case, simply set the range at the end of
         # the existing input buffer.
         modifiable_string = self.modifiable_string
+        self.logger.debug("modifiable string: {!r}; length: {!r}".format(modifiable_string, length))
         if modifiable_string != '' and tv_text[-len(modifiable_string):] != modifiable_string:
             xs_adjusted = xe_adjusted = length
-
         else:
             xs, xe = rng
             # The start location is converted using it offset to the end of the

@@ -77,7 +77,7 @@ class ShBaseUI(object):
         self.stash.mini_buffer.delete_word(self.selected_range)
 
     def controlLAction(self):  # delete one word backwards
-        self.stash.stream.feed(u'\u009bc%s' % stash.runtime.get_prompt(), no_wait=True)
+        self.stash.stream.feed(u'\u009bc%s' % self.stash.runtime.get_prompt(), no_wait=True)
 
     def controlZAction(self):
         self.stash.runtime.push_to_background()
@@ -143,7 +143,8 @@ class ShBaseUI(object):
 
 class ShBaseTerminal(object):
     """
-    This is the base class for the multiline text used for bnoth in- and output.
+    This is the base class for the multiline text used for both in- and output.
+    Implementations of the terminal should call the stash.useractionproxy.* methods as appropiate.
     :param stash: assoziated StaSh instance
     :type stash: stash.stash.StaSh
     :param parent: the parent ShBaseUI
@@ -157,6 +158,8 @@ class ShBaseTerminal(object):
         self.logger = logging.getLogger('StaSh.Terminal')
         
         self.stash.terminal = self
+        
+        self.tv_delegate = ShTerminalDelegate(self.stash, self, debug=self.debug)
         
         # whether the terminal cursor position is in sync with main screen
         self.cursor_synced = False
@@ -226,3 +229,122 @@ class ShBaseTerminal(object):
         Lose the focus.
         """
         self.end_editing()
+
+
+class ShTerminalDelegate(object):
+    """
+    The Delegate for the terminal.
+    This will be called from the ShUserActionProxy.
+    The terminal should call the stash.useractionproxy.* methods instead.
+    See http://omz-software.com/pythonista/docs/ios/ui.html#textview
+    :param stash: associated StaSh instance
+    :type stash: stash.StaSh
+    :param terminal: the associated terminal
+    :type terminal: ShBaseTerminal
+    """
+    def __init__(self, stash, terminal, debug=False):
+        self.stash = stash
+        self.terminal = terminal
+        self.debug = debug
+        self.mini_buffer = self.stash.mini_buffer
+        self.main_screen = self.stash.main_screen
+        self.logger = logging.getLogger('StaSh.TerminalDelegate')
+
+    def textview_did_begin_editing(self, tv):
+        self.terminal.is_editing = True
+
+    def textview_did_end_editing(self, tv):
+        self.terminal.is_editing = False
+
+    def textview_should_change(self, tv, rng, replacement):
+        self.logger.debug("textview_should_change(..., {!r}, {!r})".format(rng, replacement))
+        self.mini_buffer.feed(rng, replacement)
+        return False  # always false
+
+    def textview_did_change(self, tv):
+        """
+        The code is a fix to a possible UI system bug:
+            Some key-combos that delete texts, e.g. alt-delete, cmd-delete, from external
+        keyboard do not trigger textview_should_change event. So following checks
+        are added to ensure consistency between in-memory and actual UI.
+        """
+        rng = self.terminal.selected_range
+        main_screen_text = self.main_screen.text
+        terminal_text = self.terminal.text
+        x_modifiable = self.main_screen.x_modifiable
+        self.logger.debug("textview_did_change() rng={!r}; text={!r}".format(rng, terminal_text))
+        if rng[0] == rng[1] and main_screen_text[rng[0]:] != terminal_text[rng[0]:]:
+            self.logger.debug("textview_did_change() if body executed")
+            if rng[0] >= x_modifiable:
+                self.mini_buffer.feed(None, main_screen_text[x_modifiable:rng[0]] + terminal_text[rng[0]:])
+                self.mini_buffer.set_cursor(-len(terminal_text[rng[0]:]), whence=2)
+            else:
+                s = terminal_text[rng[0]:]
+                self.main_screen.intact_right_bound = rng[0]  # mark the buffer to be re-rendered
+                # If the trailing string is shorter than the modifiable chars,
+                # this means there are valid deletion for the modifiable chars
+                # and we should keep it.
+                if len(s) < len(self.mini_buffer.modifiable_string):
+                    self.mini_buffer.feed(None, s)
+                    self.mini_buffer.set_cursor(0, whence=0)
+                else:  # nothing should be deleted
+                    self.mini_buffer.set_cursor(0, whence=2)
+
+    def textview_did_change_selection(self, tv):
+        # This callback was used to provide approximated support for H-Up/Dn
+        # shortcuts from an external keyboard. It is no longer necessary as
+        # proper external keyboard support is now possible with objc_util.
+
+        # If cursor is in sync already, as a result of renderer call, flag it
+        # to False for future checking.
+        if self.terminal.cursor_synced:
+            self.terminal.cursor_synced = False
+        else:
+            # Sync the cursor position on terminal to main screen
+            # Mainly used for when user touches and changes the terminal cursor position.
+            self.mini_buffer.sync_cursor(self.terminal.selected_range)
+
+
+class ShBaseSequentialRenderer(object):
+    """
+    A base class for a specific renderer for `ShSequentialScreen`. It does its job by
+    building texts from the in-memory screen and insert them to the
+    terminal.
+
+    :param stash: the StaSh instance
+    :type stash: stash.StaSh
+    :param screen: In memory screen
+    :type screen: stash.screens.ShSequentialScreen
+    :param terminal: The real terminal
+    :type terminal: ShBaseTerminal
+    """
+    FG_COLORS = {}
+    BG_COLORS = {}
+    
+    def __init__(self, stash, screen, terminal, debug=False):
+        self.stash = stash
+        self.screen = screen
+        self.terminal = terminal
+        self.debug = debug
+        self.logger = logging.getLogger('StaSh.SequentialRenderer')
+
+        # update default colors to match terminal
+        self.FG_COLORS["default"] = self.FG_COLORS.get(self.terminal.text_color, self.FG_COLORS["default"])
+        self.BG_COLORS["default"] = self.BG_COLORS.get(self.terminal.background_color, self.FG_COLORS["default"])
+        
+    @staticmethod
+    def same_style(char1, char2):
+        return char1.fg == char2.fg \
+               and char1.bg == char2.bg \
+               and char1.bold is char2.bold \
+               and char1.italics is char2.italics \
+               and char1.underscore is char2.underscore \
+               and char1.strikethrough is char2.strikethrough
+    
+    def render(self, no_wait=False):
+        """
+        Render the screen buffer to the terminal.
+        :param no_wait: Immediately render the screen without delay.
+        :type no_wait: bool
+        """
+        raise NotImplementedError()

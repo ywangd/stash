@@ -14,21 +14,21 @@ found = False
 
 if IN_PYTHONISTA:
     # load classic ui
-    from .pythonista_ui import ShUI, ShTerminal
+    from .pythonista_ui import ShUI, ShTerminal, ShSequentialRenderer
     found = True
 elif ON_TRAVIS:
     # stub terminal
-    from .stubui import ShUI, ShTerminal
+    from .stubui import ShUI, ShTerminal, ShSequentialRenderer
     found = True
-#else:
-    ## attempt to import TkinterUI
-    #try:
-        #from .tkui import ShUI, ShTerminal
-    #except ImportError as e:
-        ## do nothing here
-        #pass
-    #else:
-        #found = True
+else:
+    # attempt to import TkinterUI
+    try:
+        from .tkui import ShUI, ShTerminal, ShSequentialRenderer
+    except ImportError as e:
+        # do nothing here
+        pass
+    else:
+        found = True
 
 
 
@@ -37,4 +37,4 @@ if not found:
     raise NotImplementedError("No UI implemented for the current system!")
 
 
-__all__ = ["ShUI", "ShTerminal"]
+__all__ = ["ShUI", "ShTerminal", "ShSequentialRenderer"]

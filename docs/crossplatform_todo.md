@@ -1,11 +1,8 @@
 # Crossplatform todo list
 
-## general
-- remove IN_PYTHONISTA specific logic in `system.shscreens`
-
 ## ui
 - split history present methods and move some of them into ShBaseUI
-- split logic for input
+- `tkui`: support backspace and special keys; background and fg color
 
 ## pip
 - move pre-installed dependencies in a seperate module/lib
