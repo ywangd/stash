@@ -318,8 +318,12 @@ class ShBaseSequentialRenderer(object):
     :param terminal: The real terminal
     :type terminal: ShBaseTerminal
     """
-    FG_COLORS = {}
-    BG_COLORS = {}
+    FG_COLORS = {
+        "default": None,
+    }
+    BG_COLORS = {
+        "default": None,
+    }
     
     def __init__(self, stash, screen, terminal, debug=False):
         self.stash = stash
