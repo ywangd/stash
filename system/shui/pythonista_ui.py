@@ -850,15 +850,15 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
         location = length = 0
         for idx, curr_char in enumerate(chars):
             length += 1
-            if not self._same_style(prev_char, curr_char):  # a group is found
-                if not self._same_style(prev_char, DEFAULT_CHAR):  # skip default attrs
+            if not ShChar.same_style(prev_char, curr_char):  # a group is found
+                if not ShChar.same_style(prev_char, DEFAULT_CHAR):  # skip default attrs
                     attributed_text.setAttributes_range_(self._build_attributes(prev_char), (location, length - 1))
                 length = 1
                 location = idx
                 prev_char = curr_char
 
             if idx == len(chars) - 1:  # last char
-                if not self._same_style(prev_char, DEFAULT_CHAR):
+                if not ShChar.same_style(prev_char, DEFAULT_CHAR):
                     attributed_text.setAttributes_range_(self._build_attributes(prev_char), (location, length))
 
         return attributed_text

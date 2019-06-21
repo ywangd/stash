@@ -12,7 +12,6 @@ from six.moves import xrange
 
 # noinspection PyPep8Naming
 from .shcommon import Graphics as graphics
-from .shui.base import ShBaseSequentialRenderer
 
 
 class ShScreenNotLocked(Exception):
@@ -61,6 +60,24 @@ class ShChar(_Char):
             strikethrough=False
     ):
         return _Char.__new__(cls, data, fg, bg, bold, italics, underscore, strikethrough, reverse)
+    
+    @staticmethod
+    def same_style(char1, char2):
+        """
+        Check if both chars have the same style
+        :param char1: first char to compare
+        :type char1: ShChar
+        :param char2: second char to compare
+        :type char2: ShChar
+        :return: whether both chars have the same style or not
+        :rtype: bool
+        """
+        return char1.fg == char2.fg \
+               and char1.bg == char2.bg \
+               and char1.bold is char2.bold \
+               and char1.italics is char2.italics \
+               and char1.underscore is char2.underscore \
+               and char1.strikethrough is char2.strikethrough
 
 
 DEFAULT_CHAR = ShChar(data=' ', fg='default', bg='default')
@@ -547,7 +564,7 @@ class ShSequentialScreen(object):
                     pyte_char = pyte_screen.buffer[idx_line][idx_column]
                     # self.logger.info('HERE = %s' % idx)
                     if self._buffer[idx].data != pyte_char.data \
-                            or not ShBaseSequentialRenderer._same_style(self._buffer[idx], pyte_char):
+                            or not ShChar.same_style(self._buffer[idx], pyte_char):
                         # self.logger.info('breaking %s' % idx)
                         self.intact_right_bound = idx
                         break

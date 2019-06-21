@@ -335,15 +335,7 @@ class ShBaseSequentialRenderer(object):
         # update default colors to match terminal
         self.FG_COLORS["default"] = self.FG_COLORS.get(self.terminal.text_color, self.FG_COLORS["default"])
         self.BG_COLORS["default"] = self.BG_COLORS.get(self.terminal.background_color, self.FG_COLORS["default"])
-        
-    @staticmethod
-    def same_style(char1, char2):
-        return char1.fg == char2.fg \
-               and char1.bg == char2.bg \
-               and char1.bold is char2.bold \
-               and char1.italics is char2.italics \
-               and char1.underscore is char2.underscore \
-               and char1.strikethrough is char2.strikethrough
+
     
     def render(self, no_wait=False):
         """
