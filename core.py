@@ -282,7 +282,7 @@ class StaSh(object):
             s = self.text_color(s, "red")
         self.io.write(s)
 
-    def launch(self):
+    def launch(self, command=None):
         """
         Launch StaSh, presenting the UI.
         """

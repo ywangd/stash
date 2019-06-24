@@ -100,7 +100,7 @@ _stash = stash.StaSh(
     command=ctp,
 )
 
-_stash.launch()
-
-if ns.command:
+_stash.launch(ns.command)
+if ns.command is not None:
+    # TODO: _stash.launch() may block, which prevents this from being executed
     _stash(ns.command, add_to_history=False, persistent_level=0)

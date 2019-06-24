@@ -79,7 +79,7 @@ class ShTerminal(ShBaseTerminal):
     
     @property
     def text(self):
-        return self._txt.get("1.0", tkinter.END).replace("\r\n", "\n").replace("\r", "\n")
+        return self._txt.get("1.0", tkinter.END).replace("\r\n", "\n").replace("\r", "\n")[:-1]
     
     @text.setter
     def text(self, value):
@@ -102,10 +102,18 @@ class ShTerminal(ShBaseTerminal):
             replacement = "\n"
         elif replacement == "\x08":
             # backspace
-            replacement = ""
+            self.logger.debug("cursor {!r}; tl: {!r}; leftmost: {!r}".format(self._get_cursor_position(), self.text_length, self._leftmost()))
+            if self._leftmost():
+                # cant delete more
+                return "break"
+            replacement = u""
             if rng[0] == rng[1]:
-                rng = (rng[0] - 2, rng[1] -1)
-            return
+                rng = (rng[0] - 1, rng[1])
+            # inform of movement change later
+            if self.stash.user_action_proxy.tv_responder.textview_should_change(None, rng, replacement):
+                return  # return normally, so we do not break
+            else:
+                return "break"  # no change
         elif replacement in self._keymapping:
             self.parent.vk_tapped(self._keymapping[replacement])
             return "break"
@@ -114,6 +122,7 @@ class ShTerminal(ShBaseTerminal):
         
         if self.stash.user_action_proxy.tv_responder.textview_should_change(None, rng, replacement):
             self.parent.tk.after(0, self._notify_change)
+            self.parent.tk.after(0, self._notify_cursor_move)
         else:
             # break event
             return "break"
@@ -197,6 +206,9 @@ class ShTerminal(ShBaseTerminal):
         n = value
         row = 0
         while True:
+            if row >= len(lines):
+                # for some reason, we are at the end of the text. this is probably a bug, but lets return an approximate value to the end
+                return (len(lines) - 1, len(lines[len(lines) - 1]) - 1 )
             ll = len(lines[row])
             if n <= ll:
                 # n fits in line
@@ -258,6 +270,12 @@ class ShTerminal(ShBaseTerminal):
         rsi = self._abs_cursor_pos_to_rel_pos(si)
         rei = self._abs_cursor_pos_to_rel_pos(ei)
         return rsi, rei
+    
+    def _leftmost(self):
+        """
+        Check if the current cursor is at the left end of the modifiable chars.
+        """
+        return self._get_cursor_position() <= self.stash.main_screen.x_modifiable
         
     
     def _update_text(self, *args):
@@ -267,37 +285,6 @@ class ShTerminal(ShBaseTerminal):
         self._txt.delete("1.0", tkinter.END)
         out = self._txtvar_out.get()
         self._txt.insert("1.0", out)
-    
-    def replace_in_range(self, rng, text):
-        """
-        Replace the text in the given range
-        :param rng: range to replace
-        :type rng: tuple of (int, int)
-        :param text: text to insert
-        :type text: iterable of str or ShChar
-        """
-        rstart, rend = rng
-        start, end = self._rel_cursor_pos_to_abs_pos(rstart), self._rel_cursor_pos_to_abs_pos(rend)
-        tkstart, tkend = self._tuple_to_tk_index(start), self._tuple_to_tk_index(end)
-        self._txt.delete(tkstart, tkend)
-        # self._txt.insert(tkstart, text)
-        cp = rstart
-        for c in text:
-            a = 1
-            ctkp = self._tuple_to_tk_index(self._rel_cursor_pos_to_abs_pos(cp))
-            if isinstance(c, (six.binary_type, six.text_type)):
-                self._txt.insert(ctkp, c)
-            elif isinstance(c, ShChar):
-                if not self._colors_initialized:
-                    self._add_color_tags()
-                ch = c.data
-                if c.strikethrough:
-                    ch = u"\u0336" + ch
-                    a += 1
-                self._txt.insert(ctkp, ch, self._tag_for_char(c))
-            else:
-                raise TypeError("Unknown character type {!r}!".format(type(c)))
-            cp += a
     
     def _tag_for_char(self, c):
         """
@@ -457,6 +444,37 @@ class ShTerminal(ShBaseTerminal):
     
     def lose_focus(self):
         self.parent.tk.focus_set()
+    
+    def replace_in_range(self, rng, text):
+        """
+        Replace the text in the given range
+        :param rng: range to replace (start, length)
+        :type rng: tuple of (int, int)
+        :param text: text to insert
+        :type text: iterable of str or ShChar
+        """
+        rstart, length = rng
+        start, end = self._rel_cursor_pos_to_abs_pos(rstart), self._rel_cursor_pos_to_abs_pos(rstart + length)
+        tkstart, tkend = self._tuple_to_tk_index(start), self._tuple_to_tk_index(end)
+        self._txt.delete(tkstart, tkend)
+        # self._txt.insert(tkstart, text)
+        cp = rstart
+        for c in text:
+            a = 1
+            ctkp = self._tuple_to_tk_index(self._rel_cursor_pos_to_abs_pos(cp))
+            if isinstance(c, (six.binary_type, six.text_type)):
+                self._txt.insert(ctkp, c)
+            elif isinstance(c, ShChar):
+                if not self._colors_initialized:
+                    self._add_color_tags()
+                ch = c.data
+                if c.strikethrough:
+                    ch = u"\u0336" + ch
+                    a += 1
+                self._txt.insert(ctkp, ch, self._tag_for_char(c))
+            else:
+                raise TypeError("Unknown character type {!r}!".format(type(c)))
+            cp += a
 
 
 class ShSequentialRenderer(ShBaseSequentialRenderer):
@@ -532,7 +550,6 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
         # or on terminal, the contents need to be re-rendered.
         if intact_right_bound < max(tv_text_length, screen_buffer_length):
             if len(renderable_chars) > 0:
-                # TODO: color support
                 self.terminal.replace_in_range(
                     (intact_right_bound,
                      tv_text_length - intact_right_bound),

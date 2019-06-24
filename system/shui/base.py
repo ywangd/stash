@@ -257,7 +257,6 @@ class ShTerminalDelegate(object):
         self.terminal.is_editing = False
 
     def textview_should_change(self, tv, rng, replacement):
-        self.logger.debug("textview_should_change(..., {!r}, {!r})".format(rng, replacement))
         self.mini_buffer.feed(rng, replacement)
         return False  # always false
 
@@ -272,9 +271,7 @@ class ShTerminalDelegate(object):
         main_screen_text = self.main_screen.text
         terminal_text = self.terminal.text
         x_modifiable = self.main_screen.x_modifiable
-        self.logger.debug("textview_did_change() rng={!r}; text={!r}".format(rng, terminal_text))
         if rng[0] == rng[1] and main_screen_text[rng[0]:] != terminal_text[rng[0]:]:
-            self.logger.debug("textview_did_change() if body executed")
             if rng[0] >= x_modifiable:
                 self.mini_buffer.feed(None, main_screen_text[x_modifiable:rng[0]] + terminal_text[rng[0]:])
                 self.mini_buffer.set_cursor(-len(terminal_text[rng[0]:]), whence=2)

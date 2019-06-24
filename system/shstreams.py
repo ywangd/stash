@@ -91,14 +91,10 @@ class ShMiniBuffer(object):
             # Delete contents of selected range first
             if rng_adjusted[0] != rng_adjusted[1]:
                 if self.debug:
-                    self.logger.debug('DELETING %s' % str(rng_adjusted))
+                    self.logger.debug('DELETING {!r} (chars: {!r})'.format(rng_adjusted, self.chars))
                 self.chars = self.chars[:rng_adjusted[0]] + self.chars[rng_adjusted[1]:]
-                self.main_screen.replace_in_range(
-                    (rng_adjusted[0] - self.x_modifiable,
-                     rng_adjusted[1] - self.x_modifiable),
-                    '',
-                    relative_to_x_modifiable=True
-                )
+                replace_rng = (rng_adjusted[0] - self.x_modifiable, rng_adjusted[1] - self.x_modifiable)
+                self.main_screen.replace_in_range(replace_rng, '', relative_to_x_modifiable=True)
         # Lock is now released
 
         if replacement == '':  # pure deletion
@@ -279,8 +275,15 @@ class ShMiniBuffer(object):
         # after the event. In this case, simply set the range at the end of
         # the existing input buffer.
         modifiable_string = self.modifiable_string
-        self.logger.debug("modifiable string: {!r}; length: {!r}".format(modifiable_string, length))
-        if modifiable_string != '' and tv_text[-len(modifiable_string):] != modifiable_string:
+        lm = len(modifiable_string)
+        if lm == 0:
+            trailing = u""
+        else:
+            trailing = tv_text[-lm:]
+        if self.debug:
+            self.logger.debug("modifiable string: {!r}; length: {!r}; trailing: {!r}".format(modifiable_string, length, trailing))
+        assert len(trailing) == len(modifiable_string), len(trailing) - len(modifiable_string)
+        if modifiable_string != '' and trailing != modifiable_string:
             xs_adjusted = xe_adjusted = length
         else:
             xs, xe = rng
