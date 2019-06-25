@@ -56,12 +56,18 @@ class ShTerminal(ShBaseTerminal):
             wrap=tkinter.CHAR,
             bg=self._color_from_tuple(self.background_color),
             fg=self._color_from_tuple(self.text_color),
+            insertbackground=self._color_from_tuple(self.tint_color),
+            selectbackground=self._color_from_tuple(self.tint_color),
             )
         self._txt.pack(fill=tkinter.BOTH, expand=1)
         # binding
         self._txt.bind("<Key>", self._on_key_press)
         self._txt.bind("<FocusIn>", self._on_focus)
         self._txt.bind("<FocusOut>", self._on_focus)
+        self._txt.bind("<Left>", self._arrow_key_pressed)
+        self._txt.bind("<Right>", self._arrow_key_pressed)
+        self._txt.bind("<Up>", self._arrow_key_pressed)
+        self._txt.bind("<Down>", self._arrow_key_pressed)
         # we can not yet initialize the color system, so we need to do this later
         self._colors_initialized = False
         # output queue
@@ -94,39 +100,51 @@ class ShTerminal(ShBaseTerminal):
         # get the current position
         cp = self._get_cursor_position()  # TODO: check if this must be calculated before or after the keypress
         rng = self.selected_range
-        
         replacement = event.char
-        self.logger.debug("key {!r} pressed (symbol: {!r})".format(replacement, event.keysym))
+        skip_should_change = False  # if true, skip should_change
+        if self.debug:
+            self.logger.debug("key {!r} pressed (symbol: {!r}; selected: {!r})".format(replacement, event.keysym, rng))
         
         if replacement in ("\r", "\r\n"):
             replacement = "\n"
         elif replacement == "\x08":
             # backspace
-            self.logger.debug("cursor {!r}; tl: {!r}; leftmost: {!r}".format(self._get_cursor_position(), self.text_length, self._leftmost()))
-            if self._leftmost():
-                # cant delete more
-                return "break"
             replacement = u""
             if rng[0] == rng[1]:
                 rng = (rng[0] - 1, rng[1])
-            # inform of movement change later
-            if self.stash.user_action_proxy.tv_responder.textview_should_change(None, rng, replacement):
-                return  # return normally, so we do not break
-            else:
-                return "break"  # no change
+        elif replacement == "\x7f":
+            # del
+            replacement = u""
+            skip_should_change = True
+            if rng[0] == rng[1]:
+                rng = (rng[0], rng[1])
         elif replacement in self._keymapping:
             self.parent.vk_tapped(self._keymapping[replacement])
             return "break"
         
-        self.logger.debug("after adjusting, replacement is: {!r}".format(replacement))
-        
-        if self.stash.user_action_proxy.tv_responder.textview_should_change(None, rng, replacement):
+        if skip_should_change or self.stash.user_action_proxy.tv_responder.textview_should_change(None, rng, replacement):
             self.parent.tk.after(0, self._notify_change)
-            self.parent.tk.after(0, self._notify_cursor_move)
+            #self.parent.tk.after(0, self._notify_cursor_move)
         else:
             # break event
             return "break"
         # TODO: the cursor probably moved
+    
+    def _arrow_key_pressed(self, event):
+        """
+        Called when an arrow key was pressed.
+        """
+        d = event.keysym.lower()
+        if d == "left":
+            self.parent.arrowLeftAction()
+        elif d == "right":
+            self.parent.arrowRightAction()
+        elif d == "up":
+            self.parent.arrowUpAction()
+        elif d == "down":
+            self.parent.arrowDownAction()
+        else:
+            raise ValueError("Unknown key: {!r}".format(d))
     
     def _notify_change(self):
         """
@@ -167,6 +185,16 @@ class ShTerminal(ShBaseTerminal):
         """
         v = self._get_absolute_cursor_position()
         return self._abs_cursor_pos_to_rel_pos(v)
+    
+    def _get_absolute_cursor_position(self):
+        """
+        Return the actual cursor position as a tuple of (row, column)
+        :return: (row, column) of cursor
+        :rtype: tuple of (int, int)
+        """
+        # source of first line: https://stackoverflow.com/questions/30000368/how-to-get-current-cursor-position-for-text-widget
+        raw = self._txt.index(tkinter.INSERT)
+        return self._tk_index_to_tuple(raw)
     
     def _abs_cursor_pos_to_rel_pos(self, value, lines=None):
         """
@@ -218,17 +246,6 @@ class ShTerminal(ShBaseTerminal):
                 n -= (ll + 1)  # 1 for newline
                 row += 1
     
-    def _get_absolute_cursor_position(self):
-        """
-        Return the actual cursor position as a tuple of (row, column)
-        :return: (row, column) of cursor
-        :rtype: tuple of (int, int)
-        """
-        # self.logger.debug("position: " + repr(self._txt.index(tkinter.INSERT)))
-        # source of first line: https://stackoverflow.com/questions/30000368/how-to-get-current-cursor-position-for-text-widget
-        raw = self._txt.index(tkinter.INSERT)
-        return self._tk_index_to_tuple(raw)
-    
     def _tk_index_to_tuple(self, value):
         """
         Convert a tkinter index to a tuple of (row, column), starting at 0
@@ -261,7 +278,7 @@ class ShTerminal(ShBaseTerminal):
         """
         # based on: https://stackoverflow.com/questions/4073468/how-do-i-get-a-selected-string-in-from-a-tkinter-text-box
         # check if text is selected
-        if not (tkinter.SEL_FIRST in self._txt.tag_names() and tkinter.SEL_LAST in self._txt.tag_names()):
+        if not self._txt.tag_ranges(tkinter.SEL):
             return None, None
         raw_start = self._txt.index(tkinter.SEL_FIRST)
         raw_end = self._txt.index(tkinter.SEL_LAST)
@@ -404,7 +421,6 @@ class ShTerminal(ShBaseTerminal):
         g = int(255 * g)
         b = int(255 * b)
         hexcode = "#{:02X}{:02X}{:02X}".format(r, g, b)
-        self.logger.debug("value {!r} -> color {!r}: ".format(value, hexcode))
         return hexcode
     
     # ============= api implementation ============
@@ -433,6 +449,7 @@ class ShTerminal(ShBaseTerminal):
             start = self._tuple_to_tk_index(self._rel_cursor_pos_to_abs_pos(value[0]))
             end = self._tuple_to_tk_index(self._rel_cursor_pos_to_abs_pos(value[1]))
             self._txt.tag_add(tkinter.SEL, start, end)
+            self._txt.mark_set(tkinter.INSERT, end)
             # set focus
             self.set_focus()
     
@@ -456,8 +473,8 @@ class ShTerminal(ShBaseTerminal):
         rstart, length = rng
         start, end = self._rel_cursor_pos_to_abs_pos(rstart), self._rel_cursor_pos_to_abs_pos(rstart + length)
         tkstart, tkend = self._tuple_to_tk_index(start), self._tuple_to_tk_index(end)
+        saved = self.selected_range
         self._txt.delete(tkstart, tkend)
-        # self._txt.insert(tkstart, text)
         cp = rstart
         for c in text:
             a = 1
@@ -475,6 +492,7 @@ class ShTerminal(ShBaseTerminal):
             else:
                 raise TypeError("Unknown character type {!r}!".format(type(c)))
             cp += a
+        self.selected_range = saved  # restore cursor position
 
 
 class ShSequentialRenderer(ShBaseSequentialRenderer):
