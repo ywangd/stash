@@ -140,6 +140,8 @@ class ShBaseUI(object):
         elif vk == K_CU:
             self.stash.mini_buffer.feed(self.stash.mini_buffer.RANGE_MODIFIABLE_CHARS, '')
     
+    # ================== history functions =====================
+    
     def history_present(self, history):
         """
         Present the history.
@@ -147,6 +149,20 @@ class ShBaseUI(object):
         :type history: stash.system.shhistory.ShHistory
         """
         raise NotImplementedError()
+    
+    def history_selected(self, line, idx):
+        """
+        This should be called when a history line was selected.
+        :param line: selected line
+        :type line: str
+        :param idx: index of selected line
+        :type idx: int
+        """
+        # Save the unfinished line user is typing before showing entries from history
+        if self.stash.runtime.history.idx == -1:
+            self.stash.runtime.history.templine = self.stash.mini_buffer.modifiable_string.rstrip()
+        self.stash.mini_buffer.feed(None, line)
+        self.stash.runtime.history.idx = idx
 
 
 class ShBaseTerminal(object):

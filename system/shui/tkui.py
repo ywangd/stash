@@ -33,6 +33,37 @@ class ShUI(ShBaseUI):
         if tkinter_messagebox.askokcancel(u"Quit", u"Are you sure you want to quit?"):
             self.tk.destroy()
             self.on_exit()
+    
+    def history_present(self, history):
+        window = tkinter.Toplevel(self.tk)
+        listbox = tkinter.Listbox(window)
+        listbox.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=1)
+        scrollbar = tkinter.Scrollbar(window, orient=tkinter.VERTICAL)
+        scrollbar.config(command=listbox.yview)
+        scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
+        listbox.config(yscrollcommand=scrollbar.set)
+        # insert data
+        items = history.getlist()
+        for line in items:
+            listbox.insert(tkinter.END, line)
+        listbox.bind("<Double-Button-1>", lambda e: self._history_selected(window, items, listbox.curselection()))
+        listbox.bind("<Return>", lambda e: self._history_selected(window, items, listbox.curselection()))
+        listbox.focus_set()
+    
+    def _history_selected(self, window, items, idx):
+        """
+        Called when a line was selected from the history popover.
+        :param window: the history popover window
+        :type window: tkinter.Toplevel
+        :param items: list of lines in the history
+        :type items: list of str
+        :param idx: selected index
+        :type idx: int
+        """
+        i = idx[0]
+        window.destroy()
+        line = items[i]
+        self.history_selected(line, i)
 
 
 class ShTerminal(ShBaseTerminal):
