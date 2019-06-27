@@ -139,6 +139,14 @@ class ShBaseUI(object):
 
         elif vk == K_CU:
             self.stash.mini_buffer.feed(self.stash.mini_buffer.RANGE_MODIFIABLE_CHARS, '')
+    
+    def history_present(self, history):
+        """
+        Present the history.
+        :param history: history to present
+        :type history: stash.system.shhistory.ShHistory
+        """
+        raise NotImplementedError()
 
 
 class ShBaseTerminal(object):

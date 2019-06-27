@@ -43,8 +43,12 @@ class ShTerminal(ShBaseTerminal):
     _LOOP_DELAY = 5
     
     _keymapping = {  # tkinter event -> StaSh key
-        "\x03": K_CC,  # ctrl-c
-        "\t": K_TAB,   # tab
+        "\x03": K_CC,    # ctrl-c
+        "\t": K_TAB,     # tab
+        "\x08": K_HIST,  # ctrl-h
+        "\x1a": K_CZ,    # ctrl-z
+        "\x15": K_CU,    # ctrl-u
+        
     }
     
     def __init__(self, stash, parent):
@@ -107,8 +111,8 @@ class ShTerminal(ShBaseTerminal):
         
         if replacement in ("\r", "\r\n"):
             replacement = "\n"
-        elif replacement == "\x08":
-            # backspace
+        elif replacement == "\x08" and event.keysym != "h":
+            # backspace (for some reason, same code as ctrl-h)
             replacement = u""
             if rng[0] == rng[1]:
                 rng = (rng[0] - 1, rng[1])
@@ -145,6 +149,7 @@ class ShTerminal(ShBaseTerminal):
             self.parent.arrowDownAction()
         else:
             raise ValueError("Unknown key: {!r}".format(d))
+        return "break"
     
     def _notify_change(self):
         """
