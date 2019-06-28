@@ -12,12 +12,16 @@ class VersionTests(StashTestCase):
         """ensure keys like 'core.py' are in the output of 'version'"""
         output = self.run_command("version", exitcode=0)
         self.assertIn("StaSh", output)
-        self.assertIn("Pythonista", output)
-        # skip iOS version because we run the tests on linux (i think)
+        self.assertIn("Python", output)
+        self.assertIn("UI", output)
         self.assertIn("root", output)
         self.assertIn("core.py", output)
+        # skip iOS version because we run the tests on linux (i think)
+        self.assertIn("Platform", output)
         self.assertIn("SELFUPDATE_TARGET", output)
         self.assertIn("BIN_PATH", output)
+        self.assertIn("PYTHONPATH", output)
+        self.assertIn("Loaded libraries", output)
 
     def test_correct_py_version(self):
         """test that the correct python version will be reported."""
