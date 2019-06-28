@@ -335,7 +335,7 @@ class ShRuntime(object):
                 if self.debug:
                     self.logger.debug('Exception: %s\n' % repr(e))
                 msg = '%s\n' % repr(e)
-                self.write_error_message(msg)
+                self.write_error_message(final_errs, msg)
                 if self.py_traceback or self.py_pdb:
                     # traceback.print_exception(etype, evalue, tb, file=(final_errs if final_errs is not None else None))
                     lines = traceback.format_exception(etype, evalue, tb)
@@ -611,9 +611,9 @@ class ShRuntime(object):
 
     def encode_argv(self, argv):
         """
-    	Convert an argv list into the appropiate string type depending
-    	on the currently used python version.
-    	"""
+        Convert an argv list into the appropiate string type depending
+        on the currently used python version.
+        """
         if PY3:
             # we need unicode argv
             argv = [c if isinstance(c, text_type) else c.decode("utf-8") for c in argv]
