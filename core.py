@@ -259,11 +259,12 @@ class StaSh(object):
         os.environ['STASH_ROOT'] = _STASH_ROOT  # libcompleter needs this value
         try:
             for f in os.listdir(lib_path):
-                if f.startswith('lib') and f.endswith('.py') \
-                        and os.path.isfile(os.path.join(lib_path, f)):
+                fp = os.path.join(lib_path, f)
+                if f.startswith('lib') and f.endswith('.py') and os.path.isfile(fp):
                     name, _ = os.path.splitext(f)
+                    self.logger.debug("Attempting to load library '{}'...".format(name))
                     try:
-                        self.__dict__[name] = pyimp.load_source(name, os.path.join(lib_path, f))
+                        self.__dict__[name] = pyimp.load_source(name, fp)
                     except Exception as e:
                         self.write_message('%s: failed to load library file (%s)' % (f, repr(e)), error=True)
         finally:  # do not modify environ permanently
@@ -278,8 +279,12 @@ class StaSh(object):
         :type error: bool
         """
         s = '%s%s\n' % (prefix, s)
-        if error and self.runtime.colored_errors:
-            s = self.text_color(s, "red")
+        if error:
+            self.logger.error(s)
+            if self.runtime.colored_errors:
+                s = self.text_color(s, "red")
+        else:
+            self.logger.info(s)
         self.io.write(s)
 
     def launch(self, command=None):
