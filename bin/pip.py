@@ -43,73 +43,8 @@ from stash.system.shcommon import IN_PYTHONISTA
 
 _stash = globals()['_stash']
 VersionSpecifier = _stash.libversion.VersionSpecifier  # alias for readability
-
-
-if IN_PYTHONISTA:
-    PYTHONISTA_BUNDLED_MODULES = [
-        'bottle',
-        'beautifulsoup4',
-        'pycrypto',
-        'py-dateutil',
-        'dropbox',
-        'ecdsa',
-        'evernote',
-        'Faker',
-        'feedparser',
-        'flask',
-        'html2text',
-        'html5lib',
-        'httplib2',
-        'itsdangerous',
-        'jedi',
-        'jinja2',
-        'markdown',
-        'markdown2',
-        'matplotlib',
-        'mechanize',
-        'midiutil',
-        'mpmath',
-        'numpy',
-        'oauth2',
-        'paramiko',
-        'parsedatetime',
-        'Pillow',
-        'pycparser',
-        'pyflakes',
-        'pygments',
-        'pyparsing',
-        'PyPDF2',
-        'pytz',
-        'qrcode',
-        'reportlab',
-        'requests',
-        'simpy',
-        'six',
-        'sqlalchemy',
-        'pysqlite',
-        'sympy',
-        'thrift',
-        'werkzeug',
-        'wsgiref',
-        'pisa',
-        'xmltodict',
-        'PyYAML',
-    ]
-
-    if _stash.PY3:
-        SITE_PACKAGES_DIR_NAME = 'site-packages-3'
-    else:
-        SITE_PACKAGES_DIR_NAME = 'site-packages-2'
-    OLD_SITE_PACKAGES_DIR_NAME = 'site-packages'
-    SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(SITE_PACKAGES_DIR_NAME))
-    OLD_SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(OLD_SITE_PACKAGES_DIR_NAME))
-
-else:
-    PYTHONISTA_BUNDLED_MODULES = []
-    SITE_PACKAGES_FOLDER = os.path.expandvars("$STASH_ROOT/lib/")
-    OLD_SITE_PACKAGES_FOLDER = os.path.expandvars("$STASH_ROOT/lib/")
-    SITE_PACKAGES_DIR_NAME = os.path.basename(SITE_PACKAGES_FOLDER)
-    OLD_SITE_PACKAGES_DIR_NAME = os.path.basename(OLD_SITE_PACKAGES_FOLDER)
+SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER
+OLD_SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER_6
 
 # Some packages use wrong name for their dependencies
 PACKAGE_NAME_FIXER = {
@@ -1472,6 +1407,11 @@ if __name__ == '__main__':
     update_parser.add_argument('packages', nargs="+", help='the package name')
 
     ns = ap.parse_args()
+    
+    if ns.site_packages is None:
+        # choosen site-packages dir may be unavailable on this platform, fallback to default
+        print("Warning: the specified site-packages directory is unavailable, falling back to default.")
+        ns.site_packages = SITE_PACKAGES_FOLDER
 
     try:
         if ns.sub_command == 'list':
