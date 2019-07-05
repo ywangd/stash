@@ -39,12 +39,11 @@ from six.moves import filterfalse
 from stashutils.extensions import create_command
 from stashutils.wheels import Wheel, wheel_is_compatible
 
-from stash.system.shcommon import IN_PYTHONISTA
-
 _stash = globals()['_stash']
 VersionSpecifier = _stash.libversion.VersionSpecifier  # alias for readability
 SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER
 OLD_SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER_6
+BUNDLED_MODULES = _stash.libdist.BUNDLED_MODULES
 
 # Some packages use wrong name for their dependencies
 PACKAGE_NAME_FIXER = {
@@ -855,8 +854,8 @@ class PackageRepository(object):
                 print('Dependency already installed: {}'.format(dep_name))
                 continue
 
-            if dep_name in PYTHONISTA_BUNDLED_MODULES:
-                print('Dependency available in Pythonista bundle : {}'.format(dep_name))
+            if dep_name in BUNDLED_MODULES:
+                print('Dependency already bundled in distribution: {}'.format(dep_name))
                 continue
 
             print(
