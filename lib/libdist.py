@@ -1,6 +1,7 @@
 """
 OS/device specific interfaces
 """
+import os
 import sys
 
 import six
