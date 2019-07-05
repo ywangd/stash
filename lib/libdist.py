@@ -40,7 +40,7 @@ if IN_PYTHONISTA:
         SITE_PACKAGES_DIR_NAME = "site-packages-3"
     else:
         SITE_PACKAGES_DIR_NAME = "site-packages-2"
-    SITE_PACKAGES_FOLDER_6 = "site-packages"
+    SITE_PACKAGES_DIR_NAME_6 = "site-packages"
     SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(SITE_PACKAGES_DIR_NAME))
     SITE_PACKAGES_FOLDER_6 = os.path.expanduser('~/Documents/{}'.format(SITE_PACKAGES_DIR_NAME_6))
     
