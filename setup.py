@@ -59,6 +59,10 @@ def get_package_data_files(directory):
 def get_stash_version(corepath):
     """
     Find and return the current StaSh version.
+    :param corepath: path to the 'core.py' file in the StaSh root directory
+    :type corepath: str
+    :return: the StaSh version defined in the corepath
+    :rtype: str
     """
     with open(corepath, "r") as fin:
         for line in fin:
@@ -89,4 +93,8 @@ setup(
     },
     scripts=["stash/launch_stash.py"],
     zip_safe=False,
+    install_requires=[
+        "six",      # required by StaSh
+        "pyperclip",  # required by libdist for copy/paste on PC
+    ],
 )

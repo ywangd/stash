@@ -78,6 +78,11 @@ class StashTestCase(unittest.TestCase):
         "TMP": tempfile.gettempdir(),
         "TMPDIR": tempfile.gettempdir(),
     }
+    
+    def get_data_path(self):
+        """return the data/ sibling path"""
+        curpath = os.path.dirname(sys.modules[self.__module__].__file__)
+        return os.path.abspath(os.path.join(curpath, "data"))
 
     def setUp(self):
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -140,7 +145,15 @@ class StashTestCase(unittest.TestCase):
             assert v in self.stash.runtime.state.environ.keys(), u'%s should be defined' % v
 
     def run_command(self, command, exitcode=None):
-        """run a command and return its output."""
+        """
+        Run a command and return its output.
+        :param command: command to run
+        :type command: str
+        :param exitcode: expected exitcode, None to ignore
+        :type exitcode: int or None
+        :return: output of the command
+        :rtype: str
+        """
         # for debug purposes, locate script
         try:
             scriptname = command.split(" ")[0]

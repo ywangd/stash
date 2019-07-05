@@ -28,7 +28,7 @@ class VersionTests(StashTestCase):
         output = self.run_command("version", exitcode=0)
         self.assertIn(platform.python_version(), output)
 
-    def test_correct_stas_version(self):
+    def test_correct_stash_version(self):
         """test that the correct stash version will be reported."""
         output = self.run_command("version", exitcode=0)
         self.assertIn(self.stash.__version__, output)

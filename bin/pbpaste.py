@@ -5,8 +5,12 @@ from __future__ import print_function
 import argparse
 import os
 import sys
+import io
 
-import clipboard
+import six
+
+
+_stash = globals()["_stash"]
 
 
 def main(args):
@@ -15,19 +19,29 @@ def main(args):
     ns = ap.parse_args(args)
 
     status = 0
-
+    
+    if not hasattr(_stash, "libdist"):
+        print(_stash.text_color("Error: libdist not loaded.", "red"))
+        sys.exit(1)
+    
+    content = _stash.libdist.clipboard_get()
     if ns.file:
         if os.path.exists(ns.file):
-            print("pbpaste: {}: file exists".format(ns.file), file=sys.stderr)
+            print(_stash.text_color("pbpaste: {}: file exists".format(ns.file), "red"), file=sys.stderr)
             status = 1
         else:
             try:
-                with open(ns.file, 'w') as f:
-                    f.write(clipboard.get())
+                if isinstance(content, six.binary_type):
+                    with io.open(ns.file, 'wb') as f:
+                        f.write(content)
+                else:
+                    with io.open(ns.file, "w", encoding="utf-8"):
+                        f.write(content)
             except Exception as err:
                 print("pbpaste: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+                status = 1
     else:
-        print(clipboard.get())
+        print(content, end="")
 
     sys.exit(status)
 
