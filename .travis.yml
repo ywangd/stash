@@ -16,7 +16,7 @@ before_script:
   # show pytest version
   - py.test --version
   # install
-  - pip install setup.py ".[testing]"
+  - pip install ".[testing]"
 # command to run tests
 script: py.test tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
 
