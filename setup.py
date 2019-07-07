@@ -7,7 +7,7 @@ import os
 import sys
 
 
-# check if run inside pythonista
+# =================== check if run inside pythonista ===================
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 
 if IN_PYTHONISTA:
@@ -38,10 +38,19 @@ if IN_PYTHONISTA:
         sys.exit(1)
 
 
-
+# =================== SETUP ===================
 
 from distutils.core import setup
 from setuptools import find_packages
+
+
+TEST_REQUIREMENTS = [
+    "pyparsing==2.0.1",
+    "pytest>=3.6.0",
+    "flake8>=3.5.0",
+    "pycrypto==2.6",
+    "requests==2.9.1",
+]
 
 
 def get_package_data_files(directory):
@@ -97,4 +106,7 @@ setup(
         "six",      # required by StaSh
         "pyperclip",  # required by libdist for copy/paste on PC
     ],
+    extras_require={
+        "testing": TEST_REQUIREMENTS,
+    },
 )
