@@ -53,6 +53,10 @@ TEST_REQUIREMENTS = [
 ]
 
 
+CORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "core.py")
+STASH_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 def get_package_data_files(directory):
     """
     Find data files recursibely.
@@ -82,12 +86,12 @@ def get_stash_version(corepath):
 
 
 # before we start with the setup, we must be outside of the stash root path.
-os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+os.chdir(STASH_DIR)
 
 
 setup(
     name="StaSh",
-    version=get_stash_version("stash/core.py"),
+    version=get_stash_version(CORE_PATH),
     description="StaSh for PC",
     author="https://github.com/ywangd and various contributors",
     url="https://github.com/ywangd/stash/",
@@ -100,7 +104,7 @@ setup(
     package_data={
         "": get_package_data_files("stash"),
     },
-    scripts=["stash/launch_stash.py"],
+    scripts=[os.path.join(STASH_DIR, "launch_stash.py")],
     zip_safe=False,
     install_requires=[
         "six",      # required by StaSh
