@@ -75,3 +75,4 @@ debug
 
 # from tests
 history_test_s_l
+tests/pip/data/stpkg.zip
