@@ -53,8 +53,9 @@ TEST_REQUIREMENTS = [
 ]
 
 
-CORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "core.py")
-STASH_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STASH_DIR = os.path.dirname(os.path.abspath(__file__))
+CORE_PATH = os.path.join(STASH_DIR, "core.py")
 
 
 def get_package_data_files(directory):
@@ -87,6 +88,7 @@ def get_stash_version(corepath):
 
 # before we start with the setup, we must be outside of the stash root path.
 os.chdir(STASH_DIR)
+print(STASH_DIR)
 
 
 setup(
@@ -101,8 +103,12 @@ setup(
         "stash.system.shui",
         "stash.lib",
     ],
+    package_dir={
+        "": STASH_DIR,
+        "stash": STASH_DIR,
+    },
     package_data={
-        "": get_package_data_files("stash"),
+        "": get_package_data_files(STASH_DIR),
     },
     scripts=[os.path.join(STASH_DIR, "launch_stash.py")],
     zip_safe=False,
