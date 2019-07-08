@@ -127,7 +127,7 @@ else:
     except AttributeError:
         # site.getsitepackages() unavalaible in virtualenv
         import stash
-        SITE_PACKAGES_FOLDER = os.path.dirname(stash.__path__)
+        SITE_PACKAGES_FOLDER = os.path.dirname(stash.__path__[0])
     SITE_PACKAGES_FOLDER_6 = None
     
     BUNDLED_MODULES = [
