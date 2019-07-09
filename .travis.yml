@@ -4,9 +4,6 @@ python:
   - "3.6"
 
 # command to install dependencies
-before_install:
-  # install depenencies for pyperclip on linux
-  - sudo apt-get install xsel
 install:
   - "pip install -U pyparsing==2.0.1"
   - "pip install -U pytest>=3.6.0"

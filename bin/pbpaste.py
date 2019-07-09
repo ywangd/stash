@@ -35,7 +35,7 @@ def main(args):
                     with io.open(ns.file, 'wb') as f:
                         f.write(content)
                 else:
-                    with io.open(ns.file, "w", encoding="utf-8"):
+                    with io.open(ns.file, "w", encoding="utf-8") as f:
                         f.write(content)
             except Exception as err:
                 print("pbpaste: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
