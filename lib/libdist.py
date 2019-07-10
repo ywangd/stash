@@ -94,6 +94,29 @@ if IN_PYTHONISTA:
         'xmltodict',
         'PyYAML',
     ]
+    
+    # -------------- open in / quicklook ----------------------
+    import console
+    from objc_util import on_main_thread
+    
+    @on_main_thread
+    def open_in(path):
+        """
+        Open a file in another application.
+        If possible, let the user decide the application
+        :param path: path to file
+        :type path: str
+        """
+        console.open_in(path)
+    
+    @on_main_thread
+    def quicklook(path):
+        """
+        Show a preview of the file.
+        :param path: path to file
+        :type path: str
+        """
+        console.quicklook(path)
         
 # ======================== DEFAULT / PC / travis =========================
 else:
@@ -158,3 +181,23 @@ else:
     BUNDLED_MODULES = [
         'six',
     ]
+    
+    # -------------- open in / quicklook ----------------------
+    import webbrowser
+    
+    def open_in(path):
+        """
+        Open a file in another application.
+        If possible, let the user decide the application
+        :param path: path to file
+        :type path: str
+        """
+        webbrowser.open(path, new=1)
+    
+    def quicklook(path):
+        """
+        Show a preview of the file.
+        :param path: path to file
+        :type path: str
+        """
+        webbrowser.open(path, new=1)
