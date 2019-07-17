@@ -56,17 +56,30 @@ TEST_REQUIREMENTS = [
 PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STASH_DIR = os.path.dirname(os.path.abspath(__file__))
 CORE_PATH = os.path.join(STASH_DIR, "core.py")
+TO_IGNORE = [os.path.abspath(os.path.join(STASH_DIR, p)) for p in ("build", "dist")]
 
 
-def get_package_data_files(directory):
+def get_package_data_files(directory, exclude=[]):
     """
     Find data files recursibely.
-    from: https://stackoverflow.com/questions/27664504/how-to-add-package-data-recursively-in-python-setup-py
+    Original version from: https://stackoverflow.com/questions/27664504/how-to-add-package-data-recursively-in-python-setup-py
+    :param directory: directory to search recursively
+    :type directory: str
+    :param exclude: list of absolute paths to ignore
+    :type exclude: list of str
+    :return: package data files to include
+    :rtype: list of str
     """
     paths = []
     for (path, directories, filenames) in os.walk(directory):
         for filename in filenames:
-            paths.append(os.path.join('..', path, filename))
+            fp = os.path.abspath(os.path.join('..', path, filename))
+            skip = False
+            for v in exclude:
+                if fp.startswith(v):
+                    skip = True
+            if not skip:
+                paths.append(fp)
     return paths
 
 
@@ -108,7 +121,7 @@ setup(
         "stash": STASH_DIR,
     },
     package_data={
-        "": get_package_data_files(STASH_DIR),
+        "": get_package_data_files(STASH_DIR, exclude=TO_IGNORE),
     },
     scripts=[os.path.join(STASH_DIR, "launch_stash.py")],
     zip_safe=False,
