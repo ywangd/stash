@@ -6,6 +6,7 @@ import logging
 import threading
 import functools
 import traceback
+import tempfile
 
 from six import StringIO, text_type, binary_type, PY3
 try:
@@ -70,7 +71,8 @@ class ShRuntime(object):
                                       'bin'),
                 # Must have a placeholder because it is needed before _DEFAULT_RC is loaded
                 PROMPT='[\W]$ ',
-                PYTHONISTA_ROOT=os.path.dirname(sys.executable)
+                PYTHONISTA_ROOT=os.path.dirname(sys.executable),
+                TMPDIR=os.environ.get("TMPDIR", tempfile.gettempdir()),
             ),
             sys_stdin=self.stash.io,
             sys_stdout=self.stash.io,
