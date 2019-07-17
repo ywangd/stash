@@ -109,9 +109,14 @@ def main(args):
 
         try:
             exec (
-                requests.get('{}?q={}'.format(url,
-                                              randint(1,
-                                                      999999))).text,
+                requests.get('{}?q={}'.format(
+                    url,
+                    randint(
+                        1,
+                        999999,
+                        ),
+                    ),
+                ).content,
                 {
                     '_IS_UPDATE': True,
                     '_br': branch,
