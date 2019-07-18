@@ -5,63 +5,119 @@ import shutil
 import sys
 import requests
 import zipfile
+import time
 
-try:
-    branch = locals()['_br']
-except KeyError:
-    branch = 'master'
-try:
-    repo = locals()['_owner']
-except:
-    repo = 'ywangd'
 
-_IS_UPDATE = '_IS_UPDATE' in locals()
-
+DEFAULT_REPO = "ywangd"
+DEFAULT_BRANCH = "master"
 TMPDIR = os.environ.get('TMPDIR', os.environ.get('TMP'))
-URL_ZIPFILE = 'https://github.com/{}/stash/archive/{}.zip'.format(repo, branch)
-TEMP_ZIPFILE = os.path.join(TMPDIR, '{}.zip'.format(branch))
+URL_TEMPLATE = 'https://github.com/{}/stash/archive/{}.zip'
+TEMP_ZIPFILE = os.path.join(TMPDIR, 'StaSh.zip')
 TEMP_PTI = os.path.join(TMPDIR, 'ptinstaller.py')
 URL_PTI = 'https://raw.githubusercontent.com/ywangd/pythonista-tools-installer/master/ptinstaller.py'
+BASE_DIR = os.path.expanduser('~')
+DEFAULT_INSTALL_DIR = os.path.join(BASE_DIR, 'Documents/site-packages/stash')
+DEFAULT_PTI_PATH = os.path.join(DEFAULT_INSTALL_DIR, "bin", "ptinstaller.py")
+IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 
-print('Downloading {} ...'.format(URL_ZIPFILE))
 
-try:
-    r = requests.get(URL_ZIPFILE, stream=True)
+class DownloadError(Exception):
+    """
+    Exception indicating a problem with a download.
+    """
+    pass
+
+
+def download_stash(repo=DEFAULT_REPO, branch=DEFAULT_BRANCH, outpath=TEMP_ZIPFILE, verbose=False):
+    """
+    Download the StaSh zipfile from github.
+    :param repo: user owning the repo to download from
+    :type repo: str
+    :param branch: branch to download
+    :type branch: str
+    :param verbose: if True, print additional information
+    :type verbose: bool
+    """
+    url = URL_TEMPLATE.format(repo, branch)
+    if verbose:
+        print('Downloading {} ...'.format(url))
+    r = requests.get(url, stream=True)
     file_size = r.headers.get('Content-Length')
     if file_size is not None:
         file_size = int(file_size)
 
-    with open(TEMP_ZIPFILE, 'wb') as outs:
+    with open(outpath, 'wb') as outs:
         block_sz = 8192
         for chunk in r.iter_content(block_sz):
             outs.write(chunk)
 
-    # Get Pythonista Tools Installer
-    r = requests.get(URL_PTI)
-    with open(TEMP_PTI, 'w') as outs:
+
+def install_pti(url=URL_PTI, outpath=DEFAULT_PTI_PATH, verbose=False):
+    """
+    Download and install the pythonista tools installer.
+    :param url: url to download from
+    :type url: str
+    :param outpath: path to save to
+    :type outpath: str
+    :param verbose: if True, print additional information
+    :type verbose: bool
+    """
+    if verbose:
+        print("Downloading {} to {}".format(url, outpath))
+    r = requests.get(url)
+    with open(outpath, 'w') as outs:
         outs.write(r.text)
 
-except Exception as e:
-    sys.stderr.write('{}\n'.format(e))
-    sys.stderr.write('Download failed! Please make sure internet connection is available.\n')
-    sys.exit(1)
 
-BASE_DIR = os.path.expanduser('~')
-TARGET_DIR = os.path.join(BASE_DIR, 'Documents/site-packages/stash')
-if not os.path.exists(TARGET_DIR):
-    os.makedirs(TARGET_DIR)
-print('Unzipping into %s ...' % TARGET_DIR)
+def install_from_zip(path=TEMP_ZIPFILE, outpath=DEFAULT_INSTALL_DIR, launcher_path=None, verbose=False):
+    """
+    Install StaSh from its zipfile.
+    :param path: path to zipfile
+    :type path: str
+    :param outpath: path to extract to
+    :type outpath: str
+    :param launcher_path: path to install launch_stash.py to
+    :type launcher_path: str
+    :param verbose: print additional information
+    :type verbose: bool
+    """
+    unzip_into(path, outpath, verbose=verbose)
+    if launcher_path is not None:
+        # Move launch script to Documents for easy access
+        shutil.move(os.path.join(outpath, 'launch_stash.py'), launcher_path)
 
-with open(TEMP_ZIPFILE, 'rb') as ins:
-    try:
-        zipfp = zipfile.ZipFile(ins)
-        for name in zipfp.namelist():
+
+def unzip_into(path, outpath, verbose=False):
+    """
+    Unzip zipfile at path into outpath.
+    :param path: path to zipfile
+    :type path: str
+    :param outpath: path to extract to
+    :type outpath: str
+    """
+    if not os.path.exists(outpath):
+        os.makedirs(outpath)
+    if verbose:
+        print('Unzipping into %s ...' % outpath)
+        
+    with zipfile.ZipFile(path) as zipfp:
+        toplevel_directory = None
+        namelist = zipfp.namelist()
+        
+        # find toplevel directory name
+        for name in namelist:
+            if os.path.dirname(os.path.normpath(name)) == "":
+                # is toplevel
+                toplevel_directory = name
+                break
+        
+        for name in namelist:
             data = zipfp.read(name)
-            name = name.split('stash-%s/' % branch, 1)[-1]  # strip the top-level directory
+            name = name.split(toplevel_directory, 1)[-1]  # strip the top-level directory
             if name == '':  # skip top-level directory
                 continue
 
-            fname = os.path.join(TARGET_DIR, name)
+            fname = os.path.join(outpath, name)
             if fname.endswith('/'):  # A directory
                 if not os.path.exists(fname):
                     os.makedirs(fname)
@@ -71,23 +127,16 @@ with open(TEMP_ZIPFILE, 'rb') as ins:
                     fp.write(data)
                 finally:
                     fp.close()
-    except:
-        sys.stderr.write('The zip file is corrupted. Pleases re-run the script.\n')
-        sys.exit(1)
 
-print('Preparing the folder structure ...')
-# Move ptinstaller.py to bin
-shutil.move(TEMP_PTI, os.path.join(TARGET_DIR, 'bin/ptinstaller.py'))
 
-# Move launch script to Documents for easy access
-shutil.move(os.path.join(TARGET_DIR, 'launch_stash.py'), os.path.join(BASE_DIR, 'Documents/launch_stash.py'))
-
-# Remove setup files and possible legacy files
-try:
-    os.remove(TEMP_ZIPFILE)
-
-    # shutil.rmtree(os.path.join(TARGET_DIR, 'tests'))  # TODO: maybe readd this line later
-
+def remove_unwanted_files(basepath, reraise=False):
+    """
+    Remove unwanted files.
+    :param basepath: path os StaSh installation
+    :type basepath: str
+    :param reraise: If True, reraise any exception occuring
+    :type reraise: bool
+    """
     unwanted_files = [
         'getstash.py',
         'run_tests.py',
@@ -101,12 +150,102 @@ try:
         'stash.py',
         'lib/librunner.py'
     ]
-
     for fname in unwanted_files:
-        os.remove(os.path.join(TARGET_DIR, fname))
-except:
-    pass
+        try:
+            os.remove(os.path.join(basepath, fname))
+        except:
+            pass
 
-if not _IS_UPDATE:
-    print('Installation completed.')
-    print('Please Restart Pythonista and run launch_stash.py under the Home directory to start StaSh.')
+
+
+def pythonista_install(install_path, repo=DEFAULT_REPO, branch=DEFAULT_BRANCH, launcher_path=None, verbose=False):
+    """
+    Download and install StaSh and other dependencies for pythonista.
+    :param install_path: directory to install into
+    :type install_path: str
+    :param repo: name of user owning the github repo to download/install from
+    :type repo: str
+    :param branch: branch to download/install
+    :type repo: str
+    :param launcher_path: path to install launcher to
+    :type launcher_path: str
+    :param verbose: if True, print additional information
+    :type verbose: bool
+    """
+    zp = TEMP_ZIPFILE
+    # download StaSh
+    try:
+        download_stash(repo=repo, branch=branch, outpath=zp, verbose=verbose)
+    except:
+        raise DownloadError("Unable to download StaSh from {}:{}".format(repo, branch))
+    try:
+        # install StaSh
+        install_from_zip(zp, install_path, launcher_path)
+        # install pythonista tools installer
+        # TODO: should this script realy install it?
+        pti_path = os.path.join(install_path, "bin", "ptinstaller.py")
+        install_pti(outpath=pti_path)
+    finally:
+        # cleanup
+        if verbose:
+            print("Cleaning up...")
+        if os.path.exists(zp):
+            os.remove(zp)
+        remove_unwanted_files(install_path, reraise=False)
+
+
+def setup_install(repo=DEFAULT_REPO, branch=DEFAULT_BRANCH, as_user=False, verbose=False):
+    """
+    Download and install StaSh using setup.py
+    :param repo: name of user owning the github repo to download/install from
+    :type repo: str
+    :param branch: branch to download/install
+    :type repo: str
+    :param as_user: install into user packages
+    :type as_user: bool
+    :param verbose: if True, print additional information
+    :type verbose: bool
+    """
+    zp = TEMP_ZIPFILE
+    # download StaSh
+    try:
+        download_stash(repo=repo, branch=branch, outpath=zp, verbose=verbose)
+    except:
+        raise DownloadError("Unable to download StaSh from {}:{}".format(repo, branch))
+    tp = os.path.join(TMPDIR, "getstash-{}".format(time.time()))
+    unzip_into(zp, tp, verbose=verbose)
+    # run setup.py
+    os.chdir(tp)
+    argv = ["setup.py", "install"]
+    if as_user:
+        argv.append("--user")
+    sys.argv = argv
+    fp = os.path.abspath("setup.py")
+    with open(fp, "rU") as fin:
+        content = fin.read()
+        code = compile(content, fp, "exec", dont_inherit=True)
+        exec(code, {}, {})
+    
+
+
+def main():
+    """the main function"""
+    repo = locals().get("_owner", DEFAULT_REPO)
+    branch = locals().get("_branch", DEFAULT_BRANCH)
+    is_update = '_IS_UPDATE' in locals()
+    if IN_PYTHONISTA:
+        install_path = DEFAULT_INSTALL_DIR
+        launcher_path = os.path.join(BASE_DIR, "Documents", "launch_stash.py")
+        pythonista_install(install_path, repo=repo, branch=branch, launcher_path=launcher_path, verbose=True)
+    else:
+        setup_install(repo, branch, verbose=True)
+        
+    if not is_update:
+        # print additional instructions
+        print('Installation completed.')
+        print('Please restart Pythonista and run launch_stash.py under the home directory to start StaSh.')
+
+
+if __name__ == "__main__":
+    main()
+    
