@@ -19,6 +19,22 @@ BASE_DIR = os.path.expanduser('~')
 DEFAULT_INSTALL_DIR = os.path.join(BASE_DIR, 'Documents/site-packages/stash')
 DEFAULT_PTI_PATH = os.path.join(DEFAULT_INSTALL_DIR, "bin", "ptinstaller.py")
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
+UNWANTED_FILES = unwanted_files = [
+        'getstash.py',
+        'run_tests.py',
+        'testing.py',
+        'dummyui.py',
+        'dummyconsole.py',
+        'bin/pcsm.py',
+        'bin/bh.py',
+        'bin/pythonista.py',
+        'bin/cls.py',
+        'stash.py',
+        'lib/librunner.py'
+        'system/shui.py',
+        'system/shterminal.py',
+        'system/dummyui.py',
+    ]
 
 
 class DownloadError(Exception):
@@ -137,20 +153,7 @@ def remove_unwanted_files(basepath, reraise=False):
     :param reraise: If True, reraise any exception occuring
     :type reraise: bool
     """
-    unwanted_files = [
-        'getstash.py',
-        'run_tests.py',
-        'testing.py',
-        'dummyui.py',
-        'dummyconsole.py',
-        'bin/pcsm.py',
-        'bin/bh.py',
-        'bin/pythonista.py',
-        'bin/cls.py',
-        'stash.py',
-        'lib/librunner.py'
-    ]
-    for fname in unwanted_files:
+    for fname in UNWANTED_FILES:
         try:
             os.remove(os.path.join(basepath, fname))
         except:
@@ -158,7 +161,7 @@ def remove_unwanted_files(basepath, reraise=False):
 
 
 
-def pythonista_install(install_path, repo=DEFAULT_REPO, branch=DEFAULT_BRANCH, launcher_path=None, verbose=False):
+def pythonista_install(install_path, repo=DEFAULT_REPO, branch=DEFAULT_BRANCH, launcher_path=None, zippath=None, verbose=False):
     """
     Download and install StaSh and other dependencies for pythonista.
     :param install_path: directory to install into
@@ -169,18 +172,25 @@ def pythonista_install(install_path, repo=DEFAULT_REPO, branch=DEFAULT_BRANCH, l
     :type repo: str
     :param launcher_path: path to install launcher to
     :type launcher_path: str
+    :param zippath: if not None, it specifies a path to a StaSh zipfile, otherwise download it from repo:branch
+    :type zippath: str
     :param verbose: if True, print additional information
     :type verbose: bool
     """
-    zp = TEMP_ZIPFILE
-    # download StaSh
-    try:
-        download_stash(repo=repo, branch=branch, outpath=zp, verbose=verbose)
-    except:
-        raise DownloadError("Unable to download StaSh from {}:{}".format(repo, branch))
+    if zippath is None:
+        zp = TEMP_ZIPFILE
+        # download StaSh
+        try:
+            download_stash(repo=repo, branch=branch, outpath=zp, verbose=verbose)
+        except:
+            raise DownloadError("Unable to download StaSh from {}:{}".format(repo, branch))
+    else:
+        if verbose:
+            print("Using '{}' as source.".format(zippath))
+        zp = zippath
     try:
         # install StaSh
-        install_from_zip(zp, install_path, launcher_path)
+        install_from_zip(zp, install_path, launcher_path, verbose=verbose)
         # install pythonista tools installer
         # TODO: should this script realy install it?
         pti_path = os.path.join(install_path, "bin", "ptinstaller.py")
@@ -227,18 +237,41 @@ def setup_install(repo=DEFAULT_REPO, branch=DEFAULT_BRANCH, as_user=False, verbo
         exec(code, {}, {})
     
 
-
-def main():
-    """the main function"""
-    repo = locals().get("_owner", DEFAULT_REPO)
-    branch = locals().get("_branch", DEFAULT_BRANCH)
-    is_update = '_IS_UPDATE' in locals()
-    if IN_PYTHONISTA:
-        install_path = DEFAULT_INSTALL_DIR
-        launcher_path = os.path.join(BASE_DIR, "Documents", "launch_stash.py")
-        pythonista_install(install_path, repo=repo, branch=branch, launcher_path=launcher_path, verbose=True)
+def main(defs={}):
+    """
+    The main function.
+    :param defs: namespace which may contain additional parameters
+    :type defs: dict
+    """
+    # read additional arguments
+    # These arguments will not be defined when StaSh is normally installed,
+    # but both selfupdate and tests may specify different values
+    # i would like to use argparse here, but this must be compatible with older StaSh versions
+    repo = defs.get("_owner", DEFAULT_REPO)                  # owner of repo
+    branch = defs.get("_branch", DEFAULT_BRANCH)             # target branch
+    is_update = '_IS_UPDATE' in defs                         # True if update
+    install_path = defs.get("_target", DEFAULT_INSTALL_DIR)  # target path
+    launcher_path = defs.get("_launcher_path", None)         # target path for launch_stash.py
+    force_dist = defs.get("_force_dist", None)               # force install method
+    zippath = defs.get("_zippath", None)                     # alternate path of zipfile to use
+    
+    # find out which install to use
+    if force_dist is None:
+        if IN_PYTHONISTA:
+            dist = "pythonista"
+        else:
+            dist = "setup"
     else:
+        dist = force_dist
+    
+    if dist.lower() == "pythonista":
+        if launcher_path is None:
+            launcher_path = os.path.join(BASE_DIR, "Documents", "launch_stash.py")
+        pythonista_install(install_path, repo=repo, branch=branch, launcher_path=launcher_path, zippath=zippath, verbose=True)
+    elif dist.lower() == "setup":
         setup_install(repo, branch, verbose=True)
+    else:
+        raise ValueError("Invalid install type: {}".format(dist))
         
     if not is_update:
         # print additional instructions
@@ -247,5 +280,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(locals())
     
