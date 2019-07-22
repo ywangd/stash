@@ -79,6 +79,7 @@ Also note that StaSh uses `\n` as linebreaks, so you may need to convert those.
    - implement as a property
    - `tuple` of `(int, int)`, representing startindex and endindex of the selected text.
    - remember that StaSh sees the terminal text as a single string, so you may have to convert the index of your UI.
+   - when modified, set `self.cursor_synced = False`
 - `scroll to end(self)`:
    - scroll towards the end.
 - `set_focus(self)`:
@@ -89,6 +90,17 @@ Also note that StaSh uses `\n` as linebreaks, so you may need to convert those.
    - rng is the range to replace, **as (start, length)**. `text` is the new text (depending on your renderer, either `str` or a sequence of `ShChar`s). 
    - replace the text in the given range.
    - the most important method for the UI (except when using a different renderer implementation).
+   - if the text consits of `ShChar`s, you may want to handle colors and other styles. See `system.shscreens.ShChar` for more details.
+- `tv_delegate`:
+    - type `system.shui.base.ShTerminalDelegate`
+    - created and set in `ShBaseTerminal.__init__()` / you do not have to create it yourself
+    - **when interacting with it, try to call the respective `stash.user_action_proxy.tv_responder.*` methods instead.**
+    - has a couple of callbacks which needs to be called at the correct time:
+        - call `textview_did_begin_editing(tv)` when the user starts editing/the textarea received input focus. `tv` is the terminal.
+        - call `textview_did_end_editing(tv)` when the user stops editing/the textarea loses input focus. `tv` is the terminal
+        - call `textview_should_change(tv, rng, replacement)` when the user modifies the content of the textarea. Only perform the modification if  this results in a nonzero value. `tv` is the terminal, `rng` is tuple of `(startindex, endindex)`. `replacement` is the new content.
+        - call `textview_did_change(tv)` if the content of the textarea was changed. `tv` is the terminal.
+        - call `textview_did_change_selection(self, tv)` when `self.selected_range` was changed.
 
 
 ### `class ShSequentialRenderer(ShBaseSequentialRenderer):`
@@ -104,6 +116,11 @@ This class is responsible for rendering the text onto your terminal.
     - render the text on to the terminal
     - if `no_wait` is True, do not delay rendering.
     - **chances are that you do not have to implement this method yourself. Instead, copy&paste the content in the next subsection.
+- `FG_COLORS` and `BG_COLORS`:
+    - `dicts` of colorname (`str`) to a value. Type of value is only relevant to your implementation of `ShBaseTerminal.replace_in_range`.
+    - these are the foreground and background colors.
+    - should at least contain `"default": None`.
+    - `default` will be modified according to the settings.
 
 #### code for `render()`:
 This code is a modified version copy&pasted from `tkui.py`, which in turn got it from the original UI.
@@ -148,4 +165,42 @@ This code is a modified version copy&pasted from `tkui.py`, which in turn got it
         self.terminal.scroll_to_end()
 ```
 
-more coming soon
+## Loading the UI correctly
+
+The UI must be correctly loaded in order to work.
+Please ensure that:
+- you have called the classes `ShUI` `ShTerminal` and `ShSequentialRenderer`. If you did not, rename them or replace the imports with `as`-imports.
+- as described above, have a way to identify your target platform.
+
+1. edit `stash/system/shui/__init__.py`
+2. add your check at the top of the file (near `ON_TRAVIS = ...`)
+3. see the `if ...: ... else: ...` construct there? Simply add a `elif <mycondition>:\n    from .myui import ShUI, ShTerminal, ShSequentialRenderer` and set `found = True`.
+4. save
+
+I admit that this `__init__` file is ugly.
+
+## porting `libdist`
+
+StaSh uses a file called `libdist.py` for os-specific interactions and values.
+
+1. edit `stash/lib/libdist.py`
+2. add your check at the top of the file (near `ON_TRAVIS = ...`)
+3. See the large top-level `if ... elif ... else` consturct there? add a `elif <mycondition>:` there.
+4. implement the functions and define the values used in the other cases. In the next subsection is an overview of these definitions.
+5. save
+
+
+### overview of `libdist`
+
+- `clipboard_get()` and `clipboard_set(s)`: get or set the clipbopard. works with unicode.
+- `SITE_PACKAGES_FOLDER` is the path to the directoy in which `pip` will install modules into.
+- `SITE_PACKAGES_FOLDER_6` is like `SITE_PACKAGES_FOLDER`, but should point to a directory shared by py2 and py3. If unavailable, use `None`.
+- `BUNDLED_MODULES` is a list of `str`. It contains the preinstalled 3rd party modules. `pip` will skip these modules.
+- `open_in(path)` should open the given file in another application. If possible, let the user decide.
+- `quicklook(path)` should show a quicklook at the file. May be the same as `open_in`.
+
+## Updating the installer
+
+The StaSh installation is handled by `getstash.py` in the StaSh root directory. Add your check and install as neccessary.
+At the top of the `main()` function are a couple of definitions. Please do not modify these definitions and try to handle them if possible.
+**Please note that `getstash.py` is also used by `selfupdate`.** Thus, ensure that `getstash.py` stays backwards compatible with older versions.
