@@ -46,9 +46,10 @@ class GetstashTests(StashTestCase):
             code = compile(content, p, "exec", dont_inherit=True)
         return code
     
-    def run_getstash(self, repo=None, branch=None, install_path=None, launcher_path=None, zippath=None, dist=None):
+    def run_getstash(self, repo=None, branch=None, install_path=None, launcher_path=None, zippath=None, dist=None, dryrun=False, asuser=False):
         """
         Run getstash with the specified arguments.
+        Not all arguments may be available for all installation types.
         :param repo: repo to pass to getstash.py
         :type repo: str
         :param branch: branch to pass to getstash.py
@@ -61,12 +62,16 @@ class GetstashTests(StashTestCase):
         :type zippath: str
         :param dist: install type to force
         :type dist: str
+        :param dryrun: if True, tell the installer to not actually do anything
+        :type dryrun: bool
+        :param asuser: if True, install for user
+        :type asuser: bool
         """
         # build namespace to run installer in
-        # we add the keys only when they are specified so getstash assumes default values.
         ns = {
             "__name__": "__main__",
         }
+        # we add the keys only when they are specified so getstash assumes default values.
         if repo is not None:
             ns["_owner"] = repo
         if branch is not None:
@@ -79,6 +84,10 @@ class GetstashTests(StashTestCase):
             ns["_zippath"] = zippath
         if dist is not None:
             ns["_force_dist"] = dist
+        if dryrun:
+            ns["_dryrun"] = True
+        if asuser:
+            ns["_asuser"] = True
             
         code = self.load_getstash()
 
@@ -150,4 +159,13 @@ class GetstashTests(StashTestCase):
         for fn in expected:
             p = os.path.join(sd, fn)
             self.assertTrue(os.path.exists(sd), "'{}' not found after install!".format(p))
+    
+    def test_install_setup(self):
+        """
+        Run a dummy install using setup.py install
+        """
+        zp = self.create_stash_zipfile()
+        td = self.get_new_tempdir()
+        sd = os.path.join(td, "stash")
+        self.run_getstash(zippath=zp, dist="setup", asuser=True, dryrun=True)
         
