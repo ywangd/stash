@@ -297,10 +297,8 @@ def main(defs={}):
         print('Please restart Pythonista and run launch_stash.py under the home directory to start StaSh.')
 
 
-
-print("getstash.py: __name__==" + repr(__name__))
-
-if __name__ == "__main__":
-    print("executing main()")
-    main(locals())
+# if __name__ == "__main__":
+#     print("executing main()")
+#     main(locals())
     
+main(locals())  # older StaSh versions do not pass __name__="__main__" to getstash.py, so we must run this on toplevel

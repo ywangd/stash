@@ -120,7 +120,8 @@ def main(args):
                 {
                     '_IS_UPDATE': True,
                     '_br': branch,
-                    '_owner': owner
+                    '_owner': owner,
+                    "__name__": "__main__",
                 },
             )
             print(_stash.text_color('Update completed.', 'green'))
