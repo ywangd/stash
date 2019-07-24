@@ -49,7 +49,7 @@ def get_remote_version(owner, branch):
             remote_version = ast.literal_eval(line.split('=')[1].strip())
             return remote_version
 
-    raise UpdateError('Remote version cannot be decided')
+    raise UpdateError('Remote version cannot be detected')
 
 
 def main(args):

@@ -262,9 +262,9 @@ def main(defs={}):
     # but both selfupdate and tests may specify different values
     # i would like to use argparse here, but this must be compatible with older StaSh versions
     repo = defs.get("_owner", DEFAULT_REPO)                  # owner of repo
-    branch = defs.get("_branch", DEFAULT_BRANCH)             # target branch
+    branch = defs.get("_br", DEFAULT_BRANCH)                 # target branch
     is_update = '_IS_UPDATE' in defs                         # True if update
-    install_path = defs.get("_target", None)  # target path
+    install_path = defs.get("_target", None)                 # target path
     launcher_path = defs.get("_launcher_path", None)         # target path for launch_stash.py
     force_dist = defs.get("_force_dist", None)               # force install method
     zippath = defs.get("_zippath", None)                     # alternate path of zipfile to use
