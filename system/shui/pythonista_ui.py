@@ -271,6 +271,7 @@ class ShUI(ShBaseUI, ui.View):
 
         self.terminal = ShTerminal(
             self.stash,
+            self,
             self.txts,
             width=self.txts.width,
             height=self.txts.height - (self.vks.height + 8)
