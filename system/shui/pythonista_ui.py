@@ -8,7 +8,7 @@ from objc_util import on_main_thread, ObjCInstanceMethod, UIColor, create_objc_c
 
 from ..shcommon import ON_IPAD, ON_IOS_8, sh_delay
 from ..shcommon import K_CC, K_CD, K_HUP, K_HDN, K_CU, K_TAB, K_HIST, K_CZ, K_KB, CTRL_KEY_FLAG
-from ..shscreens import DEFAULT_CHAR
+from ..shscreens import DEFAULT_CHAR, ShChar
 from .base import ShBaseUI, ShBaseTerminal, ShBaseSequentialRenderer
 
 try:
