@@ -40,7 +40,7 @@ This class represents the core of your UI.
 - `__init__(self, *args, **kwargs)`:
   - pass both `*args` and `**kwargs` to `ShBaseUI.__init__`
   - do any initialization you have to do.
-  - set `self.terminal` to your implementation of `ShBaseTerminal`.
+  - set `self.terminal` to an instance of your implementation of `ShBaseTerminal`.
  
 - `show(self)`:
   - show the UI/window.
@@ -101,6 +101,10 @@ Also note that StaSh uses `\n` as linebreaks, so you may need to convert those.
         - call `textview_should_change(tv, rng, replacement)` when the user modifies the content of the textarea. Only perform the modification if  this results in a nonzero value. `tv` is the terminal, `rng` is tuple of `(startindex, endindex)`. `replacement` is the new content.
         - call `textview_did_change(tv)` if the content of the textarea was changed. `tv` is the terminal.
         - call `textview_did_change_selection(self, tv)` when `self.selected_range` was changed.
+- `debug`:
+    - type `bool`
+    - set automatically by `ShBaseTerminal.__init__`
+    - if True, print additional debug information
 
 
 ### `class ShSequentialRenderer(ShBaseSequentialRenderer):`

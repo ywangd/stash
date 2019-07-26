@@ -375,9 +375,9 @@ class ShTerminal(ShBaseTerminal):
     a regular ui.TextView.
     """
 
-    def __init__(self, stash, parent, superview, width, height, debug=False):
+    def __init__(self, stash, parent, superview, width, height):
 
-        ShBaseTerminal.__init__(self, stash, parent, debug=debug)
+        ShBaseTerminal.__init__(self, stash, parent)
         
         self.default_font = UIFont.fontWithName_size_('Menlo-Regular', self.font_size)
         self.bold_font = UIFont.fontWithName_size_('Menlo-Bold', self.font_size)
