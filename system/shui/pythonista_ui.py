@@ -104,7 +104,7 @@ class ShUI(ShBaseUI, ui.View):
 
         self.k_tab = ui.Button(name='k_tab', title=' Tab ', flex='TB')
         self.vks.add_subview(self.k_tab)
-        self.k_tab.action = self.stash.user_action_proxy.vk_tapped
+        self.k_tab.action = self._vk_tapped
         self.k_tab.font = self.BUTTON_FONT
         self.k_tab.border_width = 1
         self.k_tab.border_color = 0.9
@@ -114,14 +114,14 @@ class ShUI(ShBaseUI, ui.View):
         self.k_tab.size_to_fit()
 
         self.k_grp_0 = ShVk(self.stash, name='k_grp_0', flex='WT')  # vk group 0
-        self.k_grp_0.sv.delegate = self.stash.user_action_proxy.sv_delegate
+        self.k_grp_0.sv.delegate = self._vk_tapped
         self.vks.add_subview(self.k_grp_0)
         self.k_grp_0.background_color = 0.7
         self.k_grp_0.x = self.k_tab.width + k_hspacing
 
         self.k_hist = ui.Button(name='k_hist', title=' H ', flex='RTB')
         self.k_grp_0.add_subview(self.k_hist)
-        self.k_hist.action = self.stash.user_action_proxy.vk_tapped
+        self.k_hist.action = self._vk_tapped
         self.k_hist.font = self.BUTTON_FONT
         self.k_hist.border_width = 1
         self.k_hist.border_color = 0.9
@@ -132,7 +132,7 @@ class ShUI(ShBaseUI, ui.View):
 
         self.k_hup = ui.Button(name='k_hup', title=' Up ', flex='RTB')
         self.k_grp_0.add_subview(self.k_hup)
-        self.k_hup.action = self.stash.user_action_proxy.vk_tapped
+        self.k_hup.action = self._vk_tapped
         self.k_hup.font = self.BUTTON_FONT
         self.k_hup.border_width = 1
         self.k_hup.border_color = 0.9
@@ -144,7 +144,7 @@ class ShUI(ShBaseUI, ui.View):
 
         self.k_hdn = ui.Button(name='k_hdn', title=' Dn ', flex='RTB')
         self.k_grp_0.add_subview(self.k_hdn)
-        self.k_hdn.action = self.stash.user_action_proxy.vk_tapped
+        self.k_hdn.action = self._vk_tapped
         self.k_hdn.font = self.BUTTON_FONT
         self.k_hdn.border_width = 1
         self.k_hdn.border_color = 0.9
@@ -156,7 +156,7 @@ class ShUI(ShBaseUI, ui.View):
 
         self.k_CD = ui.Button(name='k_CD', title=' CD ', flex='RTB')
         self.k_grp_0.add_subview(self.k_CD)
-        self.k_CD.action = self.stash.user_action_proxy.vk_tapped
+        self.k_CD.action = self._vk_tapped
         self.k_CD.font = self.BUTTON_FONT
         self.k_CD.border_width = 1
         self.k_CD.border_color = 0.9
@@ -168,7 +168,7 @@ class ShUI(ShBaseUI, ui.View):
 
         self.k_CC = ui.Button(name='k_CC', title=' CC ', flex='RTB')
         self.k_grp_0.add_subview(self.k_CC)
-        self.k_CC.action = self.stash.user_action_proxy.vk_tapped
+        self.k_CC.action = self._vk_tapped
         self.k_CC.font = self.BUTTON_FONT
         self.k_CC.border_width = 1
         self.k_CC.border_color = 0.9
@@ -181,7 +181,7 @@ class ShUI(ShBaseUI, ui.View):
         # Kill line key
         self.k_CU = ui.Button(name='k_CU', title=' CU ', flex='RTB')
         self.k_grp_0.add_subview(self.k_CU)
-        self.k_CU.action = self.stash.user_action_proxy.vk_tapped
+        self.k_CU.action = self._vk_tapped
         self.k_CU.font = self.BUTTON_FONT
         self.k_CU.border_width = 1
         self.k_CU.border_color = 0.9
@@ -194,7 +194,7 @@ class ShUI(ShBaseUI, ui.View):
         # BG key
         self.k_CZ = ui.Button(name='k_CZ', title=' CZ ', flex='RTB')
         self.k_grp_0.add_subview(self.k_CZ)
-        self.k_CZ.action = self.stash.user_action_proxy.vk_tapped
+        self.k_CZ.action = self._vk_tapped
         self.k_CZ.font = self.BUTTON_FONT
         self.k_CZ.border_width = 1
         self.k_CZ.border_color = 0.9
@@ -207,7 +207,7 @@ class ShUI(ShBaseUI, ui.View):
         # End Editing key
         self.k_KB = ui.Button(name='k_KB', title=' KB ', flex='RTB')
         self.k_grp_0.add_subview(self.k_KB)
-        self.k_KB.action = self.stash.user_action_proxy.vk_tapped
+        self.k_KB.action = self._vk_tapped
         self.k_KB.font = self.BUTTON_FONT
         self.k_KB.border_width = 1
         self.k_KB.border_color = 0.9
@@ -365,7 +365,7 @@ class ShUI(ShBaseUI, ui.View):
             raise ValueError("Unknown sender: " + repr(sender))
         
         # call action
-        self.vk_tapped(key)
+        self.stash.user_action_proxy.vk_tapped(key)
 
 # ObjC related stuff
 UIFont = ObjCClass('UIFont')
