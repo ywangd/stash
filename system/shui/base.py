@@ -100,6 +100,8 @@ class ShBaseUI(object):
         :param vk: the pressed key
         :type vk: int
         """
+        if self.debug:
+            self.logger.debug("vk_tapped({vk})".format(vk=vk))
         if vk == K_TAB:  # Tab completion
             rng = self.terminal.selected_range
             # Valid cursor positions are only when non-selection and after the modifiable position

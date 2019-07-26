@@ -362,7 +362,7 @@ class ShUI(ShBaseUI, ui.View):
         }
         key = mapping.get(sender, None) 
         if key is None:
-            raise ValueError("Unknwon sender: " + repr(sender))
+            raise ValueError("Unknown sender: " + repr(sender))
         
         # call action
         self.vk_tapped(key)
