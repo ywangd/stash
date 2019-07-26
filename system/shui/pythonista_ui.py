@@ -377,17 +377,6 @@ class ShTerminal(ShBaseTerminal):
 
     def __init__(self, stash, parent, superview, width, height):
 
-        ShBaseTerminal.__init__(self, stash, parent)
-        
-        self.default_font = UIFont.fontWithName_size_('Menlo-Regular', self.font_size)
-        self.bold_font = UIFont.fontWithName_size_('Menlo-Bold', self.font_size)
-        self.italic_font = UIFont.fontWithName_size_('Menlo-Italic', self.font_size)
-        self.bold_italic_font = UIFont.fontWithName_size_('Menlo-BoldItalic', self.font_size)
-        
-        self.autocapitalization_type = ui.AUTOCAPITALIZE_NONE
-        self.autocorrection_type = 1
-        self.spellchecking_type = 1
-
         # Create the actual TextView by subclass SUITextView
         UIKeyCommand = ObjCClass('UIKeyCommand')
 
@@ -515,6 +504,19 @@ class ShTerminal(ShBaseTerminal):
 
         # TextStorage
         self.tso = self.tvo.textStorage()
+        
+        # init baseclass and set attributes depending on settings
+        # we have to do this this late because setting a few of these attributes requires self.tvo to be set
+        ShBaseTerminal.__init__(self, stash, parent)
+        
+        self.default_font = UIFont.fontWithName_size_('Menlo-Regular', self.font_size)
+        self.bold_font = UIFont.fontWithName_size_('Menlo-Bold', self.font_size)
+        self.italic_font = UIFont.fontWithName_size_('Menlo-Italic', self.font_size)
+        self.bold_italic_font = UIFont.fontWithName_size_('Menlo-BoldItalic', self.font_size)
+        
+        self.autocapitalization_type = ui.AUTOCAPITALIZE_NONE
+        self.autocorrection_type = 1
+        self.spellchecking_type = 1
 
     @property
     def delegate(self):
