@@ -299,7 +299,7 @@ class ShUI(ShBaseUI, ui.View):
         """
         Present the UI
         """
-        self.ui.present("panel")
+        self.present("panel")
         self.terminal.begin_editing()
 
     def will_close(self):
