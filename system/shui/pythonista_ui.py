@@ -52,9 +52,6 @@ class ShVk(ui.View):
         self.sv.delegate = self
         self.dx = 0
         self.SCROLL_PER_CHAR = 20.0  # Number of pixels to scroll to move 1 character
-    
-    def show(self):
-        self.present("panel")
 
     def layout(self):
         self.sv.content_size = (self.width + 1, self.height)
@@ -297,6 +294,13 @@ class ShUI(ShBaseUI, ui.View):
                 # Take all space as virtual key row is now hidden
                 self.terminal.size = self.txts.width, self.txts.height
             # TODO: Scroll to end? may not be necessary
+    
+    def show(self):
+        """
+        Present the UI
+        """
+        self.ui.present("panel")
+        self.terminal.begin_editing()
 
     def will_close(self):
         """
