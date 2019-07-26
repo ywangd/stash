@@ -185,7 +185,8 @@ class StaSh(object):
             command = '$STASH_ROOT/bin/totd.py'
         if command:
             # do not run command if command is False (but not None)
-            self.logger.debug("Running command: {!r}".format(command))
+            if self.runtime.debug:
+                self.logger.debug("Running command: {!r}".format(command))
             self(command, add_to_history=False, persistent_level=0)
 
     def __call__(self, input_, persistent_level=2, *args, **kwargs):
@@ -262,7 +263,8 @@ class StaSh(object):
                 fp = os.path.join(lib_path, f)
                 if f.startswith('lib') and f.endswith('.py') and os.path.isfile(fp):
                     name, _ = os.path.splitext(f)
-                    self.logger.debug("Attempting to load library '{}'...".format(name))
+                    if self.runtime.debug:
+                        self.logger.debug("Attempting to load library '{}'...".format(name))
                     try:
                         self.__dict__[name] = pyimp.load_source(name, fp)
                     except Exception as e:
@@ -280,11 +282,13 @@ class StaSh(object):
         """
         s = '%s%s\n' % (prefix, s)
         if error:
-            self.logger.error(s)
+            if self.runtime.debug:
+                self.logger.error(s)
             if self.runtime.colored_errors:
                 s = self.text_color(s, "red")
         else:
-            self.logger.info(s)
+            if self.runtime.debug:
+                self.logger.info(s)
         self.io.write(s)
 
     def launch(self, command=None):
