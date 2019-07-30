@@ -349,18 +349,24 @@ class ShUI(ShBaseUI, ui.View):
         :type sender: ui.Button
         """
         # resolve key
-        mapping = {
-            self.k_tab: K_TAB,
-            self.k_hist: K_HIST,
-            self.k_hup: K_HUP,
-            self.k_hdn: K_HDN,
-            self.k_CC: K_CC,
-            self.k_CD: K_CD,
-            self.k_CU: K_CU,
-            self.k_CZ: K_CZ,
-            self.k_KB: K_KB,
-        }
-        key = mapping.get(sender, None) 
+        mapping = [
+            # we can not use a dict here because ui.Button is unhashable
+            # instead, we use a pair of (key, value) and apply a liner search
+            # a binary search may be more efficient, but come on, this is definetly not required here
+            (self.k_tab, K_TAB),
+            (self.k_hist, K_HIST),
+            (self.k_hup, K_HUP),
+            (self.k_hdn, K_HDN),
+            (self.k_CC, K_CC),
+            (self.k_CD, K_CD),
+            (self.k_CU, K_CU),
+            (self.k_CZ, K_CZ),
+            (self.k_KB, K_KB),
+        ]
+        key = None
+        for k, v in mapping:
+            if sender is k:
+                key = v
         if key is None:
             raise ValueError("Unknown sender: " + repr(sender))
         
