@@ -2,6 +2,7 @@
 
 ### Upcomming
 * New Features
+    * StaSh now runs on your PC using the `tkinter` module.
     * more settings in `easy_config`, e.g. toggle styles
     * colored error messages
     * history is now per command 
@@ -131,21 +132,21 @@
 
 ### Version 0.4.0 - 2015-01-29
 * New Features
-	* **New UI design with unified Input/Output areas**
-		* No more screen flashing when scrolling. Smooth scroll at all time
-		* Support device rotation at any direction
-		* Manipulate cursor position with ease
-		* Consistent look and feel as a proper PC terminal
-	* **External keyboard support**
-		* Tab completion works flawlessly 
-		* Navigate through command history with ⌘ (cmd) + up (↑) / down (↓)
-	* **Swipe gesture on virtual key buttons**
+    * **New UI design with unified Input/Output areas**
+        * No more screen flashing when scrolling. Smooth scroll at all time
+        * Support device rotation at any direction
+        * Manipulate cursor position with ease
+        * Consistent look and feel as a proper PC terminal
+    * **External keyboard support**
+        * Tab completion works flawlessly 
+        * Navigate through command history with ⌘ (cmd) + up (↑) / down (↓)
+    * **Swipe gesture on virtual key buttons**
         * Similar to what Pythonista builtin editor offers, you can now swipe
           left/right on the extra virtual key row to position cursor with
           better control and precision
-	* More virtual keys
-		* Show/hide on-screen keyboard with the **KB** button.
-		* Kill line easily with the **CU** (Ctrl-U) button
+    * More virtual keys
+        * Show/hide on-screen keyboard with the **KB** button.
+        * Kill line easily with the **CU** (Ctrl-U) button
 
 * Improvements 
     * Auto-completion now takes account of cursor position and completes the
