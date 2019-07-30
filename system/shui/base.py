@@ -357,7 +357,7 @@ class ShBaseSequentialRenderer(object):
 
         # update default colors to match terminal
         self.FG_COLORS["default"] = self.FG_COLORS.get(self.terminal.text_color, self.FG_COLORS["default"])
-        self.BG_COLORS["default"] = self.BG_COLORS.get(self.terminal.background_color, self.FG_COLORS["default"])
+        self.BG_COLORS["default"] = self.BG_COLORS.get(self.terminal.background_color, self.BG_COLORS["default"])
 
     
     def render(self, no_wait=False):
