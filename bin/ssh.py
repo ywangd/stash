@@ -28,14 +28,12 @@ from distutils.version import StrictVersion
 
 from six.moves import input
 
-import paramiko
+try:
+    import paramiko
+except ImportError:
+    paramiko = None
 
 _SYS_STDOUT = sys.__stdout__
-
-try:
-    import ui
-except ImportError:
-    from . import dummyui as ui
 
 _stash = globals()['_stash']
 """:type : StaSh"""
@@ -44,8 +42,9 @@ try:
     import pyte
 except ImportError:
     _stash('pip install pyte==0.4.10')
+    import pyte
 
-if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
+if (paramiko is None) or (StrictVersion(paramiko.__version__) < StrictVersion('1.15')):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
     _stash('pip install paramiko==1.16.0')
     print('Please restart Pythonista for changes to take full effect')
@@ -59,11 +58,8 @@ class StashSSH(object):
 
     def __init__(self):
         # Initialize the pyte screen based on the current screen size
-        font_width, font_height = ui.measure_string(
-            'a',
-            font=('Menlo-Regular', _stash.config.getint('display', 'TEXT_FONT_SIZE')))
         # noinspection PyUnresolvedReferences
-        self.screen = pyte.screens.DiffScreen(int(_stash.ui.width / font_width), int(_stash.ui.height / font_height))
+        self.screen = pyte.screens.DiffScreen(*_stash.terminal.get_wh())
         self.stream = pyte.Stream()
         self.stream.attach(self.screen)
 

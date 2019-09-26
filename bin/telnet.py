@@ -13,11 +13,6 @@ import threading
 
 _SYS_STDOUT = sys.__stdout__
 
-try:
-    import ui
-except ImportError:
-    from . import dummyui as ui
-
 _stash = globals()['_stash']
 """:type : StaSh"""
 
@@ -25,6 +20,7 @@ try:
     import pyte
 except ImportError:
     _stash('pip install pyte==0.4.10')
+    import pyte
 
 
 class StashTelnet(object):
@@ -34,11 +30,8 @@ class StashTelnet(object):
 
     def __init__(self):
         # Initialize the pyte screen based on the current screen size
-        font_width, font_height = ui.measure_string(
-            'a',
-            font=('Menlo-Regular', _stash.config.getint('display', 'TEXT_FONT_SIZE')))
         # noinspection PyUnresolvedReferences
-        self.screen = pyte.screens.DiffScreen(int(_stash.ui.width / font_width), int(_stash.ui.height / font_height))
+        self.screen = pyte.screens.DiffScreen(*_stash.terminal.get_wh())
         self.stream = pyte.Stream()
         self.stream.attach(self.screen)
 

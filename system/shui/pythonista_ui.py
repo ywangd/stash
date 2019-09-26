@@ -768,6 +768,14 @@ class ShTerminal(ShBaseTerminal):
         handler = self.kc_handlers.get((key, modifierFlags), None)
         if handler:
             handler()
+    
+    def get_wh(self):
+        font_width, font_height = ui.measure_string(
+            'a',
+            font=('Menlo-Regular', _stash.config.getint('display', 'TEXT_FONT_SIZE')))
+        w = int(_stash.ui.width / font_width)
+        h = int(_stash.ui.height / font_height)
+        return (w, h)
 
 
 class ShSequentialRenderer(ShBaseSequentialRenderer):

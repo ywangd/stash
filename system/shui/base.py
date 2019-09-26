@@ -255,6 +255,14 @@ class ShBaseTerminal(object):
         Lose the focus.
         """
         self.end_editing()
+    
+    def get_wh(self):
+        """
+        Return the number of columns and rows.
+        :return: number of columns and rows.
+        :rtype: tuple of (int, int)
+        """
+        raise NotImplementedError()
 
 
 class ShTerminalDelegate(object):

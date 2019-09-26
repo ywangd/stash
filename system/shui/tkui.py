@@ -529,6 +529,14 @@ class ShTerminal(ShBaseTerminal):
                 raise TypeError("Unknown character type {!r}!".format(type(c)))
             cp += a
         self.selected_range = saved  # restore cursor position
+    
+    def get_wh(self):
+        """
+        Return the number of columns and rows.
+        :return: number of columns and rows.
+        :rtype: tuple of (int, int)
+        """
+        return (self._txt.config("width")[4], self._txt.config("height")[4])
 
 
 class ShSequentialRenderer(ShBaseSequentialRenderer):

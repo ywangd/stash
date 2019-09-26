@@ -56,6 +56,9 @@ class ShTerminal(ShBaseTerminal):
     
     def lose_focus(self):
         pass
+    
+    def get_wh(self):
+        return (80, 24)
 
 
 class ShSequentialRenderer(ShBaseSequentialRenderer):
