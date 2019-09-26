@@ -1,4 +1,5 @@
 # coding: utf-8
+import io
 import os
 import sys
 import platform
@@ -109,7 +110,7 @@ class ShRuntime(object):
 
         if not no_rcfile and os.path.exists(self.rcfile) and os.path.isfile(self.rcfile):
             try:
-                with open(self.rcfile) as ins:
+                with io.open(self.rcfile, encoding="utf-8") as ins:
                     self.stash(ins.readlines(), persistent_level=1, add_to_history=False, add_new_inp_line=False)
             except IOError:
                 self.stash.write_error_message('%s: error reading rcfile\n' % self.rcfile)
