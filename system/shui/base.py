@@ -7,7 +7,7 @@ import time
 
 import six
 
-from ..shcommon import K_CC, K_CD, K_HUP, K_HDN, K_CU, K_TAB, K_HIST, K_CZ, K_KB
+from ..shcommon import K_CC, K_CD, K_HUP, K_HDN, K_LEFT, K_RIGHT, K_CU, K_TAB, K_HIST, K_CZ, K_KB
 
 
 class ShBaseUI(object):
@@ -89,10 +89,12 @@ class ShBaseUI(object):
         self.vk_tapped(K_HDN)
 
     def arrowLeftAction(self):
-        self.stash.mini_buffer.set_cursor(-1, whence=1)
+        # self.stash.mini_buffer.set_cursor(-1, whence=1)
+        self.vk_tapped(K_LEFT)
 
     def arrowRightAction(self):
-        self.stash.mini_buffer.set_cursor(1, whence=1)
+        # self.stash.mini_buffer.set_cursor(1, whence=1)
+        self.vk_tapped(K_RIGHT)
     
     def vk_tapped(self, vk):
         """
@@ -116,6 +118,12 @@ class ShBaseUI(object):
 
         elif vk == K_HDN:
             self.stash.runtime.history.down()
+        
+        elif vk == K_LEFT:
+            self.stash.mini_buffer.set_cursor(-1, whence=1)
+        
+        elif vk == K_RIGHT:
+            self.stash.mini_buffer.set_cursor(1, whence=1)
 
         elif vk == K_CD:
             if self.stash.runtime.child_thread:

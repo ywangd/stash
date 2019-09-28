@@ -11,6 +11,8 @@ import argparse
 import telnetlib
 import threading
 
+from stash.system.shcommon import K_CC, K_CD, K_HUP, K_HDN, K_CU, K_TAB, K_HIST, K_CZ, K_KB
+
 _SYS_STDOUT = sys.__stdout__
 
 _stash = globals()['_stash']
@@ -56,13 +58,21 @@ class StashTelnet(object):
             for sock in read_sockets:  # incoming message from remote server
                 if sock == self.client:
                     rcv = sock.read_very_eager()
-                    if rcv:
-                        rcv = rcv.decode('utf-8', errors='ignore')
-                        x, y = self.screen.cursor.x, self.screen.cursor.y
-                        self.stream.feed(rcv)
-                    if self.screen.dirty or x != self.screen.cursor.x or y != self.screen.cursor.y:
-                        self.update_screen()
-                        self.screen.dirty.clear()
+                    self.feed_screen(rcv)
+    
+    def feed_screen(self, data):
+        """
+        Feed data to the screen
+        :param data: data to feed
+        :type data: str
+        """
+        if data:
+            data = data.decode('utf-8', errors='ignore')
+            x, y = self.screen.cursor.x, self.screen.cursor.y
+            self.stream.feed(data)
+        if self.screen.dirty or x != self.screen.cursor.x or y != self.screen.cursor.y:
+            self.update_screen()
+            self.screen.dirty.clear()
 
     def update_screen(self):
         _stash.main_screen.load_pyte_screen(self.screen)
@@ -70,6 +80,7 @@ class StashTelnet(object):
 
     def interactive(self):
         t1 = threading.Thread(target=self.stdout_thread)
+        t1.daemon = True
         self.running = True
         t1.start()
         t1.join()
@@ -89,7 +100,8 @@ class SshUserActionDelegate(object):
         self.telnet = telnet
 
     def send(self, s):
-        self.telnet.stream.feed(s.decode('utf-8') if hasattr(s, "decode") else s)
+        # self.telnet.stream.feed(s.decode('utf-8') if hasattr(s, "decode") else s)
+        self.telnet.feed_screen(s.decode("utf-8" ) if hasattr(s, "decode") else s)
         self.telnet.client.write(s.encode('utf-8'))
 
 
@@ -105,8 +117,11 @@ class SshTvVkKcDelegate(SshUserActionDelegate):
         _stash.terminal.is_editing = False
 
     def textview_should_change(self, tv, rng, replacement):
+        print("SSH: tvsc: " + repr((rng, replacement)))
+        # _stash.mini_buffer.feed(rng, replacement)
         if replacement == '':  # delete
             replacement = '\x08'
+        # self.telnet.feed_screen(replacement)
         self.send(replacement)
         return False  # always false
 
@@ -148,22 +163,22 @@ class SshTvVkKcDelegate(SshUserActionDelegate):
                 self.send('\033[C')
 
     def vk_tapped(self, vk):
-        if vk.name == 'k_tab':
+        if vk == K_TAB:
             self.send('\t')
-        elif vk.name == 'k_CC':
+        elif vk == K_CC:
             self.kc_pressed('C', CTRL_KEY_FLAG)
-        elif vk.name == 'k_CD':
+        elif vk == K_CD:
             self.kc_pressed('D', CTRL_KEY_FLAG)
-        elif vk.name == 'k_CU':
+        elif vk == K_CU:
             self.kc_pressed('U', CTRL_KEY_FLAG)
-        elif vk.name == 'k_CZ':
+        elif vk == K_CZ:
             self.kc_pressed('Z', CTRL_KEY_FLAG)
-        elif vk.name == 'k_hup':
+        elif vk == K_HUP:
             self.kc_pressed('UIKeyInputUpArrow', 0)
-        elif vk.name == 'k_hdn':
+        elif vk == K_HDN:
             self.kc_pressed('UIKeyInputDownArrow', 0)
 
-        elif vk.name == 'k_KB':
+        elif vk == K_KB:
             if _stash.terminal.is_editing:
                 _stash.terminal.end_editing()
             else:
@@ -194,7 +209,7 @@ class SshSVDelegate(SshUserActionDelegate):
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('host', help='host to connect')
-    ap.add_argument('-p', '--port', action='store', default=23, type=int, help='port for telnet default: 23')
+    ap.add_argument('-p', '--port', action='store', default=23, type=int, help='port for telnet (default: 23)')
     ap.add_argument('--timeout', type=int, default=2, help='timeout')
     args = ap.parse_args()
 

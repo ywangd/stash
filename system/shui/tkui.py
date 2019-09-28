@@ -5,7 +5,7 @@ import six
 from six.moves import tkinter,  tkinter_messagebox, tkinter_scrolledtext, queue
 
 from ..shscreens import ShChar
-from ..shcommon import K_CC, K_CD, K_HUP, K_HDN, K_CU, K_TAB, K_HIST, K_CZ, K_KB
+from ..shcommon import K_CC, K_CD, K_HUP, K_HDN, K_LEFT, K_RIGHT, K_CU, K_TAB, K_HIST, K_CZ, K_KB
 from .base import ShBaseUI, ShBaseTerminal, ShBaseSequentialRenderer
 
 
@@ -154,7 +154,7 @@ class ShTerminal(ShBaseTerminal):
             if rng[0] == rng[1]:
                 rng = (rng[0], rng[1])
         elif replacement in self._keymapping:
-            self.parent.vk_tapped(self._keymapping[replacement])
+            self.stash.user_action_proxy.vk_tapped(self._keymapping[replacement])
             return "break"
         
         if skip_should_change or self.stash.user_action_proxy.tv_responder.textview_should_change(None, rng, replacement):
@@ -171,13 +171,17 @@ class ShTerminal(ShBaseTerminal):
         """
         d = event.keysym.lower()
         if d == "left":
-            self.parent.arrowLeftAction()
+            # self.parent.arrowLeftAction()
+            self.stash.user_action_proxy.vk_tapped(K_LEFT)
         elif d == "right":
-            self.parent.arrowRightAction()
+            # self.parent.arrowRightAction()
+            self.stash.user_action_proxy.vk_tapped(K_RIGHT)
         elif d == "up":
-            self.parent.arrowUpAction()
+            # self.parent.arrowUpAction()
+            self.stash.user_action_proxy.vk_tapped(K_HUP)
         elif d == "down":
-            self.parent.arrowDownAction()
+            # self.parent.arrowDownAction()
+            self.stash.user_action_proxy.vk_tapped(K_HDN)
         else:
             raise ValueError("Unknown key: {!r}".format(d))
         return "break"
