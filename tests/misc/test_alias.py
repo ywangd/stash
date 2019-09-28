@@ -14,16 +14,16 @@ class AliasTests(StashTestCase):
         self.assertIn("--help", output)
         self.assertIn("name=", output)
 
-    def test_logout_alias(self):
-        """tests the logout alias"""
+    def test_la_alias(self):
+        """tests the unmount alias"""
         # assert existence
         output = self.run_command("alias", exitcode=0)
-        self.assertIn("logout=", output)
+        self.assertIn("la=", output)
 
-        # assert output
-        output = self.run_command("logout", exitcode=0)
-        self.assertIn("exit StaSh.", output)
-        self.assertNotIn("logout", output)
+        # assert output identical
+        output = self.run_command("la", exitcode=0)
+        output_full = self.run_command("ls -a", exitcode=0)
+        self.assertEqual(output, output_full)
 
     def test_alias(self):
         """create and test alias"""
