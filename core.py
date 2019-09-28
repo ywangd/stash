@@ -298,6 +298,14 @@ class StaSh(object):
         self.ui.show()
         # self.terminal.set_focus()
     
+    def close(self):
+        """
+        Quit StaSh.
+        StaSh is based arround the UI, so we delegate this task to the UI,
+        which in turn will call self.on_exit().
+        """
+        self.ui.close()
+    
     def on_exit(self):
         """
         This method will be called when StaSh is about the be closed.
@@ -306,6 +314,7 @@ class StaSh(object):
         self.cleanup()
         # Clear the stack or the stdout becomes unusable for interactive prompt
         self.runtime.worker_registry.purge()
+        
 
     def cleanup(self):
         """

@@ -16,6 +16,9 @@ class ShUI(ShBaseUI):
     
     def show(self):
         pass
+    
+    def close(self):
+        self.on_exit()
 
 
 class ShTerminal(ShBaseTerminal):

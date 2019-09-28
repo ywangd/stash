@@ -26,13 +26,24 @@ class ShUI(ShBaseUI):
     def show(self):
         self.tk.mainloop()
     
+    def close(self):
+        self.on_exit()  # not on_close()
+        self._close_ui()
+    
     def on_close(self):
         """
         Called when the window will be closed
         """
         if tkinter_messagebox.askokcancel(u"Quit", u"Are you sure you want to quit?"):
-            self.tk.destroy()
             self.on_exit()
+            self._close_ui()
+    
+    def _close_ui(self):
+        """
+        Actually close the UI.
+        """
+        self.stash.renderer._stop_rendering()
+        self.tk.destroy()
     
     def history_present(self, history):
         window = tkinter.Toplevel(self.tk)
@@ -582,12 +593,16 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
     def __init__(self, *args, **kwargs):
         ShBaseSequentialRenderer.__init__(self, *args, **kwargs)
         self.should_render = False
+        self._render_loop_active = True
         self.stash.ui.tk.after(0, self._renderer_loop)
     
     def _renderer_loop(self):
         """
         Internal renderer loop.
         """
+        if not self._render_loop_active:
+            # quit loop
+            return
         if self.should_render:
             self.should_render = False
             self._render()
@@ -595,6 +610,12 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
     
     def render(self, no_wait=False):
         self.should_render = True
+    
+    def _stop_rendering(self):
+        """
+        Stop the render loop.
+        """
+        self._render_loop_active = False
     
     def _render(self, no_wait=False):
         # Lock screen to get atomic information

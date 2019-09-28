@@ -301,6 +301,11 @@ class ShUI(ShBaseUI, ui.View):
         """
         self.present("panel")
         self.terminal.begin_editing()
+    
+    def close(self):
+        ui.View.close(self)
+        # on_exit() will be called in will_close()
+        # TODO: check the above
 
     def will_close(self):
         """

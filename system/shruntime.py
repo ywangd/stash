@@ -36,7 +36,6 @@ _DEFAULT_RC = r"""BIN_PATH=~/Documents/bin:{bin_ext}:$BIN_PATH
 SELFUPDATE_TARGET=master
 PYTHONPATH=$STASH_ROOT/lib:$PYTHONPATH
 alias env='printenv'
-alias logout='echo "Use the close button in the upper right corner to exit StaSh."'
 alias help='man'
 alias la='ls -a'
 alias ll='ls -la'

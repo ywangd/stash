@@ -37,6 +37,12 @@ class ShBaseUI(object):
         """
         raise NotImplementedError()
     
+    def close(self):
+        """
+        Close the UI. You should also call self.on_exit().
+        """
+        raise NotImplementedError()
+    
     def on_exit(self):
         """
         This method should be called when the UI will be closed.
