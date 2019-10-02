@@ -777,9 +777,9 @@ class ShTerminal(ShBaseTerminal):
     def get_wh(self):
         font_width, font_height = ui.measure_string(
             'a',
-            font=('Menlo-Regular', _stash.config.getint('display', 'TEXT_FONT_SIZE')))
-        w = int(_stash.ui.width / font_width)
-        h = int(_stash.ui.height / font_height)
+            font=('Menlo-Regular', self.stash.config.getint('display', 'TEXT_FONT_SIZE')))
+        w = int(self.stash.ui.width / font_width)
+        h = int(self.stash.ui.height / font_height)
         return (w, h)
 
 
