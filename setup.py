@@ -128,6 +128,8 @@ setup(
     install_requires=[
         "six",      # required by StaSh
         "pyperclip",  # required by libdist for copy/paste on PC
+        "requests",
+        "pyte",
     ],
     extras_require={
         "testing": TEST_REQUIREMENTS,
