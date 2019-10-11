@@ -22,6 +22,13 @@ class ShUI(ShBaseUI):
         
         # terminal
         self.terminal = ShTerminal(self.stash, self)
+
+        # right click menu
+        self._rc_menu = tkinter.Menu(self.tk, tearoff=0)
+        self._rc_menu.add_command(label="Copy", command=self._rc_copy)
+        self._rc_menu.add_command(label="Paste", command=self._rc_paste)
+        self._rc_menu.add_command(label="Quit", command=self.stash.close)
+        self.tk.bind("<Button-3>", self._popup_rc_menu)  # TODO: check <Button-3> portability
     
     def show(self):
         self.tk.mainloop()
@@ -75,6 +82,32 @@ class ShUI(ShBaseUI):
         window.destroy()
         line = items[i]
         self.history_selected(line, i)
+
+    def _popup_rc_menu(self, event):
+        """
+        Show self._rc_menu as a popup.
+        :param event: tkinter event
+        """
+        try:
+            self._rc_menu.tk_popup(event.x_root, event.y_root, 0)
+        finally:
+            self._rc_menu.grab_release()
+
+    def _rc_copy(self):
+        """
+        Called on "Copy" in rc_menu. Copy selected content to clipboard.
+        """
+        sr = self.terminal.selected_range
+        selected_text = self.terminal.text[sr[0]:sr[1]]
+        self.stash.libdist.clipboard_set(selected_text)
+
+    def _rc_paste(self):
+        """
+        Called on "Paste" in rc_menu. Paste text from clipboard.
+        """
+        text = self.stash.libdist.clipboard_get()
+        rng = self.terminal.selected_range
+        self.stash.user_action_proxy.tv_responder.textview_should_change(None, rng, text)
 
 
 class ShTerminal(ShBaseTerminal):
