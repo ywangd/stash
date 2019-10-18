@@ -172,16 +172,13 @@ This code is a modified version copy&pasted from `tkui.py`, which in turn got it
 ## Loading the UI correctly
 
 The UI must be correctly loaded in order to work.
-Please ensure that:
-- you have called the classes `ShUI` `ShTerminal` and `ShSequentialRenderer`. If you did not, rename them or replace the imports with `as`-imports.
-- as described above, have a way to identify your target platform.
+Please ensure that you have a way to identify your target platform.
 
 1. edit `stash/system/shui/__init__.py`
-2. add your check at the top of the file (near `ON_TRAVIS = ...`)
-3. see the `if ...: ... else: ...` construct there? Simply add a `elif <mycondition>:\n    from .myui import ShUI, ShTerminal, ShSequentialRenderer` and set `found = True`.
+2. edit the `get_platform()` function to return a identifier for your platform/UI.
+3. edit the `get_ui_implementation()` function. see the `if ...: ... else: ...` construct there? Simply add `    elif platform == "<my-platform-identifier>":\n        from .myui import ShUI, ShTerminal, ShSequentialRenderer\n    return (ShUI, ShSequentialRenderer)`.
 4. save
 
-I admit that this `__init__` file is ugly.
 
 ## porting `libdist`
 

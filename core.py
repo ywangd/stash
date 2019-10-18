@@ -31,7 +31,7 @@ from .system.shparsers import ShCompleter, ShExpander, ShParser
 from .system.shruntime import ShRuntime
 from .system.shscreens import ShSequentialScreen
 from .system.shstreams import ShMiniBuffer, ShStream
-from .system.shui import ShUI, ShSequentialRenderer
+from .system.shui import get_ui_implementation
 from .system.shuseractionproxy import ShUserActionProxy
 
 # Setup logging
@@ -131,6 +131,7 @@ class StaSh(object):
 
         self.io = ShIO(self, debug=_DEBUG_IO in debug)
 
+        ShUI, ShSequentialRenderer = get_ui_implementation()
         self.terminal = None  # will be set during UI initialisation
         self.ui = ShUI(self, debug=(_DEBUG_UI in debug), debug_terminal=(_DEBUG_TERMINAL in debug))
         self.renderer = ShSequentialRenderer(self, self.main_screen, self.terminal, debug=_DEBUG_RENDERER in debug)
