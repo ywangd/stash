@@ -3,11 +3,11 @@
 This guide summarizes the process of porting StaSh to another platform.
 
 ## Important notes
-- This document may be outdated. When this document describes the behavior of StaSh incorectly, the current behaviour of StaSh takes precedent (except when its obiously a bug). In this case, please submit a fix to this document.
-- Before you start porting, ensure your work is based on the latest dev status
+- This document may be outdated. When this document describes the behavior of StaSh incorectly, the current behaviour of StaSh takes precedent (except when it is obviously a bug). In this case, please submit a fix to this document.
+- Before you start porting, ensure your work is based on the latest `dev` status
 - Read this document before starting your work, When I started adding an UI for desktop use, I had to switch the UI framework multiple times because I was not aware of all requirements.
 - You will have to modify a few files already in place. When doing so, ensure the files **still run on both py2 and py3 without any non-standard dependencies**.
-- most of these methods may be called from threads. It is your responsibility to ensure that this works.
+- Most of these methods may be called from threads. It is your responsibility to ensure that this works.
 - There are no tests cases for the UI.
 
 
@@ -15,23 +15,25 @@ This guide summarizes the process of porting StaSh to another platform.
 
 The porting process can be divided into the following parts:
 
-1. porting the UI
-2. loading the UI correctly
-3. porting `libdist`
-4. updating the installer
+1. Porting the UI
+2. Loading the UI correctly
+3. Porting `libdist.py`
+4. Updating the installer
 
 ## Getting started
 
 You will need to find a way to accurately detect if StaSh runs on the target platform. This must be done using the standard library and must work with both py2 and py3.
+
+For example, StaSh sets `ON_TRAVIS = "TRAVIS" in os.environ` to detect if we are running on Travis CI. In this case, a stub UI will be loaded.
 
 ## Porting the UI
 
 1. Create a module for your UI in `system/shui/`. This guide will use `system/shui/myui.py`.
 2. add a short (or long) docstring to `myui.py`
 3. add the following imports: `from ..shscreens import ShChar`, `from ..shcommon import K_CC, K_CD, K_HUP, K_HDN, K_CU, K_TAB, K_HIST, K_CZ, K_KB`, `from .base import ShBaseUI, ShBaseTerminal, ShBaseSequentialRenderer`.
-4. subclass and implement `ShBaseUI`, `ShBaseTerminal`, `ShBaseSequentialRenderer`. See the following subsection.
+4. Subclass and implement `ShBaseUI`, `ShBaseTerminal`, `ShBaseSequentialRenderer`. See the following subsection.
 
-The following subsection describes the required methods. **Please note the names of the subclasses.** For more examples, see `/system/shui/`.
+The following subsection describes the required methods and attributes. **Please note the names of the subclasses.** For more examples, see `/system/shui/`.
 
 ### `class ShUI(ShBaseUI):`
 
@@ -41,7 +43,7 @@ This class represents the core of your UI.
   - pass both `*args` and `**kwargs` to `ShBaseUI.__init__`
   - do any initialization you have to do.
   - set `self.terminal` to an instance of your implementation of `ShBaseTerminal`.
- 
+
 - `show(self)`:
   - show the UI/window.
 
@@ -80,6 +82,9 @@ Also note that StaSh uses `\n` as linebreaks, so you may need to convert those.
    - `tuple` of `(int, int)`, representing startindex and endindex of the selected text.
    - remember that StaSh sees the terminal text as a single string, so you may have to convert the index of your UI.
    - when modified, set `self.cursor_synced = False`
+- `get_wh(self)`:
+    - return the number of columns and rows in the terminal as a tuple of ( `int`, `int`)
+
 - `scroll to end(self)`:
    - scroll towards the end.
 - `set_focus(self)`:
@@ -126,7 +131,7 @@ This class is responsible for rendering the text onto your terminal.
     - should at least contain `"default": None`.
     - `default` will be modified according to the settings.
 
-#### code for `render()`:
+#### Code for `render()`:
 This code is a modified version copy&pasted from `tkui.py`, which in turn got it from the original UI.
 ```python
     def render(self, no_wait=False):
@@ -180,7 +185,7 @@ Please ensure that you have a way to identify your target platform.
 4. save
 
 
-## porting `libdist`
+## Porting `libdist`
 
 StaSh uses a file called `libdist.py` for os-specific interactions and values.
 
@@ -191,7 +196,7 @@ StaSh uses a file called `libdist.py` for os-specific interactions and values.
 5. save
 
 
-### overview of `libdist`
+### Overview of `libdist`
 
 - `clipboard_get()` and `clipboard_set(s)`: get or set the clipbopard. works with unicode.
 - `SITE_PACKAGES_FOLDER` is the path to the directoy in which `pip` will install modules into.
