@@ -68,7 +68,11 @@ class StashSSH(object):
 
     def connect(self, host, passwd=None, port=22):
         print('Connecting...')
-        username, host = host.split('@')
+        if "@" in host:
+            username, host = host.split('@')
+        else:
+            # TODO: find better default username
+            username = "root"
 
         if passwd is not None:
             return self._connect_with_passwd(host, username, passwd, port)
@@ -104,6 +108,9 @@ class StashSSH(object):
 
     def find_ssh_keys(self):
         ssh_dir = os.path.join(os.environ['STASH_ROOT'], '.ssh')
+        if not os.path.exists(ssh_dir):
+            # create directory
+            os.mkdir(ssh_dir)
         return [os.path.join(ssh_dir, filename) for filename in os.listdir(ssh_dir) if '.' not in filename]
 
     def stdout_thread(self):
