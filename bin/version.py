@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import os
+import io
 import sys
 import time
 import platform
@@ -22,7 +23,9 @@ IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 # https://github.com/cclauss/Ten-lines-or-less/blob/master/pythonista_version.py
 def pythonista_version():  # 2.0.1 (201000)
     try:
-        plist = plistlib.readPlist(os.path.abspath(os.path.join(sys.executable, '..', 'Info.plist')))
+        path = os.path.abspath(os.path.join(sys.executable, '..', 'Info.plist'))
+        with io.open(path, "rb") as fin:
+            plist = plistlib.load(fin)
         return '{CFBundleShortVersionString} ({CFBundleVersion})'.format(**plist)
     except Exception as e:
         return "UNKNOWN ({e})".format(e=repr(e))

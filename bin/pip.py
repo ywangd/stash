@@ -321,8 +321,10 @@ def save_current_sys_modules():
         sys.modules[k] = v
 
 
+# warning: the ConfigParser may refer to a different class depening on the used py version
+# though I believe that pip does not use interpolation, so we *should* be safe
 # noinspection PyUnresolvedReferences
-from six.moves.configparser import SafeConfigParser, NoSectionError
+from six.moves.configparser import ConfigParser, NoSectionError
 
 
 class CIConfigParer(SafeConfigParser):

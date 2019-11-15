@@ -68,7 +68,7 @@ TINT_COLOR=(0.0, 0.0, 1.0)
 INDICATOR_STYLE=white
 BUFFER_MAX=150
 AUTO_COMPLETION_MAX=50
-VK_SYMBOLS=~/.-*|>$'=!&_"\?`
+VK_SYMBOLS=~/.-*|>$'=!&_"\\?`
 
 [style]
 enable_styles=1

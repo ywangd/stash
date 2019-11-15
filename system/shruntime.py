@@ -70,7 +70,7 @@ class ShRuntime(object):
                 BIN_PATH=os.path.join(_STASH_ROOT,
                                       'bin'),
                 # Must have a placeholder because it is needed before _DEFAULT_RC is loaded
-                PROMPT='[\W]$ ',
+                PROMPT=r'[\W]$ ',
                 PYTHONISTA_ROOT=os.path.dirname(sys.executable),
                 TMPDIR=os.environ.get("TMPDIR", tempfile.gettempdir()),
             ),

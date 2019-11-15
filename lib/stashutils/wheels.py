@@ -62,7 +62,7 @@ def escape_filename_component(fragment):
     """
     Escape a component of the filename as specified in PEP 427.
     """
-    return re.sub("[^\w\d.]+", "_", fragment, re.UNICODE)
+    return re.sub(r"[^\w\d.]+", "_", fragment, re.UNICODE)
 
 
 def generate_filename(

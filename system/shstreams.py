@@ -37,7 +37,7 @@ class ShMiniBuffer(object):
         # TODO: cbreak mode, process char by char. NOT IMPLEMENTED
         self.cbreak = False
 
-        self._pattern_word_split = re.compile('[^\W]+\W*')
+        self._pattern_word_split = re.compile(r'[^\W]+\W*')
 
     @property
     def x_modifiable(self):
