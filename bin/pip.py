@@ -327,7 +327,7 @@ def save_current_sys_modules():
 from six.moves.configparser import ConfigParser, NoSectionError
 
 
-class CIConfigParer(SafeConfigParser):
+class CIConfigParer(ConfigParser):
     """
     This config parser is case insensitive for section names so that
     the behaviour matches pypi queries.
@@ -346,23 +346,23 @@ class CIConfigParer(SafeConfigParser):
 
     def has_option(self, name, option_name):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.has_option(self, section_name, option_name)
+        return ConfigParser.has_option(self, section_name, option_name)
 
     def items(self, name):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.items(self, section_name)
+        return ConfigParser.items(self, section_name)
 
     def get(self, name, option_name, *args, **kwargs):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.get(self, section_name, option_name, *args, **kwargs)
+        return ConfigParser.get(self, section_name, option_name, *args, **kwargs)
 
     def set(self, name, option_name, value):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.set(self, section_name, option_name, value.replace('%', '%%'))
+        return ConfigParser.set(self, section_name, option_name, value.replace('%', '%%'))
 
     def remove_section(self, name):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.remove_section(self, section_name)
+        return ConfigParser.remove_section(self, section_name)
 
 
 class PackageConfigHandler(object):
