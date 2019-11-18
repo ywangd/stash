@@ -87,6 +87,9 @@ class OmniClass(object):
     def __getitem__(self, item):
         return OmniClass()
 
+    def __mro_entries__(self, bases):
+        return self.__class__
+
 
 class PackageFinder(object):
     """
