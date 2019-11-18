@@ -540,7 +540,7 @@ class ShRuntime(object):
         self.handle_PYTHONPATH()  # Make sure PYTHONPATH is honored
 
         try:
-            with (open(file_path, "rU") if not self.stash.PY3 else open(file_path, newline=None)) as f:
+            with io.open(file_path, "rb", newline=None) as f:
                 content = f.read()
                 code = compile(content, file_path, "exec", dont_inherit=True)
                 exec (code, namespace, namespace)
@@ -587,7 +587,7 @@ class ShRuntime(object):
 
         # Enclosing variables will be merged to environ when creating new thread
         try:
-            with open(filename, "rU") as fins:
+            with io.open(filename, "rb", newline=None) as fins:
                 child_worker = self.run(
                     fins.readlines(),
                     final_ins=ins,
