@@ -89,7 +89,7 @@ class ShUI(ShBaseUI):
         :param event: tkinter event
         """
         try:
-            self._rc_menu.tk_popup(event.x_root, event.y_root, 0)
+            self._rc_menu.post(event.x_root, event.y_root)
         finally:
             self._rc_menu.grab_release()
 
