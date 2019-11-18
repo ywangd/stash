@@ -88,7 +88,7 @@ class OmniClass(object):
         return OmniClass()
 
     def __mro_entries__(self, bases):
-        return self.__class__
+        return (self.__class__, )
 
 
 class PackageFinder(object):
