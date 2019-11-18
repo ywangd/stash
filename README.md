@@ -57,10 +57,13 @@ you can choose to directly clone or download the
 older Pythonista 1.5 compatible version, please refer to the
 [v0.4](https://github.com/ywangd/stash/tree/v0.4) branch.*
 
+Starting with `0.7.4`, StaSh supports being run on a PC using the `tkinter` module. This is intended for development purposes and may not offer you the best user experience. To install StaSh on your PC, either use the line above or clone this repository and run `setup.py`.
+
 
 ## Upgrade
 Once StaSh is installed, it can be easily updated by running the `selfupdate`
 command from within the shell. 
+
 * `selfupdate` defaults to the `master` branch. To update from a different
   branch, e.g. `dev`, use `selfupdate dev`.
 * By default, `selfupdate` compares local and remote versions and only performs
