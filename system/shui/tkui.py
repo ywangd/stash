@@ -20,6 +20,11 @@ class ShUI(ShBaseUI):
         self.tk.title("StaSh")
         self.tk.protocol("WM_DELETE_WINDOW", self.on_close)
         
+        # fullscreen logic
+        # from: https://stackoverflow.com/a/23840010
+        self._fullscreen = False
+        self.tk.bind_all("<F11>", self._toggle_fullscreen)
+        
         # terminal
         self.terminal = ShTerminal(self.stash, self)
 
@@ -27,6 +32,7 @@ class ShUI(ShBaseUI):
         self._rc_menu = tkinter.Menu(self.tk, tearoff=0)
         self._rc_menu.add_command(label="Copy", command=self._rc_copy)
         self._rc_menu.add_command(label="Paste", command=self._rc_paste)
+        self._rc_menu.add_command(label="Toggle Fullscreen", command=self._toggle_fullscreen)
         self._rc_menu.add_command(label="Quit", command=self.stash.close)
         self.tk.bind("<Button-3>", self._popup_rc_menu)  # TODO: check <Button-3> portability
     
@@ -108,6 +114,14 @@ class ShUI(ShBaseUI):
         text = self.stash.libdist.clipboard_get()
         rng = self.terminal.selected_range
         self.stash.user_action_proxy.tv_responder.textview_should_change(None, rng, text)
+    
+    def _toggle_fullscreen(self, event=None):
+        """
+        Toggle the fullscreen mode.
+        """
+        self._fullscreen = not self._fullscreen
+        self.tk.attributes("-fullscreen", self._fullscreen)
+        return "break"
 
 
 class ShTerminal(ShBaseTerminal):
