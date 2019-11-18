@@ -587,7 +587,8 @@ class ShRuntime(object):
 
         # Enclosing variables will be merged to environ when creating new thread
         try:
-            with io.open(filename, "rb", newline=None) as fins:
+            # read the file in textmode.
+            with io.open(filename, "r", newline=None) as fins:
                 child_worker = self.run(
                     fins.readlines(),
                     final_ins=ins,
