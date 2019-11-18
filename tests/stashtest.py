@@ -81,6 +81,8 @@ class StashTestCase(unittest.TestCase):
         "TMP": tempfile.gettempdir(),
         "TMPDIR": tempfile.gettempdir(),
     }
+
+    maxDiff = 4096  # max diff size
     
     def get_data_path(self):
         """return the data/ sibling path"""
