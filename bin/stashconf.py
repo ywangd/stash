@@ -19,7 +19,7 @@ def main(args):
         'py_traceback': _stash.runtime,
         'py_pdb': _stash.runtime,
         'input_encoding_utf8': _stash.runtime,
-        'ipython_style_history_search': _stash.runtime,
+        'ipython_style_history_search': _stash.runtime.history,
         "enable_styles": _stash,
         "colored_errors": _stash.runtime,
     }

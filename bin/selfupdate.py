@@ -49,7 +49,7 @@ def get_remote_version(owner, branch):
             remote_version = ast.literal_eval(line.split('=')[1].strip())
             return remote_version
 
-    raise UpdateError('Remote version cannot be decided')
+    raise UpdateError('Remote version cannot be detected')
 
 
 def main(args):
@@ -109,13 +109,19 @@ def main(args):
 
         try:
             exec (
-                requests.get('{}?q={}'.format(url,
-                                              randint(1,
-                                                      999999))).text,
+                requests.get('{}?q={}'.format(
+                    url,
+                    randint(
+                        1,
+                        999999,
+                        ),
+                    ),
+                ).content,
                 {
                     '_IS_UPDATE': True,
                     '_br': branch,
-                    '_owner': owner
+                    '_owner': owner,
+                    "__name__": "__main__",
                 },
             )
             print(_stash.text_color('Update completed.', 'green'))

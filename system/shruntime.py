@@ -7,6 +7,7 @@ import logging
 import threading
 import functools
 import traceback
+import tempfile
 
 from six import StringIO, text_type, binary_type, PY3
 try:
@@ -36,7 +37,6 @@ _DEFAULT_RC = r"""BIN_PATH=~/Documents/bin:{bin_ext}:$BIN_PATH
 SELFUPDATE_TARGET=master
 PYTHONPATH=$STASH_ROOT/lib:$PYTHONPATH
 alias env='printenv'
-alias logout='echo "Use the close button in the upper right corner to exit StaSh."'
 alias help='man'
 alias la='ls -a'
 alias ll='ls -la'
@@ -70,8 +70,9 @@ class ShRuntime(object):
                 BIN_PATH=os.path.join(_STASH_ROOT,
                                       'bin'),
                 # Must have a placeholder because it is needed before _DEFAULT_RC is loaded
-                PROMPT='[\W]$ ',
-                PYTHONISTA_ROOT=os.path.dirname(sys.executable)
+                PROMPT=r'[\W]$ ',
+                PYTHONISTA_ROOT=os.path.dirname(sys.executable),
+                TMPDIR=os.environ.get("TMPDIR", tempfile.gettempdir()),
             ),
             sys_stdin=self.stash.io,
             sys_stdout=self.stash.io,
@@ -336,7 +337,7 @@ class ShRuntime(object):
                 if self.debug:
                     self.logger.debug('Exception: %s\n' % repr(e))
                 msg = '%s\n' % repr(e)
-                self.write_error_message(msg)
+                self.write_error_message(final_errs, msg)
                 if self.py_traceback or self.py_pdb:
                     # traceback.print_exception(etype, evalue, tb, file=(final_errs if final_errs is not None else None))
                     lines = traceback.format_exception(etype, evalue, tb)
@@ -539,7 +540,7 @@ class ShRuntime(object):
         self.handle_PYTHONPATH()  # Make sure PYTHONPATH is honored
 
         try:
-            with (open(file_path, "rU") if not self.stash.PY3 else open(file_path, newline=None)) as f:
+            with io.open(file_path, "rb", newline=None) as f:
                 content = f.read()
                 code = compile(content, file_path, "exec", dont_inherit=True)
                 exec (code, namespace, namespace)
@@ -586,7 +587,8 @@ class ShRuntime(object):
 
         # Enclosing variables will be merged to environ when creating new thread
         try:
-            with open(filename, "rU") as fins:
+            # read the file in textmode.
+            with io.open(filename, "r", newline=None) as fins:
                 child_worker = self.run(
                     fins.readlines(),
                     final_ins=ins,
@@ -612,9 +614,9 @@ class ShRuntime(object):
 
     def encode_argv(self, argv):
         """
-    	Convert an argv list into the appropiate string type depending
-    	on the currently used python version.
-    	"""
+        Convert an argv list into the appropiate string type depending
+        on the currently used python version.
+        """
         if PY3:
             # we need unicode argv
             argv = [c if isinstance(c, text_type) else c.decode("utf-8") for c in argv]

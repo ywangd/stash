@@ -67,9 +67,9 @@ def visit_homepage():
 @ui.in_background
 def add_editor_action():
     """
-	adds an editor action to the 'wrench' menu in the editor which
-	launches launch_stash.py
-	"""
+    adds an editor action to the 'wrench' menu in the editor which
+    launches launch_stash.py
+    """
     mv = cfg_view  # [global] the main view
     mv.ai.start()
     try:
@@ -86,10 +86,10 @@ def add_editor_action():
 
 
 # define all options as a dict of:
-#	section -> list of dicts of
-#		display_name: str
-#		option_name: str
-#		type: int
+#   section -> list of dicts of
+#       display_name: str
+#       option_name: str
+#       type: int
 
 OPTIONS = {
     "system":
@@ -169,12 +169,6 @@ OPTIONS = {
                     "white",
                 ),
                 "description": "Color of indicator used by the terminal",
-            },
-            {
-                "display_name": "Max History Length",
-                "option_name": "HISTORY_MAX",
-                "type": TYPE_INT,
-                "description": "Max number of commands to store in the history",
             },
             {
                 "display_name": "Max Buffer",
@@ -327,10 +321,10 @@ SECTIONS = [
 
 class RGBColorPicker(object):
     """
-	This object will prompt the user for a color.
-	Parts of this are copied from the pythonista examples.
-	TODO: rewrite as a subclass of ui.View()
-	"""
+    This object will prompt the user for a color.
+    Parts of this are copied from the pythonista examples.
+    TODO: rewrite as a subclass of ui.View()
+    """
 
     def __init__(self, default=(0.0, 0.0, 0.0)):
         self.r, self.g, self.b, = default
@@ -400,22 +394,22 @@ class RGBColorPicker(object):
     @property
     def rgb(self):
         """
-		returns the selected color as a tuple line (1.0, 1.0, 1.0)
-		"""
+        returns the selected color as a tuple line (1.0, 1.0, 1.0)
+        """
         return (self.r, self.g, self.b)
 
     @property
     def rgb_255(self):
         """
-		returns the selected color as a rgb tuple like (255, 255, 255)
-		"""
+        returns the selected color as a rgb tuple like (255, 255, 255)
+        """
         r, g, b = self.rgb
         return (r * 255, g * 255, b * 255)
 
     def get_color(self):
         """
-		shows the view, wait until it is closed and the. return the selected color.
-		"""
+        shows the view, wait until it is closed and the. return the selected color.
+        """
         self.view.present(
             "sheet",
             orientations=ORIENTATIONS,
@@ -426,8 +420,8 @@ class RGBColorPicker(object):
 
 class ConfigView(ui.View):
     """
-	The main GUI.
-	"""
+    The main GUI.
+    """
 
     def __init__(self):
         ui.View.__init__(self)

@@ -39,77 +39,11 @@ from six.moves import filterfalse
 from stashutils.extensions import create_command
 from stashutils.wheels import Wheel, wheel_is_compatible
 
-from stash.system.shcommon import IN_PYTHONISTA
-
 _stash = globals()['_stash']
 VersionSpecifier = _stash.libversion.VersionSpecifier  # alias for readability
-
-
-if IN_PYTHONISTA:
-    PYTHONISTA_BUNDLED_MODULES = [
-        'bottle',
-        'beautifulsoup4',
-        'pycrypto',
-        'py-dateutil',
-        'dropbox',
-        'ecdsa',
-        'evernote',
-        'Faker',
-        'feedparser',
-        'flask',
-        'html2text',
-        'html5lib',
-        'httplib2',
-        'itsdangerous',
-        'jedi',
-        'jinja2',
-        'markdown',
-        'markdown2',
-        'matplotlib',
-        'mechanize',
-        'midiutil',
-        'mpmath',
-        'numpy',
-        'oauth2',
-        'paramiko',
-        'parsedatetime',
-        'Pillow',
-        'pycparser',
-        'pyflakes',
-        'pygments',
-        'pyparsing',
-        'PyPDF2',
-        'pytz',
-        'qrcode',
-        'reportlab',
-        'requests',
-        'simpy',
-        'six',
-        'sqlalchemy',
-        'pysqlite',
-        'sympy',
-        'thrift',
-        'werkzeug',
-        'wsgiref',
-        'pisa',
-        'xmltodict',
-        'PyYAML',
-    ]
-
-    if _stash.PY3:
-        SITE_PACKAGES_DIR_NAME = 'site-packages-3'
-    else:
-        SITE_PACKAGES_DIR_NAME = 'site-packages-2'
-    OLD_SITE_PACKAGES_DIR_NAME = 'site-packages'
-    SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(SITE_PACKAGES_DIR_NAME))
-    OLD_SITE_PACKAGES_FOLDER = os.path.expanduser('~/Documents/{}'.format(OLD_SITE_PACKAGES_DIR_NAME))
-
-else:
-    PYTHONISTA_BUNDLED_MODULES = []
-    SITE_PACKAGES_FOLDER = os.path.expandvars("$STASH_ROOT/lib/")
-    OLD_SITE_PACKAGES_FOLDER = os.path.expandvars("$STASH_ROOT/lib/")
-    SITE_PACKAGES_DIR_NAME = os.path.basename(SITE_PACKAGES_FOLDER)
-    OLD_SITE_PACKAGES_DIR_NAME = os.path.basename(OLD_SITE_PACKAGES_FOLDER)
+SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER
+OLD_SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER_6
+BUNDLED_MODULES = _stash.libdist.BUNDLED_MODULES
 
 # Some packages use wrong name for their dependencies
 PACKAGE_NAME_FIXER = {
@@ -152,6 +86,9 @@ class OmniClass(object):
 
     def __getitem__(self, item):
         return OmniClass()
+
+    def __mro_entries__(self, bases):
+        return (self.__class__, )
 
 
 class PackageFinder(object):
@@ -387,11 +324,13 @@ def save_current_sys_modules():
         sys.modules[k] = v
 
 
+# warning: the ConfigParser may refer to a different class depening on the used py version
+# though I believe that pip does not use interpolation, so we *should* be safe
 # noinspection PyUnresolvedReferences
-from six.moves.configparser import SafeConfigParser, NoSectionError
+from six.moves.configparser import ConfigParser, NoSectionError
 
 
-class CIConfigParer(SafeConfigParser):
+class CIConfigParer(ConfigParser):
     """
     This config parser is case insensitive for section names so that
     the behaviour matches pypi queries.
@@ -410,23 +349,23 @@ class CIConfigParer(SafeConfigParser):
 
     def has_option(self, name, option_name):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.has_option(self, section_name, option_name)
+        return ConfigParser.has_option(self, section_name, option_name)
 
     def items(self, name):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.items(self, section_name)
+        return ConfigParser.items(self, section_name)
 
     def get(self, name, option_name, *args, **kwargs):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.get(self, section_name, option_name, *args, **kwargs)
+        return ConfigParser.get(self, section_name, option_name, *args, **kwargs)
 
     def set(self, name, option_name, value):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.set(self, section_name, option_name, value.replace('%', '%%'))
+        return ConfigParser.set(self, section_name, option_name, value.replace('%', '%%'))
 
     def remove_section(self, name):
         section_name = self._get_section_name(name)
-        return SafeConfigParser.remove_section(self, section_name)
+        return ConfigParser.remove_section(self, section_name)
 
 
 class PackageConfigHandler(object):
@@ -920,8 +859,8 @@ class PackageRepository(object):
                 print('Dependency already installed: {}'.format(dep_name))
                 continue
 
-            if dep_name in PYTHONISTA_BUNDLED_MODULES:
-                print('Dependency available in Pythonista bundle : {}'.format(dep_name))
+            if dep_name in BUNDLED_MODULES:
+                print('Dependency already bundled in distribution: {}'.format(dep_name))
                 continue
 
             print(
@@ -1472,6 +1411,11 @@ if __name__ == '__main__':
     update_parser.add_argument('packages', nargs="+", help='the package name')
 
     ns = ap.parse_args()
+    
+    if ns.site_packages is None:
+        # choosen site-packages dir may be unavailable on this platform, fallback to default
+        print("Warning: the specified site-packages directory is unavailable, falling back to default.")
+        ns.site_packages = SITE_PACKAGES_FOLDER
 
     try:
         if ns.sub_command == 'list':

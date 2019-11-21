@@ -10,8 +10,8 @@ module_names = (
     'system.shcommon',
     'system.shstreams',
     'system.shscreens',
-    'system.shterminal',
     'system.shui',
+    'system.shui.base',
     'system.shio',
     'system.shiowrapper',
     'system.shparsers',
@@ -69,6 +69,13 @@ if ns.debug_switch == '':
         # stash._DEBUG_EXPANDER,
         # stash._DEBUG_COMPLETER,
     )
+elif ns.debug_switch == "all":
+    debug = []
+    for key in dir(stash):
+        if key.startswith("_DEBUG_"):
+            value = getattr(stash, key, None)
+            if value is not None:
+                debug.append(value)
 else:
     debug = []
     for ds in ns.debug_switch.split(','):
@@ -90,10 +97,10 @@ _stash = stash.StaSh(
     no_cfgfile=ns.no_cfgfile,
     no_rcfile=ns.no_rcfile,
     no_historyfile=ns.no_historyfile,
-    command=ctp
+    command=ctp,
 )
 
-_stash.launch()
-
-if ns.command:
+_stash.launch(ns.command)
+if ns.command is not None:
+    # TODO: _stash.launch() may block, which prevents this from being executed
     _stash(ns.command, add_to_history=False, persistent_level=0)

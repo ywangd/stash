@@ -41,7 +41,6 @@ help=man
 l1=ls -1
 la=ls -a
 ll=ls -la
-logout=echo "Use the close button in the upper right corner to exit StaSh."
 paste=pbpaste
 unmount=umount
 
@@ -51,7 +50,6 @@ env=printenv
 help=man
 la=ls -a
 ll=ls -la
-logout=echo "Use the close button in the upper right corner to exit StaSh."
 paste=pbpaste
 unmount=umount
 
@@ -64,7 +62,6 @@ help=man
 l1=ls -1
 la=ls -a
 ll=ls -la
-logout=echo "Use the close button in the upper right corner to exit StaSh."
 paste=pbpaste
 unmount=umount
 
@@ -75,7 +72,6 @@ help=man
 l1=ls -1
 la=ls -a
 ll=ls -la
-logout=echo "Use the close button in the upper right corner to exit StaSh."
 paste=pbpaste
 unmount=umount
 

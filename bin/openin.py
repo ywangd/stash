@@ -6,9 +6,10 @@
 from __future__ import print_function
 
 import argparse
-import console
 import sys
-import ui
+
+
+_stash = globals()["_stash"]
 
 
 class ConsoleOpenin(object):
@@ -18,18 +19,8 @@ class ConsoleOpenin(object):
         ns = p.parse_args(args)
         self.filename = ns.file
 
-    @ui.in_background
-    def preamble(self):
-        print('WARNING: Do not switch window or Pythonista may freeze')
-        print('Opening %s ...' % self.filename)
-
-    @ui.in_background
-    def _open_in(self):
-        console.open_in(self.filename)
-
     def open_in(self):
-        self.preamble()
-        ui.delay(self._open_in, 1)
+        _stash.libdist.open_in(self.filename)
 
 
 if __name__ == "__main__":

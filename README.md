@@ -35,7 +35,7 @@ environment and great treasures may be found within.
 **StaSh can be easily installed via one line of python command**
 (courtesy of [@whitone](https://forum.omz-software.com/user/whitone)). 
 ```Python
-import requests as r; exec(r.get('https://bit.ly/get-stash').text)
+import requests as r; exec(r.get('https://bit.ly/get-stash').content)
 ```
 Simply copy the above line, paste into Pythonista interactive prompt and
 execute. It installs StaSh as a Python module under the `site-packages` 
@@ -57,10 +57,13 @@ you can choose to directly clone or download the
 older Pythonista 1.5 compatible version, please refer to the
 [v0.4](https://github.com/ywangd/stash/tree/v0.4) branch.*
 
+Starting with `0.7.4`, StaSh supports being run on a PC using the `tkinter` module. This is intended for development purposes and may not offer you the best user experience. To install StaSh on your PC, either use the line above or clone this repository and run `setup.py`.
+
 
 ## Upgrade
 Once StaSh is installed, it can be easily updated by running the `selfupdate`
 command from within the shell. 
+
 * `selfupdate` defaults to the `master` branch. To update from a different
   branch, e.g. `dev`, use `selfupdate dev`.
 * By default, `selfupdate` compares local and remote versions and only performs
@@ -94,7 +97,7 @@ features are what really set the difference from shellista.
       in background. But StaSh can stay up forever (till memory runs out due to
       other Apps). You can just launch StaSh to run a few commands and leave it.
       It will still be there for you when you return later.
-	
+    
 * **Comprehensive** command line parsing and handling using
   [pyparsing](http://pyparsing.wikispaces.com)
     * Environmental variables, e.g `echo $HOME`, `NAME=value`
@@ -158,13 +161,13 @@ features are what really set the difference from shellista.
   builtin editor offers)
 
 * **External keyboard support**
-	* Tab key for auto-completion
-	* Up (↑) / Down (↓) for navigating through command history
-	* Ctrl-A and Ctrl-E to jump to the beginning and end of the input line, 
-	  respectively
-	* Ctrl-U to erase the input line
-	* Ctrl-W to erase one word before cursor
-	* Ctrl-L to clear the screen
+    * Tab key for auto-completion
+    * Up (↑) / Down (↓) for navigating through command history
+    * Ctrl-A and Ctrl-E to jump to the beginning and end of the input line, 
+      respectively
+    * Ctrl-U to erase the input line
+    * Ctrl-W to erase one word before cursor
+    * Ctrl-L to clear the screen
 
 * You can **run (almost) any regular python scripts** from within StaSh
     * There is no need to customize them for the shell. If it can be executed by

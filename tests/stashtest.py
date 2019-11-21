@@ -17,6 +17,9 @@ from stash import stash
 from stash.system.shcommon import _STASH_ROOT, PY3
 
 
+ON_TRAVIS = "TRAVIS" in os.environ
+
+
 def network_is_available():
     """
     Check whether the network is available.
@@ -79,6 +82,13 @@ class StashTestCase(unittest.TestCase):
         "TMPDIR": tempfile.gettempdir(),
     }
 
+    maxDiff = 4096  # max diff size
+    
+    def get_data_path(self):
+        """return the data/ sibling path"""
+        curpath = os.path.dirname(sys.modules[self.__module__].__file__)
+        return os.path.abspath(os.path.join(curpath, "data"))
+
     def setUp(self):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.stash = stash.StaSh()
@@ -140,7 +150,15 @@ class StashTestCase(unittest.TestCase):
             assert v in self.stash.runtime.state.environ.keys(), u'%s should be defined' % v
 
     def run_command(self, command, exitcode=None):
-        """run a command and return its output."""
+        """
+        Run a command and return its output.
+        :param command: command to run
+        :type command: str
+        :param exitcode: expected exitcode, None to ignore
+        :type exitcode: int or None
+        :return: output of the command
+        :rtype: str
+        """
         # for debug purposes, locate script
         try:
             scriptname = command.split(" ")[0]

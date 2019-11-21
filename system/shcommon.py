@@ -50,6 +50,7 @@ M_64 = platform_string.find('64bit') != -1
 
 CTRL_KEY_FLAG = (1 << 18)  # Control key for keyCommands
 CMD_KEY_FLAG = (1 << 20)  # Command key
+K_CC, K_CD, K_HUP, K_HDN, K_LEFT, K_RIGHT, K_CU, K_TAB, K_HIST, K_CZ, K_KB = range(11)
 
 _STASH_ROOT = os.path.realpath(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 _STASH_CONFIG_FILES = ('.stash_config', 'stash.cfg')

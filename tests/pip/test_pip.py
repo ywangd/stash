@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """tests for the 'pip' command."""
-import os
 import sys
 import unittest
 
@@ -24,10 +23,6 @@ class PipTests(StashTestCase):
         except Exception as e:
             self.logger.warning("Could not purge packages: " + repr(e))
         StashTestCase.tearDown(self)
-
-    def get_data_path(self):
-        """return the data/ sibling path"""
-        return os.path.abspath(os.path.join(os.path.dirname(__file__), "data"))
 
     def purge_packages(self):
         """uninstall all packages."""

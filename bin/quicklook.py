@@ -6,11 +6,10 @@
 from __future__ import print_function
 
 import argparse
-import console
 import sys
-import ui
 
-from objc_util import on_main_thread
+
+_stash = globals()["_stash"]
 
 
 class ConsoleQuicklook(object):
@@ -20,9 +19,8 @@ class ConsoleQuicklook(object):
         ns = p.parse_args(args)
         self.filename = ns.file
 
-    @on_main_thread
     def quicklook(self):
-        console.quicklook(self.filename)
+        _stash.libdist.quicklook(self.filename)
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ StaSh - Pythonista Shell
 https://github.com/ywangd/stash
 """
 
-__version__ = '0.7.3'
+__version__ = '0.7.4'
 
 import imp as pyimp  # rename to avoid name conflict with objc_util
 import logging
@@ -29,9 +29,9 @@ from .system.shiowrapper import disable as disable_io_wrapper
 from .system.shiowrapper import enable as enable_io_wrapper
 from .system.shparsers import ShCompleter, ShExpander, ShParser
 from .system.shruntime import ShRuntime
-from .system.shscreens import ShSequentialRenderer, ShSequentialScreen
+from .system.shscreens import ShSequentialScreen
 from .system.shstreams import ShMiniBuffer, ShStream
-from .system.shui import ShUI
+from .system.shui import get_ui_implementation
 from .system.shuseractionproxy import ShUserActionProxy
 
 # Setup logging
@@ -68,7 +68,7 @@ TINT_COLOR=(0.0, 0.0, 1.0)
 INDICATOR_STYLE=white
 BUFFER_MAX=150
 AUTO_COMPLETION_MAX=50
-VK_SYMBOLS=~/.-*|>$'=!&_"\?`
+VK_SYMBOLS=~/.-*|>$'=!&_"\\?`
 
 [style]
 enable_styles=1
@@ -131,9 +131,10 @@ class StaSh(object):
 
         self.io = ShIO(self, debug=_DEBUG_IO in debug)
 
+        ShUI, ShSequentialRenderer = get_ui_implementation()
         self.terminal = None  # will be set during UI initialisation
-        self.ui = ShUI(self, debug=_DEBUG_UI in debug)
-        self.renderer = ShSequentialRenderer(self.main_screen, self.terminal, debug=_DEBUG_RENDERER in debug)
+        self.ui = ShUI(self, debug=(_DEBUG_UI in debug), debug_terminal=(_DEBUG_TERMINAL in debug))
+        self.renderer = ShSequentialRenderer(self, self.main_screen, self.terminal, debug=_DEBUG_RENDERER in debug)
 
         parser = ShParser(debug=_DEBUG_PARSER in debug)
         expander = ShExpander(self, debug=_DEBUG_EXPANDER in debug)
@@ -185,6 +186,8 @@ class StaSh(object):
             command = '$STASH_ROOT/bin/totd.py'
         if command:
             # do not run command if command is False (but not None)
+            if self.runtime.debug:
+                self.logger.debug("Running command: {!r}".format(command))
             self(command, add_to_history=False, persistent_level=0)
 
     def __call__(self, input_, persistent_level=2, *args, **kwargs):
@@ -258,11 +261,13 @@ class StaSh(object):
         os.environ['STASH_ROOT'] = _STASH_ROOT  # libcompleter needs this value
         try:
             for f in os.listdir(lib_path):
-                if f.startswith('lib') and f.endswith('.py') \
-                        and os.path.isfile(os.path.join(lib_path, f)):
+                fp = os.path.join(lib_path, f)
+                if f.startswith('lib') and f.endswith('.py') and os.path.isfile(fp):
                     name, _ = os.path.splitext(f)
+                    if self.runtime.debug:
+                        self.logger.debug("Attempting to load library '{}'...".format(name))
                     try:
-                        self.__dict__[name] = pyimp.load_source(name, os.path.join(lib_path, f))
+                        self.__dict__[name] = pyimp.load_source(name, fp)
                     except Exception as e:
                         self.write_message('%s: failed to load library file (%s)' % (f, repr(e)), error=True)
         finally:  # do not modify environ permanently
@@ -277,18 +282,53 @@ class StaSh(object):
         :type error: bool
         """
         s = '%s%s\n' % (prefix, s)
-        if error and self.runtime.colored_errors:
-            s = self.text_color(s, "red")
+        if error:
+            if self.runtime.debug:
+                self.logger.error(s)
+            if self.runtime.colored_errors:
+                s = self.text_color(s, "red")
+        else:
+            if self.runtime.debug:
+                self.logger.info(s)
         self.io.write(s)
 
-    def launch(self, style='panel'):
-        self.ui.present(style)
-        self.terminal.begin_editing()
+    def launch(self, command=None):
+        """
+        Launch StaSh, presenting the UI.
+        """
+        self.ui.show()
+        # self.terminal.set_focus()
+    
+    def close(self):
+        """
+        Quit StaSh.
+        StaSh is based arround the UI, so we delegate this task to the UI,
+        which in turn will call self.on_exit().
+        """
+        self.ui.close()
+    
+    def on_exit(self):
+        """
+        This method will be called when StaSh is about the be closed.
+        """
+        self.runtime.save_history()
+        self.cleanup()
+        # Clear the stack or the stdout becomes unusable for interactive prompt
+        self.runtime.worker_registry.purge()
+        
 
     def cleanup(self):
+        """
+        Perform cleanup here.
+        """
         disable_io_wrapper()
 
     def get_workers(self):
+        """
+        Return a list of all workers..
+        :return: a list of all workers
+        :rtype: list of [stash.system.shtreads.BaseThread]
+        """
         return [worker for worker in self.runtime.worker_registry]
 
     # noinspection PyProtectedMember

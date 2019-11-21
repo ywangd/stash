@@ -9,7 +9,6 @@ import argparse
 from six.moves.urllib.request import urlopen
 
 try:
-    import clipboard
     import console
 except ImportError:
     console = None
@@ -43,7 +42,7 @@ def main(args):
     ap.add_argument('url', nargs='?', help='the url to read from (default to clipboard)')
 
     ns = ap.parse_args(args)
-    url = ns.url or clipboard.get()
+    url = ns.url or _stash.libdist.clipboard_get()
     output_file = ns.output_file or url.split('/')[-1]
 
     if console is not None:
