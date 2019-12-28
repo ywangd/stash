@@ -1422,7 +1422,7 @@ if __name__ == '__main__':
             repository = get_repository('pypi', site_packages=ns.site_packages, verbose=ns.verbose)
             info_list = repository.list()
             for module, info in info_list:
-                print('{} ({}) - {}'.format(module, info['version'], info['summary']))
+                print('{} ({}) - {}'.format(module, info.get('version', '???'), info.get('summary', '')))
 
         elif ns.sub_command == 'install':
             if ns.directory is not None:
