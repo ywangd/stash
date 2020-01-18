@@ -15,7 +15,7 @@ def main(args):
 
     ns = ap.parse_args(args)
 
-    filename = os.path.join(os.environ['STASH_ROOT'], 'data', '.stash_tips')
+    filename = os.path.join(os.environ['STASH_ROOT'], 'data', 'stash_tips.json')
     if not os.path.exists(filename):
         return 1
 
