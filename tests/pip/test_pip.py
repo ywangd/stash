@@ -296,7 +296,7 @@ class PipTests(StashTestCase):
     
     def test_blacklist_nonfatal(self):
         """test 'pip install <blacklisted-nonfatal-package>'."""
-        output = self.run_command("pip --verbose install matplotlib", exitcode=1)
+        output = self.run_command("pip --verbose install matplotlib", exitcode=0)
         self.assertIn("Warning: package 'matploblib' is blacklisted, but marked as non-fatal.")
         self.assertIn("This package is already bundled with Pythonista", output)
         self.assertNotIn("PackageBlacklisted", output)

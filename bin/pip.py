@@ -1134,9 +1134,7 @@ class PyPIRepository(PackageRepository):
                         "red",
                         )
                     )
-                print(_stash.text_color(
-                    )
-                )
+                print(_stash.text_color("Reason: " + reason, "red"))
                 raise PackageBlacklisted(pkg_name, reason)
             elif alt is not None:
                 # an alternative package exposing the same functionality

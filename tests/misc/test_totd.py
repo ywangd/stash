@@ -13,7 +13,7 @@ class TotdTests(StashTestCase):
         """
         Test 'totd --help'.
         """
-        output = self.run_command("totd --help")
+        output = self.run_command("totd --help", exitcode=0)
         self.assertIn("totd", output)
         self.assertIn("-h", output)
         self.assertIn("--help", output)
@@ -24,7 +24,7 @@ class TotdTests(StashTestCase):
         """
         Test 'totd --count'.
         """
-        output = self.run_command("totd --count").replace("\n", "")
+        output = self.run_command("totd --count", exitcode=0).replace("\n", "")
         # ensure that the string is correct
         self.assertTrue(output.startswith("Total available tips: "))
         # ensure that number of tips is not zero
@@ -38,7 +38,7 @@ class TotdTests(StashTestCase):
         known = []
         n_unique = 0
         for i in range(100):
-            output = self.run_command("totd").replace("\n", "")
+            output = self.run_command("totd", exitcode=0).replace("\n", "")
             if output not in known:
                 known.append(output)
                 n_unique += 1
