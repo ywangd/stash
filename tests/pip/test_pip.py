@@ -286,3 +286,21 @@ class PipTests(StashTestCase):
         except ImportError as e:
             # expected failure
             pass
+    
+    def test_blacklist_fatal(self):
+        """test 'pip install <blacklisted-fatal-package>'."""
+        output = self.run_command("pip --verbose install pip", exitcode=1)
+        self.assertIn("StaSh uses a custom version of PIP", output)
+        self.assertIn("PackageBlacklisted", output)
+        self.assertNotIn("Package installed: pip", output)
+    
+    def test_blacklist_nonfatal(self):
+        """test 'pip install <blacklisted-nonfatal-package>'."""
+        output = self.run_command("pip --verbose install matplotlib", exitcode=1)
+        self.assertIn("Warning: package 'matploblib' is blacklisted, but marked as non-fatal.")
+        self.assertIn("This package is already bundled with Pythonista", output)
+        self.assertNotIn("PackageBlacklisted", output)
+        self.assertNotIn("Package installed: matplotlib", output)
+    
+    # TODO: add test for blacklist with alternative.
+    

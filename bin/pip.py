@@ -29,6 +29,7 @@ import requests
 import operator
 import traceback
 import platform
+import json
 
 import six
 from distutils.util import convert_path
@@ -44,6 +45,7 @@ VersionSpecifier = _stash.libversion.VersionSpecifier  # alias for readability
 SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER
 OLD_SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER_6
 BUNDLED_MODULES = _stash.libdist.BUNDLED_MODULES
+BLACKLIST_PATH = os.path.join(os.path.expandvars("$STASH_ROOT"), "data", "pip_blacklist.json")
 
 # Some packages use wrong name for their dependencies
 PACKAGE_NAME_FIXER = {
@@ -53,11 +55,12 @@ PACKAGE_NAME_FIXER = {
 NO_OVERWRITE = False
 
 # Utility constants
-DIST_ALLOW_SRC = 1
-DIST_ALLOW_WHL = 2
-DIST_PREFER_SRC = 4
-DIST_PREFER_WHL = 8
-DIST_DEFAULT = DIST_ALLOW_SRC | DIST_ALLOW_WHL | DIST_PREFER_WHL
+FLAG_DIST_ALLOW_SRC = 1
+FLAG_DIST_ALLOW_WHL = 2
+FLAG_DIST_PREFER_SRC = 4
+FLAG_DIST_PREFER_WHL = 8
+FLAG_IGNORE_BLACKLIST = 16
+DEFAULT_FLAGS = FLAG_DIST_ALLOW_SRC | FLAG_DIST_ALLOW_WHL | FLAG_DIST_PREFER_WHL
 
 
 def _setup_stub_(*args, **kwargs):
@@ -66,12 +69,30 @@ def _setup_stub_(*args, **kwargs):
 
 
 class PipError(Exception):
+    """
+    Baseclass for pip related errors.
+    """
     pass
 
 
 class PackageAlreadyInstalled(PipError):
-    """Error raised when a package is already installed."""
+    """
+    Error raised when a package is already installed.
+    """
     pass
+
+
+class PackageBlacklisted(PipError):
+    """
+    Error raised when a package is fataly blacklisted
+    :param pkg_name: name of blacklisted package
+    :type pkg_name: str
+    :param reason: reason for blacklisting
+    :type reason: str
+    """
+    def __init__(self, pkg_name, reason):
+        s = "Package '{}' blacklisted. Reason: {}".format(pkg_name, reason)
+        PipError.__init__(self, s)
 
 
 class OmniClass(object):
@@ -824,10 +845,10 @@ class PackageRepository(object):
     def download(self, pkg_name, ver_spec):
         raise PipError('Action Not Available: download')
 
-    def install(self, pkg_name, ver_spec, dist=DIST_DEFAULT, extras=[]):
+    def install(self, pkg_name, ver_spec, flags=DEFAULT_FLAGS, extras=[]):
         raise PipError('Action Not Available: install')
 
-    def _install(self, pkg_name, pkg_info, archive_filename, dependency_dist=DIST_DEFAULT, extras=[]):
+    def _install(self, pkg_name, pkg_info, archive_filename, dependency_flags=DEFAULT_FLAGS, extras=[]):
         if archive_filename.endswith(".whl"):
             print("Installing wheel: {}...".format(os.path.basename(archive_filename)))
             wheel = Wheel(archive_filename, verbose=self.verbose, extras=extras)
@@ -872,7 +893,7 @@ class PackageRepository(object):
             )
             repository = get_repository(dep_name, verbose=self.verbose)
             try:
-                repository.install(dep_name, ver_spec, dist=dependency_dist, extras=extras)
+                repository.install(dep_name, ver_spec, flags=dependency_flags, extras=extras)
             except PackageAlreadyInstalled:
                 # well, it is already installed...
                 # TODO: maybe update package if required?
@@ -949,6 +970,33 @@ class PyPIRepository(PackageRepository):
         # DO NOT USE self.pypi, it's there just for search, it's obsolete/legacy
         self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
         self.standard_package_names = {}
+    
+    def _check_blacklist(self, pkg_name):
+        """
+        Check if a package is blacklisted.
+        The result is a tuple:
+            - element 0 is True if the package is blacklisted
+            - element 1 is the reason
+            - element 2 is True if the install should fail due to this
+            - element 3 is an optional alternative package to use instead.
+        :param pkg_name: name of package to check
+        :type pkg_name: str
+        :return: a tuple of (blacklisted, reason, fatal, alt).
+        :rtype: (bool, str, bool, str or None)
+        """
+        if (BLACKLIST_PATH is None) or (not os.path.exists(BLACKLIST_PATH)):
+            # blacklist not available
+            return (False, "", False, None)
+        with open(BLACKLIST_PATH) as fin:
+            content = json.load(fin)
+        if pkg_name not in content["blacklist"]:
+            # package not blacklisted
+            return (False, "", False, None)
+        else:
+            # package blacklisted
+            reasonid, fatal, alt = content["blacklist"][pkg_name]
+            reason = content["reasons"].get(reasonid, reasonid)
+            return (True, reason, fatal, alt)
 
     def get_standard_package_name(self, pkg_name):
         if pkg_name not in self.standard_package_names:
@@ -1001,11 +1049,11 @@ class PyPIRepository(PackageRepository):
 
         return releases
 
-    def download(self, pkg_name, ver_spec, dist=DIST_DEFAULT):
+    def download(self, pkg_name, ver_spec, flags=DEFAULT_FLAGS):
         print('Querying PyPI ... ')
         pkg_name = self.get_standard_package_name(pkg_name)
         pkg_data = self._package_data(pkg_name)
-        hit = self._determin_hit(pkg_data, ver_spec, dist=dist)
+        hit = self._determin_hit(pkg_data, ver_spec, flags=flags)
 
         if self.verbose:
             print("Using {n}=={v}...".format(n=pkg_name, v=hit))
@@ -1027,21 +1075,21 @@ class PyPIRepository(PackageRepository):
                     wheel = download
 
         target = None
-        if source is not None and (dist & DIST_ALLOW_SRC > 0):
+        if source is not None and (flags & FLAG_DIST_ALLOW_SRC > 0):
             # source is available and allowed
-            if (wheel is None or (dist & DIST_ALLOW_WHL == 0)) or (dist & DIST_PREFER_SRC > 0):
+            if (wheel is None or (flags & FLAG_DIST_ALLOW_WHL == 0)) or (flags & FLAG_DIST_PREFER_SRC > 0):
                 # no wheel is available or source is prefered
                 # use source
                 if self.verbose:
                     print("A source distribution is available and will be used.")
                 target = source
-            elif (dist & DIST_ALLOW_WHL > 0):
+            elif (flags & FLAG_DIST_ALLOW_WHL > 0):
                 # a wheel is available and allowed and source is not preffered
                 # use wheel
                 if self.verbose:
                     print("A binary distribution is available and will be used.")
                 target = wheel
-        elif wheel is not None and (dist & DIST_ALLOW_WHL > 0):
+        elif wheel is not None and (flags & FLAG_DIST_ALLOW_WHL > 0):
             # source is not available or allowed, but a wheel is available and allowed
             # use wheel
             if self.verbose:
@@ -1051,9 +1099,9 @@ class PyPIRepository(PackageRepository):
         if target is None:
             if self.verbose:
                 print("No allowed distribution found!")
-                if wheel is not None and (dist & DIST_ALLOW_WHL == 0):
+                if wheel is not None and (flags & FLAG_DIST_ALLOW_WHL == 0):
                     print("However, a wheel is available. Maybe try without '--no-binary' or with '--only-binary :all:'?")
-                if source is not None and (dist & DIST_ALLOW_SRC == 0):
+                if source is not None and (flags & FLAG_DIST_ALLOW_SRC == 0):
                     print("However, a source distribution is available. Maybe try with '--no-binary :all:'?")
             raise PipError("No allowed distribution found for '{}': {}!".format(pkg_name, hit))
 
@@ -1069,11 +1117,58 @@ class PyPIRepository(PackageRepository):
 
         return os.path.join(os.getenv('TMPDIR'), target['filename']), pkg_info
 
-    def install(self, pkg_name, ver_spec, dist=DIST_DEFAULT, extras=[]):
+    def install(self, pkg_name, ver_spec, flags=DEFAULT_FLAGS, extras=[]):
         pkg_name = self.get_standard_package_name(pkg_name)
+        
+        # check if package is blacklisted
+        # we only do this for PyPI installs, since non-PyPI installs
+        # may have the same pkg name for a different package.
+        # TODO: should this be changed?
+        blacklisted, reason, fatal, alt = self._check_blacklist(pkg_name)
+        if blacklisted and not (flags & FLAG_IGNORE_BLACKLIST > 0):
+            if fatal:
+                # raise an exception.
+                print(
+                    _stash.text_color(
+                        "Package {} is blacklisted and marked fatal. Failing install.".format(pkg_name),
+                        "red",
+                        )
+                    )
+                print(_stash.text_color(
+                    )
+                )
+                raise PackageBlacklisted(pkg_name, reason)
+            elif alt is not None:
+                # an alternative package exposing the same functionality
+                #  and API is known. Print a warning and use this instead.
+                print(
+                    _stash.text_color(
+                        "Warning: Using {} instead of {}".format(pkg_name, alt),
+                        "yellow",
+                        )
+                    )
+                print("Reason: " + reason)
+                pkg_name = alt
+                # use an empty VersionSpecifier to mark any version as acceptable
+                ver_spec = _stash.libversion.VersionSpecifier()
+                # do not use extras. We can not be sure that the package provide the same extras.
+                extras = []
+            else:
+                # this package is probably bundled with pythonista
+                # we should print a warning, but continue anyway
+                print(
+                    _stash.text_color(
+                        "Warning: package '{}' is blacklisted, but marked as non-fatal.".format(blacklisted),
+                        "yellow",
+                        )
+                    )
+                print("This probably means that the dependency can not be installed, but pythonista ships with the package preinstalled.")
+                print("Reason for blacklisting: " + reason)
+                return
+        
         if not self.config.module_exists(pkg_name):
-            archive_filename, pkg_info = self.download(pkg_name, ver_spec, dist=dist)
-            self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist, extras=extras)
+            archive_filename, pkg_info = self.download(pkg_name, ver_spec, flags=flags)
+            self._install(pkg_name, pkg_info, archive_filename, dependency_flags=flags, extras=extras)
         else:
             # todo: maybe update package?
             raise PackageAlreadyInstalled('Package already installed')
@@ -1093,15 +1188,15 @@ class PyPIRepository(PackageRepository):
         else:
             raise PipError('package not installed: {}'.format(pkg_name))
 
-    def _determin_hit(self, pkg_data, ver_spec, dist=None):
+    def _determin_hit(self, pkg_data, ver_spec, flags=None):
         """
         Find a release for a package matching a specified version.
         :param pkg_data: the package information
         :type pkg_data: dict
         :param ver_spec: the version specification
         :type ver_spec: VersionSpecifier
-        :param dist: distribution options
-        :type dist: int or None
+        :param flags: (distribution) options
+        :type flags: int or None
         :return: a version matching the specified version
         :rtype: str
         """
@@ -1113,7 +1208,7 @@ class PyPIRepository(PackageRepository):
         versions = [latest] + _stash.libversion.sort_versions(self._package_releases(pkg_data))
         for hit in versions:
             # we return the fist matching hit, so we should sort the hits by descending version
-            if (dist is not None) and not self._dist_allows_release(dist, pkg_data, hit):
+            if (flags is not None) and not self._dist_flags_allows_release(flags, pkg_data, hit):
                 # hit has no source/binary release and is not allowed by dis
                 continue
             if not self._release_matches_py_version(pkg_data, hit):
@@ -1132,7 +1227,7 @@ class PyPIRepository(PackageRepository):
         :type pkg_data: dict
         :param release: the release to check
         :type release: str
-        :return: whether dist allows the release or not
+        :return: whether the releases matches the python version
         :rtype: boolean
         """
         had_v = False
@@ -1179,16 +1274,16 @@ class PyPIRepository(PackageRepository):
             # we did it before without these checks and it worked *most* of the time, so missing this check is not horrible...
             return True
 
-    def _dist_allows_release(self, dist, pkg_data, release):
+    def _dist_flags_allows_release(self, flags, pkg_data, release):
         """
-        Check if a release is allowed by the distribution settings.
-        :param dist: the distribution options
-        :type dist: int
+        Check if a release is allowed by the distribution flags.
+        :param flags: the (distribution) flags
+        :type flags: int
         :param pkg_data: package information
         :type pkg_data: dict
         :param release: the release to check
         :type release: str
-        :return: whether dist allows the release or not
+        :return: whether the flags allow this release or not
         :rtype: boolean
         """
         downloads = self._package_downloads(pkg_data, release)
@@ -1198,11 +1293,11 @@ class PyPIRepository(PackageRepository):
                 continue
             elif pt in ("source", "sdist"):
                 # source distribution
-                if (dist & DIST_ALLOW_SRC > 0):
+                if (flags & FLAG_DIST_ALLOW_SRC > 0):
                     return True
             elif pt in ("bdist_wheel", "wheel", "whl"):
                 # wheel
-                if (dist & DIST_ALLOW_WHL > 0):
+                if (flags & FLAG_DIST_ALLOW_WHL > 0):
                     return True
         # no allowed downloads found
         return False
@@ -1243,12 +1338,12 @@ class GitHubRepository(PackageRepository):
         'summary': metadata.get('description', ''),
         }
 
-    def install(self, owner_repo, ver_spec, dist=DIST_DEFAULT, extras=[]):
+    def install(self, owner_repo, ver_spec, flags=DEFAULT_FLAGS, extras=[]):
         if not self.config.module_exists(owner_repo):
             owner, repo = owner_repo.split('/')
             release = self._get_release_from_version_specifier(ver_spec)
             archive_filename, pkg_info = self.download(owner_repo, release)
-            self._install('-'.join([repo, release]), pkg_info, archive_filename, dependency_dist=dist, extras=extras)
+            self._install('-'.join([repo, release]), pkg_info, archive_filename, dependency_flags=flags, extras=extras)
         else:
             raise PipError('Package already installed')
 
@@ -1271,11 +1366,11 @@ class UrlRepository(PackageRepository):
         'summary': '',
         }
 
-    def install(self, url, ver_spec, dist=DIST_DEFAULT, extras=[]):
+    def install(self, url, ver_spec, flags=DEFAULT_FLAGS, extras=[]):
         if not self.config.module_exists(url):
             archive_filename, pkg_info = self.download(url, ver_spec)
             pkg_name = os.path.splitext(os.path.basename(archive_filename))[0]
-            self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist, extras=extras)
+            self._install(pkg_name, pkg_info, archive_filename, dependency_flags=flags, extras=extras)
         else:
             raise PipError('Package already installed')
 
@@ -1285,9 +1380,9 @@ class LocalRepository(PackageRepository):
     This repository deals with a local archive file.
     """
 
-    def install(self, archive_filename, ver_spec, dist=DIST_DEFAULT, extras=[]):
+    def install(self, archive_filename, ver_spec, flags=DEFAULT_FLAGS, extras=[]):
         pkg_info = {'name': archive_filename, 'url': 'local', 'version': '', 'summary': ''}
-        self._install(pkg_name, pkg_info, archive_filename, dependency_dist=dist, extras=extras)
+        self._install(pkg_name, pkg_info, archive_filename, dependency_flags=flags, extras=extras)
 
 
 # url_repository = UrlRepository()
@@ -1380,6 +1475,7 @@ if __name__ == '__main__':
         help="Prefer older binary packages over newer source packages",  # TODO: do we actually check older sources/wheels?
         dest="preferbinary",
     )
+    install_parser.add_argument("--ignore-blacklist", action="store_true", help="Ignore blacklist", dest="ignoreblacklist")
 
     download_parser = subparsers.add_parser('download', help='download packages')
     download_parser.add_argument(
@@ -1430,15 +1526,15 @@ if __name__ == '__main__':
             else:
                 site_packages = ns.site_packages
 
-            dist = DIST_DEFAULT
+            flags = DEFAULT_FLAGS
             if ns.nobinary is not None:
                 if ns.nobinary == ":all:":
                     # disable all binaries
-                    dist = dist & ~DIST_ALLOW_WHL
-                    dist = dist & ~DIST_PREFER_WHL
+                    flags = flags & ~FLAG_DIST_ALLOW_WHL
+                    flags = flags & ~FLAG_DIST_PREFER_WHL
                 elif ns.nobinary == ":none:":
                     # allow all binaries
-                    dist = dist | DIST_ALLOW_WHL
+                    flags = flags | FLAG_DIST_ALLOW_WHL
                 else:
                     # TODO: implement this
                     print("Error: --no-binary does currently only support :all: or :none:")
@@ -1446,20 +1542,23 @@ if __name__ == '__main__':
             if ns.onlybinary is not None:
                 if ns.onlybinary == ":all:":
                     # disable all source
-                    dist = dist & ~DIST_ALLOW_SRC
-                    dist = dist & ~DIST_PREFER_SRC
+                    flags = flags & ~FLAG_DIST_ALLOW_SRC
+                    flags = flags & ~FLAG_DIST_PREFER_SRC
 
                 elif ns.nobinary == ":none:":
                     # allow all source
-                    dist = dist | DIST_ALLOW_SRC
+                    flags = flags | FLAG_DIST_ALLOW_SRC
                 else:
                     # TODO: implement this
                     print("Error: --only-binary does currently only support :all: or :none:")
 
             if ns.preferbinary:
                 # set preference to wheels
-                dist = dist | DIST_PREFER_WHL | DIST_ALLOW_WHL
-                dist = dist & ~DIST_PREFER_SRC
+                flags = flags | FLAG_DIST_PREFER_WHL | FLAG_DIST_ALLOW_WHL
+                flags = flags & ~FLAG_DIST_PREFER_SRC
+            
+            if ns.ignoreblacklist:
+                flags = flags | FLAG_IGNORE_BLACKLIST
 
             for requirement in ns.requirements:
                 repository = get_repository(requirement, site_packages=site_packages, verbose=ns.verbose)
@@ -1472,7 +1571,7 @@ if __name__ == '__main__':
                     ensure_pkg_resources()  # install pkg_resources if needed
                     # start with what we have installed (i.e. in the config file)
                     sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
-                    repository.install(pkg_name, ver_spec, dist=dist, extras=extras)
+                    repository.install(pkg_name, ver_spec, flags=flags, extras=extras)
 
         elif ns.sub_command == 'download':
             for requirement in ns.requirements:
