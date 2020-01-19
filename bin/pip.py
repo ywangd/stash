@@ -1141,7 +1141,7 @@ class PyPIRepository(PackageRepository):
                 #  and API is known. Print a warning and use this instead.
                 print(
                     _stash.text_color(
-                        "Warning: Using {} instead of {}".format(pkg_name, alt),
+                        "Warning: Using {} instead of {}".format(alt, pkg_name),
                         "yellow",
                         )
                     )
@@ -1156,7 +1156,7 @@ class PyPIRepository(PackageRepository):
                 # we should print a warning, but continue anyway
                 print(
                     _stash.text_color(
-                        "Warning: package '{}' is blacklisted, but marked as non-fatal.".format(blacklisted),
+                        "Warning: package '{}' is blacklisted, but marked as non-fatal.".format(pkg_name),
                         "yellow",
                         )
                     )
