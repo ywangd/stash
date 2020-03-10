@@ -328,6 +328,10 @@ class VersionSpecifier(object):
         splitted = specs_s.split(",")
         specs = []
         for vs in splitted:
+            if vs == "":
+                # for some weird reasons, sometimes a trailing ',' is
+                # included in the requirement list.
+                continue
             cmp_end = re.search(version_cmp, vs).end()
             c, v = vs[:cmp_end], vs[cmp_end:]
             specs.append((c, v))

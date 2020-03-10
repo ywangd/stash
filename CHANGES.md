@@ -7,6 +7,10 @@
     * colored error messages
     * history is now per command 
     * `pip` now supports extras
+    * `pip` will now show error messages for known incompatible packages
+    * `wget` will now show an progress bar
+    * support for unicode symbols im prompt
+    * various bugfixes and minor improvements
 
 ### Version 0.7.0 - 2018-05-04
 * New Features
