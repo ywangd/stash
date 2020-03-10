@@ -11,7 +11,7 @@ from six.moves.urllib.parse import urlparse
 try:
     import clipboard
 except ImportError:
-    pass
+    clipboard = None
 
 
 def main(args):
@@ -23,6 +23,12 @@ def main(args):
         '--remote-name',
         action='store_true',
         help='write output to a local file named like the remote file we get'
+    )
+    ap.add_argument(
+        '-L',
+        '--location',
+        action='store_true',
+        help='follow redirects to other web pages (if the URL has a 3XX response code)'
     )
     ap.add_argument(
         '-X',
@@ -46,11 +52,24 @@ def main(args):
             headers[name.strip()] = value.strip()
 
     if ns.request_method == 'GET':
-        r = requests.get(url, headers=headers)
+        r = requests.get(
+            url,
+            headers=headers,
+            allow_redirects=ns.location
+        )
     elif ns.request_method == 'POST':
-        r = requests.post(url, data=ns.data, headers=headers)
+        r = requests.post(
+            url,
+            data=ns.data,
+            headers=headers,
+            allow_redirects=ns.location
+        )
     elif ns.request_method == 'HEAD':
-        r = requests.head(url, headers=headers)
+        r = requests.head(
+            url,
+            headers=headers,
+            allow_redirects=ns.location
+        )
     else:
         print('unknown request method: {}'.format(ns.request_method))
         return
