@@ -74,8 +74,8 @@ if __name__ == '__main__':
     args = ap.parse_args()
     crypt = Crypt(args.infile, args.outfile)
     if args.decrypt:
-        crypt.aes_decrypt(args.key)
+        crypt.aes_decrypt(args.key.encode())
     else:
         nk = crypt.aes_encrypt(args.key)
         if args.key is None:
-            print("Key: %s" % nk)
+            print("Key: %s" % nk.decode())
