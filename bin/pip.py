@@ -780,9 +780,12 @@ if __name__ == "__main__":
         """
         # with codecs.open(filename, mode="r", encoding="UTF-8") as ins:
         #    s = ins.read()
-        with open(filename, "r") as ins:
-            s = ins.read()
-        tree = ast.parse(s, filename=filename, mode='exec')
+        with open(filename, "rb") as ins:
+            tree = ast.parse(
+                ins.read(),
+                filename=filename,
+                mode='exec'
+            )
         ArchiveFileInstaller.SetupTransformer().visit(tree)
         return tree
 
