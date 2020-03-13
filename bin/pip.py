@@ -765,6 +765,9 @@ if __name__ == "__main__":
 
         # Recursively Handle dependencies
         dependencies = kwargs.get('install_requires', [])
+        if isinstance(dependencies, (six.text_type, six.binary_type)):
+            # must be split into lines
+            dependencies = dependencies.splitlines()
         # add extra dependencies
         extra_req = kwargs.get("extras_require", [])
         for en in extra_req:
@@ -867,6 +870,10 @@ class PackageRepository(object):
         print('Package installed: {}'.format(pkg_name))
 
         for dep_name, ver_spec, extras in name_versions:
+            
+            if dep_name.strip().startswith("#") or len(dep_name.strip()) == 0:
+                # not a dependency
+                continue
 
             if dep_name == 'setuptools':  # do not install setuptools
                 continue
