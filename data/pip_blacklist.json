@@ -7,7 +7,8 @@
     "lowlevel_os": "This package uses (relatively) low-level OS functions, which can not be used with Pythonista.",
     "processes": "This package requires process interaction, which is not possible on iOS",
     "bundled": "This package is already bundled with Pythonista",
-    "incompatible_dependency": "This package has one or more dependencies which are incompatible with Pythonista."
+    "incompatible_dependency": "This package has one or more dependencies which are incompatible with Pythonista.",
+    "bugged": "Installation of this packages is currently critically bugged."
 },
 "blacklist": {
     "stash": ["is_stash", true, null],
@@ -19,6 +20,7 @@
     "scipy": ["C", true, null],
     "tensorflow": ["C", true, null],
     "pyobjc": ["C", true, null],
-    "pyttsx3": ["incompatible_dependency", true, null]
+    "pyttsx3": ["incompatible_dependency", true, null],
+    "futures": ["bugged", true, null]
 }
 }
