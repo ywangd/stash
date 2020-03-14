@@ -1,5 +1,5 @@
 {
-"reasons": {
+  "reasons": {
     "C": "This package uses C-Code, which can not be compiled by StaSh.",
     "unknown": "Reason unknown.",
     "is_stash": "The name of the package conflicts with StaSh.",
@@ -8,17 +8,62 @@
     "processes": "This package requires process interaction, which is not possible on iOS",
     "bundled": "This package is already bundled with Pythonista",
     "incompatible_dependency": "This package has one or more dependencies which are incompatible with Pythonista."
-},
-"blacklist": {
-    "stash": ["is_stash", true, null],
-    "pip": ["is_pip", true, null],
-    "selenium": ["processes", true, null],
-    "matplotlib": ["bundled", false, null],
-    "mypy": ["C", true, null],
-    "eventlet": ["C", true, null],
-    "scipy": ["C", true, null],
-    "tensorflow": ["C", true, null],
-    "pyobjc": ["C", true, null],
-    "pyttsx3": ["incompatible_dependency", true, null]
-}
+  },
+  "blacklist": {
+    "stash": [
+      "is_stash",
+      true,
+      null
+    ],
+    "pip": [
+      "is_pip",
+      true,
+      null
+    ],
+    "selenium": [
+      "processes",
+      true,
+      null
+    ],
+    "matplotlib": [
+      "bundled",
+      false,
+      null
+    ],
+    "mypy": [
+      "C",
+      true,
+      null
+    ],
+    "eventlet": [
+      "C",
+      true,
+      null
+    ],
+    "scipy": [
+      "C",
+      true,
+      null
+    ],
+    "tensorflow": [
+      "C",
+      true,
+      null
+    ],
+    "pyobjc": [
+      "C",
+      true,
+      null
+    ],
+    "pyttsx3": [
+      "incompatible_dependency",
+      true,
+      null
+    ],
+    "futures": [
+      "incompatible_dependency",
+      false,
+      null
+    ]
+  }
 }
