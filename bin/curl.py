@@ -75,14 +75,14 @@ def main(args):
         return
 
     if ns.output_file:
-        with open(ns.output_file, 'w') as outs:
-            outs.write(r.text)
+        with open(ns.output_file, 'wb') as outs:
+            outs.write(r.content)
     elif ns.remote_name:
         # get basename of url
         url_path = urlparse(url).path
         filename = url_path.split('/')[-1]
-        with open(filename, 'w') as outs:
-            outs.write(r.text)
+        with open(filename, 'wb') as outs:
+            outs.write(r.content)
     else:
         print(r.text)
 
