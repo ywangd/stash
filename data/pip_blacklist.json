@@ -22,6 +22,6 @@
     "pyobjc": ["C", true, null],
     "pyttsx3": ["incompatible_dependency", true, null],
     "futures": ["bugged", true, null],
-    "regex": ["C", true, null],
+    "regex": ["C", true, null]
 }
 }
