@@ -78,8 +78,8 @@ def is_image(path):
     else:
         return False
 
-
 def main(args):
+
     ap = ArgumentParser()
     ap.add_argument('-1', '--one-line', action='store_true', help='List one file per line')
     ap.add_argument('-a', '--all', action='store_true', help='do not ignore entries starting with .')
@@ -105,37 +105,49 @@ def main(args):
     if ns.long:
 
         def _fmt(filename, dirname=''):
+            suffix = ''
+            
             _stat = os.stat(os.path.join(dirname, filename))
-
+            
+            home = os.environ['HOME']
             fullpath = os.path.join(dirname, filename)
-            if os.path.isdir(fullpath):
+            filename = '{:30}'.format(filename)
+
+            if os.path.islink(fullpath):
+                filename = _stash.text_color(filename, 'yellow')
+                suffix = ' -> %s'%os.path.realpath(fullpath).replace(home,'~') 
+            elif os.path.isdir(fullpath):
                 filename = _stash.text_color(filename, 'blue')
             elif filename.endswith('.py'):
                 filename = _stash.text_color(filename, 'green')
-            elif is_archive(fullpath):
+            elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
                 filename = _stash.text_color(filename, 'red')
-            elif is_image(fullpath):
+            elif imghdr.what(fullpath) is not None:
                 filename = _stash.text_color(filename, 'brown')
 
             ret = filename + _stash.text_color(
-                ' (%s) %s' % (sizeof_fmt(_stat.st_size),
-                              time.strftime("%Y-%m-%d %H:%M:%S",
-                                            time.localtime(_stat.st_mtime))),
-                'gray'
-            )
+                ' ({:8}) {}'.format(sizeof_fmt(_stat.st_size),
+                time.strftime(
+                    "%Y-%m-%d %H:%M:%S",
+                    time.localtime(_stat.st_mtime)),
+                    ),
+                'gray',
+               ) + suffix
 
             return ret
     else:
 
         def _fmt(filename, dirname=''):
             fullpath = os.path.join(dirname, filename)
-            if os.path.isdir(fullpath):
+            if os.path.islink(fullpath):
+                return _stash.text_color(filename, 'yellow')
+            elif os.path.isdir(fullpath):
                 return _stash.text_color(filename, 'blue')
             elif filename.endswith('.py'):
                 return _stash.text_color(filename, 'green')
-            elif is_archive(fullpath):
+            elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
                 return _stash.text_color(filename, 'red')
-            elif is_image(fullpath):
+            elif imghdr.what(fullpath) is not None:
                 return _stash.text_color(filename, 'brown')
             else:
                 return filename
