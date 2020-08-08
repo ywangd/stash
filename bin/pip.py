@@ -46,6 +46,7 @@ SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER
 OLD_SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER_6
 BUNDLED_MODULES = _stash.libdist.BUNDLED_MODULES
 BLACKLIST_PATH = os.path.join(os.path.expandvars("$STASH_ROOT"), "data", "pip_blacklist.json")
+PIP_INDEX_FILE = os.path.join(os.path.expandvars('$STASH_ROOT'), 'data','pip_index.json')
 
 # Some packages use wrong name for their dependencies
 PACKAGE_NAME_FIXER = {
@@ -213,6 +214,51 @@ class SetuptoolsStub(types.ModuleType):
                 return PackageFinder.find
         return OmniClass()
 
+def get_requires(package, index_file=PIP_INDEX_FILE):
+    """
+    get require of the package
+    :param package: package name
+    :type package: str
+    :return: a list of requires package
+    :rtype: list
+    """
+    if os.path.exists(index_file):
+        with open(index_file) as f:
+            index=json.load(f)
+            try:
+                return index[package]
+            except KeyError:# no such package in index file
+                raise PipError("Cannot find packages in index file. Try to using 'pip --update-index' to update index file")
+
+    else:
+        raise PipError("Cannot find index file. Try to using 'pip --update-index' to update index file")
+
+def get_req_by(package, index_file=PIP_INDEX_FILE):
+    """
+    get the packages that require this package
+    :param package: package name
+    :type package: str
+    :return: a list of packages that require this package
+    :rtype: list
+    """
+    if os.path.exists(index_file):
+
+        with open(index_file) as f:
+            index=json.load(f)
+            required_by=[]
+            for pkg, req in index.items():
+                if package in req:
+                    required_by.append(pkg)
+    else:
+
+        raise PipError("Cannot find index file. Try to using 'pip --update-index' to update index file")
+
+    return required_by 
+
+
+
+
+
 def print_info(package, site_packages=SITE_PACKAGES_FOLDER):
     info_file = os.path.join(site_packages, package, 'info.json')
     if os.path.exists(info_file):
@@ -226,15 +272,11 @@ def print_info(package, site_packages=SITE_PACKAGES_FOLDER):
         print('Author-email: {}'.format(info['author_email']))
         print('License: {}'.format(info['license']))
         print('Location: {}'.format(site_packages))
-        requires = []
-        try:
-            for req in info['requires_dist']:
-                if not ';' in req:
-                    #Remove package version
-                    requires.append(req.split(' ')[0])
-        except TypeError:# some package may have no require
-            pass
+       
+        requires = get_requires(package)
+        required_by = get_req_by(package)
         print('requires: {}'.format(', '.join(requires)))
+        print('required-by: {}'.format(', '.join(required_by)))
     else: #no info_file
         print(_stash.text_color('Package not found: {}'.format(package), 'yellow'))
         
@@ -242,12 +284,48 @@ def print_info(package, site_packages=SITE_PACKAGES_FOLDER):
         print(_stash.text_color("If you are sure that the package has already install, please reinstall it ,or use -f option force to download info_file from pypi(but the package version may not match in this way)", 'yellow'))
 
 
-def download_info(pkg_name, site_packages):
-    r=requests.get('https://pypi.python.org/pypi/requests/json')
+def download_info(pkg_name, site_packages=SITE_PACKAGES_FOLDER):
+    r=requests.get('https://pypi.python.org/pypi/{}/json'.format(pkg_name))
     info=r.json()['info']
     info_file=os.path.join(site_packages, pkg_name, 'info.json')
     with open(info_file, 'w') as f:
         json.dump(info, f)
+    update_req_index()
+
+def update_req_index(site_packages = SITE_PACKAGES_FOLDER, index_file = PIP_INDEX_FILE):
+    '''
+    update package requires index file 
+    '''
+    repository = get_repository('pypi', site_packages=site_packages)
+    info_list = repository.list()
+
+    req_index={} # a dict of {package:requires_list}  type:dict of {str:list of str}
+    for package, info in info_list:
+        info_file = os.path.join(site_packages,package,'info.json')
+
+        if os.path.exists(info_file):
+            # load info
+            with open(info_file) as f:
+                info=json.load(f)
+            # filte requires 
+            requires = []
+            try:
+                for req in info['requires_dist']:
+                    if not ';' in req:
+                        #Remove package version
+                        requires.append(req.split(' ')[0])
+            except TypeError:# some package may have no require
+                pass
+            req_index[package]=requires
+
+        else: # info file not exists
+            print(_stash.text_color('Info file of Package {} not found'.format(package), 'yellow'))
+            # The previous install function has no ability to download info_file, so though the package has already install, it may still have no info_file.(this can be deleted after a few versions)
+            print(_stash.text_color("If you are sure that the package has already install, please reinstall it ,or use 'pip show package -f' force to download info file from pypi(but the package version may not match in this way)", 'yellow'))
+
+
+    with open(index_file, 'w') as f:
+        json.dump(req_index,f)
 
 def fake_module(new_module):
     """
@@ -1474,7 +1552,6 @@ def get_repository(pkg_name, site_packages=SITE_PACKAGES_FOLDER, verbose=False):
 
 if __name__ == '__main__':
     import argparse
-
     ap = argparse.ArgumentParser()
 
     ap.add_argument('--verbose', action='store_true', help='be more chatty')
@@ -1486,6 +1563,7 @@ if __name__ == '__main__':
         const=OLD_SITE_PACKAGES_FOLDER,
         default=SITE_PACKAGES_FOLDER
     )
+    ap.add_argument('--update-index', action='store_true', help='update index file')
 
     subparsers = ap.add_subparsers(
         dest='sub_command',
@@ -1565,7 +1643,10 @@ if __name__ == '__main__':
         ns.site_packages = SITE_PACKAGES_FOLDER
 
     try:
-        if ns.sub_command == 'list':
+        if ns.update_index:
+            update_req_index()
+
+        elif ns.sub_command == 'list':
             repository = get_repository('pypi', site_packages=ns.site_packages, verbose=ns.verbose)
             info_list = repository.list()
             for module, info in info_list:
@@ -1623,6 +1704,7 @@ if __name__ == '__main__':
                     # start with what we have installed (i.e. in the config file)
                     sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
                     repository.install(pkg_name, ver_spec, flags=flags, extras=extras)
+                    update_req_index() 
 
         elif ns.sub_command == 'download':
             for requirement in ns.requirements:
@@ -1652,6 +1734,7 @@ if __name__ == '__main__':
             for package_name in ns.packages:
                 repository = get_repository('pypi', site_packages=ns.site_packages, verbose=ns.verbose)
                 repository.remove(package_name)
+                update_req_index() 
 
         elif ns.sub_command == 'update':
             for package_name in ns.packages:
@@ -1663,10 +1746,12 @@ if __name__ == '__main__':
                     # start with what we have installed (i.e. in the config file)
                     sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
                     repository.update(package_name)
+
         elif ns.sub_command == 'show':
             if ns.forcedownload:
                 download_info(ns.package, site_packages=ns.site_packages)
             print_info(ns.package, site_packages=ns.site_packages)
+
         else:
             raise PipError('unknown command: {}'.format(ns.sub_command))
             sys.exit(1)
