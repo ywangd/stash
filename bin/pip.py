@@ -46,7 +46,7 @@ SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER
 OLD_SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER_6
 BUNDLED_MODULES = _stash.libdist.BUNDLED_MODULES
 BLACKLIST_PATH = os.path.join(os.path.expandvars("$STASH_ROOT"), "data", "pip_blacklist.json")
-PIP_INDEX_FILE = os.path.join(os.path.expandvars('$STASH_ROOT'), 'data','pip_index.json')
+PIP_INDEX_FILE = os.path.join(SITE_PACKAGES_FOLDER,'pip_index.json')
 
 # Some packages use wrong name for their dependencies
 PACKAGE_NAME_FIXER = {
