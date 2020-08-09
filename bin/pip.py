@@ -228,10 +228,10 @@ def get_requires(package, index_file=PIP_INDEX_FILE):
             try:
                 return index[package]
             except KeyError:# no such package in index file
-                raise PipError("Cannot find packages in index file. Try to using 'pip --update-index' to update index file")
+                raise PipError("Cannot find packages in index file. Try to using 'pip dev update-index' to update index file")
 
     else:
-        raise PipError("Cannot find index file. Try to using 'pip --update-index' to update index file")
+        raise PipError("Cannot find index file. Try to using 'pip dev update-index' to update index file")
 
 def get_req_by(package, index_file=PIP_INDEX_FILE):
     """
@@ -251,7 +251,7 @@ def get_req_by(package, index_file=PIP_INDEX_FILE):
                     required_by.append(pkg)
     else:
 
-        raise PipError("Cannot find index file. Try to using 'pip --update-index' to update index file")
+        raise PipError("Cannot find index file. Try to using 'pip dev update-index' to update index file")
 
     return required_by 
 
@@ -1563,7 +1563,6 @@ if __name__ == '__main__':
         const=OLD_SITE_PACKAGES_FOLDER,
         default=SITE_PACKAGES_FOLDER
     )
-    ap.add_argument('--update-index', action='store_true', help='update index file')
 
     subparsers = ap.add_subparsers(
         dest='sub_command',
@@ -1635,6 +1634,9 @@ if __name__ == '__main__':
     update_parser = subparsers.add_parser('update', help='update an installed package')
     update_parser.add_argument('packages', nargs="+", help='the package name')
 
+    dev_parser = subparsers.add_parser('dev')
+    dev_parser.add_argument('opt')
+
     ns = ap.parse_args()
     
     if ns.site_packages is None:
@@ -1643,10 +1645,7 @@ if __name__ == '__main__':
         ns.site_packages = SITE_PACKAGES_FOLDER
 
     try:
-        if ns.update_index:
-            update_req_index()
-
-        elif ns.sub_command == 'list':
+        if ns.sub_command == 'list':
             repository = get_repository('pypi', site_packages=ns.site_packages, verbose=ns.verbose)
             info_list = repository.list()
             for module, info in info_list:
@@ -1751,6 +1750,14 @@ if __name__ == '__main__':
             if ns.forcedownload:
                 download_info(ns.package, site_packages=ns.site_packages)
             print_info(ns.package, site_packages=ns.site_packages)
+
+        elif ns.sub_command=='dev':
+            if ns.opt=='update-index':
+                update_req_index()
+                print('index file updated')
+            else:
+                raise PipError('unknow dev option: {}'.format(ns.opt))
+                sys.exit(1)
 
         else:
             raise PipError('unknown command: {}'.format(ns.sub_command))
