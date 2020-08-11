@@ -4,7 +4,7 @@ import sys
 def main(args):
     print("-url {0}".format(args.id))
 def url():
-    long_url = inp
+    long_url = inpu
     querystring = {"url":long_url}
     url = "http://suo.im/api.php"
     response = requests.request("GET", url, params=querystring)
@@ -14,5 +14,5 @@ if __name__ == "__main__":
     parser.add_argument("-url", type=str, required=True, help="The Origin URL.")
     args = parser.parse_args()
     main(args)
-    inp = args.inp
+    inpu = args.inp
     url()
