@@ -1,4 +1,6 @@
-```Verify Chinese ID number```
+```Verify Chinese ID number
+Usage: idverify -id (ID number)
+```
 import argparse
 import sys
 def main(args):

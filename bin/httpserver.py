@@ -24,7 +24,6 @@ from six.moves.urllib.parse import quote, unquote
 __version__ = "0.1"
 __all__ = ["SimpleHTTPRequestHandler"]
 __author__ = "bones7456"
-__home_page__ = "http://li2z.cn/"
 
 
 class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
