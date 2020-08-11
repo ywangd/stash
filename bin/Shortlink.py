@@ -2,7 +2,7 @@ import requests
 import argparse
 import sys
 def main(args):
-    print("-url {0}".format(args.id))
+    print("-url {0}".format(args.inp))
 def url():
     long_url = inpu
     querystring = {"url":long_url}
@@ -14,5 +14,5 @@ if __name__ == "__main__":
     parser.add_argument("-url", type=str, required=True, help="The Origin URL.")
     args = parser.parse_args()
     main(args)
-    inpu = args.inp
+    inpu = args.url
     url()
