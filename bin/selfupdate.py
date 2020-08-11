@@ -69,16 +69,16 @@ def main(args):
     if ns.target is not None:
         target = ns.target
     else:
-        target = os.environ.get('SELFUPDATE_TARGET', 'ywangd:master')
+        target = os.environ.get('SELFUPDATE_TARGET', 'SnowleopardXI:master')
 
     fields = target.replace('/', ':').split(':', 1)
 
     if len(fields) == 2:
         owner, branch = fields
     elif len(fields) == 1:
-        owner, branch = 'ywangd', fields[0]
+        owner, branch = 'SnowleopardXI', fields[0]
     else:
-        owner, branch = 'ywangd', 'master'
+        owner, branch = 'SnowleopardXI', 'master'
         print('Invalid target {}, using default {}:{}'.format(target, owner, branch))
 
     print(_stash.text_style('Running selfupdate ...', {'color': 'yellow', 'traits': ['bold']}))
