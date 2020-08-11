@@ -1,7 +1,7 @@
 # StaSh - Shell Like an Expert in Pythonista
 Inspired by
 [shellista](http://omz-forums.appspot.com/pythonista/post/5302343285342208) and
-its variants, [StaSh](https://github.com/ywangd/stash) is a serious attempt to
+its variants, [StaSh](https://github.com/SnowleopardXI/stash) is a serious attempt to
 implement a Bash-like shell for [Pythonista](http://omz-software.com/pythonista/).
 
 Since its initial release, valuable contributions and advices have been received
@@ -35,7 +35,7 @@ environment and great treasures may be found within.
 **StaSh can be easily installed via one line of python command**
 (courtesy of [@whitone](https://forum.omz-software.com/user/whitone)). 
 ```Python
-import requests as r; exec(r.get('https://bit.ly/get-stash').content)
+import requests as r; exec(r.get('https://raw.githubusercontent.com/SnowleopardXI/stash/master/getstash.py').content)
 ```
 Simply copy the above line, paste into Pythonista interactive prompt and
 execute. It installs StaSh as a Python module under the `site-packages` 
@@ -51,11 +51,11 @@ You may need to restart Pythonista BEFORE the installation.*
 [gitview](http://omz-forums.appspot.com/pythonista/post/5810965861892096) or
 [gitrepo](http://omz-forums.appspot.com/pythonista/post/5795611756462080),
 you can choose to directly clone or download the
-[repository](https://github.com/ywangd/stash).*
+[repository](https://github.com/SnowleopardXI/stash).*
 
 *StaSh requires Pythonista v2.0 or Pythonista3 as the new ObjC feature is heavily used. For
 older Pythonista 1.5 compatible version, please refer to the
-[v0.4](https://github.com/ywangd/stash/tree/v0.4) branch.*
+[v0.4](https://github.com/SnowleopardXI/stash/tree/v0.4) branch.*
 
 Starting with `0.7.4`, StaSh supports being run on a PC using the `tkinter` module. This is intended for development purposes and may not offer you the best user experience. To install StaSh on your PC, either use the line above or clone this repository and run `setup.py`.
 
