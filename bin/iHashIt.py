@@ -1,6 +1,5 @@
 # iHashIt by SnowleopardXI | Hash your string!
-```Hash utilities
-```
+'''Hash utilities'''
 from __future__ import absolute_import, print_function
 import hashlib, inspect, console
 
