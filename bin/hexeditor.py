@@ -1,5 +1,5 @@
-```Very Simple Hex Editor
-```
+'''Very Simple Hex Editor
+'''
 import os
 import clipboard
 

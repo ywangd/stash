@@ -4,7 +4,7 @@ Selfupdate StaSh from the GitHub repo.
 
 Usage: selfupdate.py [-n] [-f] [target]
 
-       target         default to ywangd:master
+       target         default to SnowleopardXI:master
 
        -n, --check    check for update only
        -f, --force    update without checking for new version
@@ -60,7 +60,7 @@ def main(args):
         'target',
         nargs='?',
         help='target of update in the format of [owner]:branch. '
-        'Default to ywangd:master or simply master'
+        'Default to SnowleopardXI:master or simply master'
     )
     ap.add_argument('-n', '--check', action='store_true', help='check for update only')
     ap.add_argument('-f', '--force', action='store_true', help='update without checking for new version')

@@ -1,5 +1,4 @@
-```Lightweight SMBclient
-```
+'''Lightweight SMBclient'''
 # You need the impacket python module (http://corelabs.coresecurity.com)
 # Extract the impacket directory to site-packages (https://pypi.python.org/packages/source/i/impacket/)
 # and you also need a copy of ntpath.py in your site-package directory

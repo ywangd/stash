@@ -1,4 +1,4 @@
-```Lightweight SFTPclient```
+'''Lightweight SFTPclient'''
 import ui, os, paramiko
 
 class SFTPclient(ui.View):
