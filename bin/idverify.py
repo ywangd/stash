@@ -1,9 +1,12 @@
-def a():
-    ID = input('请输入十八位身份证号码: ')
+import argparse
+import sys
+def main(args):
+    print("-id {0}".format(args.id))
+def ver():
     if len(ID) != 18:
         print("错误的身份证号码")
         print("请重新输入！")
-        a()
+        sys.exit()
     else:
         print("你的身份证号码是 " + ID)
         ID_check = ID[17]
@@ -16,7 +19,7 @@ def a():
         ID_Check = ID_aXw % 11
         if ID_check != ID_CHECK[ID_Check]:
             print('错误的身份证号码')
-            a()
+            sys.exit()
         else:
             print('正确的身份证号码')
             ID_add = ID[0:6]
@@ -31,4 +34,9 @@ def a():
             else:
                 print('性别：男')
 if __name__ == "__main__":
-    a()
+    parser = argparse.ArgumentParser(usage="it's usage tip.", description="help info.")
+    parser.add_argument("-id", type=str, required=True, help="The ID number.")
+    args = parser.parse_args()
+    main(args)
+    ID = args.id
+    ver()
