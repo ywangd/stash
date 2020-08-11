@@ -2,7 +2,7 @@ import requests
 import argparse
 import sys
 def main(args):
-    print("-id {0}".format(args.id))
+    print("-url {0}".format(args.id))
 def url():
     long_url = inp
     querystring = {"url":long_url}
