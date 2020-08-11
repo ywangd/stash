@@ -1,3 +1,5 @@
+'''URL shorter
+Usage: Shortlink -url (Your URL)'''
 import requests
 import argparse
 import sys

@@ -1,0 +1,13 @@
+﻿import platform
+print('Python Version:       ', platform.python_version())
+print('Python Compiler:      ', platform.python_compiler())
+print('Python Implementation:', platform.python_implementation())
+print('Arcitecture:          ', platform.architecture()[0])
+print('Machine:              ', platform.machine())
+print('Device Name:          ', platform.node())
+#print('Platform:', platform.platform())
+#print('Processor:', platform.processor())
+print('Release:              ', platform.release())
+print('System:               ', platform.system())
+print('Version:              ', platform.version())
+#print('libc version (unix):', platform.libc_ver())
