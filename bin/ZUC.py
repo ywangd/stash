@@ -178,13 +178,17 @@ if '__main__' == __name__:
         input2=input()
         inpu=input2.encode()
         out = zuc.zuc_encrypt(inpu)
+        print(out)
         print("加密得到的字流", ["%08x" % e for e in out])
     # 解密过程
     if c == 2:
         zuc2 = ZUC(key, iv)
-        a=eval(input('需解密的内容:').split(","))
-        a1=[str(a[i]) for i in range(len(a))]
-        print (a1)
-        print("解密得到的字流", ["%08x" % e for e in a1])
-        print(bytes(out2))
+        print("需解密的内容:")
+        a=str(input())
+        a1=a.split(",")
+        results = list(map(int, a1)) 
+        result=map(["%08x" % e for e in results])
+        print(result)
+        '''print("解密得到的字流", ["%08x" % e for e in result])'''
+
         
