@@ -164,11 +164,27 @@ if '__main__' == __name__:
     key = [0x00] * 16
     iv = [0x00] * 16
     zuc = ZUC(key, iv)
+
+    print('请选择一个选项:')
+    n='''
+            1:加密
+            2:解密
+    '''
+    print (n)
+    c=int(input()) #定义菜单变量
     # 加密过程
-    out = zuc.zuc_encrypt(b"i love u")
-    print("加密得到的字流", ["%08x" % e for e in out])
+    if c == 1: #进入菜单1的判断
+        print("输入要加密的字符串")
+        input2=input()
+        inpu=input2.encode()
+        out = zuc.zuc_encrypt(inpu)
+        print("加密得到的字流", ["%08x" % e for e in out])
     # 解密过程
-    zuc2 = ZUC(key, iv)
-    out2 = zuc2.zuc_encrypt(out)
-    print("解密得到的字流", ["%08x" % e for e in out2])
-    print(bytes(out2))
+    if c == 2:
+        zuc2 = ZUC(key, iv)
+        a=eval(input('需解密的内容:').split(","))
+        a1=[str(a[i]) for i in range(len(a))]
+        print (a1)
+        print("解密得到的字流", ["%08x" % e for e in a1])
+        print(bytes(out2))
+        
