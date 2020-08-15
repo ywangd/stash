@@ -1,10 +1,7 @@
 # -*- coding:utf-8 -*-
 '''Timestamp Utilitie'''
-from __future__ import absolute_import
-from __future__ import print_function
 import time
 import datetime
-from six.moves import input
 def timestamp_to_format_time(str_time=None, format='%Y-%m-%d %H:%M:%S'): #封装函数：时间戳转换成格式化时间
     if timestamp:
         time_tuple = time.localtime(timestamp)
@@ -28,7 +25,7 @@ if c == 2:
 格式:YYYY-MM-DD HH-MM-SS
 	'''
 	print(('请输入要转换的日期',t))
-	a=eval(input())
+	a=input()
 	timeStamp = int(time.mktime(time.strptime(a, "%Y-%m-%d %H:%M:%S")))
-	print(timestamp)
+	print(timeStamp)
 
