@@ -167,6 +167,7 @@ if '__main__' == __name__:
 # Code By Snowleopard
 # 2015-2020 3awall studio
 # All rights reserved
+
     print('请选择一个选项:')
     n='''
             1:加密
@@ -180,6 +181,9 @@ if '__main__' == __name__:
         input2=input()
         out = zuc.zuc_encrypt(input2.encode())
         print("加密得到的字流", ["%08x" % e for e in out])
+        stri=["%08x" % e for e in out]
+        stri1=','.join(stri)
+        print(stri1)
     # 解密过程
     if c == 2:
         zuc2 = ZUC(key, iv)
