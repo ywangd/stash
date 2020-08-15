@@ -21,9 +21,7 @@ if c == 1: #进入菜单1的判断
 	timestamp=int(eval(input())) #定义需转换的时间戳,并将其转换为int整型
 	print(('时间戳:',timestamp,'转换成日期格式为：',timestamp_to_format_time(timestamp)))
 if c == 2:
-	t='''
-格式:YYYY-MM-DD HH-MM-SS
-	'''
+	t='''格式:YYYY-MM-DD HH-MM-SS'''
 	print(('请输入要转换的日期',t))
 	a=input()
 	timeStamp = int(time.mktime(time.strptime(a, "%Y-%m-%d %H:%M:%S")))
