@@ -164,7 +164,9 @@ if '__main__' == __name__:
     key = [0x00] * 16
     iv = [0x00] * 16
     zuc = ZUC(key, iv)
-
+# Code By Snowleopard
+# 2015-2020 3awall studio
+# All rights reserved
     print('请选择一个选项:')
     n='''
             1:加密
@@ -176,19 +178,15 @@ if '__main__' == __name__:
     if c == 1: #进入菜单1的判断
         print("输入要加密的字符串")
         input2=input()
-        inpu=input2.encode()
-        out = zuc.zuc_encrypt(inpu)
-        print(out)
+        out = zuc.zuc_encrypt(input2.encode())
         print("加密得到的字流", ["%08x" % e for e in out])
     # 解密过程
     if c == 2:
         zuc2 = ZUC(key, iv)
         print("需解密的内容:")
-        a=str(input())
-        a1=a.split(",")
-        results = list(map(int, a1)) 
-        result=map(["%08x" % e for e in results])
-        print(result)
-        '''print("解密得到的字流", ["%08x" % e for e in result])'''
-
-        
+        a=str(input()).split(",")
+        a0=map(lambda x: int(x, 16), a)
+        a2=["%d" % e for e in a0]
+        out2 = zuc2.zuc_encrypt(list(map(int, a2)))
+        print("解密得到的字流", ["%08x" % e for e in out2])
+        print(bytes(out2))
