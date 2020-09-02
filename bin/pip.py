@@ -45,7 +45,7 @@ VersionSpecifier = _stash.libversion.VersionSpecifier  # alias for readability
 SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER
 OLD_SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER_6
 BUNDLED_MODULES = _stash.libdist.BUNDLED_MODULES
-BLACKLIST_PATH = os.path.join(os.path.expandvars("$STASH_ROOT"), "data", "pip_blacklist.json")
+BLOCKLIST_PATH = os.path.join(os.path.expandvars("$STASH_ROOT"), "data", "pip_blocklist.json")
 PIP_INDEX_FILE = os.path.join(SITE_PACKAGES_FOLDER,'pip_index.json')
 PIP_INFO_FILE = os.path.join(SITE_PACKAGES_FOLDER, '.package_info', '%s.json')
 
@@ -61,7 +61,7 @@ FLAG_DIST_ALLOW_SRC = 1
 FLAG_DIST_ALLOW_WHL = 2
 FLAG_DIST_PREFER_SRC = 4
 FLAG_DIST_PREFER_WHL = 8
-FLAG_IGNORE_BLACKLIST = 16
+FLAG_IGNORE_BLOCKLIST = 16
 DEFAULT_FLAGS = FLAG_DIST_ALLOW_SRC | FLAG_DIST_ALLOW_WHL | FLAG_DIST_PREFER_WHL
 
 
@@ -84,16 +84,16 @@ class PackageAlreadyInstalled(PipError):
     pass
 
 
-class PackageBlacklisted(PipError):
+class PackageBlocklisted(PipError):
     """
-    Error raised when a package is fataly blacklisted
-    :param pkg_name: name of blacklisted package
+    Error raised when a package is fataly blocklisted
+    :param pkg_name: name of blocklisted package
     :type pkg_name: str
-    :param reason: reason for blacklisting
+    :param reason: reason for blocklisting
     :type reason: str
     """
     def __init__(self, pkg_name, reason):
-        s = "Package '{}' blacklisted. Reason: {}".format(pkg_name, reason)
+        s = "Package '{}' blocklisted. Reason: {}".format(pkg_name, reason)
         PipError.__init__(self, s)
 
 
@@ -1093,30 +1093,30 @@ class PyPIRepository(PackageRepository):
         self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
         self.standard_package_names = {}
     
-    def _check_blacklist(self, pkg_name):
+    def _check_blocklist(self, pkg_name):
         """
-        Check if a package is blacklisted.
+        Check if a package is blocklisted.
         The result is a tuple:
-            - element 0 is True if the package is blacklisted
+            - element 0 is True if the package is blocklisted
             - element 1 is the reason
             - element 2 is True if the install should fail due to this
             - element 3 is an optional alternative package to use instead.
         :param pkg_name: name of package to check
         :type pkg_name: str
-        :return: a tuple of (blacklisted, reason, fatal, alt).
+        :return: a tuple of (blocklisted, reason, fatal, alt).
         :rtype: (bool, str, bool, str or None)
         """
-        if (BLACKLIST_PATH is None) or (not os.path.exists(BLACKLIST_PATH)):
-            # blacklist not available
+        if (BLOCKLIST_PATH is None) or (not os.path.exists(BLOCKLIST_PATH)):
+            # blocklist not available
             return (False, "", False, None)
-        with open(BLACKLIST_PATH) as fin:
+        with open(BLOCKLIST_PATH) as fin:
             content = json.load(fin)
-        if pkg_name not in content["blacklist"]:
-            # package not blacklisted
+        if pkg_name not in content["blocklist"]:
+            # package not blocklisted
             return (False, "", False, None)
         else:
-            # package blacklisted
-            reasonid, fatal, alt = content["blacklist"][pkg_name]
+            # package blocklisted
+            reasonid, fatal, alt = content["blocklist"][pkg_name]
             reason = content["reasons"].get(reasonid, reasonid)
             return (True, reason, fatal, alt)
 
@@ -1242,22 +1242,22 @@ class PyPIRepository(PackageRepository):
     def install(self, pkg_name, ver_spec, flags=DEFAULT_FLAGS, pip_info_file=PIP_INFO_FILE, extras=[]):
         pkg_name = self.get_standard_package_name(pkg_name)
         
-        # check if package is blacklisted
+        # check if package is blocklisted
         # we only do this for PyPI installs, since non-PyPI installs
         # may have the same pkg name for a different package.
         # TODO: should this be changed?
-        blacklisted, reason, fatal, alt = self._check_blacklist(pkg_name)
-        if blacklisted and not (flags & FLAG_IGNORE_BLACKLIST > 0):
+        blocklisted, reason, fatal, alt = self._check_blocklist(pkg_name)
+        if blocklisted and not (flags & FLAG_IGNORE_BLOCKLIST > 0):
             if fatal:
                 # raise an exception.
                 print(
                     _stash.text_color(
-                        "Package {} is blacklisted and marked fatal. Failing install.".format(pkg_name),
+                        "Package {} is blocklisted and marked fatal. Failing install.".format(pkg_name),
                         "red",
                         )
                     )
                 print(_stash.text_color("Reason: " + reason, "red"))
-                raise PackageBlacklisted(pkg_name, reason)
+                raise PackageBlocklisted(pkg_name, reason)
             elif alt is not None:
                 # an alternative package exposing the same functionality
                 #  and API is known. Print a warning and use this instead.
@@ -1278,12 +1278,12 @@ class PyPIRepository(PackageRepository):
                 # we should print a warning, but continue anyway
                 print(
                     _stash.text_color(
-                        "Warning: package '{}' is blacklisted, but marked as non-fatal.".format(pkg_name),
+                        "Warning: package '{}' is blocklisted, but marked as non-fatal.".format(pkg_name),
                         "yellow",
                         )
                     )
                 print("This probably means that the dependency can not be installed, but pythonista ships with the package preinstalled.")
-                print("Reason for blacklisting: " + reason)
+                print("Reason for blocklisting: " + reason)
                 return
         
         if not self.config.module_exists(pkg_name):
@@ -1605,7 +1605,7 @@ if __name__ == '__main__':
         help="Prefer older binary packages over newer source packages",  # TODO: do we actually check older sources/wheels?
         dest="preferbinary",
     )
-    install_parser.add_argument("--ignore-blacklist", action="store_true", help="Ignore blacklist", dest="ignoreblacklist")
+    install_parser.add_argument("--ignore-blocklist", action="store_true", help="Ignore blocklist", dest="ignoreblocklist")
 
     download_parser = subparsers.add_parser('download', help='download packages')
     download_parser.add_argument(
@@ -1690,8 +1690,8 @@ if __name__ == '__main__':
                 flags = flags | FLAG_DIST_PREFER_WHL | FLAG_DIST_ALLOW_WHL
                 flags = flags & ~FLAG_DIST_PREFER_SRC
             
-            if ns.ignoreblacklist:
-                flags = flags | FLAG_IGNORE_BLACKLIST
+            if ns.ignoreblocklist:
+                flags = flags | FLAG_IGNORE_BLOCKLIST
 
             for requirement in ns.requirements:
                 repository = get_repository(requirement, site_packages=site_packages, verbose=ns.verbose)
