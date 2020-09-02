@@ -1,23 +1,21 @@
+os: linux
+dist: focal
 language: python
 python:
   - "2.7"
   - "3.6"
-  - "3.8"
+  - "3.9-dev"
 jobs:
   allow_failures:
-    - python: "3.8"
-# command to install dependencies
+    - python: "3.9-dev"
 install:
-  - "pip install --upgrade flake8>=3.7.9 pyparsing==2.4.4 pytest==4.6.6"
+  - "pip install --upgrade flake8>=3.8.3 pyparsing==2.4.7 pytest==4.6.11"
 before_script:
   # stop the build if there are Python syntax errors or undefined names
   - flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
   # exit-zero treats all errors as warnings.
   - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
-  # show pytest version
-  - py.test --version
-  # install
+  - pytest --version
   - pip install ".[testing]"
-# command to run tests
-script: pytest tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
+script: pytest . --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
 
