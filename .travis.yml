@@ -17,5 +17,5 @@ before_script:
   - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
   - pytest --version
   - pip install ".[testing]"
-script: pytest . --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
+script: pytest tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
 
