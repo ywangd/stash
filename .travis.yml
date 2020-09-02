@@ -4,9 +4,11 @@ language: python
 python:
   - "2.7"
   - "3.6"
-  - "3.9-dev"
+  - "3.8"
+  # - "3.9-dev"
 jobs:
   allow_failures:
+    - python: "3.8"
     - python: "3.9-dev"
 install:
   - "pip install --upgrade flake8>=3.8.3 pyparsing==2.4.7 pytest==4.6.11"
