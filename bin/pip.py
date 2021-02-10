@@ -47,6 +47,7 @@ OLD_SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER_6
 BUNDLED_MODULES = _stash.libdist.BUNDLED_MODULES
 BLACKLIST_PATH = os.path.join(os.path.expandvars("$STASH_ROOT"), "data", "pip_blacklist.json")
 PIP_INDEX_FILE = os.path.join(SITE_PACKAGES_FOLDER,'pip_index.json')
+PIP_INFO_FILE = os.path.join(SITE_PACKAGES_FOLDER, '.package_info', '%s.json')
 
 # Some packages use wrong name for their dependencies
 PACKAGE_NAME_FIXER = {
@@ -259,8 +260,8 @@ def get_req_by(package, index_file=PIP_INDEX_FILE):
 
 
 
-def print_info(package, site_packages=SITE_PACKAGES_FOLDER):
-    info_file = os.path.join(site_packages, package, 'info.json')
+def print_info(package, pip_info_file=PIP_INFO_FILE, site_packages=SITE_PACKAGES_FOLDER):
+    info_file = pip_info_file % package
     if os.path.exists(info_file):
         with open(info_file) as f:
             info = json.load(f)
@@ -282,15 +283,18 @@ def print_info(package, site_packages=SITE_PACKAGES_FOLDER):
         
 
 
-def download_info(pkg_name, site_packages=SITE_PACKAGES_FOLDER):
+def download_info(pkg_name, pip_info_file=PIP_INFO_FILE, site_packages=SITE_PACKAGES_FOLDER):
+    info_file = pip_info_file % pkg_name
     r=requests.get('https://pypi.python.org/pypi/{}/json'.format(pkg_name))
     info=r.json()['info']
-    info_file=os.path.join(site_packages, pkg_name, 'info.json')
+    info_folder = os.path.split(info_file)[0]
+    if not os.path.exists(info_folder):
+        os.mkdir(info_folder)
     with open(info_file, 'w') as f:
         json.dump(info, f)
     update_req_index()
 
-def update_req_index(site_packages = SITE_PACKAGES_FOLDER, index_file = PIP_INDEX_FILE):
+def update_req_index(pip_info_file=PIP_INFO_FILE, site_packages=SITE_PACKAGES_FOLDER, index_file=PIP_INDEX_FILE):
     '''
     update package requires index file 
     '''
@@ -299,8 +303,7 @@ def update_req_index(site_packages = SITE_PACKAGES_FOLDER, index_file = PIP_INDE
 
     req_index={} # a dict of {package:requires_list}  type:dict of {str:list of str}
     for package, info in info_list:
-        info_file = os.path.join(site_packages,package,'info.json')
-
+        info_file = pip_info_file % package
         if os.path.exists(info_file):
             # load info
             with open(info_file) as f:
@@ -1236,7 +1239,7 @@ class PyPIRepository(PackageRepository):
 
         return os.path.join(os.getenv('TMPDIR'), target['filename']), pkg_info
 
-    def install(self, pkg_name, ver_spec, flags=DEFAULT_FLAGS, extras=[]):
+    def install(self, pkg_name, ver_spec, flags=DEFAULT_FLAGS, pip_info_file=PIP_INFO_FILE, extras=[]):
         pkg_name = self.get_standard_package_name(pkg_name)
         
         # check if package is blacklisted
@@ -1287,7 +1290,10 @@ class PyPIRepository(PackageRepository):
             archive_filename, pkg_info = self.download(pkg_name, ver_spec, flags=flags)
             self._install(pkg_name, pkg_info, archive_filename, dependency_flags=flags, extras=extras)
             # save json file of info
-            info_file = os.path.join(self.site_packages, pkg_name, 'info.json')
+            info_file = pip_info_file % pkg_name
+            info_folder = os.path.split(info_file)[0]
+            if not os.path.exists(info_folder):
+                os.mkdir(info_folder)
             with open(info_file, 'w') as f:
                 json.dump(pkg_info, f)
         else:
