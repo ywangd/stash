@@ -280,8 +280,6 @@ def print_info(package, site_packages=SITE_PACKAGES_FOLDER):
     else: #no info_file
         print(_stash.text_color('Package not found: {}'.format(package), 'yellow'))
         
-        # The previous install function has no ability to download info_file, so though the package has already install, it still have no info_file.(this can be deleted after a few versions)
-        print(_stash.text_color("If you are sure that the package has already install, please reinstall it ,or use -f option force to download info_file from pypi(but the package version may not match in this way)", 'yellow'))
 
 
 def download_info(pkg_name, site_packages=SITE_PACKAGES_FOLDER):
@@ -320,8 +318,6 @@ def update_req_index(site_packages = SITE_PACKAGES_FOLDER, index_file = PIP_INDE
 
         else: # info file not exists
             print(_stash.text_color('Info file of Package {} not found'.format(package), 'yellow'))
-            # The previous install function has no ability to download info_file, so though the package has already install, it may still have no info_file.(this can be deleted after a few versions)
-            print(_stash.text_color("If you are sure that the package has already install, please reinstall it ,or use 'pip show package -f' force to download info file from pypi(but the package version may not match in this way)", 'yellow'))
 
 
     with open(index_file, 'w') as f:
