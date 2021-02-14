@@ -60,6 +60,7 @@ class PipTests(StashTestCase):
         self.assertIn("download", output)
         self.assertIn("list", output)
 
+    @unittest.skip('Pip is retiring and seach is disabled')
     @requires_network
     def test_search(self):
         """test 'pip search <term>'"""
