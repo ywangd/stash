@@ -1,6 +1,6 @@
-#PIP blacklist
+#PIP blocklist
 -----------------------
-Starting with version 0.7.5, StaSh pip includes a blacklist.
+Starting with version 0.7.5, StaSh pip includes a blocklist.
 
 
 It indicates whether a package should not be installed and what reasons
@@ -9,17 +9,17 @@ should be given.
 
 ## Motivation
 
-The reason for this blacklist is the high number of issues regarding
+The reason for this blocklist is the high number of issues regarding
 installation problems of known incompatible packages. I hope that by
-slowly adding packages to the blacklist we can reduce the amount of
+slowly adding packages to the blocklist we can reduce the amount of
 these issues.
 
 
-The blacklist was initially discussed in issue #376.
+The blocklist was initially discussed in issue #376.
 
 
 ## Details
-This blacklist is stored as a JSON file at `$STASH_ROOT/data/pip_blacklist.json`.
+This blocklist is stored as a JSON file at `$STASH_ROOT/data/pip_blocklist.json`.
 It is a dict with two top-level keys:
 
 
@@ -27,14 +27,14 @@ It is a dict with two top-level keys:
 It is used to reduce redundancy of error messages.
 
 
-**`blacklist`** Is a dict mapping packagename (str) to details (list).
-Every package mentioned in a key of the dict is considered blacklisted.
+**`blocklist`** Is a dict mapping packagename (str) to details (list).
+Every package mentioned in a key of the dict is considered blocklisted.
 
 The first (`i=0`) element of the list is the reasonID (str). Use the `reasons` toplevel
 key to determine the actual reason.
 
 The second (`i=1`) element of the list is a bool indicating whether this
-blacklisting is fatal. If true, it is considered fatal. This means that
+blocklisting is fatal. If true, it is considered fatal. This means that
 `pip` should abort the installation. Otherwise it is considered nonfatal.
 This means that `pip` should skip the installation, but continue the install.
 This is useful if the package can not be installed, but Pythonista already
