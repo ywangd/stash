@@ -57,6 +57,11 @@ target/
 # IDE
 .idea
 
+# Eclipse
+.project
+.settings/
+.pydevproject
+
 # Vim
 *.swp
 
