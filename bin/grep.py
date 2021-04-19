@@ -30,6 +30,9 @@ class Path(object):
     def is_dir(self):
         return os.path.isdir(self.real_pathname)
     
+    def exists(self):
+        return os.path.exists(self.pathname)
+    
     @property
     def parent(self):
         return Path(os.path.dirname(self.pathname))
@@ -60,8 +63,12 @@ class CountOutputHandler(object):
         to be used in the printed output of the grep command.
     """
     def __init__(self,files_without_match=False,
+                      files_with_matches=False,
+                      no_filename=False,
                       count_only=False):
         self.files_without_match = files_without_match
+        self.files_with_matches = files_with_matches
+        self.no_filename = no_filename
         self.count_only = count_only
         self.count = 0
         self.filename_to_print = None
@@ -81,10 +88,15 @@ class CountOutputHandler(object):
             output after a file finished processing.
             Otherwise it does nothing.
         """
-        if (self.count_only and (self.files_without_match or self.count>0)):
-            print(u'{cnt:6} {fn}'
-                  .format(cnt=self.count,fn=self.filename_to_print))
-        elif self.files_without_match and self.count==0:
+        if self.count_only:
+            if self.no_filename:
+                print(str(self.count))
+            else:
+                print(u'{fn}:{cnt}'
+                      .format(cnt=self.count,fn=self.filename_to_print))
+        if self.files_without_match and self.count==0:
+            print(self.filename_to_print)
+        elif self.files_with_matches and self.count>0:
             print(self.filename_to_print)
 
 
@@ -124,7 +136,7 @@ class FileInputHandler(object):
         while len(self.filepaths)>0:
             filepath = self.filepaths.pop(0)
             if filepath:
-                self.new_file_callback(filepath.pretty())
+                self.new_file_callback(str(filepath))
                 filehndl = io.open(str(filepath),mode='rt',encoding=self.encoding)
             else:
                 self.new_file_callback(self.stdin_label)
@@ -160,9 +172,9 @@ def main(args):
     ap.add_argument('-l','--files-with-matches', action='store_true', help='only list file names of files that match')
     ap.add_argument('-o','--only-matching', action='store_true', help='only print the matching parts')
     ap.add_argument('--color', action='store_true', help='color matched text in output')
-    ap.add_argument('--encoding', action='store', default='latin1',help=='encoding to use when opening files (default encoding is latin1)')
+    ap.add_argument('--encoding', action='store', default='latin1',help='encoding to use when opening files (default encoding is latin1)')
 
-    rc = 0
+    rc = 1 # 1 (no match found) is the default return code
     try:
         ns = ap.parse_args(args)
     
@@ -197,39 +209,45 @@ def main(args):
                     if p.is_file():
                         filepaths.append(p)
                     elif not p.exists():
-                        print('grep: {} was skipped because it does not exist'.format(f),file=sys.stderr)
+                        print('grep: {} was skipped because it does not exist.'.format(f),file=sys.stderr)
                     else:
-                        print('grep: {} was skipped because it is not a file'.format(f),file=sys.stderr)
+                        print('grep: {} was skipped because it is not a file.'.format(f),file=sys.stderr)
             if len(filepaths)==0:
                 print('grep: No valid files given. Exiting.',file=sys.stderr)
                 return 1
                     
     
-        no_filename = (((len(filepaths)<=1)
-                         or ns.no_filename)
-                       and not ns.with_filename)
+        no_filename = (len(filepaths)<=1)
+        if ns.no_filename:
+            no_filename = True
+            if ns.with_filename:
+                print('grep: option --with-filename ignored since --no-filename was specified as well.',file=sys.stderr)
+        elif ns.with_filename:
+            no_filename = False
             
         if no_filename:
             if ns.line_number:
-                fmt = u'{lineno}: {line}'
+                fmt = u'{lineno}:{line}'
             else:
                 fmt = u'{line}'
         elif ns.line_number:
-            fmt = u'{filename}: {lineno}: {line}'
+            fmt = u'{filename}:{lineno}:{line}'
         else:
-            fmt = u'{filename}: {line}'
+            fmt = u'{filename}:{line}'
     
-        count_output_handler = CountOutputHandler(files_without_match=ns.files_without_match,
-                                                  count_only=ns.count)
+        count_output_handler = CountOutputHandler(ns.files_without_match,
+                                                  ns.files_with_matches,
+                                                  no_filename,
+                                                  ns.count)
         file_input_handler = FileInputHandler(filepaths, count_output_handler.new_file, ns.label, ns.encoding)
 
         for line in file_input_handler.input():
             if bool(pattern.search(line))!=ns.invert:
+                rc = 0 # we had a match, therefore we will have return code 0
                 count_output_handler.count_match()
-                if (ns.files_with_matches
-                    and not ns.invert):
-                    print(count_output_handler.filename_to_print)
-                    file_input_handler.nextfile()
+                if ns.files_with_matches:
+                    if not ns.invert and not ns.count: # if we do not need a count, skip the rest of the file
+                        file_input_handler.nextfile()
                 elif not (ns.count or
                           ns.files_without_match):
                     if ns.invert:
@@ -252,8 +270,8 @@ def main(args):
                               end='')
 
     except Exception as err:
-        print("grep: {}: {s}".format(type(err).__name__, err), file=sys.stderr)
-        rc = 1
+        print("grep: {}: {:s}".format(type(err).__name__, err), file=sys.stderr)
+        rc = 2 # return code 2 is signaling an error
     
     return rc
 
