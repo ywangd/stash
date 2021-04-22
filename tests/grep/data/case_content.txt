@@ -1,0 +1,4 @@
+test grep lower case test
+test Grep mixed case test
+test GREP upper case test
+test grep Grep GREP grep GREP Grep test

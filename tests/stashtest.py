@@ -149,7 +149,7 @@ class StashTestCase(unittest.TestCase):
         for v in ensure_defined:
             assert v in self.stash.runtime.state.environ.keys(), u'%s should be defined' % v
 
-    def run_command(self, command, exitcode=None):
+    def run_command(self, command, exitcode=None, stdin_text=''):
         """
         Run a command and return its output.
         :param command: command to run
@@ -169,9 +169,12 @@ class StashTestCase(unittest.TestCase):
             # do NOT return here, script may be alias
         outs = StringIO()
         self.logger.info(u"Executing: " + repr(command))
+        
+        ins = StringIO(stdin_text)
         worker = self.stash(
             command,
             persistent_level=1,
+            final_ins=ins,
             final_outs=outs,
             final_errs=outs,
             cwd=self.cwd

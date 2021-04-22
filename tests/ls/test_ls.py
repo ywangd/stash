@@ -53,8 +53,15 @@ class LsTests(StashTestCase):
         # 2. test -a
         output = self.run_command("ls -a", exitcode=0)
         self.assertIn(".hidden", output)
-        self.assertIn(".", output)
-        self.assertIn("..", output)
+        self.assertIn(". ", output)
+        self.assertIn(".. ", output)
+        self.assertIn("file1.txt", output)
+        self.assertIn("file2.txt", output)
+        # 3. test -A
+        output = self.run_command("ls -A", exitcode=0)
+        self.assertIn(".hidden", output)
+        self.assertNotIn(". ", output)
+        self.assertNotIn(".. ", output)
         self.assertIn("file1.txt", output)
         self.assertIn("file2.txt", output)
 
