@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function, unicode_literals
-from io import open, StringIO
+from io import open, StringIO, BytesIO
 from tempfile import NamedTemporaryFile
 
 import argparse
@@ -15,7 +15,7 @@ import traceback
 import webbrowser
 
 
-__updated__ = '2021-05-13 12:57:55'
+__updated__ = '2021-05-21 19:14:11'
 
 BRIEF = """
 sed.py - python sed module and command line utility\
@@ -140,6 +140,7 @@ class ScriptLine (object):
 
     def copy(self):
         new = ScriptLine()  # create empty object to be filled directly
+        new.encoding = self.encoding
         new.line = self.line
         new.is_continued = self.is_continued
         new.pos = self.pos
@@ -152,6 +153,7 @@ class ScriptLine (object):
         return new
 
     def become(self, scriptLine):
+        self.encoding = scriptLine.encoding
         self.line = scriptLine.line
         self.is_continued = scriptLine.is_continued
         self.pos = scriptLine.pos
@@ -363,15 +365,15 @@ class Script(object):
         return self.script_line.look_ahead(*args)
 
     # methods to add script content
-    def add_string(self, strg):
+    def add_string(self, strg, encoding):
         self.script_idx += 1
         self.strg_idx += 1
         lineno = 0
-        unicode_strg = make_unicode(strg, self.sed.encoding)
+        unicode_strg = make_unicode(strg, encoding)
         for line in unicode_strg.split('\n'):
             lineno += 1
             self._add(ScriptLine(
-                          self.sed.encoding,
+                          encoding,
                           line,
                           lineno,
                           self.script_idx,
@@ -385,7 +387,7 @@ class Script(object):
         self.script_idx += 1
         self.file_idx += 1
         lineno = 0
-        filename = make_unicode(filename, encoding)
+        filename = make_unicode(filename, sys.getfilesystemencoding())
         if not os.path.exists(filename):
             raise SedException('', 'Script file {file} does not exist.', file=filename)
         try:
@@ -393,7 +395,7 @@ class Script(object):
                 for line in f.readlines():
                     lineno += 1
                     self._add(ScriptLine(
-                                    self.sed.encoding,
+                                    encoding,
                                     line,
                                     lineno,
                                     self.script_idx,
@@ -405,17 +407,17 @@ class Script(object):
         # if last line is continued, add another
         # empty line to resolve continuation
         if self.last_line.is_continued:
-            self._add(ScriptLine(self.sed.encoding, '\n', lineno + 1,
+            self._add(ScriptLine(encoding, '\n', lineno + 1,
                                  self.script_idx, self.file_idx, None))
 
-    def add_object(self, script_stream):
+    def add_object(self, script_stream, encoding):
         self.script_idx += 1
         self.obj_idx += 1
         lineno = 0
         for line in script_stream.readlines():
             lineno += 1
             self._add(ScriptLine(
-                            self.sed.encoding,
+                            encoding,
                             line,
                             lineno,
                             self.script_idx,
@@ -424,7 +426,7 @@ class Script(object):
         # if last line is continued, add another
         # empty line to resolve continuation
         if self.last_line.is_continued:
-            self._add(ScriptLine(self.sed.encoding, '\n', lineno + 1,
+            self._add(ScriptLine(encoding, '\n', lineno + 1,
                                  self.script_idx, self.obj_idx, None))
 
     def _add(self, script_line):
@@ -693,7 +695,7 @@ class Script(object):
                 unesc.append(int_num)
                 try:
                     # let's try if we can decode this to unicode yet
-                    return strg, pystrg, unesc.decode(self.sed.encoding)
+                    return strg, pystrg, unesc.decode(self.script_line.encoding)
                 except UnicodeDecodeError:
                     # we do not have enough bytes yet, let's check if there is more available
                     if self.look_ahead('\\', 'dox0'):
@@ -704,7 +706,7 @@ class Script(object):
                         raise SedException(
                             pos,
                             'Incomplete byte escape data for a valid character in encoding {enc}',
-                            enc=self.sed.encoding)
+                            enc=self.script_line.encoding)
         else:
             if (char in 'AZ' and place == PLACE_REGEXP  # noqa: E127
                   or char in 'dD' and place & (PLACE_REGEXP + PLACE_CHRSET)):
@@ -1199,7 +1201,7 @@ class Sed(object):
         if strng is None:  # pragma: no cover (debug only)
             yield ''
             return
-        byteArray = bytearray(strng, self.encoding)
+        byteArray = bytearray(strng, self.writer.current_encoding)
         x = ''
         for c in byteArray:
             if 32 <= c <= 127:
@@ -1241,14 +1243,28 @@ class Sed(object):
         if type(filename) == str or PY2 and type(filename) == unicode:
             self.script.add_file(filename, encoding)
         else:
-            self.script.add_object(filename)
+            self.script.add_object(filename, encoding)
 
-    def load_string(self, string):
-        self.script.add_string(string)
+    def load_string(self, string, encoding=None):
+        if encoding is None:
+            encoding = self.encoding
+        if type(string) == list:
+            self.load_string_list(string, encoding=encoding)
+        else:
+            self.script.add_string(string, encoding)
 
-    def load_string_list(self, string_list):
-        for string in string_list:
-            self.script.add_string(string)
+    def load_string_list(self, string_list, encoding=None):
+        if type(string_list) != list:
+            raise SedException('', 'Input to load_string_list must be a list of strings.')
+        if encoding is None:
+            encoding = self.encoding
+        buffer = StringIO()
+        for strg in string_list:
+            strg = make_unicode(strg, encoding)
+            buffer.write(strg)
+            if not strg.endswith('\n'):
+                buffer.write('\n')
+        self.script.add_string(buffer.getvalue(), encoding)
 
     def readline(self):
         self.subst_successful = False
@@ -1432,8 +1448,9 @@ class StateWriter(object):
 class Writer (object):
 
     def __init__(self, output, encoding, in_place, debug=0):
-        self.encoding = encoding
-        self.in_place = make_unicode(in_place, encoding)
+        self.default_encoding = encoding
+        self.current_encoding = encoding
+        self.in_place = make_unicode(in_place, sys.getfilesystemencoding())
         self.debug = debug
         self.output_lines = []
         self.open_files = {}
@@ -1443,9 +1460,9 @@ class Writer (object):
         self.inplace_filenames = {}
         if in_place is None:
             if type(output) == str or PY2 and type(output) == unicode:
-                self.current_filename = make_unicode(output, self.encoding)
+                self.current_filename = make_unicode(output, sys.getfilesystemencoding())
                 try:
-                    self.current_output = open(self.current_filename, 'wt', encoding=self.encoding)
+                    self.current_output = open(self.current_filename, 'wt', encoding=encoding)
                     self.current_output_opened = True
                 except Exception as e:
                     raise SedException(
@@ -1453,7 +1470,7 @@ class Writer (object):
                         file=self.current_filename,
                         err=make_unicode(str(e), encoding))
             elif output is not None:
-                self.current_output = output
+                self.current_output = output  # we assume it is an output stream
 
     def is_inplace(self):
         return self.in_place is not None
@@ -1464,7 +1481,10 @@ class Writer (object):
             # that expects unicode to be written to. That means, if a stream
             # is passed in as output to sed.apply, THAT stream must accept
             # unicode data as well.
-            self.current_output.write(line+'\n')
+            if PY2:
+                self.current_output.write((line+'\n').encode(self.current_encoding))
+            else:
+                self.current_output.write(line+'\n')
         self.output_lines.extend(lne+'\n' for lne in line.split('\n'))
 
     def add_write_file(self, filename):
@@ -1476,7 +1496,7 @@ class Writer (object):
             elif filename == '/dev/stderr':
                 self.open_files['/dev/stderr'] = sys.stderr
             else:
-                self.open_files[filename] = open(filename, 'wt', encoding=self.encoding)
+                self.open_files[filename] = open(filename, 'wt', encoding=self.default_encoding)
 
     def write_to_file(self, filename, line):
         open_file = self.open_files.get(filename)
@@ -1527,9 +1547,9 @@ class Writer (object):
     def finish(self):
         if self.current_output_opened:
             if self.in_place is not None:
-                try:  # pragma: no cover (should never happen)
+                try:
                     self.close_inplace()
-                except IOError:
+                except IOError:  # pragma: no cover (should never happen)
                     pass
             else:
                 try:
@@ -1566,13 +1586,14 @@ class ReaderUnbufferedOneStream(object):
             if type(inputs) != list:
                 self.inputs = [inputs]
             else:
-                self.inputs = inputs
+                self.inputs = list(inputs)  # create copy of incoming list
             if len(self.inputs) == 0 or \
                len(self.inputs) == 1 \
                and not self.inputs[0]:  # empty or None
                 self.inputs = [sys.stdin]
 
-        self.encoding = encoding
+        self.default_encoding = encoding
+        self.current_input_encoding = encoding
         self.line = ''
         self.line_number = 0
         self.source_file_name = None
@@ -1587,17 +1608,15 @@ class ReaderUnbufferedOneStream(object):
         if len(files) == 0:
             raise SedException(
                 '', 'Can not use stdin as input for inplace-editing.')
-        for open_file in files:
-            if open_file is None:
+        for fle in files:
+            if type(fle) == tuple:  # do we have an (encoding,input) tuple
+                fle = fle[1]
+            if fle in [None, '', '-', '/dev/stdin']:
                 raise SedException(
                     '', 'Can not use stdin as input for inplace-editing.')
-            elif not (type(open_file) == str or PY2 and type(open_file) == unicode):
+            elif not (type(fle) == str or PY2 and type(fle) == unicode):
                 raise SedException(
-                    '',
-                    'Can not use streams, files or literals as input for inplace-editing.')
-            elif open_file in ['-', '/dev/stdin', '-', '/dev/stdin']:
-                raise SedException(
-                    '', 'Can not use stdin as input for inplace-editing.')
+                    '', 'Can not use streams, files or literals as input for inplace-editing.')
 
     def open_next(self):
         if len(self.inputs) == 0:
@@ -1605,11 +1624,18 @@ class ReaderUnbufferedOneStream(object):
             self.input_stream_opened = False
             return
         self.open_index += 1
+
         next_input = self.inputs.pop(0)
+        if type(next_input) == tuple:
+            self.current_input_encoding = next_input[0]
+            next_input = next_input[1]
+        else:
+            self.current_input_encoding = self.default_encoding
+
         if type(next_input) == list:
             result = ''
             for lne in next_input:
-                lne = make_unicode(lne, self.encoding)
+                lne = make_unicode(lne, self.current_input_encoding)
                 result += lne
                 if not lne.endswith('\n'):
                     result += '\n'
@@ -1618,12 +1644,12 @@ class ReaderUnbufferedOneStream(object):
             self.input_stream_opened = True
         elif type(next_input) == str or PY2 and type(next_input) == unicode:
             try:
-                self.source_file_name = make_unicode(next_input, self.encoding)
+                self.source_file_name = make_unicode(next_input, sys.getfilesystemencoding())
             except UnicodeDecodeError as e:
                 raise SedException(
                     '', 'Unable to convert file name {fle} to unicode using encoding {enc}',
                     fle=codecs.getdecoder('latin1', 'replace')(next_input)[0],
-                    enc=self.encoding)
+                    enc=sys.getfilesystemencoding())
 
             if self.source_file_name in ['-', '/dev/stdin']:
                 self.input_stream = sys.stdin
@@ -1632,12 +1658,13 @@ class ReaderUnbufferedOneStream(object):
             else:
                 self.input_stream_opened = True
                 try:
-                    self.input_stream = open(self.source_file_name, 'rt', encoding=self.encoding)
+                    self.input_stream = open(self.source_file_name, 'rt',
+                                             encoding=self.current_input_encoding)
                 except IOError as e:
                     raise SedException(
                         '', 'Unable to open input file {file}: {err}',
                         file=self.source_file_name,
-                        err=make_unicode(str(e), self.encoding))
+                        err=make_unicode(str(e), self.default_encoding))
         else:
             self.input_stream = next_input
             self.source_file_name = '<stream[{}]>'.format(self.open_index)
@@ -1661,7 +1688,7 @@ class ReaderUnbufferedOneStream(object):
         return self.line
 
     def next_line(self):
-        return make_unicode(self.input_stream.readline(), self.encoding)
+        return make_unicode(self.input_stream.readline(), self.current_input_encoding)
 
     def readline_from_file(self, filename):
         if filename not in self.open_files:
@@ -1672,7 +1699,7 @@ class ReaderUnbufferedOneStream(object):
                     self.open_files['/dev/stdin'] = open_file
                     self.open_files['-'] = open_file
                 else:
-                    open_file = open(filename, 'rt', encoding=self.encoding)
+                    open_file = open(filename, 'rt', encoding=self.default_encoding)
                     self.open_files[filename] = open_file
             except IOError:
                 self.open_files[filename] = None
@@ -1682,7 +1709,7 @@ class ReaderUnbufferedOneStream(object):
         if open_file is None:
             return ''
         try:
-            line = make_unicode(open_file.readline(), self.encoding)
+            line = make_unicode(open_file.readline(), self.default_encoding)
         except IOError:  # pragma: no cover (not testable)
             line = ''
         if len(line) == 0:
@@ -1756,12 +1783,14 @@ class ReaderBufferedOneStream(ReaderUnbufferedOneStream):
     def open_next(self):
         ReaderUnbufferedOneStream.open_next(self)
         if self.input_stream:
-            self.nextline = make_unicode(self.input_stream.readline(), self.encoding)
+            self.nextline = make_unicode(self.input_stream.readline(),
+                                         self.current_input_encoding)
 
     def next_line(self):
         if self.nextline != '':
             line = self.nextline
-            self.nextline = make_unicode(self.input_stream.readline(), self.encoding)
+            self.nextline = make_unicode(self.input_stream.readline(),
+                                         self.current_input_encoding)
             return line
         else:
             return ''
@@ -2442,10 +2471,10 @@ class Command_y(Command):
         return self.next
 
 
-class Command_z(Command_a):
+class Command_z(Command):
 
     def apply(self, sed):
-        sed.PS = self.text
+        sed.PS = ''
         return self.next
 
 
@@ -3210,125 +3239,161 @@ def do_helphtml():  # pragma: no cover (interactive code not testable with pyuni
 
 
 class Filename(object):
-
-    def __init__(self, filename):
+    def __init__(self, encoding, filename):
+        self.encoding = encoding
         self.filename = filename
 
 
-def script_string_arg(strng):
-    return strng
+class Literal(object):
+    def __init__(self, encoding, literal):
+        self.encoding = encoding
+        self.literal = literal
 
 
-def script_file_arg(strng):
-    return Filename(strng)
+class ParseArguments(object):
 
+    def __init__(self):
+        self.default_encoding = DEFAULT_ENCODING
+        self.encoding = None
 
-def parse_command_line():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=BRIEF,
-        epilog="""\
+        parser = argparse.ArgumentParser(
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            description=BRIEF,
+            epilog="""\
+Option -c can be repeated multiple times. The first is going to be used as default \
+encoding and for stdout output, writing to files (commands w and W) and reading from \
+files (commands r and R). For script literals (-e), script files (-f) and input files \
+the last preceding -c option is used to define that part's encoding.
+
 Options -e and -f can be repeated multiple times and add to the commands \
 executed for each line of input in the sequence they are specified.
+
 If neither -e nor -f is given, the first positional parameter is taken as \
 the script, as if it had been prefixed with -e.""")
-    parser.add_argument(
-        '-H', '--htmlhelp',
-        help='open html help page in web browser',
-        action='store_true',
-        default=False,
-        dest='do_helphtml')
-    parser.add_argument(
-        '-v', '--version',
-        help='display version',
-        action='store_true',
-        default=False,
-        dest='version')
-    parser.add_argument(
-        '--encoding',
-        help='input encoding',
-        action='store',
-        type=str,
-        default=DEFAULT_ENCODING)
-    parser.add_argument(
-        '-f', '--file',
-        help='add script commands from file',
-        action='append',
-        dest='scripts',
-        default=[],
-        type=script_file_arg,
-        metavar='file')
-    parser.add_argument(
-        '-e', '--expression',
-        help='add script commands from string',
-        action='append',
-        dest='scripts',
-        default=[],
-        type=script_string_arg,
-        metavar='string')
-    parser.add_argument(
-        '-i', '--in-place',
-        nargs='?',
-        help='change input files in place',
-        dest='in_place',
-        metavar='backup suffix',
-        default=0)
-    parser.add_argument(
-        '-n', '--quiet', '--silent',
-        help='print only if requested',
-        action='store_true',
-        default=False,
-        dest='no_autoprint')
-    parser.add_argument(
-        '-s', '--separate',
-        help='consider input files as separate files ' +
-        'instead of a continuous stream',
-        action='store_true',
-        default=False,
-        dest='separate')
-    parser.add_argument(
-        '-p', '--python-syntax',
-        help='Python regexp syntax',
-        action='store_false',
-        default=True,
-        dest='sed_compatible')
-    parser.add_argument(
-        '-r', '-E', '--regexp-extended',
-        help='extended regexp syntax',
-        action='store_true',
-        default=False,
-        dest='regexp_extended')
-    parser.add_argument(
-        '-l', '--line-length',
-        help='line length to be used by l command',
-        dest='line_length',
-        default=70,
-        type=int)
-    parser.add_argument(
-        '-d', '--debug',
-        help='dump script and annotate execution on stderr',
-        action='store',
-        type=int,
-        default=0,
-        dest='debug')
-    parser.add_argument(
-        'targets',
-        nargs='*',
-        help='files to be processed (defaults to stdin if not specified)',
-        default=[])
-    args = parser.parse_args()
-    if (not args.version and
-        len(args.scripts) == 0 and
-            len(args.targets) == 0):
-        parser.print_help()
-        raise SedException('', 'No script specified.')
-    return args
+        parser.add_argument(
+            '-H', '--htmlhelp',
+            help='open html help page in web browser',
+            action='store_true',
+            default=False,
+            dest='do_helphtml')
+        parser.add_argument(
+            '-v', '--version',
+            help='display version',
+            action='store_true',
+            default=False,
+            dest='version')
+        parser.add_argument(
+            '-c', '--encoding',
+            help='input encoding',
+            action='store',
+            type=self.encoding_arg,
+            default=DEFAULT_ENCODING)
+        parser.add_argument(
+            '-f', '--file',
+            help='add script commands from file',
+            action='append',
+            dest='scripts',
+            default=[],
+            type=self.file_arg,
+            metavar='file')
+        parser.add_argument(
+            '-e', '--expression',
+            help='add script commands from string',
+            action='append',
+            dest='scripts',
+            default=[],
+            type=self.literal_arg,
+            metavar='string')
+        parser.add_argument(
+            '-i', '--in-place',
+            nargs='?',
+            help='change input files in place',
+            type=self.literal_arg,
+            dest='in_place',
+            metavar='backup suffix',
+            default=0)
+        parser.add_argument(
+            '-n', '--quiet', '--silent',
+            help='print only if requested',
+            action='store_true',
+            default=False,
+            dest='no_autoprint')
+        parser.add_argument(
+            '-s', '--separate',
+            help='consider input files as separate files ' +
+            'instead of a continuous stream',
+            action='store_true',
+            default=False,
+            dest='separate')
+        parser.add_argument(
+            '-p', '--python-syntax',
+            help='Python regexp syntax',
+            action='store_false',
+            default=True,
+            dest='sed_compatible')
+        parser.add_argument(
+            '-r', '-E', '--regexp-extended',
+            help='extended regexp syntax',
+            action='store_true',
+            default=False,
+            dest='regexp_extended')
+        parser.add_argument(
+            '-l', '--line-length',
+            help='line length to be used by l command',
+            dest='line_length',
+            default=70,
+            type=int)
+        parser.add_argument(
+            '-d', '--debug',
+            help='dump script and annotate execution on stderr',
+            action='store',
+            type=int,
+            default=0,
+            dest='debug')
+        parser.add_argument(
+            'targets',
+            nargs='*',
+            type=self.file_arg,
+            help='files to be processed (defaults to stdin if not specified)',
+            default=[])
+        self.args = parser.parse_args()
+        if (not self.args.version and
+            len(self.args.scripts) == 0 and
+                len(self.args.targets) == 0):
+            parser.print_help()
+            raise SedException('', 'No script specified.')
+
+    def __getattr__(self, name):
+        if name in self.args:
+            return self.args.__getattribute__(name)
+        raise AttributeError('Attribute {name} not found'.format(name=name))
+
+    def get_encoding(self):
+        if self.encoding:
+            return self.encoding
+        else:
+            return self.default_encoding
+
+    def encoding_arg(self, encoding):
+        if self.encoding is None:
+            self.default_encoding = encoding
+        self.encoding = encoding
+        return encoding
+
+    def literal_arg(self, script_literal):
+        return Literal(self.get_encoding(), script_literal)
+
+    def file_arg(self, filename):
+        return Filename(self.get_encoding(), filename)
 
 
 def main():
     exit_code = 0
+    encoding = DEFAULT_ENCODING
     try:
-        args = parse_command_line()
+        args = ParseArguments()
+        encoding = args.default_encoding
+
         if args.version:
             DEBUG('{brief}', brief=BRIEF)
             DEBUG('Version: {vers}', vers=VERSION)
@@ -3337,16 +3402,16 @@ def main():
             do_helphtml()
             return 0
         sed = Sed()
-        sed.encoding = args.encoding
+        sed.encoding = encoding
         sed.no_autoprint = args.no_autoprint
         sed.regexp_extended = args.regexp_extended
 
         if args.in_place is None:
             sed.in_place = ''
-        elif type(args.in_place) != str and (not PY2 or type(args.in_place) != unicode):
-            sed.in_place = None
+        elif isinstance(args.in_place, Literal):
+            sed.in_place = make_unicode(args.in_place.literal, args.in_place.encoding)
         else:
-            sed.in_place = args.in_place
+            sed.in_place = None
 
         sed.line_length = args.line_length
         sed.debug = args.debug
@@ -3357,20 +3422,25 @@ def main():
         if len(scripts) == 0:
             # at this point we know targets is
             # not empty because that was checked
-            # in parse_command_line() already
-            scripts = [targets.pop(0)]
+            # in ParseArguments.__init__() already
+            scripts = targets.pop(0)
+            scripts = [Literal(scripts.encoding, scripts.filename)]
         for script in scripts:
             if isinstance(script, Filename):
-                sed.load_script(script.filename)
+                sed.load_script(script.filename, encoding=script.encoding)
             else:
-                sed.load_string(script)
+                sed.load_string(script.literal, encoding=script.encoding)
+        targets = list((target.encoding, target.filename) for target in targets)
         sed.apply(targets, output=sys.stdout)
         exit_code = sed.exit_code
     except SedException as e:
         DEBUG('{msg}', msg=e.message)
         exit_code = 1
     except:  # noqa: E722  # pragma: no cover (only happening for programming errors)
-        traceback.print_exception(*sys.exc_info(), file=sys.stderr)
+        byteStream = BytesIO()
+        traceback.print_exception(*sys.exc_info(), file=byteStream)
+        sys.stderr.write(make_unicode(byteStream.getvalue(), encoding))
+        del byteStream
         exit_code = 1
     return exit_code
 

@@ -1,20 +1,279 @@
 # -*- coding: utf-8 -*-
+"""Utility for PythonSed unittest testcases"""
+from __future__ import print_function, unicode_literals
 
-from __future__ import unicode_literals
-from io import StringIO, open as open
+from io import open as open, StringIO
 import codecs
+import locale
+import logging
+import os
+import shutil
 import sys
+import tempfile
+import unittest
 
-from stash.tests.sed.sed_unittest import PythonSedTestCase
+from stash.tests.stashtest import StashTestCase
 
 ENCODING = 'utf-8'
 PY2 = sys.version_info[0] == 2
+if PY2:
+    import Tkinter
+
+    def make_unicode(strg, encoding):
+        if type(strg) == str:
+            return unicode(strg, encoding)
+        else:
+            return strg
+
+else:
+
+    class unicode(object):  # @ReservedAssignment
+        pass
+
+    def make_unicode(strg, encoding):
+        if type(strg) == bytes:
+            return strg.decode(encoding)
+        else:
+            return strg
+
+    def unichr(char):  # @ReservedAssignment
+        return chr(char)
 
 
-class sed_unittest_unit_suite(PythonSedTestCase):
+class PythonSedTestCase(StashTestCase):
+    """A test case implementing utility methods and tests for testing PythonSed"""
+
+    def setUp(self):
+        StashTestCase.setUp(self)
+        self.temp_dir = tempfile.mkdtemp(prefix='sed_unittest.')
+
+    def tearDown(self):
+        StashTestCase.tearDown(self)
+        shutil.rmtree(self.temp_dir)
+
+    def create_tempfile(self, encoding, prefix, content):  # expects unicode for content
+        (fd, name) = tempfile.mkstemp(dir=self.temp_dir, prefix=prefix)
+        with os.fdopen(fd, 'wb') as fle:
+            fle.write(codecs.getencoder(encoding)(content)[0])
+        return name
+
+    def run_test(
+            self,
+            debug=0,              # debug level (0..3)
+            encoding=ENCODING,   # input encoding
+            python_syntax=False,  # option -p/--python-syntax
+            separate=False,       # option -s
+            no_autoprint=False,   # option -n
+            in_place=None,        # option -i value
+            options=[],           # additional options
+            scripts=[],           # literal script strings (as list) and file names (as string)
+            inputs=[],            # literal input strings (as list) and file names (as string)
+            stdin=None,           # stdin input to command
+            redirect=None,        # pipe stdout to this file
+            stdout=None,          # expected output to stdout
+            stderr=None,          # expected output to stderr
+            output_files={},      # expected content of files written by the sed script
+            inplace_content=[],   # results of inplace-editing
+            exit_code=0,          # expected exit code
+            ):
+        args = ['sed.py', '--encoding='+encoding]
+        if debug > 0:
+            args.append('--debug='+str(debug))
+
+        if python_syntax:
+            args.append('--python-syntax')
+
+        if separate:
+            args.append('-s')
+
+        if no_autoprint:
+            args.append('-n')
+
+        if in_place is not None:
+            args.append('--in-place'+("='"+str(in_place)+"'" if len(str(in_place)) > 0 else "''"))
+
+        args.extend(options)
+
+        script_index = 0
+        for script in scripts:
+            script_index += 1
+            if type(script) == list:
+                for lines in script:
+                    if '\n' in lines:
+                        args.extend(['-f',
+                                     "'"+self.create_tempfile(
+                                             encoding,
+                                             'script-literal.{idx}.'.format(idx=script_index),
+                                             make_unicode(lines, encoding))+"'"])
+                    else:
+                        args.extend(['-e', '"'+lines.replace('\\', '\\\\')
+                                                    .replace('$','\\$')
+                                                    .replace('"', '\\"')+'"'])
+            elif type(script) == str or PY2 and type(script) == unicode:
+                args.extend(['-f', "'"+script+"'"])
+            else:
+                file_name = self.create_tempfile(encoding,
+                                                 'script-stream.{idx}.'.format(idx=script_index),
+                                                 ''.join(script.readlines()))
+                args.extend(['-f', "'"+file_name+"'"])
+
+        processed_inputs = []
+        input_index = 0
+        for input in inputs:  # @ReservedAssignment
+            input_index += 1
+            if type(input) == list:
+                processed_inputs.append(
+                    self.create_tempfile(encoding, 'input-literal.{idx}.'.format(idx=input_index),
+                                         '\n'.join(make_unicode(lne, encoding) for lne in input)))
+            elif type(input) == str or PY2 and type(input) == unicode:
+                processed_inputs.append(input)
+            else:
+                file_name = self.create_tempfile(encoding,
+                                                 'input-stream.{idx}.'.format(idx=input_index),
+                                                 ''.join(input.readlines()))
+                processed_inputs.append(file_name)
+
+        args.extend("'"+fle+"'" for fle in processed_inputs)
+
+        if redirect is not None:
+            args.extend(['>', "'"+redirect+"'"])
+
+        cmd = ' '.join(args)
+
+        actual_exit_code, actual_stdout, actual_stderr = self.run_command_2(cmd, stdin_text=stdin)
+
+        result = []
+        if actual_exit_code != exit_code:
+            result.append('Expected exit code was {exp} but the actual exit code was {act}'
+                          .format(exp=exit_code, act=actual_exit_code))
+            result.append('')
+            if stderr is None:
+                result.extend(self.check_output(encoding, 'stderr', '', actual_stderr))
+
+        if stdout is not None:
+            result.extend(self.check_output(encoding, 'stdout', stdout, actual_stdout))
+
+        if stderr is not None:
+            result.extend(self.check_output(encoding, 'stderr', stderr, actual_stderr))
+
+        for (file_name, expected_content) in output_files.items():
+            file_name = os.path.join(self.temp_dir, file_name)
+            if os.path.exists(file_name):
+                with open(file_name, 'rt', encoding=encoding) as f:
+                    file_content = f.read()
+            else:
+                file_content = []
+            result.extend(self.check_output(encoding, file_name,
+                                            make_unicode(expected_content, encoding),
+                                            file_content))
+
+        if in_place is not None:
+            if type(processed_inputs) == str or PY2 and type(processed_inputs) == unicode:
+                processed_inputs = [processed_inputs]
+            if type(processed_inputs) != list:
+                raise ValueError('Invalid inputs list')
+            if type(inplace_content) != list:
+                raise ValueError('Invalid inplace_content list')
+            if len(processed_inputs) != len(inplace_content):
+                raise ValueError('List of input files and list of expected edited input ' +
+                                 'file content must be of same size')
+            in_place = make_unicode(in_place, encoding)
+            for i in range(len(processed_inputs)):
+                file_name = processed_inputs[i]
+                if len(in_place) > 0:
+                    if '*' in in_place:
+                        bkup_file_name = in_place.replace('*', os.path.basename(file_name))
+                        if '/' not in bkup_file_name:
+                            bkup_file_name = os.path.join(os.path.dirname(file_name),
+                                                          bkup_file_name)
+                    else:
+                        bkup_file_name = file_name+in_place
+                    if not os.path.exists(bkup_file_name):
+                        result.append('Backup file '+bkup_file_name+' is missing!')
+                expected_content = inplace_content[i]
+                if os.path.exists(file_name):
+                    with open(file_name, 'rt', encoding=encoding) as f:
+                        file_content = f.read()
+                else:
+                    file_content = []
+                result.extend(self.check_output(encoding, file_name,
+                                                expected_content, file_content))
+
+        if len(result) > 0:
+            try:
+                result = '\nCommand was: '+cmd+'\n'+'\n'.join(result)
+                self.fail(result)
+            except TypeError:
+                self.fail(str(result))
+
+    def make_list(self, encoding, content):
+        if type(content) == str or PY2 and type(content) == unicode:
+            if len(content) == 0:
+                return []
+            content = make_unicode(content, encoding)
+            if content.endswith('\n'):
+                return list(lne+'\n' for lne in content[:-1].split('\n'))
+            else:
+                return list(lne+'\n' for lne in content.split('\n'))
+        elif type(content) == list:
+            return list(make_unicode(lne, encoding) for lne in content)
+        raise ValueError('Programming error: invalid content parameter type ({}) for make_list'
+                         .format(type(content)))
+
+    def check_output(self, encoding, content_name, expected_content, actual_content):
+        MISSING_MARKER = '<missing>'
+        UNEXPECTED_MARKER = '<unexpected>'
+
+        list1 = self.make_list(encoding, expected_content)
+        list2 = self.make_list(encoding, actual_content)
+
+        content_name = os.path.basename(content_name)
+        tag1 = 'expected '+content_name
+        tag2 = 'actual '+content_name
+
+        max_lst_len = max(len(list1), len(list2))
+        if max_lst_len == 0:
+            return []
+
+        # make sure both lists have same length
+        list1.extend([None] * (max_lst_len - len(list1)))
+        list2.extend([None] * (max_lst_len - len(list2)))
+
+        max_txt_len_1 = max(list(len(UNEXPECTED_MARKER)
+                                 if txt is None
+                                 else 3*len(txt)-2*len(txt.rstrip('\r\n'))
+                                 for txt in list1)+[len(tag1)])
+        max_txt_len_2 = max(list(len(MISSING_MARKER)
+                                 if txt is None
+                                 else 3*len(txt)-2*len(txt.rstrip('\r\n'))
+                                 for txt in list2)+[len(tag2)])
+
+        diff = ['']
+        equal = True
+        diff.append('|  No | ? | {tag1:<{txtlen1}.{txtlen1}s} | {tag2:<{txtlen2}.{txtlen2}s} |'
+                    .format(tag1=tag1, tag2=tag2, txtlen1=max_txt_len_1, txtlen2=max_txt_len_2))
+        for i, (x, y) in enumerate(zip(list1, list2)):
+            if x != y:
+                equal = False
+                if x is not None and y is not None and x.rstrip('\r\n') == y.rstrip('\r\n'):
+                    x = x.replace('\n', '\\n').replace('\r', '\\r')
+                    y = y.replace('\n', '\\n').replace('\r', '\\r')
+            diff.append('| {idx:>3d} | {equal:1.1s} | {line1:<{txtlen1}.{txtlen1}s} | {line2:<{txtlen2}.{txtlen2}s} |'  # noqa: E501
+                        .format(idx=i+1,
+                                equal=(' ' if x == y else '*'),
+                                txtlen1=max_txt_len_1,
+                                txtlen2=max_txt_len_2,
+                                line1=UNEXPECTED_MARKER
+                                      if x is None
+                                      else x.rstrip('\r\n'),  # .replace(' ', '\N{MIDDLE DOT}'),
+                                line2=MISSING_MARKER
+                                      if y is None
+                                      else y.rstrip('\r\n')))  # .replace(' ', '\N{MIDDLE DOT}')))
+
+        return [] if equal else diff
 
     def test_001_syntax_terminating_commands_all_but_y_1(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """1 { p }
@@ -34,7 +293,7 @@ abcabc2
             )
 
     def test_002_syntax_terminating_commands_all_but_y_2(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """1 { p ; }
@@ -54,7 +313,7 @@ abcabc2
             )
 
     def test_003_syntax_terminating_commands_all_but_y_3(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """1 p # comment
@@ -74,7 +333,7 @@ abcabc2
             )
 
     def test_004_syntax_terminating_commands_y_1(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""1 { y/abc/def/ }"""]],
             inputs=[[
@@ -88,7 +347,7 @@ abcabc2
             )
 
     def test_005_syntax_terminating_commands_y_2(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""1 { y/abc/def/ ; }"""]],
             inputs=[[
@@ -102,7 +361,7 @@ abcabc2
             )
 
     def test_006_syntax_terminating_commands_y_3(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""1 y/abc/def/ # comment"""]],
             inputs=[[
@@ -116,7 +375,7 @@ abcabc2
             )
 
     def test_007_syntax_terminating_commands_4_no_space_at_end_of_line(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""p; p"""]],
             inputs=[[
@@ -132,7 +391,7 @@ a
             )
 
     def test_008_syntax_terminating_commands_5_one_space_at_end_of_line(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""p; p """]],
             inputs=[[
@@ -148,7 +407,7 @@ a
             )
 
     def test_009_syntax_terminating_commands_6_no_space_at_end_of_line(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""p; p;"""]],
             inputs=[[
@@ -164,7 +423,7 @@ a
             )
 
     def test_010_syntax_terminating_commands_7_one_space_at_end_of_line(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""p; p; """]],
             inputs=[[
@@ -180,7 +439,7 @@ a
             )
 
     def test_011_syntax_terminating_commands_8(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""1"""]],
             inputs=[[
@@ -192,7 +451,7 @@ a
             )
 
     def test_012_syntax_terminating_commands_9(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[['1,']],
             inputs=[[
@@ -205,7 +464,7 @@ a
             )
 
     def test_013_syntax_terminating_commands_10(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""1,2"""]],
             inputs=[[
@@ -217,7 +476,7 @@ a
             )
 
     def test_014_syntax_terminating_commands_aic(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -257,7 +516,7 @@ egg } nor end of block inside a argument
             )
 
     def test_015_regexp_address_separators(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -279,7 +538,7 @@ abc
             )
 
     def test_016_regexp_address_flags(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -300,7 +559,7 @@ ABC
             )
 
     def test_017_regexp_address_address_range_with_flag(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -334,7 +593,7 @@ DEF
             )
 
     def test_018_empty_addresses_single_address(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -357,7 +616,7 @@ a
             )
 
     def test_019_empty_addresses_address_range(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -381,7 +640,7 @@ a
             )
 
     def test_020_PS_ending_with_a_line_break(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """s/.*/\\n/
@@ -399,7 +658,7 @@ X
             )
 
     def test_021_anchors_at_end_of_regexp_1_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -416,7 +675,7 @@ s/\\(abc\\)$/ABC/p
             )
 
     def test_022_anchors_at_end_of_regexp_1_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -433,7 +692,7 @@ s/(abc)$/ABC/p
             )
 
     def test_023_anchors_at_end_of_regexp_2_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -450,7 +709,7 @@ s/\\(abc\\)\\($\\)/ABC/p
             )
 
     def test_024_anchors_at_end_of_regexp_2_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -467,7 +726,7 @@ s/(abc)($)/ABC/p
             )
 
     def test_025_anchors_at_end_of_regexp_3_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -484,7 +743,7 @@ s/\\(abc\\)\\(X\\|$\\)/ABC/p
             )
 
     def test_026_anchors_at_end_of_regexp_3_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -501,7 +760,7 @@ s/(abc)(X|$)/ABC/p
             )
 
     def test_027_anchors_at_end_of_regexp_4_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -518,7 +777,7 @@ s/\\(abc\\)\\($\\|X\\)/ABC/p
             )
 
     def test_028_anchors_at_end_of_regexp_4_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -535,7 +794,7 @@ s/(abc)($|X)/ABC/p
             )
 
     def test_029_anchors_inside_regexp_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -552,7 +811,7 @@ s/.*\\(abc\\)$.*/\\1/p
             )
 
     def test_030_anchors_inside_regexp_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -569,7 +828,7 @@ s/.*(abc)$.*/\\1/p
             )
 
     def test_031_anchors_at_start_of_regexp_1_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -586,7 +845,7 @@ s/^\\(abc\\)/ABC/p
             )
 
     def test_032_anchors_at_start_of_regexp_1_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -603,7 +862,7 @@ s/^(abc)/ABC/p
             )
 
     def test_033_anchors_at_start_of_regexp_2_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -620,7 +879,7 @@ s/\\(^\\)\\(abc\\)/ABC/p
             )
 
     def test_034_anchors_at_start_of_regexp_2_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -637,7 +896,7 @@ s/(^)(abc)/ABC/p
             )
 
     def test_035_anchors_at_start_of_regexp_3_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -654,7 +913,7 @@ s/\\(^\\|X\\)\\(abc\\)/ABC/p
             )
 
     def test_036_anchors_at_start_of_regexp_3_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -671,7 +930,7 @@ s/(^|X)(abc)/ABC/p
             )
 
     def test_037_anchors_at_start_of_regexp_4_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -688,7 +947,7 @@ s/\\(X\\|^\\)\\(abc\\)/ABC/p
             )
 
     def test_038_anchors_at_start_of_regexp_4_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -705,7 +964,7 @@ s/(X|^)(abc)/ABC/p
             )
 
     def test_039_anchors_inside_regexp_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -722,7 +981,7 @@ s/.*\\(abc\\)^.*/\\1/p
             )
 
     def test_040_anchors_inside_regexp_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -739,7 +998,7 @@ s/.*(abc)^.*/\\1/p
             )
 
     def test_041_regexp_or(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -775,7 +1034,7 @@ cd
             )
 
     def test_042_regexp_or_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -811,7 +1070,7 @@ cd
             )
 
     def test_043_regexp_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ab+/cd/"""]],
             inputs=[[
@@ -825,7 +1084,7 @@ cd
             )
 
     def test_044_regexp_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ab\\+/cd/"""]],
             inputs=[[
@@ -839,7 +1098,7 @@ cd
             )
 
     def test_045_regexp_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -856,7 +1115,7 @@ s/ab+/cd/
             )
 
     def test_046_regexp_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -873,7 +1132,7 @@ s/ab\\+/cd/
             )
 
     def test_047_regexp_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ab?/cd/"""]],
             inputs=[[
@@ -887,7 +1146,7 @@ s/ab\\+/cd/
             )
 
     def test_048_regexp_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ab\\?/cd/"""]],
             inputs=[[
@@ -901,7 +1160,7 @@ s/ab\\+/cd/
             )
 
     def test_049_regexp_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -918,7 +1177,7 @@ s/ab?/cd/
             )
 
     def test_050_regexp_ERE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -935,7 +1194,7 @@ s/ab\\?/cd/
             )
 
     def test_051_regexp_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ab*?/cd/"""]],
             inputs=[[
@@ -949,7 +1208,7 @@ s/ab\\?/cd/
             )
 
     def test_052_regexp_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ab+?/cd/"""]],
             inputs=[[
@@ -963,7 +1222,7 @@ s/ab\\?/cd/
             )
 
     def test_053_regexp_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ab??/cd/"""]],
             inputs=[[
@@ -977,7 +1236,7 @@ s/ab\\?/cd/
             )
 
     def test_054_regexp_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ab+\\?/cd/"""]],
             inputs=[[
@@ -991,7 +1250,7 @@ s/ab\\?/cd/
             )
 
     def test_055_regexp_BRE(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ab?\\?/cd/"""]],
             inputs=[[
@@ -1005,7 +1264,7 @@ s/ab\\?/cd/
             )
 
     def test_056_regexp_n(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -1030,7 +1289,7 @@ abbbc
             )
 
     def test_057_regexp_m_n(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -1052,7 +1311,7 @@ abbbc
             )
 
     def test_058_regexp_n(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -1077,7 +1336,7 @@ abbbc
             )
 
     def test_059_regexp_n(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -1102,7 +1361,7 @@ abbc
             )
 
     def test_060_regexp_BRE_multiple_quantifier(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ab**/cd/"""]],
             inputs=[[
@@ -1119,7 +1378,7 @@ if PY2 else
             )
 
     def test_061_regexp_ERE_multiple_quantifier(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[['#r', 's/ab**/cd/']],
             inputs=[[
@@ -1136,7 +1395,7 @@ if PY2 else
             )
 
     def test_062_regexp_BRE_multiple_quantifier(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ab*\\?/cd/"""]],
             inputs=[[
@@ -1149,7 +1408,7 @@ if PY2 else
             )
 
     def test_063_regexp_ERE_multiple_quantifier(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[['#r', 's/ab*?/cd/']],
             inputs=[[
@@ -1162,7 +1421,7 @@ if PY2 else
             )
 
     def test_064_regexp_closing_bracket_in_char_set(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -1179,7 +1438,7 @@ if PY2 else
             )
 
     def test_065_regexp_closing_bracket_in_complement_char_set(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -1196,7 +1455,7 @@ if PY2 else
             )
 
     def test_066_regexp_t_n_in_char_set(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -1218,7 +1477,7 @@ a	b
             )
 
     def test_067_regexp_back_reference_before_num_in_address(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -1235,7 +1494,7 @@ a	b
             )
 
     def test_068_regexp_extended_back_reference_before_num_in_address(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -1252,7 +1511,7 @@ a	b
             )
 
     def test_069_regexp_extended_unmatched_groups_1(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -1269,7 +1528,7 @@ s/(a)|(b)/\\1\\2/
             )
 
     def test_070_regexp_extended_unmatched_groups_2(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -1286,7 +1545,7 @@ s/(x)?/\\1/
             )
 
     def test_071_avoid_python_extension_1(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/b(\\?#foo)c/xyz/"""]],
             inputs=[[
@@ -1300,7 +1559,7 @@ s/(x)?/\\1/
             )
 
     def test_072_avoid_python_extension_2(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/b\\(\\?#foo\\)c/xyz/"""]],
             inputs=[[
@@ -1313,7 +1572,7 @@ s/(x)?/\\1/
             )
 
     def test_073__b_a_2(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -1330,7 +1589,7 @@ s/(x)?/\\1/
             )
 
     def test_074__a_b_2(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -1347,7 +1606,7 @@ s/(x)?/\\1/
             )
 
     def test_075__a_2(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -1364,7 +1623,7 @@ s/(x)?/\\1/
             )
 
     def test_076__a_2(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -1381,7 +1640,7 @@ s/(x)?/\\1/
             )
 
     def test_077__2(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -1399,7 +1658,7 @@ aa
             )
 
     def test_078__2(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -1417,7 +1676,7 @@ aa
             )
 
     def test_079_substitution_replace_first_occurrence(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/abc/x&y/"""]],
             inputs=[[
@@ -1431,7 +1690,7 @@ aa
             )
 
     def test_080_substitution_replace_second_occurrence(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/abc/x&y/2"""]],
             inputs=[[
@@ -1445,7 +1704,7 @@ aa
             )
 
     def test_081_substitution_replace_all_occurrences(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/abc/x&y/g"""]],
             inputs=[[
@@ -1459,7 +1718,7 @@ aa
             )
 
     def test_082_substitution_replace_far_occurrence(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/abc/x&y/12"""]],
             inputs=[[
@@ -1473,7 +1732,7 @@ aa
             )
 
     def test_083_substitution_occurrence_not_found(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/abc/x&y/12"""]],
             inputs=[[
@@ -1487,7 +1746,7 @@ aa
             )
 
     def test_084_substitution_replace_all_occurrences_with_ignore_case_s_i(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ABC/x&y/gi"""]],
             inputs=[[
@@ -1501,7 +1760,7 @@ aa
             )
 
     def test_085_substitution_replace_all_occurrences_with_ignore_case_s_I(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ABC/x&y/gI"""]],
             inputs=[[
@@ -1515,7 +1774,7 @@ aa
             )
 
     def test_086_substitution_ignore_case_by_default(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ABC/x&y/g"""]],
             inputs=[[
@@ -1529,7 +1788,7 @@ aa
             )
 
     def test_087_substitution_back_reference_before_num_in_regexp(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/\\(abc\\)\\10/\\1/"""]],
             inputs=[[
@@ -1543,7 +1802,7 @@ aa
             )
 
     def test_088_substitution_back_reference_before_num_in_repl(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/\\(abc\\)/\\10/"""]],
             inputs=[[
@@ -1557,7 +1816,7 @@ aa
             )
 
     def test_089_substitution_r_back_reference_before_num_in_regexp(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -1574,7 +1833,7 @@ s/(abc)\\10/\\1/
             )
 
     def test_090_substitution_r_back_reference_before_num_in_repl(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#r
@@ -1591,7 +1850,7 @@ s/(abc)/\\10/
             )
 
     def test_091_substitution_empty_back_reference_in_regexp(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/abc\\(X\\{0,1\\}\\)abc\\1/&/"""]],
             inputs=[[
@@ -1605,7 +1864,7 @@ s/(abc)/\\10/
             )
 
     def test_092_substitution_in_replacement(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#nr
@@ -1624,7 +1883,7 @@ hahahaha
             )
 
     def test_093_substitution_new_line_in_replacement_old_style(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """s/ab/&\\
@@ -1643,7 +1902,7 @@ c
             )
 
     def test_094_substitution_new_line_in_replacement_new_style(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""s/ab/&\\n/g"""]],
             inputs=[[
@@ -1659,7 +1918,7 @@ c
             )
 
     def test_095_empty_regexp(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """# Check that the empty regex recalls the last *executed* regex,
@@ -1687,7 +1946,7 @@ XYeYYY
             )
 
     def test_096_empty_regexp_empty_cascade(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """p
@@ -1711,7 +1970,7 @@ XXXfff
             )
 
     def test_097_empty_regexp_case_modifier_propagation(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """p
@@ -1733,7 +1992,7 @@ Xeefff
             )
 
     def test_098_empty_regexp_same_empty_regexp_different_case_status(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """p
@@ -1760,7 +2019,7 @@ XXeXXX
             )
 
     def test_099_empty_regexp_case_modifier_propagation_for_addresses(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """/A/Ip
@@ -1779,7 +2038,7 @@ a
             )
 
     def test_100_branch_on_subst(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """s/abc/xy/
@@ -1802,7 +2061,7 @@ s/$/bar/
             )
 
     def test_101_branch_on_one_successful_subst(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """s/abc/xy/
@@ -1822,7 +2081,7 @@ s/$/foo/
             )
 
     def test_102_branch_or_print_on_successful_subst_not_on_change_of_PS(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """s/abc/abc/p
@@ -1843,7 +2102,7 @@ abc
             )
 
     def test_103_Change_command_c(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """2c\\
@@ -1907,7 +2166,7 @@ not changed:
             )
 
     def test_104_a_i_c(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """/TAG/ {
@@ -1936,7 +2195,7 @@ After
             )
 
     def test_105_a_i_c_silent_mode(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -1964,7 +2223,7 @@ After
             )
 
     def test_106_a_i_c_one_liners(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """/TAG/ {
@@ -1990,7 +2249,7 @@ After
             )
 
     def test_107_a_i_c_one_liners_ignore_leading_spaces(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """/TAG/ {
@@ -2016,7 +2275,7 @@ After
             )
 
     def test_108_a_i_c_one_liners_include_leading_spaces_with(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """/TAG/ {
@@ -2042,7 +2301,7 @@ TAG
             )
 
     def test_109_a_i_c_one_liners_embedded_n(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """/TAG/ {
@@ -2072,7 +2331,7 @@ er
             )
 
     def test_110_y_basic_usage(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -2094,7 +2353,7 @@ bca
             )
 
     def test_111_y_slashes(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -2122,7 +2381,7 @@ x/y\\z,t
             )
 
     def test_112_y_more_slashes_n_t(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -2149,7 +2408,7 @@ c
             )
 
     def test_113_y_separators_including_t_space(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -2171,7 +2430,7 @@ abCd
             )
 
     def test_114_y_exceptions_not_delimited(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""y/ab/ab"""]],
             inputs=[[
@@ -2184,7 +2443,7 @@ abCd
             )
 
     def test_115_y_exceptions_unequal_length(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""y/ab/abc/"""]],
             inputs=[[
@@ -2197,7 +2456,7 @@ abCd
             )
 
     def test_116_y_exceptions_additional_text(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""y/ab/ba/ and more"""]],
             inputs=[[
@@ -2209,7 +2468,7 @@ abCd
             )
 
     def test_117_n_command_with_auto_print(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""n; p;"""]],
             inputs=[[
@@ -2233,7 +2492,7 @@ abCd
             )
 
     def test_118_n_command_without_auto_print(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -2255,7 +2514,7 @@ n; p;
             )
 
     def test_119_N_command_with_auto_print(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""N; p;"""]],
             inputs=[[
@@ -2281,7 +2540,7 @@ n; p;
             )
 
     def test_120_N_command_without_auto_print(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -2305,7 +2564,7 @@ N; p;
             )
 
     def test_121_p_command_with_auto_print(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""p"""]],
             inputs=[[
@@ -2326,7 +2585,7 @@ N; p;
             )
 
     def test_122_p_command_without_auto_print(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -2347,7 +2606,7 @@ p
             )
 
     def test_123_P_command_with_auto_print(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""N; P;"""]],
             inputs=[[
@@ -2371,7 +2630,7 @@ p
             )
 
     def test_124_P_command_without_auto_print(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """#n
@@ -2393,7 +2652,7 @@ N; P;
             )
 
     def test_125_v_command_earlier_and_no_version(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """v 4.5.3
@@ -2410,7 +2669,7 @@ v
             )
 
     def test_126_v_command_later_version(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""v 5.0.3"""]],
             inputs=[[
@@ -2423,7 +2682,7 @@ v
             )
 
     def test_127_v_command_with_syntax_error(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""v 4.lo-9"""]],
             inputs=[[
@@ -2437,7 +2696,7 @@ v
 
     def test_128_F_command(self):
         tempfile = self.create_tempfile(ENCODING, 'f-command.', '1\n2\n3\n')
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[["""2F"""]],
             inputs=[tempfile],
@@ -2452,7 +2711,7 @@ v
             )
 
     def test_129_command_D_and_script_as_target(self):
-        self.run_test_against_main(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[],
@@ -2490,7 +2749,7 @@ text
         input_file_4 = self.create_tempfile(ENCODING, 'input_4.',
                                             'Line 4.1\nLine 4.2\nLine 4.3\nLine 4.4\n')
         script_file = self.create_tempfile(ENCODING, 'script.', '1x\n$x\n')
-        self.run_test_against_main(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             options=['--separate'],
@@ -2506,7 +2765,7 @@ Line 3.4\nLine 4.2\nLine 4.3\nLine 4.1
             exit_code=0)
 
     def test_131_version_output(self):
-        self.run_test_against_main(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             options=['-v'],
@@ -2518,7 +2777,7 @@ Line 3.4\nLine 4.2\nLine 4.3\nLine 4.1
             exit_code=0)
 
     def test_132_write_to_stdout_and_stderr(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[
@@ -2539,7 +2798,7 @@ Line 3
 
     def test_133_write_output_to_file_and_command_T(self):
         tempfile_name = self.create_tempfile(ENCODING, 'output-test.', '')
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             python_syntax=True,
@@ -2561,7 +2820,7 @@ T # this branch to <end cycle> will always happen
 
     def test_134_write_output_to_named_file(self):
         tempfile_name = self.create_tempfile(ENCODING, 'output-test.', '')
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             python_syntax=True,
@@ -2578,7 +2837,7 @@ s/cats like to eat (\\w*)/\\1 like to eat wheat/;P;t
             exit_code=0)
 
     def test_135_encoding_script_and_input(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             python_syntax=True,
@@ -2607,7 +2866,7 @@ Strassenlaterne
             exit_code=0)
 
     def test_136_collating_symbol(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[['#r', 's/([[.ch.]])/\\1/g']],
@@ -2621,7 +2880,7 @@ Strassenlaterne
             exit_code=1)
 
     def test_137_equivalence_class(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[['#r', 's/([[=a=]])/\\1/g']],
@@ -2635,7 +2894,7 @@ Strassenlaterne
             exit_code=1)
 
     def test_138_character_class(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[['#r', 's/([[:lower:]])/\\U\\1/g']],
@@ -2656,33 +2915,28 @@ c
 d
 e
 """)
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[
 ["""
-2~0,4z \\
-These two lines replace\\
-the lines b, c and d
+2~0,4z # this will replace lines b,c and d with an empty line
 $q
 """]],
             inputs=[tempfile_name],
             stdin='',
             stdout=(
 """a
-These two lines replace
-the lines b, c and d
-These two lines replace
-the lines b, c and d
-These two lines replace
-the lines b, c and d
+
+
+
 e
 """),
             stderr='',
             exit_code=0)
 
     def test_140_read_non_existent_file_and_command_equal(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[
@@ -2705,7 +2959,7 @@ d
     def test_141_write_file_from_s_command(self):
         write_file_1 = self.create_tempfile(ENCODING, 's-cmd-write.1.', '')
         write_file_2 = self.create_tempfile(ENCODING, 's-cmd-write.2.', '')
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[
@@ -2735,7 +2989,7 @@ d
             exit_code=0)
 
     def test_142_newline_as_delimiter(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[
@@ -2786,7 +3040,7 @@ bCCE
             exit_code=0)
 
     def test_143_command_z_and_separate(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             separate=True,
             scripts=[
@@ -2836,7 +3090,7 @@ bCCE
 
     def test_144_command_w(self):
         write_file = self.create_tempfile(ENCODING, 'w-cmd-write.', '')
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[
@@ -2872,7 +3126,7 @@ w """+write_file]],
 
     def test_145_command_W(self):
         write_file = self.create_tempfile(ENCODING, 'W-cmd-write.', '')
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[
@@ -2910,7 +3164,7 @@ W """+write_file]],
         tmp_file = self.create_tempfile(ENCODING, 'readfile-test.', """Line 1
 Line 2
 Line 3""")
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[
@@ -2954,7 +3208,7 @@ Line 1.3""")
         tmp_file_2 = self.create_tempfile(ENCODING, 'readline-test-2.', """Line 2.1
 Line 2.2
 Line 2.3""")
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[
@@ -2999,7 +3253,7 @@ Another line from stdin
             exit_code=0)
 
     def test_148_python_syntax(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             python_syntax=True,
@@ -3029,7 +3283,7 @@ Otto\\000Emil\\001Hugo\\t\\vMake \\a\\fthis a little longer so it will span\\
             exit_code=0)
 
     def test_149_flipcase(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[
@@ -3056,8 +3310,8 @@ upper: D LlL UUU A
             exit_code=0)
 
     def test_150_escapes(self):
-        tempfile = self.create_tempfile(ENCODING, 'piped-stdin.', '')
-        self.run_test_against_object(  # noqa: E122
+        tempfile = self.create_tempfile(ENCODING, 'piped-stdout.', '')
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[
@@ -3089,7 +3343,7 @@ a:b:c :%:-:=: d:e:f.:
             exit_code=0)
 
     def test_151_backslash_in_charlist(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[
@@ -3103,7 +3357,7 @@ a:b:c :%:-:=: d:e:f.:
             exit_code=0)
 
     def test_152_invalid_number_in_address(self):
-        self.run_test_against_main(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[['1~a p']],
@@ -3114,7 +3368,7 @@ a:b:c :%:-:=: d:e:f.:
             exit_code=1)
 
     def test_153_cmd_l_invalid_number(self):
-        self.run_test_against_main(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[['l abc']],
@@ -3126,7 +3380,7 @@ a:b:c :%:-:=: d:e:f.:
             exit_code=1)
 
     def test_154_address_without_command(self):
-        self.run_test_against_main(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[['/hugo/', 'p']],
@@ -3137,7 +3391,7 @@ a:b:c :%:-:=: d:e:f.:
             exit_code=1)
 
     def test_155_undefined_lables(self):
-        self.run_test_against_main(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[[': defined',
@@ -3154,7 +3408,7 @@ a:b:c :%:-:=: d:e:f.:
             exit_code=1)
 
     def test_156_unclosed_blocks(self):
-        self.run_test_against_main(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             encoding=ENCODING,
             scripts=[['${', '# unclosed block 1', '/a/{ # unclosed block 2', 'Q']],
@@ -3166,7 +3420,7 @@ a:b:c :%:-:=: d:e:f.:
             exit_code=1)
 
     def test_157_script_ends_with_continuation(self):
-        self.run_test_against_main(
+        self.run_test(
             debug=0,
             encoding=ENCODING,
             scripts=[['p', 'i\\']],
@@ -3177,7 +3431,7 @@ a:b:c :%:-:=: d:e:f.:
             exit_code=1)
 
     def test_158_script_file_not_found(self):
-        self.run_test_against_object(
+        self.run_test(
             debug=0,
             encoding=ENCODING,
             scripts=['some-file-that-does-not-exist.sed'],
@@ -3188,7 +3442,7 @@ a:b:c :%:-:=: d:e:f.:
             exit_code=1)
 
     def test_159_no_script(self):
-        self.run_test_against_object(
+        self.run_test(
             debug=0,
             encoding=ENCODING,
             scripts=[[' # some empty script', ' # just comments']],
@@ -3199,7 +3453,7 @@ a:b:c :%:-:=: d:e:f.:
             exit_code=1)
 
     def test_160_no_script(self):
-        self.run_test_against_main(
+        self.run_test(
             debug=0,
             encoding=ENCODING,
             scripts=[],
@@ -3210,10 +3464,10 @@ a:b:c :%:-:=: d:e:f.:
             exit_code=1)
 
     # This testcase does not make sense in stash, since all tests are going through main
-    # and in this case, the input file name generated by run_test_against_object would
+    # and in this case, the input file name generated by run_test would
     # be taken as script and producing 'unknown command' errors.
     # def test_161_no_script(self):
-    #    self.run_test_against_object(
+    #    self.run_test(
     #        debug=0,
     #        encoding=ENCODING,
     #        scripts=[],
@@ -3238,7 +3492,7 @@ $c afterwards for a test of in-place editing.
 """
         input_file_1 = self.create_tempfile(ENCODING, 'input_1.', 'input_1\n'+input_data)
         input_file_2 = self.create_tempfile(ENCODING, 'input_2.', 'input_2\n'+input_data)
-        self.run_test_against_main(
+        self.run_test(
             debug=0,
             in_place='/tmp/*',
             scripts=[[script]],
@@ -3263,7 +3517,7 @@ afterwards for a test of in-place editing.
 """
         input_file_1 = self.create_tempfile(ENCODING, 'input_1.', 'input_1\n'+input_data)
         input_file_2 = self.create_tempfile(ENCODING, 'input_2.', 'input_2\n'+input_data)
-        self.run_test_against_main(
+        self.run_test(
             debug=0,
             in_place='backup-*',
             scripts=[[script]],
@@ -3288,7 +3542,7 @@ afterwards for a test of in-place editing.
 """
         input_file_1 = self.create_tempfile(ENCODING, 'input_1.', 'input_1\n'+input_data)
         input_file_2 = self.create_tempfile(ENCODING, 'input_2.', 'input_2\n'+input_data)
-        self.run_test_against_main(
+        self.run_test(
             debug=0,
             in_place='.bkup',
             scripts=[[script]],
@@ -3309,7 +3563,7 @@ to be edited and checked
 afterwards for a test of in-place editing.
 """
         input_file_1 = self.create_tempfile(ENCODING, 'input_1.', 'input_1\n'+input_data)
-        self.run_test_against_object(
+        self.run_test(
             debug=0,
             in_place='',
             scripts=[['3s/edited/& and checked/',
@@ -3335,7 +3589,7 @@ afterwards for a test of in-place editing.
 """
         input_file_1 = self.create_tempfile(ENCODING, 'input_1.', 'input_1\n'+input_data)
         input_file_2 = self.create_tempfile(ENCODING, 'input_2.', 'input_2\n'+input_data)
-        self.run_test_against_main(
+        self.run_test(
             debug=0,
             in_place='',
             scripts=[[script]],
@@ -3356,7 +3610,7 @@ afterwards for a test of in-place editing.
         input_file = self.create_tempfile(ENCODING, 'input_open_file_test.', 'Line 4')
         with open(script_file, 'rt', encoding=ENCODING) as script_file_open, \
              open(input_file, 'rt', encoding=ENCODING) as input_file_open:  # noqa: E127
-            self.run_test_against_object(  # noqa: E122
+            self.run_test(  # noqa: E122
                 debug=0,
                 encoding=ENCODING,
                 no_autoprint=False,
@@ -3385,7 +3639,7 @@ Line 4"""),
                 exit_code=10)
 
     def test_168_comment_syntax_and_data_from_stdin_via_inputs_1(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """1 p # comment
@@ -3409,7 +3663,7 @@ abcabc2
             )
 
     def test_169_comment_syntax_and_data_from_stdin(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=0,
             scripts=[[
 """1 p # comment
@@ -3432,7 +3686,7 @@ abcabc2
             )
 
     def test_170_debug_mode_3(self):
-        self.run_test_against_object(  # noqa: E122
+        self.run_test(  # noqa: E122
             debug=3,
             scripts=[[
 """1 { s/\\x5c//; p }
