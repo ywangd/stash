@@ -235,6 +235,19 @@ def match_commit_sha(repo, short_sha: bytes):
             return entry.commit.id
     raise Exception('the input short sha do not match any commit')
 
+def refresh_editor():
+    #reload current file in editor
+    # TODO: only reload if the file was recently updated...
+    try:
+        sel = editor.get_selection()
+        editor.open_file(editor.get_path())
+        import time
+        time.sleep(0.5)  #let the file load
+        editor.replace_text(sel[0], sel[0], '')  #force scroll
+        editor.set_selection(sel[0], sel[1])
+    except:
+        print('Could not refresh editor.  continuing anyway')
+
 
 def git_init(args):
     if len(args) == 0:
@@ -442,6 +455,7 @@ def git_reset(args):
             porcelain.reset_file(repo, path, target=commit)
     else:
         porcelain.reset(repo, mode='hard', treeish=commit)
+    refresh_editor()
     print('updated HEAD to ', commit.decode())
 
 
@@ -696,6 +710,7 @@ def git_checkout(args):
         for file in result.pathspec:
             porcelain.reset_file(repo, file, result.target.encode())
             print("file '%s' reset to %s" % (file, result.target))
+    refresh_editor()
 
 
 def git_help(args):
