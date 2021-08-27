@@ -438,6 +438,9 @@ def git_reset(args):
 
     if result.mixed or result.soft:
         print('only hard reset are supported now')
+    
+    if result.hard and result.paths:
+        raise Exception('Cannot do hard reset with paths.')
 
     if commit == b'HEAD':
         commit = repo.head()
