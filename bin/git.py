@@ -653,7 +653,7 @@ def git_checkout(args):
     parser = argparse.ArgumentParser(prog='git checkout', description=description)
 
     if '--' not in args:
-        parser.add_argument('-b', action='store', nargs='?')
+        parser.add_argument('-b', action='store_true')
         parser.add_argument('target', default='', nargs='+')
         result = parser.parse_args(args)
         # porcelain.update_head to HEAD will broke the repo
@@ -661,21 +661,21 @@ def git_checkout(args):
             raise Exception('checkout to HEAD is not support now')
 
         if len(result.target) == 1:
-            result.target = result.target[0]
-            result.target = result.target.encode()
+            result.target = result.target[0].encode()
         # match short sha to full sha
         if result.target not in branch_list and not result.b and result.target not in repo.open_index() and len(result.target) != 40:
             result.target = match_commit_sha(repo, result.target)
 
         # create new branch and checkout to new branch
         if result.b:
-            porcelain.branch_create(repo, result.b)
-            porcelain.checkout(repo, result.b.encode())
-            print("Switched to a new branch '%s'" % (result.b))
+            porcelain.branch_create(repo, result.target)
+            print("branch '%s' created" % (result.target))
+            porcelain.checkout(repo, result.target.encode())
+            print("Switched to a new branch '%s'" % (result.target))
         # checkout specified paths to HEAD
         elif isinstance(result.target, list):
             for file in result.target:
-                porcelain.reset_file(repo, file.decode(), b'HEAD')
+                porcelain.reset_file(repo, file, b'HEAD')
         # checkout specified path to HEAD
         elif result.target in porcelain.ls_files(repo):
             porcelain.reset_file(repo, result.target.decode(), b'HEAD')
