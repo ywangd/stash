@@ -1348,7 +1348,7 @@ class Sed(object):
             while self.PS is not None:
                 matched, command = False, first_cmd
                 if self.debug > 0:
-                    DEBUG('############### new cycle'.ljust(self.line_length, '#'))
+                    DEBUG('############### new cycle '.ljust(self.line_length, '#'))
                     DEBUG('Auto Print: {ap}', ap='Off' if self.no_autoprint else 'On')
                     DEBUG('Input File: {fle}[{idx}]',
                           fle=self.reader.source_file_name,
@@ -1369,6 +1369,8 @@ class Sed(object):
                           fle=self.reader.source_file_name,
                           idx=self.reader.line_number)
                     DEBUG('Output To : {fle}', fle=self.writer.current_filename)
+                    DEBUG('Last Command: {cmd}', cmd=last_relevant_command)
+                    DEBUG('Pattern space is None: {flag}', flag=(self.PS is None))
                 if not (self.no_autoprint
                         or last_relevant_command in 'DQ'
                         or self.PS is None):
@@ -1481,10 +1483,12 @@ class Writer (object):
             # that expects unicode to be written to. That means, if a stream
             # is passed in as output to sed.apply, THAT stream must accept
             # unicode data as well.
-            if PY2:
-                self.current_output.write((line+'\n').encode(self.current_encoding))
-            else:
+            try:
                 self.current_output.write(line+'\n')
+            except:
+               # bail out immediately if we have any problem with encodings here
+               sys.stderr.write(traceback.format_exc())
+               sys.exit(1)
         self.output_lines.extend(lne+'\n' for lne in line.split('\n'))
 
     def add_write_file(self, filename):
