@@ -11,6 +11,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+import pytest
 
 from stash.tests.stashtest import StashTestCase
 
@@ -76,7 +77,7 @@ class PythonSedTestCase(StashTestCase):
             inplace_content=[],   # results of inplace-editing
             exit_code=0,          # expected exit code
             ):
-        args = ['sed.py', '--encoding='+encoding]
+        args = ['PYTHONIOENCODING="UTF-8"', 'sed.py', '--encoding='+encoding]
         if debug > 0:
             args.append('--debug='+str(debug))
 
@@ -3309,6 +3310,7 @@ upper: D LlL UUU A
             stderr='',
             exit_code=0)
 
+    @pytest.mark.skipif(sys.version_info < (3,0), reason="stash uses encoding='ascii' on stdout redirects under Python 2")
     def test_150_escapes(self):
         tempfile = self.create_tempfile(ENCODING, 'piped-stdout.', '')
         self.run_test(  # noqa: E122
