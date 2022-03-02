@@ -84,7 +84,13 @@ def main(args):
         with open(filename, 'wb') as outs:
             outs.write(r.content)
     else:
-        print(r.text)
+        if ns.request_method == 'HEAD':
+            print('Status: {}'.format(r.status_code))
+            for k, v in r.headers.items():
+                print('{}: {}'.format(k, v))
+            print('')
+        else:
+            print(r.text)
 
 
 if __name__ == '__main__':
