@@ -1301,13 +1301,17 @@ class PyPIRepository(PackageRepository):
             raise PackageAlreadyInstalled('Package already installed')
 
     def update(self, pkg_name):
+        global SITE_PACKAGES_FOLDER
         pkg_name = self.get_standard_package_name(pkg_name)
         if self.config.module_exists(pkg_name):
             pkg_data = self._package_data(pkg_name)
             hit = self._package_latest_release(pkg_data)
             current = self.config.get_info(pkg_name)
             if not current['version'] == hit:
-                print('Updating {}'.format(pkg_name))
+                files_installed = self.config.get_files_installed(pkg_name)
+                if files_installed:
+                    SITE_PACKAGES_FOLDER = os.path.dirname(files_installed[0])
+                print('Updating {} in {}'.format(pkg_name,SITE_PACKAGES_FOLDER))
                 self.remove(pkg_name)
                 self.install(pkg_name, VersionSpecifier((('==', hit), )))
             else:
