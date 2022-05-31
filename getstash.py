@@ -29,7 +29,7 @@ UNWANTED_FILES = [
         'bin/pythonista.py',
         'bin/cls.py',
         'stash.py',
-        'lib/librunner.py'
+        'lib/librunner.py',
         'system/shui.py',
         'system/shterminal.py',
         'system/dummyui.py',
