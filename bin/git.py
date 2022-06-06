@@ -429,7 +429,7 @@ def get_config_or_prompt(repo, section, name, prompt, save=None):
         value = config.get(section, name)
     except KeyError:
         value = input(prompt).encode()
-        if save == None:
+        if save is None:
             reply = input('Save this setting? [y/n]')
             save = reply == 'y'
         if save:
