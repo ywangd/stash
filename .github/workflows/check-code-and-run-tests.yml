@@ -1,0 +1,30 @@
+name: Check code and run tests
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["2.7", "3.6", "3.8", "3.9", "3.10"]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade flake8>=3.7.9 pyparsing==2.4.4 pytest==4.6.6
+    - name: Analysing the code with flake8
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+    - name: Running tests
+      run: |
+        py.test --version
+        pip install ".[testing]"
+        pytest tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
