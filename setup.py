@@ -45,9 +45,9 @@ from setuptools import find_packages
 
 
 TEST_REQUIREMENTS = [
-    "pyparsing==2.0.1",
-    "pytest>=3.6.0",
-    "flake8>=3.5.0",
+    "pyparsing==2.0.2",
+    "pytest==4.6.11",
+    "flake8>=3.7.9",
     "pycrypto==2.6",
     "requests==2.9.1",
 ]
