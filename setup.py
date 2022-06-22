@@ -49,7 +49,7 @@ if sys.version_info.major==2:
         "pyperclip",  # required by libdist for copy/paste on PC
         "requests==2.9.1",
         "pycrypto==2.6",
-        "pyte",
+        "pyte==0.8.1",
     ]
     TEST_REQUIREMENTS = [
         "pyparsing==2.0.2",

@@ -26,4 +26,6 @@ jobs:
     - name: Running tests
       run: |
         py.test --version
+        # make install test work...
+        export PYTHONPATH=$(python -m site --user-site) 
         pytest tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
