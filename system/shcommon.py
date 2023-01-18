@@ -26,6 +26,9 @@ if IN_PYTHONISTA:
     else:
         raise Exception('`plistlib` does not support reading a plist file.')
 
+    PYTHONISTA_VERSION = _properties['CFBundleShortVersionString']
+    PYTHONISTA_VERSION_LONG = _properties['CFBundleVersion']
+
     if PYTHONISTA_VERSION < '3.0':
         python_capi = ctypes.pythonapi
     else:
