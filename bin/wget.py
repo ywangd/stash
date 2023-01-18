@@ -5,8 +5,11 @@ from __future__ import print_function
 
 import sys
 import argparse
+import ssl
 
 from six.moves.urllib.request import urlopen
+
+import certifi
 
 try:
     import console
@@ -51,7 +54,8 @@ def main(args):
     try:
 
         print('Opening: %s\n' % url)
-        u = urlopen(url)
+        context = ssl.create_default_context(cafile=certifi.where())
+        u = urlopen(url, context=context)
 
         meta = u.info()
         try:
