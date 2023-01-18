@@ -385,14 +385,14 @@ UIFont = ObjCClass('UIFont')
 # noinspection PyAttributeOutsideInit,PyUnusedLocal,PyPep8Naming
 class ShTerminal(ShBaseTerminal):
     """
-    This is a wrapper class of the actual TextView that subclass the SUITextView.
+    This is a wrapper class of the actual TextView that subclass the UITextView.
     The wrapper is used to encapsulate the objc calls so that it behaves more like
     a regular ui.TextView.
     """
 
     def __init__(self, stash, parent, superview, width, height):
 
-        # Create the actual TextView by subclass SUITextView
+        # Create the actual TextView by subclass UITextView
         UIKeyCommand = ObjCClass('UIKeyCommand')
 
         def kcDispatcher_(_self, _cmd, _sender):
@@ -490,7 +490,7 @@ class ShTerminal(ShBaseTerminal):
             ('UIKeyInputRightArrow', 0): parent.arrowRightAction,
         }
 
-        _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView'), [keyCommands, kcDispatcher_])
+        _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('UITextView'), [keyCommands, kcDispatcher_])
 
         self.is_editing = False
 
@@ -894,7 +894,7 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
                 self.render_thread.cancel()
             self._render()
         else:  # delayed rendering
-            if self.render_thread is None or not self.render_thread.isAlive():
+            if self.render_thread is None or not self.render_thread.is_alive():
                 self.render_thread = sh_delay(self._render, self.RENDER_INTERVAL)
             # Do nothing if there is already a delayed rendering thread waiting
 

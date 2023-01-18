@@ -17,9 +17,14 @@ IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 if IN_PYTHONISTA:
     import plistlib
 
-    _properties = plistlib.readPlist(os.path.join(os.path.dirname(sys.executable), 'Info.plist'))
-    PYTHONISTA_VERSION = _properties['CFBundleShortVersionString']
-    PYTHONISTA_VERSION_LONG = _properties['CFBundleVersion']
+    info_plist_path = os.path.join(os.path.dirname(sys.executable), 'Info.plist')
+    if hasattr(plistlib, 'readPlist'):
+        _properties = plistlib.readPlist(info_plist_path)
+    elif hasattr(plistlib, 'load'):
+        with open(info_plist_path, 'rb') as info_plist:
+            _properties = plistlib.load(info_plist)
+    else:
+        raise Exception('`plistlib` does not support reading a plist file.')
 
     if PYTHONISTA_VERSION < '3.0':
         python_capi = ctypes.pythonapi
