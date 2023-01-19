@@ -490,7 +490,10 @@ class ShTerminal(ShBaseTerminal):
             ('UIKeyInputRightArrow', 0): parent.arrowRightAction,
         }
 
-        _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('UITextView'), [keyCommands, kcDispatcher_])
+        try:
+            _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView'), [keyCommands, kcDispatcher_])
+        except ValueError:
+            _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView_PY3'), [keyCommands, kcDispatcher_])
 
         self.is_editing = False
 
@@ -895,7 +898,7 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
             self._render()
         else:  # delayed rendering
             # `Thread.isAlive()` was removed in Python 3.9
-            is_render_thread_alive = False
+            is_render_thread_alive = None
             if self.render_thread is not None:
                 if hasattr(self.render_thread, 'is_alive'):
                     is_render_thread_alive = self.render_thread.is_alive()
