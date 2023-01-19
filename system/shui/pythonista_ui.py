@@ -894,7 +894,15 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
                 self.render_thread.cancel()
             self._render()
         else:  # delayed rendering
-            if self.render_thread is None or not self.render_thread.is_alive():
+            # `Thread.isAlive()` was removed in Python 3.9
+            is_render_thread_alive = False
+            if self.render_thread is not None:
+                if hasattr(self.render_thread, 'is_alive'):
+                    is_render_thread_alive = self.render_thread.is_alive()
+                else:
+                    is_render_thread_alive = self.render_thread.isAlive()
+
+            if self.render_thread is None or not is_render_thread_alive:
                 self.render_thread = sh_delay(self._render, self.RENDER_INTERVAL)
             # Do nothing if there is already a delayed rendering thread waiting
 

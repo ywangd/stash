@@ -261,9 +261,16 @@ class ShBaseThread(threading.Thread):
         # False     | not None    | stopped
         # True      |     None    | impossible
         # True      | not None    | running
-        if self.isAlive():
+        
+        # `Thread.isAlive()` was removed in Python 3.9
+        if hasattr(self, 'is_alive'):
+            is_alive = self.is_alive()
+        else:
+            is_alive = self.isAlive()
+    
+        if is_alive:
             return self.STARTED
-        elif (not self.is_alive()) and (self.ident is not None):
+        elif (not is_alive) and (self.ident is not None):
             return self.STOPPED
         else:
             return self.CREATED
