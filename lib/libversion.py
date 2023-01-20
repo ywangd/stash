@@ -323,6 +323,14 @@ class VersionSpecifier(object):
                 extras = []
             else:
                 extras = extra_s.split(",")
+        elif "[" in name:
+            si = name.find("[")
+            extra_s = name[si + 1:-1]
+            name = name[:si]
+            if len(extra_s) == 0:
+                extras = []
+            else:
+                extras = extra_s.split(",") 
         else:
             extras = []
         splitted = specs_s.split(",")
