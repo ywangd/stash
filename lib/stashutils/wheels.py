@@ -361,13 +361,13 @@ class DependencyHandler(BaseHandler):
                                     if self.verbose:
                                         print("Adding dependencies for extras...")
                             elif rq == "platform_python_implementation":
-                                if not rq == platform.python_implementation():
+                                if not v.match(platform.python_implementation()):
                                     break
                             elif rq == "platform_system":
-                                if not rq == platform.system():
+                                if v.match(platform.system()):
                                     break
                             elif rq == "sys_platform":
-                                if not rq == sys.platform:
+                                if not v.match(sys.platform):
                                     break
                             else:
                                 # unknown requirement for dependency
