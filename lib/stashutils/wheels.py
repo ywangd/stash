@@ -336,34 +336,51 @@ class DependencyHandler(BaseHandler):
                     if ";" in t:
                         es = t[t.find(";") + 1:].replace('"', "").replace("'", "")
                         t = t[:t.find(";")].strip()
-                        if VersionSpecifier is None:
-                            # libversion not found
-                            print(
-                                "Warning: could not import libversion.VersionSpecifier! Ignoring version and extra dependencies."
-                            )
-                            rq, v, extras = "<libversion not found>", "???", []
-                        else:
-                            rq, v, extras = VersionSpecifier.parse_requirement(es)
-                        if rq == "python_version":
-                            # handle python version dependencies
-                            if not v.match(platform.python_version()):
-                                # dependency NOT required
-                                continue
-                        elif rq == "extra":
-                            # handle extra dependencies
-                            matched = any([v.match(e) for e in self.wheel.extras])
-                            if not matched:
-                                # dependency NOT required
-                                continue
+                        for sub_es in es.split(' and '):
+                            if VersionSpecifier is None:
+                                # libversion not found
+                                print(
+                                    "Warning: could not import libversion.VersionSpecifier! Ignoring version and extra dependencies."
+                                )
+                                rq, v, extras = "<libversion not found>", "???", []
                             else:
-                                if self.verbose:
-                                    print("Adding dependencies for extras...")
+                                rq, v, extras = VersionSpecifier.parse_requirement(sub_es)
+
+                            if rq == "python_version":
+                                # handle python version dependencies
+                                if not v.match(platform.python_version()):
+                                    # dependency NOT required
+                                    break
+                            elif rq == "extra":
+                                # handle extra dependencies
+                                matched = any([v.match(e) for e in self.wheel.extras])
+                                if not matched:
+                                    # dependency NOT required
+                                    break
+                                else:
+                                    if self.verbose:
+                                        print("Adding dependencies for extras...")
+                            elif rq == "platform_python_implementation":
+                                if not rq == platform.python_implementation():
+                                    break
+                            elif rq == "platform_system":
+                                if not rq == platform.system():
+                                    break
+                            elif rq == "sys_platform":
+                                if not rq == sys.platform:
+                                    break
+                            else:
+                                # unknown requirement for dependency
+                                # warn user and register the dependency
+                                print("Warning: unknown dependency requirement: '{}'".format(rq))
+                                print("Warning: Adding dependency '{}', ignoring requirements for dependency.".format(t))
+                                # do not do anything here- As long as we dont use 'continue', 'break', ... the dependency will be added.
                         else:
-                            # unknown requirement for dependency
-                            # warn user and register the dependency
-                            print("Warning: unknown dependency requirement: '{}'".format(rq))
-                            print("Warning: Adding dependency '{}', ignoring requirements for dependency.".format(t))
-                            # do not do anything here- As long as we dont use 'continue', 'break', ... the dependency will be added.
+                            # no 'break' happens
+                            continue
+                        # a 'break' happens, don't add dependencies and go to next 'line'
+                        break
+
                     dependencies.append(t)
         return dependencies
 
