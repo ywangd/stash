@@ -3,6 +3,23 @@
 import re
 import operator
 
+HAS_SPECIFIER = False
+try:
+    # Get 'SpecifierSet' from 'pip' package is preffered method. It can match 
+    # str like '==CPython' without fallback solution. Install it with 
+    # 'pip install --ignore-blocklist pip' and delete the pip cmds in stash_extensions/bin
+    from pip._vendor.packaging.specifiers import SpecifierSet
+    HAS_SPECIFIER = True
+except ImportError:
+    try:
+        # A good compromise is the 'packaging' package with 'pip install packaging'.
+        # 'SpecifierSet' from 'packaging' will raise an exception if matching str 
+        # like '==CPython'. Fallback to old implementation in that case 
+        from packaging.specifiers import SpecifierSet
+        HAS_SPECIFIER = True
+    except ImportError:
+        print("Fallback to default VersionSpecifier. To bypass some issues ")
+
 # release type identifier -> release type priority (higher == better)
 RELEASE_TYPE_PRIORITIES = {
     None: 4,   # no release type
@@ -275,6 +292,13 @@ class VersionSpecifier(object):
         self.specs = [(VersionSpecifier.OPS[op], version) for (op, version) in version_specs]
         self.str = str(version_specs)
 
+        self.specifier = None
+        if HAS_SPECIFIER:
+            try:
+                self.specifier = SpecifierSet(''.join(version_specs[0]))
+            except:
+                pass
+
     def __str__(self):
         return self.str
 
@@ -323,6 +347,14 @@ class VersionSpecifier(object):
                 extras = []
             else:
                 extras = extra_s.split(",")
+        elif "[" in name:
+            si = name.find("[")
+            extra_s = name[si + 1:-1]
+            name = name[:si]
+            if len(extra_s) == 0:
+                extras = []
+            else:
+                extras = extra_s.split(",")
         else:
             extras = []
         splitted = specs_s.split(",")
@@ -347,6 +379,13 @@ class VersionSpecifier(object):
         :rtype: boolean
         """
         # return all([op(Version.parse(version), Version.parse(ver)) for op, ver in self.specs])
+        if self.specifier is not None:
+            try:
+                return self.specifier.contains(version)
+            except:
+                # fallback to libversion implementation
+                pass
+
         matches = True
         for op, ver in self.specs:
             try:
