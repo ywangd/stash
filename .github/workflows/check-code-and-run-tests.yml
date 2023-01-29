@@ -32,6 +32,6 @@ jobs:
       uses: GabrielBB/xvfb-action@v1
       with:
         run: |
-          run: pytest --version
+          pytest --version
           export PYTHONPATH=$(python -m site --user-site)
           pytest tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
