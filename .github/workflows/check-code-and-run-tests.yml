@@ -32,4 +32,4 @@ jobs:
     - name: Running tests
       uses: GabrielBB/xvfb-action@v1
       with:
-        run: export PYTHONPATH=$(python -m site --user-site) pytest tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
+        run: pytest tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
