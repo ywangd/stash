@@ -28,10 +28,10 @@ jobs:
       run: |
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+    - uses: GabrielBB/xvfb-action@v1
     - name: Running tests
       run: |
         pytest --version
         # make install test work...
-        export DISPLAY=:0.0
         export PYTHONPATH=$(python -m site --user-site)
         pytest tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
