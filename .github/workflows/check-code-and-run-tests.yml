@@ -32,5 +32,6 @@ jobs:
       run: |
         pytest --version
         # make install test work...
-        export PYTHONPATH=$(python -m site --user-site) 
+        export DISPLAY=:0.0
+        export PYTHONPATH=$(python -m site --user-site)
         pytest tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
