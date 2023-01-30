@@ -106,8 +106,8 @@ class PipTests(StashTestCase):
             self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
 
+    # @expected_failure_on_py3
     @requires_network
-    @expected_failure_on_py3
     def test_install_pypi_complex_1(self):
         """test 'pip install <pypi_package>' with a complex package."""
         output = self.run_command("pip --verbose install twisted", exitcode=0)

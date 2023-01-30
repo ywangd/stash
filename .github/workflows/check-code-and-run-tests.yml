@@ -1,18 +1,23 @@
 name: Check code and run tests
 
-on: [push]
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["2.7", "3.6", "3.8"]
+        python-version: ["2.7", "3.6", "3.10"]
     steps:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -25,7 +30,8 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
     - name: Running tests
       run: |
-        py.test --version
+        pytest --version
         # make install test work...
         export PYTHONPATH=$(python -m site --user-site) 
         pytest tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
+    
