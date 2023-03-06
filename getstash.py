@@ -314,7 +314,7 @@ def main(defs={}):
         # inform user, then abort
         print("Installation aborted. The version of StaSh you are trying to install is incompatible!")
         print(e)
-        return False
+        sys.exit(1)
 
     if dist.lower() == "pythonista":
         if install_path is None:
