@@ -45,7 +45,9 @@ VersionSpecifier = _stash.libversion.VersionSpecifier  # alias for readability
 SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER
 OLD_SITE_PACKAGES_FOLDER = _stash.libdist.SITE_PACKAGES_FOLDER_6
 BUNDLED_MODULES = _stash.libdist.BUNDLED_MODULES
-BLACKLIST_PATH = os.path.join(os.path.expandvars("$STASH_ROOT"), "data", "pip_blacklist.json")
+BLOCKLIST_PATH = os.path.join(os.path.expandvars("$STASH_ROOT"), "data", "pip_blocklist.json")
+PIP_INDEX_FILE = os.path.join(SITE_PACKAGES_FOLDER,'pip_index.json')
+PIP_INFO_FILE = os.path.join(SITE_PACKAGES_FOLDER, '.package_info', '%s.json')
 
 # Some packages use wrong name for their dependencies
 PACKAGE_NAME_FIXER = {
@@ -59,7 +61,7 @@ FLAG_DIST_ALLOW_SRC = 1
 FLAG_DIST_ALLOW_WHL = 2
 FLAG_DIST_PREFER_SRC = 4
 FLAG_DIST_PREFER_WHL = 8
-FLAG_IGNORE_BLACKLIST = 16
+FLAG_IGNORE_BLOCKLIST = 16
 DEFAULT_FLAGS = FLAG_DIST_ALLOW_SRC | FLAG_DIST_ALLOW_WHL | FLAG_DIST_PREFER_WHL
 
 
@@ -82,16 +84,16 @@ class PackageAlreadyInstalled(PipError):
     pass
 
 
-class PackageBlacklisted(PipError):
+class PackageBlocklisted(PipError):
     """
-    Error raised when a package is fataly blacklisted
-    :param pkg_name: name of blacklisted package
+    Error raised when a package is fataly blocklisted
+    :param pkg_name: name of blocklisted package
     :type pkg_name: str
-    :param reason: reason for blacklisting
+    :param reason: reason for blocklisting
     :type reason: str
     """
     def __init__(self, pkg_name, reason):
-        s = "Package '{}' blacklisted. Reason: {}".format(pkg_name, reason)
+        s = "Package '{}' blocklisted. Reason: {}".format(pkg_name, reason)
         PipError.__init__(self, s)
 
 
@@ -213,6 +215,116 @@ class SetuptoolsStub(types.ModuleType):
                 return PackageFinder.find
         return OmniClass()
 
+def get_requires(package, index_file=PIP_INDEX_FILE):
+    """
+    get require of the package
+    :param package: package name
+    :type package: str
+    :return: a list of requires package
+    :rtype: list
+    """
+    if os.path.exists(index_file):
+        with open(index_file) as f:
+            index=json.load(f)
+            try:
+                return index[package]
+            except KeyError:# no such package in index file
+                raise PipError("Cannot find packages in index file. Try to using 'pip dev update-index' to update index file")
+
+    else:
+        raise PipError("Cannot find index file. Try to using 'pip dev update-index' to update index file")
+
+def get_req_by(package, index_file=PIP_INDEX_FILE):
+    """
+    get the packages that require this package
+    :param package: package name
+    :type package: str
+    :return: a list of packages that require this package
+    :rtype: list
+    """
+    if os.path.exists(index_file):
+
+        with open(index_file) as f:
+            index=json.load(f)
+            required_by=[]
+            for pkg, req in index.items():
+                if package in req:
+                    required_by.append(pkg)
+    else:
+
+        raise PipError("Cannot find index file. Try to using 'pip dev update-index' to update index file")
+
+    return required_by 
+
+
+
+
+
+def print_info(package, pip_info_file=PIP_INFO_FILE, site_packages=SITE_PACKAGES_FOLDER):
+    info_file = pip_info_file % package
+    if os.path.exists(info_file):
+        with open(info_file) as f:
+            info = json.load(f)
+        print('Name: {}'.format(info['name']))
+        print('Version: {}'.format(info['version']))
+        print('Summary: {}'.format(info['summary']))
+        print('Home-page: {}'.format(info['project_urls']['Homepage']))
+        print('Author: {}'.format(info['author']))
+        print('Author-email: {}'.format(info['author_email']))
+        print('License: {}'.format(info['license']))
+        print('Location: {}'.format(site_packages))
+       
+        requires = get_requires(package)
+        required_by = get_req_by(package)
+        print('requires: {}'.format(', '.join(requires)))
+        print('required-by: {}'.format(', '.join(required_by)))
+    else: #no info_file
+        print(_stash.text_color('Package not found: {}'.format(package), 'yellow'))
+        
+
+
+def download_info(pkg_name, pip_info_file=PIP_INFO_FILE, site_packages=SITE_PACKAGES_FOLDER):
+    info_file = pip_info_file % pkg_name
+    r=requests.get('https://pypi.python.org/pypi/{}/json'.format(pkg_name))
+    info=r.json()['info']
+    info_folder = os.path.split(info_file)[0]
+    if not os.path.exists(info_folder):
+        os.mkdir(info_folder)
+    with open(info_file, 'w') as f:
+        json.dump(info, f)
+    update_req_index()
+
+def update_req_index(pip_info_file=PIP_INFO_FILE, site_packages=SITE_PACKAGES_FOLDER, index_file=PIP_INDEX_FILE):
+    '''
+    update package requires index file 
+    '''
+    repository = get_repository('pypi', site_packages=site_packages)
+    info_list = repository.list()
+
+    req_index={} # a dict of {package:requires_list}  type:dict of {str:list of str}
+    for package, info in info_list:
+        info_file = pip_info_file % package
+        if os.path.exists(info_file):
+            # load info
+            with open(info_file) as f:
+                info=json.load(f)
+            # filte requires 
+            requires = []
+            try:
+                for req in info['requires_dist']:
+                    if not ';' in req:
+                        #Remove package version
+                        requires.append(req.split(' ')[0])
+            except TypeError:# some package may have no require
+                pass
+            req_index[package]=requires
+
+        else: # info file not exists
+            print(_stash.text_color('Info file of Package {} not found'.format(package), 'yellow'))
+
+
+    with open(index_file, 'w') as f:
+        json.dump(req_index,f)
 
 def fake_module(new_module):
     """
@@ -981,30 +1093,30 @@ class PyPIRepository(PackageRepository):
         self.pypi = xmlrpclib.ServerProxy('https://pypi.python.org/pypi')
         self.standard_package_names = {}
     
-    def _check_blacklist(self, pkg_name):
+    def _check_blocklist(self, pkg_name):
         """
-        Check if a package is blacklisted.
+        Check if a package is blocklisted.
         The result is a tuple:
-            - element 0 is True if the package is blacklisted
+            - element 0 is True if the package is blocklisted
             - element 1 is the reason
             - element 2 is True if the install should fail due to this
             - element 3 is an optional alternative package to use instead.
         :param pkg_name: name of package to check
         :type pkg_name: str
-        :return: a tuple of (blacklisted, reason, fatal, alt).
+        :return: a tuple of (blocklisted, reason, fatal, alt).
         :rtype: (bool, str, bool, str or None)
         """
-        if (BLACKLIST_PATH is None) or (not os.path.exists(BLACKLIST_PATH)):
-            # blacklist not available
+        if (BLOCKLIST_PATH is None) or (not os.path.exists(BLOCKLIST_PATH)):
+            # blocklist not available
             return (False, "", False, None)
-        with open(BLACKLIST_PATH) as fin:
+        with open(BLOCKLIST_PATH) as fin:
             content = json.load(fin)
-        if pkg_name not in content["blacklist"]:
-            # package not blacklisted
+        if pkg_name not in content["blocklist"]:
+            # package not blocklisted
             return (False, "", False, None)
         else:
-            # package blacklisted
-            reasonid, fatal, alt = content["blacklist"][pkg_name]
+            # package blocklisted
+            reasonid, fatal, alt = content["blocklist"][pkg_name]
             reason = content["reasons"].get(reasonid, reasonid)
             return (True, reason, fatal, alt)
 
@@ -1127,25 +1239,25 @@ class PyPIRepository(PackageRepository):
 
         return os.path.join(os.getenv('TMPDIR'), target['filename']), pkg_info
 
-    def install(self, pkg_name, ver_spec, flags=DEFAULT_FLAGS, extras=[]):
+    def install(self, pkg_name, ver_spec, flags=DEFAULT_FLAGS, pip_info_file=PIP_INFO_FILE, extras=[]):
         pkg_name = self.get_standard_package_name(pkg_name)
         
-        # check if package is blacklisted
+        # check if package is blocklisted
         # we only do this for PyPI installs, since non-PyPI installs
         # may have the same pkg name for a different package.
         # TODO: should this be changed?
-        blacklisted, reason, fatal, alt = self._check_blacklist(pkg_name)
-        if blacklisted and not (flags & FLAG_IGNORE_BLACKLIST > 0):
+        blocklisted, reason, fatal, alt = self._check_blocklist(pkg_name)
+        if blocklisted and not (flags & FLAG_IGNORE_BLOCKLIST > 0):
             if fatal:
                 # raise an exception.
                 print(
                     _stash.text_color(
-                        "Package {} is blacklisted and marked fatal. Failing install.".format(pkg_name),
+                        "Package {} is blocklisted and marked fatal. Failing install.".format(pkg_name),
                         "red",
                         )
                     )
                 print(_stash.text_color("Reason: " + reason, "red"))
-                raise PackageBlacklisted(pkg_name, reason)
+                raise PackageBlocklisted(pkg_name, reason)
             elif alt is not None:
                 # an alternative package exposing the same functionality
                 #  and API is known. Print a warning and use this instead.
@@ -1166,29 +1278,40 @@ class PyPIRepository(PackageRepository):
                 # we should print a warning, but continue anyway
                 print(
                     _stash.text_color(
-                        "Warning: package '{}' is blacklisted, but marked as non-fatal.".format(pkg_name),
+                        "Warning: package '{}' is blocklisted, but marked as non-fatal.".format(pkg_name),
                         "yellow",
                         )
                     )
                 print("This probably means that the dependency can not be installed, but pythonista ships with the package preinstalled.")
-                print("Reason for blacklisting: " + reason)
+                print("Reason for blocklisting: " + reason)
                 return
         
         if not self.config.module_exists(pkg_name):
             archive_filename, pkg_info = self.download(pkg_name, ver_spec, flags=flags)
             self._install(pkg_name, pkg_info, archive_filename, dependency_flags=flags, extras=extras)
+            # save json file of info
+            info_file = pip_info_file % pkg_name
+            info_folder = os.path.split(info_file)[0]
+            if not os.path.exists(info_folder):
+                os.mkdir(info_folder)
+            with open(info_file, 'w') as f:
+                json.dump(pkg_info, f)
         else:
             # todo: maybe update package?
             raise PackageAlreadyInstalled('Package already installed')
 
     def update(self, pkg_name):
+        global SITE_PACKAGES_FOLDER
         pkg_name = self.get_standard_package_name(pkg_name)
         if self.config.module_exists(pkg_name):
             pkg_data = self._package_data(pkg_name)
             hit = self._package_latest_release(pkg_data)
             current = self.config.get_info(pkg_name)
             if not current['version'] == hit:
-                print('Updating {}'.format(pkg_name))
+                files_installed = self.config.get_files_installed(pkg_name)
+                if files_installed:
+                    SITE_PACKAGES_FOLDER = os.path.dirname(files_installed[0])
+                print('Updating {} in {}'.format(pkg_name,SITE_PACKAGES_FOLDER))
                 self.remove(pkg_name)
                 self.install(pkg_name, VersionSpecifier((('==', hit), )))
             else:
@@ -1435,7 +1558,6 @@ def get_repository(pkg_name, site_packages=SITE_PACKAGES_FOLDER, verbose=False):
 
 if __name__ == '__main__':
     import argparse
-
     ap = argparse.ArgumentParser()
 
     ap.add_argument('--verbose', action='store_true', help='be more chatty')
@@ -1454,6 +1576,10 @@ if __name__ == '__main__':
         metavar='sub-command',
         help='"pip sub-command -h" for more help on a sub-command'
     )
+    
+    show_parser = subparsers.add_parser('show', help='show information of package ')
+    show_parser.add_argument('package', help='package name to show')
+    show_parser.add_argument('-f', '--force', action="store_true", dest="forcedownload", help='force to download info file from pypi')
 
     list_parser = subparsers.add_parser('list', help='list packages installed')
 
@@ -1483,7 +1609,7 @@ if __name__ == '__main__':
         help="Prefer older binary packages over newer source packages",  # TODO: do we actually check older sources/wheels?
         dest="preferbinary",
     )
-    install_parser.add_argument("--ignore-blacklist", action="store_true", help="Ignore blacklist", dest="ignoreblacklist")
+    install_parser.add_argument("--ignore-blocklist", action="store_true", help="Ignore blocklist", dest="ignoreblocklist")
 
     download_parser = subparsers.add_parser('download', help='download packages')
     download_parser.add_argument(
@@ -1513,6 +1639,9 @@ if __name__ == '__main__':
 
     update_parser = subparsers.add_parser('update', help='update an installed package')
     update_parser.add_argument('packages', nargs="+", help='the package name')
+
+    dev_parser = subparsers.add_parser('dev')
+    dev_parser.add_argument('opt')
 
     ns = ap.parse_args()
     
@@ -1565,8 +1694,8 @@ if __name__ == '__main__':
                 flags = flags | FLAG_DIST_PREFER_WHL | FLAG_DIST_ALLOW_WHL
                 flags = flags & ~FLAG_DIST_PREFER_SRC
             
-            if ns.ignoreblacklist:
-                flags = flags | FLAG_IGNORE_BLACKLIST
+            if ns.ignoreblocklist:
+                flags = flags | FLAG_IGNORE_BLOCKLIST
 
             for requirement in ns.requirements:
                 repository = get_repository(requirement, site_packages=site_packages, verbose=ns.verbose)
@@ -1580,6 +1709,7 @@ if __name__ == '__main__':
                     # start with what we have installed (i.e. in the config file)
                     sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
                     repository.install(pkg_name, ver_spec, flags=flags, extras=extras)
+                    update_req_index() 
 
         elif ns.sub_command == 'download':
             for requirement in ns.requirements:
@@ -1609,6 +1739,7 @@ if __name__ == '__main__':
             for package_name in ns.packages:
                 repository = get_repository('pypi', site_packages=ns.site_packages, verbose=ns.verbose)
                 repository.remove(package_name)
+                update_req_index() 
 
         elif ns.sub_command == 'update':
             for package_name in ns.packages:
@@ -1620,6 +1751,20 @@ if __name__ == '__main__':
                     # start with what we have installed (i.e. in the config file)
                     sys.modules['setuptools']._installed_requirements_ = repository.config.list_modules()
                     repository.update(package_name)
+
+        elif ns.sub_command == 'show':
+            if ns.forcedownload:
+                download_info(ns.package, site_packages=ns.site_packages)
+            print_info(ns.package, site_packages=ns.site_packages)
+
+        elif ns.sub_command=='dev':
+            if ns.opt=='update-index':
+                update_req_index()
+                print('index file updated')
+            else:
+                raise PipError('unknow dev option: {}'.format(ns.opt))
+                sys.exit(1)
+
         else:
             raise PipError('unknown command: {}'.format(ns.sub_command))
             sys.exit(1)

@@ -54,7 +54,7 @@ _DEBUG_COMPLETER = 403
 # Default configuration (can be overridden by external configuration file)
 _DEFAULT_CONFIG = """[system]
 rcfile=.stashrc
-py_traceback=0
+py_traceback=1
 py_pdb=0
 input_encoding_utf8=1
 thread_type=ctypes
@@ -232,7 +232,7 @@ class StaSh(object):
             'WARNING': logging.WARNING,
             'INFO': logging.INFO,
             'DEBUG': logging.DEBUG,
-            'NOTEST': logging.NOTSET,
+            'NOTSET': logging.NOTSET,
         }.get(_log_setting['level'],
               logging.DEBUG)
 

@@ -30,7 +30,7 @@ def main(args):
                 for src in ns.src:
                     try:
                         # Attempt to move every source into destination
-                        shutil.move(src, os.path.join(ns.dest, os.path.basename(src)))
+                        shutil.move(src, ns.dest)
                     except Exception as err:
                         print("mv: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
                         status = 1
@@ -44,27 +44,17 @@ def main(args):
         src = ns.src[0]
         if os.path.exists(src):
             # Source must exist
-            if os.path.exists(ns.dest):
-                # If destination exists...
-                if os.path.isdir(ns.dest):
-                    # ...it must be a folder
-                    try:
-                        # Attempt to move source into destination
-                        shutil.move(src, os.path.join(ns.dest, os.path.basename(src)))
-                    except Exception as err:
-                        print("mv: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
-                        status = 1
-                else:
-                    # Won't overwrite unasked
-                    print("mv: {}: file exists".format(ns.dest), file=sys.stderr)
-            else:
-                # Destination doesn't exist
+            if not os.path.isfile(ns.dest):
+            # Python will rename source if it doesn't exists
+            # And will move source into destination if it is a directory
                 try:
-                    # Try to rename source to destination
                     shutil.move(src, ns.dest)
                 except Exception as err:
                     print("mv: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
                     status = 1
+            else:
+                # Won't overwrite unasked
+                print("mv: {}: file exists".format(ns.dest), file=sys.stderr)
         else:
             print("mv: {}: no such file or directory".format(src), file=sys.stderr)
             status = 1

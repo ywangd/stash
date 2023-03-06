@@ -8,9 +8,7 @@ import tarfile
 import zipfile
 import imghdr
 from argparse import ArgumentParser
-
 from stashutils.mount_ctrl import get_manager
-
 
 def is_mounted(path):
     """checks if path is on a mounted path."""
@@ -27,7 +25,6 @@ def get_file_extension(path):
         return ""
     else:
         return path.split(".")[-1].lower()
-
 
 def is_archive(path):
     """checks if path points to an archive"""
@@ -49,7 +46,6 @@ def is_archive(path):
             return True
         else:
             return False
-
 
 def is_image(path):
     """checks wether path points to an image."""
@@ -77,28 +73,61 @@ def is_image(path):
         return True
     else:
         return False
-
+        
+def human_legible_size(num):
+    """
+    Return a human readable string describing the size of something.
+    :param num: the number in machine-readble form
+    :type num: int
+    """
+    suffix = ''
+    if num<=999999:
+        return '%7d' % num
+    for suffix in ['K','M','G','T']:
+        num /= 1024.0
+        if num<=9999:
+            return '%4.1f%s' % (num,suffix)
+    return "%4.1f%s" % (num, 'P')
+    
+def unformatted_size(num):
+    return '%7d' % num
+    
+def sortKey(txt):
+    result = ''
+    for c in txt:
+        if c.islower():
+            result += c+'1'
+        if c.isupper():
+            result += c.lower()+'2'
+        else:
+            result += c+'0'
+    return result
+    
 def main(args):
-
-    ap = ArgumentParser()
+    ap = ArgumentParser(add_help=False)
+    ap.add_argument('--help', action='help', help='show this help message and exit')
     ap.add_argument('-1', '--one-line', action='store_true', help='List one file per line')
     ap.add_argument('-a', '--all', action='store_true', help='do not ignore entries starting with .')
+    ap.add_argument('-A', '--almost-all', action='store_true', help='do not ignore entries starting with .')
     ap.add_argument('-l', '--long', action='store_true', help='use a long listing format')
+    ap.add_argument('-h','--human', action='store_true', help='display size in human legible format')
+    ap.add_argument('-d','--dirs', action='store_true', help='list directories instead of their content')
     ap.add_argument('files', nargs='*', help='files to be listed')
     ns = ap.parse_args(args)
 
     _stash = globals()['_stash']
     exitcode = 0
-    sizeof_fmt = _stash.libcore.sizeof_fmt
 
     joiner = '\n' if ns.one_line or ns.long else ' '
+    format_size = (human_legible_size
+                    if ns.human
+                    else unformatted_size)
+    all_files = [ '.','..' ] if ns.all else []
 
-    if ns.all:
-
+    if ns.all or ns.almost_all:
         def _filter(filename):
             return True
     else:
-
         def _filter(filename):
             return False if filename.startswith('.') else True
 
@@ -106,54 +135,56 @@ def main(args):
 
         def _fmt(filename, dirname=''):
             suffix = ''
-            
-            _stat = os.stat(os.path.join(dirname, filename))
-            
-            home = os.environ['HOME']
             fullpath = os.path.join(dirname, filename)
-            filename = '{:30}'.format(filename)
-
+            _stat = os.stat(fullpath)
+            if filename.startswith('/'):
+                filename = _stash.libcore.abbreviate(filename)
+            
             if os.path.islink(fullpath):
-                filename = _stash.text_color(filename, 'yellow')
-                suffix = ' -> %s'%os.path.realpath(fullpath).replace(home,'~') 
+                filename = (_stash.text_color(
+                                filename,
+                                'yellow') +
+                            ' -> %s' % _stash.libcore.abbreviate(os.path.realpath(fullpath),
+                                         relativeTo=os.path.dirname(fullpath)))
             elif os.path.isdir(fullpath):
                 filename = _stash.text_color(filename, 'blue')
             elif filename.endswith('.py'):
                 filename = _stash.text_color(filename, 'green')
-            elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
+            elif is_archive(fullpath):
                 filename = _stash.text_color(filename, 'red')
-            elif imghdr.what(fullpath) is not None:
+            elif is_image(fullpath):
                 filename = _stash.text_color(filename, 'brown')
 
-            ret = filename + _stash.text_color(
-                ' ({:8}) {}'.format(sizeof_fmt(_stat.st_size),
-                time.strftime(
+            return _stash.text_color(
+                '{} {} {}'.format(
+                    time.strftime(
                     "%Y-%m-%d %H:%M:%S",
                     time.localtime(_stat.st_mtime)),
+                    format_size(_stat.st_size),
+                    filename
                     ),
-                'gray',
-               ) + suffix
-
-            return ret
+                'gray')
     else:
 
         def _fmt(filename, dirname=''):
             fullpath = os.path.join(dirname, filename)
+            if filename.startswith('/'):
+                filename = _stash.libcore.abbreviate(filename)
             if os.path.islink(fullpath):
                 return _stash.text_color(filename, 'yellow')
             elif os.path.isdir(fullpath):
                 return _stash.text_color(filename, 'blue')
             elif filename.endswith('.py'):
                 return _stash.text_color(filename, 'green')
-            elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
+            elif is_archive(fullpath):
                 return _stash.text_color(filename, 'red')
-            elif imghdr.what(fullpath) is not None:
+            elif is_image(fullpath):
                 return _stash.text_color(filename, 'brown')
             else:
                 return filename
 
     if len(ns.files) == 0:
-        filenames = [".", ".."] + os.listdir('.')
+        filenames = all_files + sorted(os.listdir('.'),key=sortKey)
         out = joiner.join(_fmt(f) for f in filenames if _filter(f))
         print(out)
 
@@ -161,12 +192,13 @@ def main(args):
         out_dir = []
         out_file = []
         out_miss = []
-        for f in ns.files:
+        for f in sorted(ns.files,key=sortKey):
             if not os.path.exists(f):
                 out_miss.append('ls: %s: No such file or directory' % f)
                 exitcode = 1
-            elif os.path.isdir(f):
-                filenames = [".", ".."] + os.listdir(f)
+            elif (os.path.isdir(f)
+                  and not ns.dirs):
+                filenames = all_files + sorted(os.listdir(f),key=sortKey)
                 fn = (f[:-1] if f.endswith("/") else f)
                 out_dir.append('%s/:\n%s\n' % (fn, joiner.join(_fmt(sf, f) for sf in filenames if _filter(sf))))
             else:

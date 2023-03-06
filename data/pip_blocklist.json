@@ -10,7 +10,7 @@
     "incompatible_dependency": "This package has one or more dependencies which are incompatible with Pythonista.",
     "bugged": "Installation of this packages is currently critically bugged."
 },
-"blacklist": {
+"blocklist": {
     "stash": ["is_stash", true, null],
     "pip": ["is_pip", true, null],
     "selenium": ["processes", true, null],
@@ -22,6 +22,8 @@
     "pyobjc": ["C", true, null],
     "pyttsx3": ["incompatible_dependency", true, null],
     "futures": ["bugged", true, null],
-    "regex": ["C", true, null]
+    "regex": ["C", true, null],
+    "gevent": ["C", true, null],
+    "grequests": ["incompatible_dependency", true, null]
 }
 }

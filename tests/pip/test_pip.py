@@ -60,6 +60,7 @@ class PipTests(StashTestCase):
         self.assertIn("download", output)
         self.assertIn("list", output)
 
+    @unittest.skip('Pip is retiring and seach is disabled')
     @requires_network
     def test_search(self):
         """test 'pip search <term>'"""
@@ -287,20 +288,20 @@ class PipTests(StashTestCase):
             # expected failure
             pass
     
-    def test_blacklist_fatal(self):
-        """test 'pip install <blacklisted-fatal-package>'."""
+    def test_blocklist_fatal(self):
+        """test 'pip install <blocklisted-fatal-package>'."""
         output = self.run_command("pip --verbose install pip", exitcode=1)
         self.assertIn("StaSh uses a custom version of PIP", output)
-        self.assertIn("PackageBlacklisted", output)
+        self.assertIn("PackageBlocklisted", output)
         self.assertNotIn("Package installed: pip", output)
     
-    def test_blacklist_nonfatal(self):
-        """test 'pip install <blacklisted-nonfatal-package>'."""
+    def test_blocklist_nonfatal(self):
+        """test 'pip install <blocklisted-nonfatal-package>'."""
         output = self.run_command("pip --verbose install matplotlib", exitcode=0)
-        self.assertIn("Warning: package 'matplotlib' is blacklisted, but marked as non-fatal.", output)
+        self.assertIn("Warning: package 'matplotlib' is blocklisted, but marked as non-fatal.", output)
         self.assertIn("This package is already bundled with Pythonista", output)
-        self.assertNotIn("PackageBlacklisted", output)
+        self.assertNotIn("PackageBlocklisted", output)
         self.assertNotIn("Package installed: matplotlib", output)
     
-    # TODO: add test for blacklist with alternative.
+    # TODO: add test for blocklist with alternative.
     

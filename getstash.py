@@ -36,7 +36,7 @@ UNWANTED_FILES = [
         'bin/pythonista.py',
         'bin/cls.py',
         'stash.py',
-        'lib/librunner.py'
+        'lib/librunner.py',
         'system/shui.py',
         'system/shterminal.py',
         'system/dummyui.py',
@@ -65,7 +65,7 @@ def raise_for_compatibility():
     more info via the exception message.
     """
     if sys.version_info[0] == 2 and not PY2_COMPATIBLE:
-        raise IncompatibleVersion("Not compatible with python2! Try using stash<=0.7.4!")
+        raise IncompatibleVersion("Not compatible with python2! Try using stash<=0.7.5!")
     elif sys.version_info[0] == 3 and not PY3_COMPATIBLE:
         raise IncompatibleVersion("Not compatible with python3!")
 

@@ -39,15 +39,15 @@ def main(args):
                  'HEAD'],
         help='specify request method to use (default to GET)'
     )
-    ap.add_argument('-H', '--header', help='Custom header to pass to server (H)')
+    ap.add_argument('-H', '--header', help='Custom header to pass to server (H)', action='append')
     ap.add_argument('-d', '--data', help='HTTP POST data (H)')
 
     ns = ap.parse_args(args)
     url = ns.url or clipboard.get()
 
     headers = {}
-    if ns.header:
-        for h in ns.header.split(';'):
+    for header in ns.header:
+        for h in header.split(';'):
             name, value = h.split(':')
             headers[name.strip()] = value.strip()
 
@@ -84,7 +84,13 @@ def main(args):
         with open(filename, 'wb') as outs:
             outs.write(r.content)
     else:
-        print(r.text)
+        if ns.request_method == 'HEAD':
+            print('Status: {}'.format(r.status_code))
+            for k, v in r.headers.items():
+                print('{}: {}'.format(k, v))
+            print('')
+        else:
+            print(r.text)
 
 
 if __name__ == '__main__':

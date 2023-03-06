@@ -6,6 +6,13 @@ try:
     unicode
 except NameError:
     unicode = str
+    
+    
+def abbreviate(filename,relativeTo='.'):
+    result = collapseuser(filename)
+    if result.startswith('~'):
+        return result
+    return os.path.relpath(filename,relativeTo)
 
 
 def collapseuser(path):
@@ -25,7 +32,7 @@ def collapseuser(path):
     elif path.startswith(althome):
         collapsed = os.path.relpath(path, althome)
     else:
-        collapsed = path
+        return path
 
     return "~" if collapsed == "." else os.path.join("~", collapsed)
 

@@ -71,7 +71,8 @@ def main(args):
             return True
 
     for path in ns.paths:
-        if os.path.isfile(path):
+        if (os.path.isfile(path) or
+            os.path.islink(path)):
             if prompt(path):
                 try:
                     os.remove(path)

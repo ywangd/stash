@@ -22,8 +22,9 @@ Remarkable contributions are also made by
 [@zrzka](https://github.com/zrzka),
 [@seanld](https://github.com/Seanld),
 [@zed](https://github.com/zed),
-[@sdushantha](https://github.com/sdushantha) and
-[@ywang-bom](https://github.com/ywang-bom).
+[@sdushantha](https://github.com/sdushantha),
+[@ywang-bom](https://github.com/ywang-bom) and
+[@fschaeck](https://github.com/fschaeck).
 
 StaSh stands for Pythoni**sta** **Sh**ell. While **Sta** may not be the best
 abbreviation for Pythonista, it forms a concise and meaningful word with the
@@ -275,6 +276,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `rm.py` - delete (remove) file
     * `rmdir.py` - delete (remove) directories
     * `scp.py` - Copy files from/to remote servers. 
+    * `sed.py` - Stream editor (compatible with GNU sed v4.8)
     * `selfupdate.py` - Update StaSh from its GitHub repo
     * `sha1sum.py` - Print of check SHA1 checksums
     * `sha256sum.py` - Print of check SHA256 checksums
