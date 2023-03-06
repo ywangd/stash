@@ -878,7 +878,7 @@ class Script(object):
                     elif self.sed.sed_compatible:
                         # in sed a ^ not at the beginning of
                         # a regexp must be taken literally
-                        if char == '^' and not (last_pychr in ['(', '|', '']):
+                        if char == '^' and last_pychr not in ['(', '|', '']:
                             pychr = '\\^'
                         elif char == '$':
                             # remember this dollar sign's position in py_pattern

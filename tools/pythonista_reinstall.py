@@ -19,7 +19,7 @@ def remove_stash():
 
 
 def install_stash(repo="ywangd", branch="master"):
-    if not "TMPDIR" in os.environ:
+    if "TMPDIR" not in os.environ:
         os.environ["TMPDIR"] = tempfile.gettempdir()
     ns = {"_owner": repo, "_br": branch}
     exec(requests.get("https://bit.ly/get-stash").content, ns, ns)

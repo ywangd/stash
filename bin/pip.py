@@ -312,7 +312,7 @@ def update_req_index(pip_info_file=PIP_INFO_FILE, site_packages=SITE_PACKAGES_FO
             requires = []
             try:
                 for req in info['requires_dist']:
-                    if not ';' in req:
+                    if ';' not in req:
                         #Remove package version
                         requires.append(req.split(' ')[0])
             except TypeError:# some package may have no require
@@ -782,7 +782,7 @@ class ArchiveFileInstaller(object):
             if self.verbose:
                 print("Handling commandline script: {s}".format(s=script))
             cmdname = script.replace(os.path.dirname(script), "").replace("/", "")
-            if not "." in cmdname:
+            if '.' not in cmdname:
                 cmdname += ".py"
             scriptpath = os.path.join(source_folder, script)
             with open(scriptpath, "r") as fin:
