@@ -23,7 +23,7 @@ BASE_DIR = os.path.expanduser('~')
 DEFAULT_INSTALL_DIR = os.path.join(BASE_DIR, 'Documents/site-packages/stash')
 DEFAULT_PTI_PATH = os.path.join(DEFAULT_INSTALL_DIR, "bin", "ptinstaller.py")
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
-PY2_COMPATIBLE = True
+PY2_COMPATIBLE = False
 PY3_COMPATIBLE = True
 UNWANTED_FILES = [
         'getstash.py',
