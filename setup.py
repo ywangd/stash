@@ -40,17 +40,35 @@ if IN_PYTHONISTA:
 
 # =================== SETUP ===================
 
-from distutils.core import setup
-from setuptools import find_packages
+from setuptools import setup,find_packages
 
-
-TEST_REQUIREMENTS = [
-    "pyparsing==2.0.1",
-    "pytest>=3.6.0",
-    "flake8>=3.5.0",
-    "pycrypto==2.6",
-    "requests==2.9.1",
-]
+if sys.version_info.major==2:
+    INSTALL_REQUIREMENTS = [
+        "rsa==4.5",
+        "six",        # required by StaSh
+        "pyperclip",  # required by libdist for copy/paste on PC
+        "requests==2.9.1",
+        "pycrypto==2.6",
+        "pyte==0.8.1",
+    ]
+    TEST_REQUIREMENTS = [
+        "pyparsing==2.0.2",
+        "pytest==4.6.11",
+        "flake8>=3.7.9",
+    ]
+else:
+    INSTALL_REQUIREMENTS=[
+        "six",        # required by StaSh
+        "pyperclip",  # required by libdist for copy/paste on PC
+        "requests",
+        "pycrypto",
+        "pyte",
+    ],
+    TEST_REQUIREMENTS = [
+        "pyparsing",
+        "pytest",
+        "flake8>=3.7.9",
+    ]
 
 
 PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -125,12 +143,7 @@ setup(
     },
     scripts=[os.path.join(STASH_DIR, "launch_stash.py")],
     zip_safe=False,
-    install_requires=[
-        "six",      # required by StaSh
-        "pyperclip",  # required by libdist for copy/paste on PC
-        "requests",
-        "pyte",
-    ],
+    install_requires=INSTALL_REQUIREMENTS,
     extras_require={
         "testing": TEST_REQUIREMENTS,
     },

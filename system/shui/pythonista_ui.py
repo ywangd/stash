@@ -385,14 +385,14 @@ UIFont = ObjCClass('UIFont')
 # noinspection PyAttributeOutsideInit,PyUnusedLocal,PyPep8Naming
 class ShTerminal(ShBaseTerminal):
     """
-    This is a wrapper class of the actual TextView that subclass the SUITextView.
+    This is a wrapper class of the actual TextView that subclass the SUITextView/SUITextView_PY3.
     The wrapper is used to encapsulate the objc calls so that it behaves more like
     a regular ui.TextView.
     """
 
     def __init__(self, stash, parent, superview, width, height):
 
-        # Create the actual TextView by subclass SUITextView
+        # Create the actual TextView by subclass SUITextView/SUITextView_PY3
         UIKeyCommand = ObjCClass('UIKeyCommand')
 
         def kcDispatcher_(_self, _cmd, _sender):
@@ -490,7 +490,10 @@ class ShTerminal(ShBaseTerminal):
             ('UIKeyInputRightArrow', 0): parent.arrowRightAction,
         }
 
-        _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView'), [keyCommands, kcDispatcher_])
+        try:
+            _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView'), [keyCommands, kcDispatcher_])
+        except ValueError:
+            _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView_PY3'), [keyCommands, kcDispatcher_])
 
         self.is_editing = False
 
@@ -883,7 +886,7 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
 
     def render(self, no_wait=False):
         """
-        Render the screen buffer to the UITextView. Normally the rendering process
+        Render the screen buffer to the SUITextView/SUITextView_PY3. Normally the rendering process
         is delayed to throttle the total attempts of rendering.
         :param bool no_wait: Immediately render the screen without delay.
         """

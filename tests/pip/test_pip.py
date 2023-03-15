@@ -138,7 +138,7 @@ class PipTests(StashTestCase):
     @pytest.mark.xfail(sys.version_info < (3, 0), reason="rsa v4.7.1 binary is not available on Py2")
     def test_install_pypi_onlybinary(self):
         """test 'pip install --only-binary :all: <pypi_package>'."""
-        output = self.run_command("pip --verbose install --only-binary :all: rsa", exitcode=0)
+        output = self.run_command("pip --verbose install --only-binary :all: rsa==4.5", exitcode=0)
         self.assertIn("Downloading package", output)
         self.assert_did_run_setup(output, allow_source=False)
         self.assertIn("Package installed: rsa", output)
@@ -156,7 +156,7 @@ class PipTests(StashTestCase):
         self.run_command("pyrsa-keygen --help", exitcode=127)
 
         # 2. install
-        output = self.run_command("pip --verbose install rsa", exitcode=0)
+        output = self.run_command("pip --verbose install rsa==4.5", exitcode=0)
         self.assertIn("Downloading package", output)
         self.assert_did_run_setup(output)
         self.assertIn("Package installed: rsa", output)
