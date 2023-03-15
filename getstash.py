@@ -1,3 +1,8 @@
+"""
+StaSh install script. Also used for updates.
+
+IMPORTANT: ensure we maintain py2 and py3 compatibility in this file!
+"""
 from __future__ import print_function
 import os
 import shutil
@@ -18,6 +23,8 @@ BASE_DIR = os.path.expanduser('~')
 DEFAULT_INSTALL_DIR = os.path.join(BASE_DIR, 'Documents/site-packages/stash')
 DEFAULT_PTI_PATH = os.path.join(DEFAULT_INSTALL_DIR, "bin", "ptinstaller.py")
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
+PY2_COMPATIBLE = False
+PY3_COMPATIBLE = True
 UNWANTED_FILES = [
         'getstash.py',
         'run_tests.py',
@@ -41,6 +48,26 @@ class DownloadError(Exception):
     Exception indicating a problem with a download.
     """
     pass
+
+
+class IncompatibleVersion(Exception):
+    """
+    Exception raised when a version is incompatible.
+    """
+    pass
+
+
+def raise_for_compatibility():
+    """
+    Check if this version of stash is compatible with this pythonista/... version, raising an exception if not.
+
+    While I'd prefer to just return True/False, raising an Exception allows us to convey
+    more info via the exception message.
+    """
+    if sys.version_info[0] == 2 and not PY2_COMPATIBLE:
+        raise IncompatibleVersion("Not compatible with python2! Try using stash<=0.7.5!")
+    elif sys.version_info[0] == 3 and not PY3_COMPATIBLE:
+        raise IncompatibleVersion("Not compatible with python3!")
 
 
 def download_stash(repo=DEFAULT_REPO, branch=DEFAULT_BRANCH, outpath=TEMP_ZIPFILE, verbose=False):
@@ -280,6 +307,15 @@ def main(defs={}):
     else:
         dist = force_dist
     
+    # check compatiblity
+    try:
+        raise_for_compatibility()
+    except IncompatibleVersion as e:
+        # inform user, then abort
+        print("Installation aborted. The version of StaSh you are trying to install is incompatible!")
+        print(e)
+        sys.exit(1)
+
     if dist.lower() == "pythonista":
         if install_path is None:
             install_path = DEFAULT_INSTALL_DIR
