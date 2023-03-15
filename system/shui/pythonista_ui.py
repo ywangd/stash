@@ -894,7 +894,7 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
                 self.render_thread.cancel()
             self._render()
         else:  # delayed rendering
-            if self.render_thread is None or not self.render_thread.isAlive():
+            if self.render_thread is None or not self.render_thread.is_alive():
                 self.render_thread = sh_delay(self._render, self.RENDER_INTERVAL)
             # Do nothing if there is already a delayed rendering thread waiting
 
