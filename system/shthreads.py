@@ -263,7 +263,7 @@ class ShBaseThread(threading.Thread):
         # True       | not None    | running
         if self.is_alive():
             return self.STARTED
-        elif (not is_alive) and (self.ident is not None):
+        elif (not self.is_alive()) and (self.ident is not None):
             return self.STOPPED
         else:
             return self.CREATED
