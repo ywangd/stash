@@ -5,8 +5,8 @@ import os
 
 from stash.system.shcommon import IN_PYTHONISTA
 
-# check if running on travis
-ON_TRAVIS = "TRAVIS" in os.environ
+# check if running on GitHub Actions CI
+ON_CI = "CI" in os.environ
 
 
 def get_platform():
@@ -18,7 +18,7 @@ def get_platform():
     # platform specific UIs
     if IN_PYTHONISTA:
         return "pythonista"
-    elif ON_TRAVIS:
+    elif ON_CI:
         return "stub"
 
     # attempt to fall back to tkinter

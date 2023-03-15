@@ -96,7 +96,8 @@ if __name__ == '__main__':
     # Calculate the relative path because absolute path crashes Pythonista
     # most likely due to access right for iOS root path.
     if ns.file:
-        filename = os.path.relpath(ns.file, '.')
+        filename = os.path.expanduser(ns.file)
+        filename = os.path.relpath(filename, '.')
 
     if ns.temp and ns.file:
         open_temp(filename, new_tab=not ns.old_tab)

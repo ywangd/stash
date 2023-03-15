@@ -7,8 +7,9 @@ from __future__ import print_function
 
 import argparse
 import sys
+import os
 
-INVISIBLE = range(0x20) + [0x81, 0x8d, 0x8f, 0x90, 0x9d]
+INVISIBLE = list(range(0x20)) + [0x81, 0x8d, 0x8f, 0x90, 0x9d]
 
 
 def main(args):
@@ -20,14 +21,16 @@ def main(args):
 
     for filename in ns.file:
         try:
+            filename = os.path.expanduser(filename)
             with open(filename, "rb") as f:
                 i = 0
                 chunk = f.read(16)
                 while chunk:
                     # Decoding as Latin-1 to get a visual representation for most
                     # bytes that would otherwise be non-printable.
-                    strchunk = "".join("_" if ord(c) in INVISIBLE else c.decode("windows-1252") for c in chunk)
-                    hexchunk = " ".join("{:0>2X}".format(ord(c)) for c in chunk)
+                    decoded = chunk.decode('windows-1252')
+                    strchunk = "".join("_" if ord(c) in INVISIBLE else c for c in decoded)
+                    hexchunk = " ".join("{:0>2X}".format(ord(c) if isinstance(c,str) else c) for c in chunk)
                     print("0x{:>08X} | {:<48} | {:<16}".format(i, hexchunk, strchunk))
                     i += 16
                     chunk = f.read(16)

@@ -152,7 +152,7 @@ def format_tracking_branch_desc(repo, branchname):
 def edit_branch_description(branchname, description=None):
     description = description or input('enter description:')
     config = _get_repo().repo.get_config()
-    if not branchname in _get_repo().branches:
+    if branchname not in _get_repo().branches:
         GitError('{} is not an existing branch'.format(branchname))
         config.set(('branch', branchname), 'description', description)
         config.write_to_path()
@@ -284,7 +284,7 @@ def create_branch(new_branch, base_rev, force=False, no_track=False):
     #handle tracking, only if this was a remote
     tracking, remote_branch = (['origin'] + base_rev.split('/'))[-2:]  #branch-> origin/branch.  remote/branch stays as is
     qualified_remote_branch = os.path.sep.join([tracking, remote_branch])
-    if qualified_remote_branch in repo.remote_branches and not base_rev in repo.branches:
+    if qualified_remote_branch in repo.remote_branches and base_rev not in repo.branches:
         if not no_track:
             add_tracking(new_branch, tracking, remote_branch)
         else:

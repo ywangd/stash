@@ -22,6 +22,9 @@ var/
 .installed.cfg
 *.egg
 
+# pyenv virtual environment auto selection
+.python-version
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -56,6 +59,11 @@ target/
 
 # IDE
 .idea
+
+# Eclipse
+.project
+.settings/
+.pydevproject
 
 # Vim
 *.swp

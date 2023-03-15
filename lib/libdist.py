@@ -8,7 +8,7 @@ import six
 
 
 IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
-ON_TRAVIS = "TRAVIS" in os.environ
+ON_CI = "CI" in os.environ
 
 
 # ========================== PYTHONISTA =======================
@@ -118,12 +118,12 @@ if IN_PYTHONISTA:
         """
         console.quicklook(path)
         
-# ======================== DEFAULT / PC / travis =========================
+# ======================== DEFAULT / PC / GitHub Actions =========================
 else:
     
     # ------------- clipboard --------------
-    # travis is a variation of PC
-    if not ON_TRAVIS:
+    # ON_CI is a variation of PC
+    if not ON_CI:
         # use pyperclip
         import pyperclip
         
@@ -146,7 +146,8 @@ else:
             pyperclip.copy(s)
     else:
         # use fake implementation
-        global _CLIPBOARD; _CLIPBOARD = u""
+        global _CLIPBOARD
+        _CLIPBOARD = u""
         
         def clipboard_get():
             """

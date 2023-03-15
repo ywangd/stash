@@ -255,20 +255,13 @@ class ShBaseThread(threading.Thread):
         Status of the thread. Created, Started or Stopped.
         """
         # STATES
-        # isAlive() | self.ident  | Meaning
-        # ----------+-------------+--------
-        # False     |     None    | created
-        # False     | not None    | stopped
-        # True      |     None    | impossible
-        # True      | not None    | running
-        
-        # `Thread.isAlive()` was removed in Python 3.9
-        if hasattr(self, 'is_alive'):
-            is_alive = self.is_alive()
-        else:
-            is_alive = self.isAlive()
-    
-        if is_alive:
+        # is_alive() | self.ident  | Meaning
+        # -----------+-------------+--------
+        # False      |     None    | created
+        # False      | not None    | stopped
+        # True       |     None    | impossible
+        # True       | not None    | running
+        if self.is_alive():
             return self.STARTED
         elif (not is_alive) and (self.ident is not None):
             return self.STOPPED

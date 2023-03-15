@@ -17,7 +17,7 @@ from stash import stash
 from stash.system.shcommon import _STASH_ROOT, PY3
 
 
-ON_TRAVIS = "TRAVIS" in os.environ
+ON_CI = "CI" in os.environ
 
 
 def network_is_available():
@@ -149,7 +149,7 @@ class StashTestCase(unittest.TestCase):
         for v in ensure_defined:
             assert v in self.stash.runtime.state.environ.keys(), u'%s should be defined' % v
 
-    def run_command(self, command, exitcode=None):
+    def run_command(self, command, exitcode=None, stdin_text=''):
         """
         Run a command and return its output.
         :param command: command to run
@@ -169,9 +169,12 @@ class StashTestCase(unittest.TestCase):
             # do NOT return here, script may be alias
         outs = StringIO()
         self.logger.info(u"Executing: " + repr(command))
+        
+        ins = StringIO(stdin_text)
         worker = self.stash(
             command,
             persistent_level=1,
+            final_ins=ins,
             final_outs=outs,
             final_errs=outs,
             cwd=self.cwd
@@ -189,3 +192,43 @@ class StashTestCase(unittest.TestCase):
                                                                                       o=output),
             )
         return output
+
+    def run_command_2(self, command, stdin_text=''):
+        """
+        Run a command and return its output on stdout and stderr.
+        :param command: command to run
+        :type command: str
+        :param exitcode: expected exitcode, None to ignore
+        :type exitcode: int or None
+        :return: tuple of exit code and output of the command to stdout and stderr
+        :rtype: (int, str, str)
+        """
+        # for debug purposes, locate script
+        try:
+            scriptname = command.split(" ")[0]
+            scriptfile = self.stash.runtime.find_script_file(scriptname)
+            self.logger.debug(u"Scriptfile for command: " + str(scriptfile))
+        except Exception as e:
+            self.logger.warning(u"Could not find script for command: " + repr(e))
+            # do NOT return here, script may be alias
+        outs = StringIO()
+        errs = StringIO()
+
+        self.logger.info(u"Executing: " + repr(command))
+
+        ins = StringIO(stdin_text)
+        worker = self.stash(
+            command,
+            persistent_level=1,
+            final_ins=ins,
+            final_outs=outs,
+            final_errs=errs,
+            cwd=self.cwd
+        )  # 1 for mimicking running from console
+        stdout_output = outs.getvalue()
+        stderr_output = errs.getvalue()
+        returnvalue = worker.state.return_value
+        self.logger.debug("Exitcode: " + str(returnvalue))
+        self.logger.debug('stdout:\n' + stdout_output)
+        self.logger.debug('stderr:\n' + stderr_output)
+        return returnvalue, stdout_output, stderr_output
