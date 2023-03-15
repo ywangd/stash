@@ -7,7 +7,7 @@ import tempfile
 import time
 import shutil
 
-from stash.tests.stashtest import StashTestCase, ON_TRAVIS
+from stash.tests.stashtest import StashTestCase, ON_CI
 
 
 
@@ -168,6 +168,6 @@ class GetstashTests(StashTestCase):
         zp = self.create_stash_zipfile()
         td = self.get_new_tempdir()
         sd = os.path.join(td, "stash")
-        asuser = (not ON_TRAVIS)
+        asuser = (not ON_CI)
         self.run_getstash(zippath=zp, dist="setup", asuser=asuser, dryrun=True)
         

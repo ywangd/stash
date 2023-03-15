@@ -2,6 +2,7 @@
 """tests for the 'pip' command."""
 import sys
 import unittest
+import pytest
 
 from six.moves import reload_module
 
@@ -134,6 +135,7 @@ class PipTests(StashTestCase):
             raise AssertionError("Could not import installed module: " + repr(e))
 
     @requires_network
+    @pytest.mark.xfail(sys.version_info < (3, 0), reason="rsa v4.7.1 binary is not available on Py2")
     def test_install_pypi_onlybinary(self):
         """test 'pip install --only-binary :all: <pypi_package>'."""
         output = self.run_command("pip --verbose install --only-binary :all: rsa", exitcode=0)
@@ -147,6 +149,7 @@ class PipTests(StashTestCase):
             raise AssertionError("Could not import installed module: " + repr(e))
 
     @requires_network
+    @pytest.mark.xfail(sys.version_info < (3, 0), reason="rsa v4.7.1 raises SyntaxError on Py2")
     def test_install_command(self):
         """test 'pip install <package>' creates commandline scripts."""
         # 1. test command not yet installed

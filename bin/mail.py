@@ -159,7 +159,7 @@ if __name__ == "__main__":
     )
     args = ap.parse_args()
     smail = Mail(CONFIG, args.verbose)
-    if args.e == True:
+    if args.e is True:
         smail.edit_cfg()
     elif args.message or args.file and args.sendto:
         if args.message == '-':

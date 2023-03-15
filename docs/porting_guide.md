@@ -24,7 +24,7 @@ The porting process can be divided into the following parts:
 
 You will need to find a way to accurately detect if StaSh runs on the target platform. This must be done using the standard library and must work with both py2 and py3.
 
-For example, StaSh sets `ON_TRAVIS = "TRAVIS" in os.environ` to detect if we are running on Travis CI. In this case, a stub UI will be loaded.
+For example, StaSh sets `ON_CI = "CI" in os.environ` to detect if we are running on GitHub Actions CI. In this case, a stub UI will be loaded.
 
 ## Porting the UI
 
@@ -190,7 +190,7 @@ Please ensure that you have a way to identify your target platform.
 StaSh uses a file called `libdist.py` for os-specific interactions and values.
 
 1. edit `stash/lib/libdist.py`
-2. add your check at the top of the file (near `ON_TRAVIS = ...`)
+2. add your check at the top of the file (near `ON_CI = ...`)
 3. See the large top-level `if ... elif ... else` consturct there? add a `elif <mycondition>:` there.
 4. implement the functions and define the values used in the other cases. In the next subsection is an overview of these definitions.
 5. save
