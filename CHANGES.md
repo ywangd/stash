@@ -1,6 +1,6 @@
 # Change Log #
 
-### Upcomming
+### Upcoming
 * New Features
     * StaSh now runs on your PC using the `tkinter` module.
     * more settings in `easy_config`, e.g. toggle styles
