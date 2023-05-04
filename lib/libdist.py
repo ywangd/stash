@@ -38,7 +38,9 @@ if IN_PYTHONISTA:
     # -------------- pip ----------------------
     
     if six.PY3:
-        SITE_PACKAGES_DIR_NAME = "site-packages-3"
+        SITE_PACKAGES_DIR_NAME = "site-packages"
+        if sys.version_info < (3, 10):  # Pythonista < v3.4
+            SITE_PACKAGES_DIR_NAME += "-3"
     else:
         SITE_PACKAGES_DIR_NAME = "site-packages-2"
     SITE_PACKAGES_DIR_NAME_6 = "site-packages"
