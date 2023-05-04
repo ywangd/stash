@@ -5,7 +5,7 @@ import operator
 
 HAS_SPECIFIER = False
 try:
-    # Get 'SpecifierSet' from 'pip' package is preffered method. It can match 
+    # Get 'SpecifierSet' from 'pip' package is the preferred method. It can match 
     # str like '==CPython' without fallback solution. Install it with 
     # 'pip install --ignore-blocklist pip' and delete the pip cmds in stash_extensions/bin
     from pip._vendor.packaging.specifiers import SpecifierSet
@@ -351,10 +351,7 @@ class VersionSpecifier(object):
             si = name.find("[")
             extra_s = name[si + 1:-1]
             name = name[:si]
-            if len(extra_s) == 0:
-                extras = []
-            else:
-                extras = extra_s.split(",")
+            extras = extra_s.split(",") if extra_s else []
         else:
             extras = []
         splitted = specs_s.split(",")
