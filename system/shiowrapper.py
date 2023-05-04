@@ -14,7 +14,7 @@ from .shthreads import ShBaseThread
 
 class ShStdinWrapper(object):
     def __getattribute__(self, item):
-        thread = threading.currentThread()
+        thread = threading.current_thread()
 
         if isinstance(thread, ShBaseThread):
             return getattr(thread.state.sys_stdin, item)
@@ -24,7 +24,7 @@ class ShStdinWrapper(object):
 
 class ShStdoutWrapper(object):
     def __getattribute__(self, item):
-        thread = threading.currentThread()
+        thread = threading.current_thread()
 
         if isinstance(thread, ShBaseThread):
             return getattr(thread.state.sys_stdout, item)
@@ -34,7 +34,7 @@ class ShStdoutWrapper(object):
 
 class ShStderrWrapper(object):
     def __getattribute__(self, item):
-        thread = threading.currentThread()
+        thread = threading.current_thread()
 
         if isinstance(thread, ShBaseThread):
             return getattr(thread.state.sys_stderr, item)

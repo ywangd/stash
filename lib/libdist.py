@@ -7,7 +7,7 @@ import sys
 import six
 
 
-IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
+IN_PYTHONISTA = "Pythonista" in sys.executable
 ON_CI = "CI" in os.environ
 
 

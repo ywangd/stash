@@ -33,7 +33,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip wheel setuptools
+        python -m pip install --upgrade "pip<32.0" wheel setuptools
         pip install ".[testing]"
     - name: Analysing the code with flake8
       run: |
