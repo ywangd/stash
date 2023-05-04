@@ -17,7 +17,8 @@ IN_PYTHONISTA = sys.executable.find('Pythonista') >= 0
 if IN_PYTHONISTA:
     import plistlib
 
-    _properties = plistlib.readPlist(os.path.join(os.path.dirname(sys.executable), 'Info.plist'))
+    with open(os.path.join(os.path.dirname(sys.executable), 'Info.plist'), 'rb') as fp:
+        _properties = plistlib.loads(fp.read())
     PYTHONISTA_VERSION = _properties['CFBundleShortVersionString']
     PYTHONISTA_VERSION_LONG = _properties['CFBundleVersion']
 
