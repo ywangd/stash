@@ -148,7 +148,8 @@ else:
             pyperclip.copy(s)
     else:
         # use fake implementation
-        global _CLIPBOARD; _CLIPBOARD = u""
+        global _CLIPBOARD
+        _CLIPBOARD = u""
         
         def clipboard_get():
             """

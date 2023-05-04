@@ -63,7 +63,7 @@ AUTODOWNLOAD_DEPENDENCIES = True
 
 if AUTODOWNLOAD_DEPENDENCIES:
     libpath = os.path.join(os.environ['STASH_ROOT'], 'lib')
-    if not libpath in sys.path:
+    if libpath not in sys.path:
         sys.path.insert(1, libpath)
     download_dulwich = False
 
@@ -381,10 +381,10 @@ def git_reset(args):
     commit = ns.commit
     # first arg was really a file
     paths = ns.paths or []
-    if not commit in repo and os.path.exists(commit):  #really specified a path
+    if commit not in repo and os.path.exists(commit):  #really specified a path
         paths = [commit] + paths
         commit = None
-    elif not commit in repo and not commit in repo.branches and not commit in repo.remote_branches and not os.path.exists(
+    elif commit not in repo and commit not in repo.branches and commit not in repo.remote_branches and not os.path.exists(
             commit):
         raise Exception('{} is not a valid commit or file'.format(commit))
     if not commit:
@@ -429,7 +429,7 @@ def get_config_or_prompt(repo, section, name, prompt, save=None):
         value = config.get(section, name)
     except KeyError:
         value = input(prompt).encode()
-        if save == None:
+        if save is None:
             reply = input('Save this setting? [y/n]')
             save = reply == 'y'
         if save:
