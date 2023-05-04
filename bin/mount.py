@@ -64,7 +64,7 @@ if __name__ == "__main__":
         else:
             manager.enable_patches()
 
-    if not ns.type in FILESYSTEM_TYPES:
+    if ns.type not in FILESYSTEM_TYPES:
         print(_stash.text_color("Error: Unknown Filesystem-Type!", "red"))
         sys.exit(1)
 

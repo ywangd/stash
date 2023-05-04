@@ -79,7 +79,7 @@ class MountManager(object):
     def unmount_fsi(self, path, force=False):
         """unmounts a fsi."""
         path = os.path.abspath(path)
-        if not path in self.path2fs:
+        if path not in self.path2fs:
             raise MountError("Nothing mounted there.")
         fsi, readonly = self.path2fs[path]
         if not force:
