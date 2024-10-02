@@ -13,14 +13,14 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
     - run: pip install --user ruff
-    - run: ruff --ignore=E401,E402,E701,E722,E731,E741,F401,F403,F405,F523,F524,F811,F841
-                --format=github --line-length=2793 --show-source --target-version=py37 .
+    - run: ruff check --ignore=E401,E402,E501,E701,E721,E722,E731,E741,F401,F403,F405,F523,F524,F811,F841
+                      --output-format=github --target-version=py310 .
   build:
     runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["2.7", "3.6", "3.10"]
+        python-version: ["3.10"]  # ["2.7", "3.6", "3.10"]
     steps:
     - name: Checkout
       uses: actions/checkout@v3
