@@ -26,6 +26,15 @@ def guess_img(path):
     return None
 
 
+def guess_img(path):
+    mimetype = mimetypes.guess_file_type(path)
+    if mimetype:
+        type_, encoding_ = mimetype
+        if type_ and type_.startswith("image"):
+            return mimetype
+    return None
+
+
 def is_mounted(path):
     """checks if path is on a mounted path."""
     manager = get_manager()

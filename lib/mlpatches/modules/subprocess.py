@@ -23,7 +23,6 @@ import select
 import time
 import sys
 from mlpatches import base, l2c
-from six import integer_types, string_types
 
 _stash = base._stash
 list2cmdline = l2c.list2cmdline
@@ -113,7 +112,7 @@ class Popen(object):
         self._cwd = cwd
         self._environ = env if env is not None else {}
 
-        if isinstance(args, string_types):
+        if isinstance(args, str):
             self.cmd = args
         else:
             if args[0] == sys.executable:
@@ -134,7 +133,7 @@ class Popen(object):
             self._fds += [rfd, wfd]
             self.stdout = os.fdopen(rfd, rfm, bufsize)
             self._sp_stdout = os.fdopen(wfd, "wb")
-        elif isinstance(stdout, integer_types):
+        elif isinstance(stdout, int):
             # use fd
             self.stdout = None
             self._fds.append(stdout)
@@ -157,7 +156,7 @@ class Popen(object):
         elif stderr == STDOUT:
             self.stderr = self.stdout
             self._sp_stderr = self._sp_stdout
-        elif isinstance(stderr, integer_types):
+        elif isinstance(stderr, int):
             # use fd
             self.stderr = None
             self._fds.append(stderr)
@@ -177,7 +176,7 @@ class Popen(object):
             self._fds += [rfd, wfd]
             self.stdin = os.fdopen(wfd, "wb")
             self._sp_stdin = os.fdopen(rfd, "rb")
-        elif isinstance(stdin, integer_types):
+        elif isinstance(stdin, int):
             # use fd
             self.stdin = None
             self._fds.append(stdin)
@@ -193,7 +192,7 @@ class Popen(object):
         """called on deletion"""
         try:
             self._close()
-        except Exception as e:
+        except Exception:
             pass
 
     def _run(self):
