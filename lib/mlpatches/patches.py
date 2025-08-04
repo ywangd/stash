@@ -5,7 +5,7 @@ from stash.system.shcommon import _STASH_EXTENSION_PATCH_PATH
 
 from stashutils.core import load_from_dir
 
-from mlpatches import base, os_patches, modulepatches, tl_patches
+from mlpatches import base, os_patches, modulepatches
 from mlpatches import mount_patches
 
 STABLE_PATCHES = {  # name -> Patch()

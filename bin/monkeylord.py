@@ -5,7 +5,6 @@ from __future__ import print_function
 import argparse
 import sys
 import json
-from mlpatches import base
 
 _stash = globals()["_stash"]
 

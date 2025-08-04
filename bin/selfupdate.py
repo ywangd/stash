@@ -58,7 +58,7 @@ def get_remote_version(owner, branch):
 
 
 def main(args):
-    from distutils.version import StrictVersion
+    from packaging.version import Version
 
     ap = ArgumentParser()
     ap.add_argument(
@@ -106,7 +106,7 @@ def main(args):
             print("Checking for new version ...")
             remote_version = get_remote_version(owner, branch)
 
-            if StrictVersion(remote_version) > StrictVersion(local_version):
+            if Version(remote_version) > Version(local_version):
                 print("New version available: %s" % remote_version)
             else:
                 has_update = False

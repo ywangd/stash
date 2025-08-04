@@ -10,7 +10,7 @@ import weakref
 import ctypes
 from collections import OrderedDict
 
-from .shcommon import M_64, _SYS_STDOUT, python_capi
+from .shcommon import M_64, python_capi
 
 _STATE_STR_TEMPLATE = """enclosed_cwd: {}
 aliases: {}

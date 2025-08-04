@@ -15,7 +15,13 @@ _stash = globals()["_stash"]
 try:
     collapseuser = _stash.libcore.collapseuser
 except AttributeError:
-    collapseuser = lambda p: p
+    collapseuser = None
+
+if not collapseuser:
+
+    def collapseuser(p):
+        return p
+
 
 IN_PYTHONISTA = sys.executable.find("Pythonista") >= 0
 

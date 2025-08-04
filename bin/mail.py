@@ -29,11 +29,10 @@ import sys
 from email import encoders
 from email.utils import formatdate
 
-from six.moves import input
-from six.moves.configparser import RawConfigParser
-from six.moves.email_mime_base import MIMEBase
-from six.moves.email_mime_multipart import MIMEMultipart
-from six.moves.email_mime_text import MIMEText
+from configparser import RawConfigParser
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 APP_DIR = os.environ["STASH_ROOT"]
 
@@ -141,6 +140,7 @@ password = Your user password
             server.close()
         except Exception as e:
             errorMsg = "Unable to send email. Error: %s" % str(e)
+            print(errorMsg)
 
 
 if __name__ == "__main__":

@@ -9,7 +9,6 @@ from six.moves import reload_module
 from stash.tests.stashtest import (
     StashTestCase,
     requires_network,
-    expected_failure_on_py3,
 )
 
 
@@ -307,7 +306,7 @@ class PipTests(StashTestCase):
             import stpkg
 
             raise AssertionError("can still import uninstalled package!")
-        except ImportError as e:
+        except ImportError:
             # expected failure
             pass
 

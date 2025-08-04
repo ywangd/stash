@@ -1,6 +1,89 @@
-#     - run: ruff check --ignore=E401,E402,E501,E701,E721,E722,E731,E741,F401,F403,F405,F523,F524,F811,F841
-#                      --output-format=github --target-version=py310 .
-#    - run: ruff format --target-version=py310 .
+[build-system]
+build-backend = "setuptools.build_meta"
+
+requires = [ "setuptools>=80.1" ]
+
+[project]
+name = "stash"
+description = "StaSh for PC"
+readme = "README.md"
+authors = [
+  { name = "https://github.com/ywangd" },
+]
+requires-python = ">=3.10"
+
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dynamic = [ "version" ]
+
+dependencies = [
+  "packaging>=25; platform_system!='iOS'",
+  "paramiko>=4; platform_system!='iOS'",
+  "pycryptodome>=3.23; platform_system!='iOS'",
+  "pyftpdlib>=2.0.1",
+  "pyperclip>=1.9; platform_system!='iOS'",
+  "pyte>=0.8.2",
+  # PC specific or Pythonista built-in
+  "pytz>=2025.2; platform_system!='iOS'",
+  "requests>=2.32.4",
+  "rsa>=4.9.1",
+  # Compat
+  "six>=1.17",
+]
+
+optional-dependencies.testing = [
+  "flake8>=3.7.9",
+  "pyparsing",
+  "pytest",
+  "ruff>=0.12.7",
+]
+urls.Homepage = "https://github.com/ywangd/stash/"
+urls.Issues = "https://github.com/ywangd/stash/issues"
+urls.Repository = "https://github.com/ywangd/stash/"
+
+[dependency-groups]
+dev = [
+  "flake8>=3.7.9",
+  "pyparsing",
+  "pytest",
+  "ruff>=0.12.7",
+]
+
+[tool.setuptools]
+#zip-safe = false
+py-modules = [
+  "core",
+  "getstash",
+  "launch_stash",
+  "__init__",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "core.__version__" }
+
+[tool.setuptools.packages.find]
+where = [ "." ]
+include = [
+  "*",
+]
+exclude = [
+  ".idea",
+  "*venv",
+  "build",
+  "dist",
+  "*.egg-info",
+]
+
+[tool.setuptools.package-data]
+"*" = [ "**/*" ]
+
+# [project.scripts]  # FIXME: not yet working
+# stash = "launch_stash"
 
 [tool.ruff]
 target-version = "py310"
@@ -11,4 +94,17 @@ lint.ignore = [
   "E731",
   "F401",
   "F841",
+]
+
+[tool.pytest.ini_options]
+# The testpaths option (optional, but good practice to specify where tests are)
+testpaths = [ "tests/" ]
+
+# Options that take a list of values
+addopts = [
+  "--showlocals",
+  "--verbose",
+  "--show-capture=all",
+  "--log-level=debug",
+  "--ignore=tests/system/data/",
 ]

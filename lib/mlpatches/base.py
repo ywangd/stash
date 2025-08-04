@@ -2,14 +2,26 @@
 """This module contains the base class for patches."""
 
 import sys
-import imp
 import os
+import imp  # FIXME: Use importlib
+import importlib
 
 from stashutils.core import get_stash
 
 SKIP = "<skip>'  # indicate that this patch should be skipped.'"
 
 _stash = get_stash()
+
+
+def load_source(modname, filename):
+    loader = importlib.machinery.SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    # The module is always executed and not cached in sys.modules.
+    # Uncomment the following line to cache the module.
+    # sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module
 
 
 class IncompatiblePatch(Exception):
@@ -139,7 +151,7 @@ class ModulePatch(BasePatch):
         if self.name in sys.modules:
             del sys.modules[self.name]
         with open(self.path, "r") as f:
-            nmod = imp.load_source(self.name, self.path, f)
+            nmod = load_source(self.name, self.path, f)
         sys.modules[self.name] = nmod
 
     def do_disable(self):

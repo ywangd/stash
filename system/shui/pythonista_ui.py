@@ -1,7 +1,6 @@
 # coding: utf-8
 from time import time
 
-import six
 
 import ui
 from objc_util import (
@@ -622,7 +621,7 @@ class ShTerminal(ShBaseTerminal):
 
     @property
     def text(self):
-        return six.text_type(self.tvo.text())
+        return str(self.tvo.text())
 
     @text.setter
     @on_main_thread

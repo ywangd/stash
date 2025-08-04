@@ -4,8 +4,7 @@
 import os
 import stat as _stat
 
-from six import text_type
-from six.moves import builtins
+import builtins
 
 from mlpatches import base
 
@@ -79,7 +78,7 @@ def getcwd(patch):
 
 def getcwdu(patch):
     """Return a Unicode object representing the current working directory."""
-    return text_type(CWD)
+    return str(CWD)
 
 
 def chdir(patch, path):

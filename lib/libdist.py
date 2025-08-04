@@ -5,7 +5,8 @@ OS/device specific interfaces
 import os
 import sys
 
-import six
+
+PY3 = sys.version_info[0] == 3
 
 
 IN_PYTHONISTA = sys.executable.find("Pythonista") >= 0
@@ -21,7 +22,7 @@ if IN_PYTHONISTA:
         """
         Get the clipboard content.
         :return: clipboard content
-        :rtype: six.text_type
+        :rtype: str
         """
         return clipboard.get()
 
@@ -32,12 +33,12 @@ if IN_PYTHONISTA:
         :type s: six.text_type
         """
         # TODO: non-unicode support
-        assert isinstance(s, six.text_type)
+        assert isinstance(s, str)
         clipboard.set(s)
 
     # -------------- pip ----------------------
 
-    if six.PY3:
+    if PY3:
         SITE_PACKAGES_DIR_NAME = "site-packages"
         if sys.version_info < (3, 10):  # Pythonista < v3.4
             SITE_PACKAGES_DIR_NAME += "-3"
@@ -136,7 +137,7 @@ else:
             """
             Get the clipboard content.
             :return: clipboard content
-            :rtype: six.text_type
+            :rtype: str
             """
             return pyperclip.paste()
 
@@ -147,7 +148,7 @@ else:
             :type s: six.text_type
             """
             # TODO: non-unicode support
-            assert isinstance(s, six.text_type)
+            assert isinstance(s, str)
             pyperclip.copy(s)
     else:
         # use fake implementation
@@ -158,7 +159,7 @@ else:
             """
             Get the clipboard content.
             :return: clipboard content
-            :rtype: six.text_type
+            :rtype: str
             """
             return _CLIPBOARD
 
@@ -169,7 +170,7 @@ else:
             :type s: six.text_type
             """
             global _CLIPBOARD
-            assert isinstance(s, six.text_type)
+            assert isinstance(s, str)
             _CLIPBOARD = s
 
     # -------------- pip ----------------------

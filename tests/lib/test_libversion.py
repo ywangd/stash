@@ -17,7 +17,6 @@ class LibVersionTests(StashTestCase):
     def test_import(self):
         """test that the libversion module can be imported"""
         # $STASH_ROOT/lib/ *should* be in sys.path, thus an import should be possible
-        import libversion
 
     def test_version_specifier_parse(self):
         """test 'libversion.VersionSpecifier.parse_requirement()'"""

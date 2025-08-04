@@ -2,10 +2,21 @@
 """core utilities for StaSh-scripts"""
 
 import threading
-import imp
+import importlib
 import os
 
 from stash.system import shthreads
+
+
+def load_source(modname, filename):
+    loader = importlib.machinery.SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    # The module is always executed and not cached in sys.modules.
+    # Uncomment the following line to cache the module.
+    # sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module
 
 
 def get_stash():
@@ -37,7 +48,7 @@ def load_from_dir(dirpath, varname):
         if not os.path.isfile(fp):
             continue
         with open(fp, "r") as fin:
-            mod = imp.load_source(fn[: fn.index(".")], fp, fin)
+            mod = load_source(fn[: fn.index(".")], fp, fin)
         if not hasattr(mod, varname):
             continue
         else:

@@ -19,8 +19,6 @@ from git.gitutils import (
     find_revision_sha,
     get_remote_tracking_branch,
 )
-from six import iteritems
-from six.moves import input
 
 
 def branch(args):
@@ -201,7 +199,7 @@ def branch_list(result):
     N = result.abbrev
     repo = _get_repo()
     if not result.remotes:
-        for key, value in iteritems(repo.branches):
+        for key, value in repo.branches.items():
             dispval = value[0:N]  # todo, --abbrev=n
             commitmsg = (repo[value].message if result.verbose else "").strip()
             tracking = get_remote_tracking_branch(repo, key)
@@ -224,7 +222,7 @@ def branch_list(result):
                 )
             )
     if result.remotes or result.all:
-        for key, value in iteritems(repo.remote_branches):
+        for key, value in repo.remote_branches.items():
             dispval = value[0:N]  # todo, --abbrev=n
             commitmsg = (repo[value].message if result.verbose else "").strip()
             print(

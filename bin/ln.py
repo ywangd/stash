@@ -2,14 +2,9 @@
 
 import sys
 import os
-import re
 import json
 import argparse
-import time
-import pytz
 import console
-from datetime import datetime, timedelta
-from difflib import unified_diff, ndiff
 
 
 def argue():

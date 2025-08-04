@@ -2,6 +2,7 @@
 """functions and classes related to wheels."""
 
 import os
+import sys
 import shutil
 import tempfile
 import json
@@ -10,8 +11,9 @@ import zipfile
 import platform
 from io import open
 
-import six
-from six.moves import configparser
+import configparser
+
+PY3 = sys.version_info[0] == 3
 
 try:
     from stashutils.extensions import create_command
@@ -79,7 +81,7 @@ def generate_filename(
     Generate a filename for the wheel and return it.
     """
     if python_tag is None:
-        if six.PY3:
+        if PY3:
             python_tag = "py3"
         else:
             python_tag = "py2"
@@ -105,7 +107,7 @@ def wheel_is_compatible(filename):
     if ("py2.py3" in data["python_tag"]) or ("py3.py2" in data["python_tag"]):
         # only here to skip elif/else
         pass
-    elif six.PY3:
+    elif PY3:
         if not data["python_tag"].startswith("py3"):
             return False
     else:
