@@ -234,7 +234,7 @@ def subcmd_complete(toks):
             if cands is not None:
                 return cands, cfg["-"]["with_normal_completion"]
 
-    except KeyError as e:
+    except KeyError:
         pass
 
     return None, None

@@ -23,8 +23,6 @@ import sys
 import shutil
 from argparse import ArgumentParser
 
-from six.moves import input
-
 
 def main(args):
     ap = ArgumentParser()

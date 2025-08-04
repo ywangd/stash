@@ -4,7 +4,6 @@ more than one FILE is specified.
 """
 
 from __future__ import print_function
-import os
 import sys
 import argparse
 

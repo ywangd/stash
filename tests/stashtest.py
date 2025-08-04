@@ -15,7 +15,10 @@ except ImportError:
 import requests
 
 from stash import stash
-from stash.system.shcommon import _STASH_ROOT, PY3
+from stash.system.shcommon import _STASH_ROOT
+
+
+PY3 = sys.version_info[0] == 3
 
 
 ON_TRAVIS = "TRAVIS" in os.environ

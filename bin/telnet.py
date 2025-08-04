@@ -19,7 +19,6 @@ from stash.system.shcommon import (
     K_HDN,
     K_CU,
     K_TAB,
-    K_HIST,
     K_CZ,
     K_KB,
 )

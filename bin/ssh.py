@@ -25,9 +25,7 @@ import argparse
 import os
 import sys
 import threading
-from distutils.version import StrictVersion
-
-from six.moves import input
+from packaging.version import Version
 
 try:
     import paramiko
@@ -45,7 +43,7 @@ except ImportError:
     _stash("pip install pyte==0.4.10")
     import pyte
 
-if (paramiko is None) or (StrictVersion(paramiko.__version__) < StrictVersion("1.15")):
+if (paramiko is None) or (Version(paramiko.__version__) < Version("1.15")):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
     _stash("pip install paramiko==1.16.0")
     print("Please restart Pythonista for changes to take full effect")
@@ -86,9 +84,10 @@ class StashSSH(object):
                     self.client.connect(
                         host,
                         username=username,
-                        password=passwd,
                         port=port,
-                        key_filename=key_filename,
+                        key_filename=key_filename[
+                            0
+                        ],  # FIXME: should iter over self.find_ssh_keys()
                     )
                     return True
                 except paramiko.SSHException as e:

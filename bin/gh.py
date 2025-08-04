@@ -15,10 +15,7 @@ NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.
 
 from __future__ import print_function
 import os
-import sys
 from functools import wraps
-
-from six.moves import input
 
 _stash = globals()["_stash"]
 
@@ -27,7 +24,6 @@ try:
 except ImportError:
     print("Could not import 'github', installing it...")
     _stash("pip install pygithub")
-    import github
 try:
     import docopt
 except ImportError:
@@ -35,7 +31,8 @@ except ImportError:
     _stash("pip install docopt")
 from docopt import docopt
 from github import Github
-import keychain, console, inspect
+import keychain
+import console
 
 
 class GitHubRepoNotFoundError(Exception):

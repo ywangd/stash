@@ -8,8 +8,6 @@ import os
 import sys
 import io
 
-import six
-
 
 _stash = globals()["_stash"]
 
@@ -35,7 +33,7 @@ def main(args):
             status = 1
         else:
             try:
-                if isinstance(content, six.binary_type):
+                if isinstance(content, (bytes, bytearray)):
                     with io.open(ns.file, "wb") as f:
                         f.write(content)
                 else:

@@ -2,13 +2,14 @@
 Tkinter UI for StaSh
 """
 
-import six
-from six.moves import tkinter, tkinter_messagebox, tkinter_scrolledtext, queue
+import tkinter
+from tkinter import messagebox
+from tkinter import scrolledtext
+import queue
 
 from ..shscreens import ShChar
 from ..shcommon import (
     K_CC,
-    K_CD,
     K_HUP,
     K_HDN,
     K_LEFT,
@@ -17,7 +18,6 @@ from ..shcommon import (
     K_TAB,
     K_HIST,
     K_CZ,
-    K_KB,
 )
 from .base import ShBaseUI, ShBaseTerminal, ShBaseSequentialRenderer
 
@@ -65,7 +65,7 @@ class ShUI(ShBaseUI):
         """
         Called when the window will be closed
         """
-        if tkinter_messagebox.askokcancel("Quit", "Are you sure you want to quit?"):
+        if messagebox.askokcancel("Quit", "Are you sure you want to quit?"):
             self.on_exit()
             self._close_ui()
 
@@ -169,7 +169,7 @@ class ShTerminal(ShBaseTerminal):
         ShBaseTerminal.__init__(self, stash, parent)
         self._txtvar_out = tkinter.StringVar(self.parent.tk)
         self._txtvar_out.trace("w", self._update_text)
-        self._txt = tkinter_scrolledtext.ScrolledText(
+        self._txt = scrolledtext.ScrolledText(
             self.parent.tk,
             wrap=tkinter.CHAR,
             bg=self._color_from_tuple(self.background_color),
@@ -624,7 +624,7 @@ class ShTerminal(ShBaseTerminal):
         for c in text:
             a = 1
             ctkp = self._tuple_to_tk_index(self._rel_cursor_pos_to_abs_pos(cp))
-            if isinstance(c, (six.binary_type, six.text_type)):
+            if isinstance(c, (str, bytes, bytearray)):
                 self._txt.insert(ctkp, c)
             elif isinstance(c, ShChar):
                 if not self._colors_initialized:

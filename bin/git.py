@@ -32,10 +32,8 @@ import posix
 import subprocess
 import sys
 
-from six import StringIO
-from six.moves import input
-from six.moves.urllib.parse import urlparse, urlunparse
-from six import iteritems
+from io import StringIO
+from urllib.parse import urlparse, urlunparse
 
 import console
 import editor  # for reloading current file
@@ -93,7 +91,7 @@ if AUTODOWNLOAD_DEPENDENCIES:
                 download_dulwich = True
             else:
                 print("Correct version loaded.")
-    except ImportError as e:
+    except ImportError:
         print("dulwich was not found.  Will attempt to download. ")
         download_dulwich = True
     try:
@@ -121,7 +119,6 @@ if AUTODOWNLOAD_DEPENDENCIES:
                 pass
             # try the imports again
             import dulwich
-            from dulwich.client import default_user_agent_string
             from dulwich import porcelain
             from dulwich.index import index_entry_from_stat
     except Exception:
@@ -159,7 +156,6 @@ if AUTODOWNLOAD_DEPENDENCIES:
     ## end install modules
 else:
     import dulwich
-    from dulwich.client import default_user_agent_string
     from dulwich import porcelain
     from dulwich.index import index_entry_from_stat
     from gittle import Gittle
@@ -274,7 +270,7 @@ def unstage_all(commit="HEAD"):
     for entry in repo.object_store.iter_tree_contents(tree_id):
         unstage(commit, [entry.path])
 
-    for entry in iteritems(index):
+    for entry in index.items():
         unstage(commit, [entry[0]])
 
 
@@ -290,7 +286,7 @@ def git_status(args):
         repo = _get_repo()
         status = porcelain.status(repo.repo.path)
         print("STAGED")
-        for k, v in iteritems(status.staged):
+        for k, v in status.staged.items():
             if v:
                 print(k, v)
         print("UNSTAGED LOCAL MODS")
@@ -370,8 +366,6 @@ def git_merge(args):
 
 
 def git_reset(args):
-    import git.gitutils as gitutils
-
     ap = argparse.ArgumentParser("reset")
     ap.add_argument("commit", nargs="?", action="store", default="HEAD")
     ap.add_argument("paths", nargs="*")
@@ -837,7 +831,7 @@ if __name__ == "__main__":
 
     ap = argparse.ArgumentParser()
     subparser = ap.add_subparsers()
-    for key, value in iteritems(commands):
+    for key, value in commands.items():
         sp = subparser.add_parser(key, help=command_help[key], add_help=False)
         sp.set_defaults(func=commands[key])
     ns, args = ap.parse_known_args()

@@ -2,8 +2,6 @@
 """convert a list of args to a cmd; copied from subprocess"""
 # info: this replaces the _get_str() used previously by mlpatches
 
-from six import string_types
-
 
 def list2cmdline(seq):
     """
@@ -35,7 +33,7 @@ def list2cmdline(seq):
     # http://msdn.microsoft.com/en-us/library/17w5ykft.aspx
     # or search http://msdn.microsoft.com for
     # "Parsing C++ Command-Line Arguments"
-    if isinstance(seq, string_types):
+    if isinstance(seq, str):
         return seq
     result = []
     needquote = False

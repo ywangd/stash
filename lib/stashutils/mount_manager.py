@@ -3,7 +3,6 @@
 
 import os
 
-from six import string_types
 
 from mlpatches.mount_patches import MOUNT_PATCHES
 from stashutils.core import get_stash
@@ -69,7 +68,7 @@ class MountManager(object):
         """mounts a fsi to a path."""
         if not isinstance(fsi, BaseFSI):
             raise ValueError("Expected a FSI!")
-        if not isinstance(path, string_types):
+        if not isinstance(path, str):
             raise ValueError("Expected a string or unicode!")
         path = os.path.abspath(path)
         if path in self.path2fs:

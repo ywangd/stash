@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-import sys
 import os
 import dulwich
-from dulwich import porcelain
 from dulwich.walk import Walker
 from gittle import Gittle
 

@@ -11,9 +11,9 @@ import fileinput
 
 def tail_f(f, wait_sec):
     while True:
-        l = f.readline()
-        if l:
-            yield l
+        ln = f.readline()
+        if ln:
+            yield ln
         else:
             # print('!!READ NOTHING!!')
             time.sleep(wait_sec)
@@ -113,13 +113,13 @@ def main(args):
                 while True:
                     j += 1
                     if use_bytes:
-                        l = f.read(1)
+                        ln = f.read(1)
                     else:
-                        l = f.readline()
-                    if not l:
+                        ln = f.readline()
+                    if not ln:
                         break
 
-                    buf.append(l)
+                    buf.append(ln)
                     if from_start:
                         if j >= count - 1:
                             break
@@ -130,8 +130,8 @@ def main(args):
                     print(item, end="")
 
                 if i == len(ns.files) - 1 and ns.follow:
-                    for l in tail_f(f, ns.sleep_interval):
-                        print(l, end="")
+                    for ln in tail_f(f, ns.sleep_interval):
+                        print(ln, end="")
                         sys.stdout.flush()
             finally:
                 if fname != "-":

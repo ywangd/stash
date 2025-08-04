@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Construct argument list(s) and execute utility"""
 
-import os
 import sys
 import argparse
 

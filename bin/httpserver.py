@@ -10,16 +10,17 @@ and HEAD requests in a fairly straightforward manner.
 
 from __future__ import absolute_import, print_function
 
-import cgi
+import html
 import mimetypes
 import os
 import posixpath
 import re
 import shutil
 
-from six import StringIO
-from six.moves import BaseHTTPServer
-from six.moves.urllib.parse import quote, unquote
+from io import StringIO
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import quote, unquote
+
 
 __version__ = "0.1"
 __all__ = ["SimpleHTTPRequestHandler"]
@@ -27,7 +28,7 @@ __author__ = "bones7456"
 __home_page__ = "http://li2z.cn/"
 
 
-class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     """Simple HTTP request handler with GET/HEAD/POST commands.
 
     This serves files from the current directory and any of its
@@ -84,7 +85,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             f.close()
 
     def deal_post_data(self):
-        boundary = self.headers.plisttext.split("=")[1]
+        boundary = self.headers.plisttext.split("=")[1]  # FIXME: plisttext ?
         remainbytes = int(self.headers["content-length"])
         line = self.rfile.readline()
         remainbytes -= len(line)
@@ -185,7 +186,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return None
         list.sort(key=lambda a: a.lower())
         f = StringIO()
-        displaypath = cgi.escape(unquote(self.path))
+        displaypath = html.escape(unquote(self.path))
         f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
         f.write("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
         f.write("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
@@ -205,7 +206,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 displayname = name + "@"
                 # Note: a link to a directory displays with @ and links with /
             f.write(
-                '<li><a href="%s">%s</a>\n' % (quote(linkname), cgi.escape(displayname))
+                '<li><a href="%s">%s</a>\n'
+                % (quote(linkname), html.escape(displayname))
             )
         f.write("</ul>\n<hr>\n</body>\n</html>\n")
         length = f.tell()
@@ -293,7 +295,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 
 def main(port=8000):
-    server = BaseHTTPServer.HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
+    server = HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
 
     try:
         print("Serving HTTP on 0.0.0.0 port %d ..." % port)
