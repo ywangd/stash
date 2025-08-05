@@ -12,9 +12,13 @@ from argparse import ArgumentParser
 
 from stashutils.mount_ctrl import get_manager
 
+if sys.version_info[1] < 13:
+    _guess_file_type = mimetypes.guess_type
+else:
+    _guess_file_type = mimetypes.guess_file_type
 
 def guess_img(path):
-    mimetype = mimetypes.guess_file_type(path)
+    mimetype = _guess_file_type(path)
     if mimetype:
         type_, encoding_ = mimetype
         if type_ and type_.startswith("image"):
