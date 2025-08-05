@@ -2,8 +2,12 @@
 """tests for libversion"""
 
 import operator
+import sys
 
 from stash.tests.stashtest import StashTestCase
+
+
+PY3 = sys.version_info[0] == 3
 
 
 class LibVersionTests(StashTestCase):
@@ -51,7 +55,7 @@ class LibVersionTests(StashTestCase):
                 self.stash.libversion.VersionSpecifier.parse_requirement(req)
             )
             self.assertEqual(name, pkg)
-            if self.stash.PY3:
+            if PY3:
                 # in py3, assertItemsEqual has been renamed to assertCountEqual
                 if spec is not None:
                     self.assertCountEqual(ver_spec.specs, spec)
