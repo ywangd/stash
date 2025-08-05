@@ -72,14 +72,7 @@ def add_editor_action():
     mv = cfg_view  # [global] the main view
     mv.ai.start()
     try:
-        lsp = "/launch_stash.py"  # TODO: auto-detect
-        paa.add_action(
-            lsp,
-            "monitor",
-            "000000",
-            "StaSh",
-        )
-        paa.save_defaults()
+        _stash("pinstash -f")
     finally:
         mv.ai.stop()
 
