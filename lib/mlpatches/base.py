@@ -3,8 +3,8 @@
 
 import sys
 import os
-import imp  # FIXME: Use importlib
-import importlib
+import importlib.machinery
+import importlib.util
 
 from stashutils.core import get_stash
 
@@ -109,14 +109,26 @@ class FunctionPatch(BasePatch):
             or (self.replacement is None)
         ):
             raise ValueError("Invalid Patch definition!")
+
         if self.module not in sys.modules:
-            fin, path, description = imp.find_module(self.module)
-            try:
-                module = imp.load_module(self.module, fin, path, description)
-            finally:
-                fin.close()
+            # Use importlib.util.find_spec to locate the module
+            spec = importlib.util.find_spec(self.module)
+
+            if spec is None:
+                raise ImportError(f"Module '{self.module}' not found.")
+
+            # Create the module object from the specification
+            module = importlib.util.module_from_spec(spec)
+
+            # Register the module in sys.modules
+            sys.modules[self.module] = module
+
+            # Execute the module's code to populate its namespace
+            spec.loader.exec_module(module)
         else:
+            # If the module is already loaded, get it from sys.modules
             module = sys.modules[self.module]
+
         self.old = getattr(module, self.function)
         setattr(module, self.function, self.replacement)
 

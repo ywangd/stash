@@ -217,7 +217,7 @@ class ShTerminal(ShBaseTerminal):
         """
         Called when a key was pressed.
         :param event: the event which fired this callback
-        :type event: six.moves.tkinter.Event
+        :type event: tkinter.Event
         """
         # get the current position
         cp = (
@@ -302,7 +302,7 @@ class ShTerminal(ShBaseTerminal):
         """
         Called when the focus was lost.
         :param event: the event which fired this callback
-        :type event: six.moves.tkinter.Event
+        :type event: tkinter.Event
         """
         self.stash.user_action_proxy.tv_responder.textview_did_begin_editing(None)
 
@@ -310,7 +310,7 @@ class ShTerminal(ShBaseTerminal):
         """
         Called when the focus was lost.
         :param event: the event which fired this callback
-        :type event: six.moves.tkinter.Event
+        :type event: tkinter.Event
         """
         self.stash.user_action_proxy.tv_responder.textview_did_end_editing(None)
 

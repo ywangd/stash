@@ -3,7 +3,6 @@ This is a stub file for the `console` module, providing type hints for its
 functions and their parameters, to be used for static analysis and autocompletion.
 """
 
-from os import PathLike
 from typing import Optional, Union, Tuple, Sequence, Literal
 
 # These are simple utility functions.
@@ -47,7 +46,7 @@ def secure_input(prompt: Optional[str] = None) -> str:
     """
     ...
 
-def show_image(image_path: Union[PathLike]) -> None:
+def show_image(image_path: Union[str]) -> None:
     """Shows an image in the console output area.
 
     Args:
@@ -204,7 +203,7 @@ def hide_output() -> None:
     """Hides the console output area with a sliding animation."""
     ...
 
-def quicklook(file_path: Union[PathLike, Sequence[PathLike]]) -> None:
+def quicklook(file_path: Union[str, Sequence[str]]) -> None:
     """Shows a full-screen preview of local files.
 
     The function returns when the preview is dismissed.
@@ -215,7 +214,7 @@ def quicklook(file_path: Union[PathLike, Sequence[PathLike]]) -> None:
     """
     ...
 
-def open_in(file_path: PathLike) -> Optional[str]:
+def open_in(file_path: str) -> Optional[str]:
     """Shows the iOS “Open in...” menu for the specified file.
 
     Args:

@@ -17,6 +17,7 @@ if sys.version_info[1] < 13:
 else:
     _guess_file_type = mimetypes.guess_file_type
 
+
 def guess_img(path):
     mimetype = _guess_file_type(path)
     if mimetype:
