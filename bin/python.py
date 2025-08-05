@@ -14,10 +14,14 @@ usage:
 """
 
 from __future__ import print_function
+import sys
 
 # check for py2/3
 _stash = globals()["_stash"]
-if _stash.PY3:
+
+PY3 = sys.version_info[0] == 3
+
+if PY3:
     print(
         _stash.text_color(
             "You are running StaSh in python3.\nRunning python 2 from python 3 is not (yet) supported.\nPlease use the 'python3' command instead.",
