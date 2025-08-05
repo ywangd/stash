@@ -7,7 +7,7 @@ Note:
     access passwords stored in Safari's keychain, for example.
 """
 
-from typing import Optional
+from typing import Optional, List, Tuple, Any
 
 def get_password(service: str, account: str) -> Optional[str]:
     """Get a password from the keychain.
@@ -53,3 +53,5 @@ def reset_keychain() -> None:
     stored by the current application.
     """
     ...
+
+def get_services() -> List[Tuple[Any, Any]]: ...
