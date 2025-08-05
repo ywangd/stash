@@ -8,8 +8,7 @@ from stash.tests.stashtest import StashTestCase
 
 
 class HistoryTests(StashTestCase):
-
-    setup_commands = ['BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH']
+    setup_commands = ["BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH"]
 
     def get_data_path(self):
         """return the data/ sibling path"""

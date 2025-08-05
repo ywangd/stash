@@ -15,7 +15,9 @@ import sys
 
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("src", action="store", nargs="+", help="one or more source files or folders")
+    p.add_argument(
+        "src", action="store", nargs="+", help="one or more source files or folders"
+    )
     p.add_argument("dest", action="store", help="the destination name or folder")
     ns = p.parse_args(args)
 
@@ -32,7 +34,10 @@ def main(args):
                         # Attempt to move every source into destination
                         shutil.move(src, ns.dest)
                     except Exception as err:
-                        print("mv: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+                        print(
+                            "mv: {}: {!s}".format(type(err).__name__, err),
+                            file=sys.stderr,
+                        )
                         status = 1
             else:
                 print("mv: {}: not a directory".format(ns.dest), file=sys.stderr)
@@ -45,12 +50,14 @@ def main(args):
         if os.path.exists(src):
             # Source must exist
             if not os.path.isfile(ns.dest):
-            # Python will rename source if it doesn't exists
-            # And will move source into destination if it is a directory
+                # Python will rename source if it doesn't exists
+                # And will move source into destination if it is a directory
                 try:
                     shutil.move(src, ns.dest)
                 except Exception as err:
-                    print("mv: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+                    print(
+                        "mv: {}: {!s}".format(type(err).__name__, err), file=sys.stderr
+                    )
                     status = 1
             else:
                 # Won't overwrite unasked

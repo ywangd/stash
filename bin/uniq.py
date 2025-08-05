@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Print standard input or files, omitting repeated lines"""
+
 from __future__ import print_function
 
 import os
@@ -10,12 +11,12 @@ import argparse
 
 def main(args):
     ap = argparse.ArgumentParser()
-    ap.add_argument('files', nargs='*', help='files to unique (must be sorted first)')
+    ap.add_argument("files", nargs="*", help="files to unique (must be sorted first)")
     ns = ap.parse_args(args)
 
     def _print(lines):
         if lines is not None:
-            print(''.join(lines))
+            print("".join(lines))
 
     fileinput.close()  # in case it is not closed
     try:
@@ -36,5 +37,5 @@ def main(args):
         fileinput.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

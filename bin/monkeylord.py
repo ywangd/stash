@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """easiliy manage monkey-patches. See 'man monkeypatching' for more help."""
+
 from __future__ import print_function
 import argparse
 import sys
@@ -44,13 +45,17 @@ def load_config(path):
 
 
 def main(ns):
-    if (ns.name is None):
+    if ns.name is None:
         if ns.action == "enable":
             name = "STABLE"
         elif ns.action == "disable":
             name = "ALL"
         elif (ns.action == "loadconf") or (ns.action == "saveconf"):
-            print(_stash.text_color("Name/Path needs to be specified for this action!", "red"))
+            print(
+                _stash.text_color(
+                    "Name/Path needs to be specified for this action!", "red"
+                )
+            )
             sys.exit(2)
         else:
             name = "ALL"
@@ -59,21 +64,39 @@ def main(ns):
     if ns.action == "enable":
         # enable a patch
         if name not in patches.PATCHES:
-            print(_stash.text_color("Error: Patch '{n}' not found!".format(n=name), "red"))
+            print(
+                _stash.text_color("Error: Patch '{n}' not found!".format(n=name), "red")
+            )
             sys.exit(1)
         patch = patches.PATCHES[name]
         if not patch_is_compatible(patch):
-            print(_stash.text_color("Error: Patch '{n}' not compatible with this python version!".format(n=name), "red"))
+            print(
+                _stash.text_color(
+                    "Error: Patch '{n}' not compatible with this python version!".format(
+                        n=name
+                    ),
+                    "red",
+                )
+            )
             sys.exit(1)
         patch.enable()
     elif ns.action == "disable":
         # disable a patch
         if name not in patches.PATCHES:
-            print(_stash.text_color("Error: Patch '{n}' not found!".format(n=name), "red"))
+            print(
+                _stash.text_color("Error: Patch '{n}' not found!".format(n=name), "red")
+            )
             sys.exit(1)
         patch = patches.PATCHES[name]
         if not patch_is_compatible(patch):
-            print(_stash.text_color("Error: Patch '{n}' not compatible with this python version!".format(n=name), "red"))
+            print(
+                _stash.text_color(
+                    "Error: Patch '{n}' not compatible with this python version!".format(
+                        n=name
+                    ),
+                    "red",
+                )
+            )
             sys.exit(1)
         patch.disable()
     elif ns.action == "list":
@@ -90,7 +113,11 @@ def main(ns):
             else:
                 t = "[disabled]"
                 c = "red"
-            print("{n}{e}{s}".format(n=pn, e=" " * (mlength - len(pn)), s=_stash.text_color(t, c)))
+            print(
+                "{n}{e}{s}".format(
+                    n=pn, e=" " * (mlength - len(pn)), s=_stash.text_color(t, c)
+                )
+            )
     elif ns.action == "saveconf":
         save_config(name)
     elif ns.action == "loadconf":
@@ -102,11 +129,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "action",
-        choices=["enable",
-                 "disable",
-                 "list",
-                 "loadconf",
-                 "saveconf"],
+        choices=["enable", "disable", "list", "loadconf", "saveconf"],
         help="What to do",
     )
     parser.add_argument(

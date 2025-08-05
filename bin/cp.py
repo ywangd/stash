@@ -12,15 +12,17 @@ import sys
 
 
 def pprint(path):
-    if path.startswith(os.environ['HOME']):
-        return '~' + path.split(os.environ['HOME'], 1)[-1]
+    if path.startswith(os.environ["HOME"]):
+        return "~" + path.split(os.environ["HOME"], 1)[-1]
     return path
 
 
 def main(args):
     ap = argparse.ArgumentParser()
-    ap.add_argument('source', nargs='+', help='one or more files or directories to be copied')
-    ap.add_argument('dest', help='destination file or folder')
+    ap.add_argument(
+        "source", nargs="+", help="one or more files or directories to be copied"
+    )
+    ap.add_argument("dest", help="destination file or folder")
     ns = ap.parse_args(args)
 
     files = ns.source
@@ -41,7 +43,9 @@ def main(args):
                     else:
                         shutil.copy(full_file, new_name)
                 except Exception as err:
-                    print("cp: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+                    print(
+                        "cp: {}: {!s}".format(type(err).__name__, err), file=sys.stderr
+                    )
         else:
             print("cp: {}: No such directory".format(pprint(dest)), file=sys.stderr)
     else:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-""" Download a file from a url.
-"""
+"""Download a file from a url."""
+
 from __future__ import print_function
 
 import sys
@@ -38,19 +38,20 @@ def get_status_string(downloaded, total):
 
 def main(args):
     ap = argparse.ArgumentParser()
-    ap.add_argument('-o', '--output-file', nargs='?', help='save content as file')
-    ap.add_argument('url', nargs='?', help='the url to read from (default to clipboard)')
+    ap.add_argument("-o", "--output-file", nargs="?", help="save content as file")
+    ap.add_argument(
+        "url", nargs="?", help="the url to read from (default to clipboard)"
+    )
 
     ns = ap.parse_args(args)
     url = ns.url or _stash.libdist.clipboard_get()
-    output_file = ns.output_file or url.split('/')[-1]
+    output_file = ns.output_file or url.split("/")[-1]
 
     if console is not None:
         console.show_activity()
 
     try:
-
-        print('Opening: %s\n' % url)
+        print("Opening: %s\n" % url)
         u = urlopen(url)
 
         meta = u.info()
@@ -65,7 +66,7 @@ def main(args):
         print("Save as: {} ".format(output_file), end="")
         print("({} bytes)".format(file_size if file_size else "???"))
 
-        with open(output_file, 'wb') as f:
+        with open(output_file, "wb") as f:
             file_size_dl = 0.0
             block_sz = 8192
             while True:
@@ -75,11 +76,11 @@ def main(args):
                 file_size_dl += len(buf)
                 f.write(buf)
                 status = get_status_string(file_size_dl, file_size)
-                print('\r' + status + " " * 10, end="")
+                print("\r" + status + " " * 10, end="")
             print("")
 
     except Exception as e:
-        print('Invalid url: %s' % url)
+        print("Invalid url: %s" % url)
         sys.exit(1)
 
     finally:
@@ -89,5 +90,5 @@ def main(args):
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

@@ -1,6 +1,7 @@
 #!python2
 # -*- coding: utf-8 -*-
 """add encoding lines at the start of the files"""
+
 import os
 import argparse
 import re
@@ -27,7 +28,7 @@ def is_encoding_line(s):
 
 def get_encoding_from_line(s):
     """
-    Return the encoding specified in the given line or None if none was specified.   
+    Return the encoding specified in the given line or None if none was specified.
     :param s: line to check
     :type s: str
     :return: the encoding
@@ -77,7 +78,7 @@ def list_all_encodings(p, recursive=False, ignore_nonpy=False):
             if recursive:
                 list_all_encodings(fp, recursive=recursive, ignore_nonpy=ignore_nonpy)
         else:
-            if (not fn.endswith(".py") and ignore_nonpy):
+            if not fn.endswith(".py") and ignore_nonpy:
                 # skip
                 continue
             show_file_encoding(fp)
@@ -115,9 +116,15 @@ def set_all_encodings(p, encoding, recursive=False, ignore_nonpy=False, force=Fa
         fp = os.path.join(p, fn)
         if os.path.isdir(fp):
             if recursive:
-                set_all_encodings(fp, encoding, recursive=recursive, ignore_nonpy=ignore_nonpy, force=force)
+                set_all_encodings(
+                    fp,
+                    encoding,
+                    recursive=recursive,
+                    ignore_nonpy=ignore_nonpy,
+                    force=force,
+                )
         else:
-            if (not fn.endswith(".py") and ignore_nonpy):
+            if not fn.endswith(".py") and ignore_nonpy:
                 # skip
                 continue
             if (get_encoding_of_file(fp) is not None) and not force:
@@ -191,10 +198,10 @@ def remove_all_encodings(p, recursive=False, ignore_nonpy=True):
             if recursive:
                 remove_all_encodings(fp, recursive=recursive, ignore_nonpy=ignore_nonpy)
         else:
-            if (not fn.endswith(".py") and ignore_nonpy):
+            if not fn.endswith(".py") and ignore_nonpy:
                 # skip
                 continue
-            if (get_encoding_of_file(fp) is None):
+            if get_encoding_of_file(fp) is None:
                 # skip
                 print("Skipping '{}', it has no encoding.".format(fp))
                 continue
@@ -223,12 +230,25 @@ def remove_file_encoding(path):
 def main():
     """the main function"""
     parser = argparse.ArgumentParser(description="encoding tool")
-    parser.add_argument("action", action="store", help="what to do", choices=["show", "set", "remove"])
-    parser.add_argument("-p", "--path", action="store", help="path to file(s), defaults to StaSh root")
-    parser.add_argument("-r", "--recursive", action="store_true", help="descend into subdirectories")
-    parser.add_argument("--py-only", dest="pyonly", action="store_true", help="ignore non .py files")
+    parser.add_argument(
+        "action", action="store", help="what to do", choices=["show", "set", "remove"]
+    )
+    parser.add_argument(
+        "-p", "--path", action="store", help="path to file(s), defaults to StaSh root"
+    )
+    parser.add_argument(
+        "-r", "--recursive", action="store_true", help="descend into subdirectories"
+    )
+    parser.add_argument(
+        "--py-only", dest="pyonly", action="store_true", help="ignore non .py files"
+    )
     parser.add_argument("-f", "--force", action="store_true", help="force the action")
-    parser.add_argument("-e", "--encoding", action="store", help="encoding to use (required by some actions")
+    parser.add_argument(
+        "-e",
+        "--encoding",
+        action="store",
+        help="encoding to use (required by some actions",
+    )
 
     ns = parser.parse_args()
 
@@ -254,7 +274,13 @@ def main():
             print("Path '{p}' does not exists!".format(p=path))
             sys.exit(1)
         elif os.path.isdir(path):
-            set_all_encodings(path, encoding, recursive=ns.recursive, ignore_nonpy=ns.pyonly, force=ns.force)
+            set_all_encodings(
+                path,
+                encoding,
+                recursive=ns.recursive,
+                ignore_nonpy=ns.pyonly,
+                force=ns.force,
+            )
         else:
             set_file_encoding(path, encoding)
     elif ns.action == "remove":

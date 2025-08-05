@@ -13,7 +13,12 @@ import sys
 
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("-p", "--parents", action="store_true", help="create parent directories as necessary")
+    p.add_argument(
+        "-p",
+        "--parents",
+        action="store_true",
+        help="create parent directories as necessary",
+    )
     p.add_argument("dir", action="store", nargs="+", help="the directory to be created")
     ns = p.parse_args(args)
 

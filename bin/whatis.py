@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-#by Siddharth Dushantha
-#31 July 2017
+
+# by Siddharth Dushantha
+# 31 July 2017
 from sys import argv
 import json
 
@@ -11,10 +12,10 @@ file = '{"alias":"Define or print aliases","cat":"Print contents of file","cd":"
 def main():
     data = json.loads(file)
     try:
-        print(command + ' - ' + data[command])
+        print(command + " - " + data[command])
 
     except KeyError:
-        print('whatis: nothing appropriate')
+        print("whatis: nothing appropriate")
 
 
 command = argv[1]

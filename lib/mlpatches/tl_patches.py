@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """patches for making some vars thread-local"""
+
 import threading
 import copy
 from mlpatches import base
@@ -47,6 +48,7 @@ class ThreadLocalVar(object):
 
 class ThreadLocalArgv(base.FunctionPatch):
     """Patches sys.argv to be thread-local."""
+
     PY2 = True
     PY3 = True
     module = "sys"

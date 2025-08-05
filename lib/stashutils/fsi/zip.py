@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """The FSI for zipfiles"""
+
 import zipfile
 import os
 import tempfile
@@ -48,7 +49,9 @@ class ZipfileFSI(base.BaseFSI):
 
     def _update(self, remove=[]):
         """create a new zipfile with some changes"""
-        nzfp = os.path.join(tempfile.gettempdir(), "tempzip_{t}.zip".format(t=time.time()))
+        nzfp = os.path.join(
+            tempfile.gettempdir(), "tempzip_{t}.zip".format(t=time.time())
+        )
         op = self.zf.fp.name
         pswd = self.zf.pwd
         comment = self.zf.comment
@@ -137,11 +140,11 @@ class ZipfileFSI(base.BaseFSI):
 
     def isdir(self, name):
         ap = self.abspath(name)
-        return ((ap in self._getdirs()) and not self.isfile(name))
+        return (ap in self._getdirs()) and not self.isfile(name)
 
     def isfile(self, name):
         ap = self.abspath(name)
-        return (ap in self.zf.namelist())
+        return ap in self.zf.namelist()
 
     def stat(self, name):
         ap = self.abspath(name)
@@ -160,7 +163,7 @@ class ZipfileFSI(base.BaseFSI):
             timestamp = zipinfo.date_time
             dt = datetime.datetime(*timestamp)
             mtime = (dt - datetime.datetime(1970, 1, 1)).total_seconds()
-        type_ = (stat.S_IFREG if isfile else stat.S_IFDIR)
+        type_ = stat.S_IFREG if isfile else stat.S_IFDIR
         mode = base.calc_mode(type=type_)
         self.log("stat return\n")
         return base.make_stat(size=size, mtime=mtime, ctime=mtime, mode=mode)

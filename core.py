@@ -5,7 +5,7 @@ StaSh - Pythonista Shell
 https://github.com/ywangd/stash
 """
 
-__version__ = '0.7.5'
+__version__ = "0.7.5"
 
 import imp as pyimp  # rename to avoid name conflict with objc_util
 import logging
@@ -20,7 +20,14 @@ from six import BytesIO, StringIO
 from six.moves.configparser import ConfigParser
 
 # noinspection PyPep8Naming
-from .system.shcommon import (_EXTERNAL_DIRS, _STASH_CONFIG_FILES, _STASH_ROOT, _SYS_STDOUT, IN_PYTHONISTA, ON_IPAD)
+from .system.shcommon import (
+    _EXTERNAL_DIRS,
+    _STASH_CONFIG_FILES,
+    _STASH_ROOT,
+    _SYS_STDOUT,
+    IN_PYTHONISTA,
+    ON_IPAD,
+)
 from .system.shcommon import Control as ctrl
 from .system.shcommon import Escape as esc
 from .system.shcommon import Graphics as graphics
@@ -35,7 +42,7 @@ from .system.shui import get_ui_implementation
 from .system.shuseractionproxy import ShUserActionProxy
 
 # Setup logging
-LOGGER = logging.getLogger('StaSh')
+LOGGER = logging.getLogger("StaSh")
 
 # Debugging constants
 _DEBUG_STREAM = 200
@@ -102,7 +109,15 @@ class StaSh(object):
 
     PY3 = six.PY3
 
-    def __init__(self, debug=(), log_setting=None, no_cfgfile=False, no_rcfile=False, no_historyfile=False, command=None):
+    def __init__(
+        self,
+        debug=(),
+        log_setting=None,
+        no_cfgfile=False,
+        no_rcfile=False,
+        no_historyfile=False,
+        command=None,
+    ):
         self.__version__ = __version__
 
         # Intercept IO
@@ -120,12 +135,13 @@ class StaSh(object):
         # Wire the components
         self.main_screen = ShSequentialScreen(
             self,
-            nlines_max=self.config.getint('display',
-                                          'BUFFER_MAX'),
-            debug=_DEBUG_MAIN_SCREEN in debug
+            nlines_max=self.config.getint("display", "BUFFER_MAX"),
+            debug=_DEBUG_MAIN_SCREEN in debug,
         )
 
-        self.mini_buffer = ShMiniBuffer(self, self.main_screen, debug=_DEBUG_MINI_BUFFER in debug)
+        self.mini_buffer = ShMiniBuffer(
+            self, self.main_screen, debug=_DEBUG_MINI_BUFFER in debug
+        )
 
         self.stream = ShStream(self, self.main_screen, debug=_DEBUG_STREAM in debug)
 
@@ -133,28 +149,36 @@ class StaSh(object):
 
         ShUI, ShSequentialRenderer = get_ui_implementation()
         self.terminal = None  # will be set during UI initialisation
-        self.ui = ShUI(self, debug=(_DEBUG_UI in debug), debug_terminal=(_DEBUG_TERMINAL in debug))
-        self.renderer = ShSequentialRenderer(self, self.main_screen, self.terminal, debug=_DEBUG_RENDERER in debug)
+        self.ui = ShUI(
+            self, debug=(_DEBUG_UI in debug), debug_terminal=(_DEBUG_TERMINAL in debug)
+        )
+        self.renderer = ShSequentialRenderer(
+            self, self.main_screen, self.terminal, debug=_DEBUG_RENDERER in debug
+        )
 
         parser = ShParser(debug=_DEBUG_PARSER in debug)
         expander = ShExpander(self, debug=_DEBUG_EXPANDER in debug)
-        self.runtime = ShRuntime(self, parser, expander, no_historyfile=no_historyfile, debug=_DEBUG_RUNTIME in debug)
+        self.runtime = ShRuntime(
+            self,
+            parser,
+            expander,
+            no_historyfile=no_historyfile,
+            debug=_DEBUG_RUNTIME in debug,
+        )
         self.completer = ShCompleter(self, debug=_DEBUG_COMPLETER in debug)
 
         # Navigate to the startup folder
         if IN_PYTHONISTA:
-            os.chdir(self.runtime.state.environ_get('HOME2'))
+            os.chdir(self.runtime.state.environ_get("HOME2"))
         self.runtime.load_rcfile(no_rcfile=no_rcfile)
         self.io.write(
             self.text_style(
-                'StaSh v%s on python %s\n' % (
+                "StaSh v%s on python %s\n"
+                % (
                     self.__version__,
                     platform.python_version(),
                 ),
-                {
-                    'color': 'blue',
-                    'traits': ['bold']
-                },
+                {"color": "blue", "traits": ["bold"]},
                 always=True,
             ),
         )
@@ -162,18 +186,15 @@ class StaSh(object):
         if self.PY3:
             self.io.write(
                 self.text_style(
-                    'Warning: you are running StaSh in python3. Some commands may not work correctly in python3.\n',
-                    {'color': 'red'},
+                    "Warning: you are running StaSh in python3. Some commands may not work correctly in python3.\n",
+                    {"color": "red"},
                     always=True,
                 ),
             )
             self.io.write(
                 self.text_style(
-                    'Please help us improving StaSh by reporting bugs on github.\n',
-                    {
-                        'color': 'yellow',
-                        'traits': ['italic']
-                    },
+                    "Please help us improving StaSh by reporting bugs on github.\n",
+                    {"color": "yellow", "traits": ["italic"]},
                     always=True,
                 ),
             )
@@ -183,7 +204,7 @@ class StaSh(object):
         # run command (this calls script_will_end)
         if command is None:
             # show tip of the day
-            command = '$STASH_ROOT/bin/totd.py'
+            command = "$STASH_ROOT/bin/totd.py"
         if command:
             # do not run command if command is False (but not None)
             if self.runtime.debug:
@@ -191,9 +212,11 @@ class StaSh(object):
             self(command, add_to_history=False, persistent_level=0)
 
     def __call__(self, input_, persistent_level=2, *args, **kwargs):
-        """ This function is to be called by external script for
-         executing shell commands """
-        worker = self.runtime.run(input_, persistent_level=persistent_level, *args, **kwargs)
+        """This function is to be called by external script for
+        executing shell commands"""
+        worker = self.runtime.run(
+            input_, persistent_level=persistent_level, *args, **kwargs
+        )
         worker.join()
         return worker
 
@@ -216,37 +239,37 @@ class StaSh(object):
 
     @staticmethod
     def _config_logging(log_setting):
-
-        logger = logging.getLogger('StaSh')
+        logger = logging.getLogger("StaSh")
 
         _log_setting = {
-            'level': 'DEBUG',
-            'stdout': True,
+            "level": "DEBUG",
+            "stdout": True,
         }
 
         _log_setting.update(log_setting or {})
 
         level = {
-            'CRITICAL': logging.CRITICAL,
-            'ERROR': logging.ERROR,
-            'WARNING': logging.WARNING,
-            'INFO': logging.INFO,
-            'DEBUG': logging.DEBUG,
-            'NOTEST': logging.NOTSET,
-        }.get(_log_setting['level'],
-              logging.DEBUG)
+            "CRITICAL": logging.CRITICAL,
+            "ERROR": logging.ERROR,
+            "WARNING": logging.WARNING,
+            "INFO": logging.INFO,
+            "DEBUG": logging.DEBUG,
+            "NOTEST": logging.NOTSET,
+        }.get(_log_setting["level"], logging.DEBUG)
 
         logger.setLevel(level)
 
         if not logger.handlers:
-            if _log_setting['stdout']:
+            if _log_setting["stdout"]:
                 _log_handler = logging.StreamHandler(_SYS_STDOUT)
             else:
-                _log_handler = logging.handlers.RotatingFileHandler('stash.log', mode='w')
+                _log_handler = logging.handlers.RotatingFileHandler(
+                    "stash.log", mode="w"
+                )
             _log_handler.setLevel(level)
             _log_handler.setFormatter(
                 logging.Formatter(
-                    '[%(asctime)s] [%(levelname)s] [%(threadName)s] [%(name)s] [%(funcName)s] [%(lineno)d] - %(message)s'
+                    "[%(asctime)s] [%(levelname)s] [%(threadName)s] [%(name)s] [%(funcName)s] [%(lineno)d] - %(message)s"
                 )
             )
             logger.addHandler(_log_handler)
@@ -257,21 +280,26 @@ class StaSh(object):
         """
         Load library files as modules and save each of them as attributes
         """
-        lib_path = os.path.join(_STASH_ROOT, 'lib')
-        os.environ['STASH_ROOT'] = _STASH_ROOT  # libcompleter needs this value
+        lib_path = os.path.join(_STASH_ROOT, "lib")
+        os.environ["STASH_ROOT"] = _STASH_ROOT  # libcompleter needs this value
         try:
             for f in os.listdir(lib_path):
                 fp = os.path.join(lib_path, f)
-                if f.startswith('lib') and f.endswith('.py') and os.path.isfile(fp):
+                if f.startswith("lib") and f.endswith(".py") and os.path.isfile(fp):
                     name, _ = os.path.splitext(f)
                     if self.runtime.debug:
-                        self.logger.debug("Attempting to load library '{}'...".format(name))
+                        self.logger.debug(
+                            "Attempting to load library '{}'...".format(name)
+                        )
                     try:
                         self.__dict__[name] = pyimp.load_source(name, fp)
                     except Exception as e:
-                        self.write_message('%s: failed to load library file (%s)' % (f, repr(e)), error=True)
+                        self.write_message(
+                            "%s: failed to load library file (%s)" % (f, repr(e)),
+                            error=True,
+                        )
         finally:  # do not modify environ permanently
-            os.environ.pop('STASH_ROOT')
+            os.environ.pop("STASH_ROOT")
 
     def write_message(self, s, error=False, prefix="stash: "):
         """
@@ -281,7 +309,7 @@ class StaSh(object):
         :param error: whether this is an error message
         :type error: bool
         """
-        s = '%s%s\n' % (prefix, s)
+        s = "%s%s\n" % (prefix, s)
         if error:
             if self.runtime.debug:
                 self.logger.error(s)
@@ -298,7 +326,7 @@ class StaSh(object):
         """
         self.ui.show()
         # self.terminal.set_focus()
-    
+
     def close(self):
         """
         Quit StaSh.
@@ -306,7 +334,7 @@ class StaSh(object):
         which in turn will call self.on_exit().
         """
         self.ui.close()
-    
+
     def on_exit(self):
         """
         This method will be called when StaSh is about the be closed.
@@ -315,7 +343,6 @@ class StaSh(object):
         self.cleanup()
         # Clear the stack or the stdout becomes unusable for interactive prompt
         self.runtime.worker_registry.purge()
-        
 
     def cleanup(self):
         """
@@ -343,53 +370,74 @@ class StaSh(object):
         :return:
         """
         # No color for pipes, files and Pythonista console
-        if not self.enable_styles or (not always and (isinstance(sys.stdout,
-                                                                 (StringIO,
-                                                                  IOBase))  # or sys.stdout.write.im_self is _SYS_STDOUT
-                                                      or sys.stdout is _SYS_STDOUT)):
+        if not self.enable_styles or (
+            not always
+            and (
+                isinstance(
+                    sys.stdout, (StringIO, IOBase)
+                )  # or sys.stdout.write.im_self is _SYS_STDOUT
+                or sys.stdout is _SYS_STDOUT
+            )
+        ):
             return s
 
-        fmt_string = u'%s%%d%s%%s%s%%d%s' % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)
+        fmt_string = "%s%%d%s%%s%s%%d%s" % (ctrl.CSI, esc.SGR, ctrl.CSI, esc.SGR)
         for style_name, style_value in style.items():
-            if style_name == 'color':
+            if style_name == "color":
                 color_id = graphics._SGR.get(style_value.lower())
                 if color_id is not None:
-                    s = fmt_string % (color_id, s, graphics._SGR['default'])
-            elif style_name == 'bgcolor':
-                color_id = graphics._SGR.get('bg-' + style_value.lower())
+                    s = fmt_string % (color_id, s, graphics._SGR["default"])
+            elif style_name == "bgcolor":
+                color_id = graphics._SGR.get("bg-" + style_value.lower())
                 if color_id is not None:
-                    s = fmt_string % (color_id, s, graphics._SGR['default'])
-            elif style_name == 'traits':
+                    s = fmt_string % (color_id, s, graphics._SGR["default"])
+            elif style_name == "traits":
                 for val in style_value:
                     val = val.lower()
-                    if val == 'bold':
-                        s = fmt_string % (graphics._SGR['+bold'], s, graphics._SGR['-bold'])
-                    elif val == 'italic':
-                        s = fmt_string % (graphics._SGR['+italics'], s, graphics._SGR['-italics'])
-                    elif val == 'underline':
-                        s = fmt_string % (graphics._SGR['+underscore'], s, graphics._SGR['-underscore'])
-                    elif val == 'strikethrough':
-                        s = fmt_string % (graphics._SGR['+strikethrough'], s, graphics._SGR['-strikethrough'])
+                    if val == "bold":
+                        s = fmt_string % (
+                            graphics._SGR["+bold"],
+                            s,
+                            graphics._SGR["-bold"],
+                        )
+                    elif val == "italic":
+                        s = fmt_string % (
+                            graphics._SGR["+italics"],
+                            s,
+                            graphics._SGR["-italics"],
+                        )
+                    elif val == "underline":
+                        s = fmt_string % (
+                            graphics._SGR["+underscore"],
+                            s,
+                            graphics._SGR["-underscore"],
+                        )
+                    elif val == "strikethrough":
+                        s = fmt_string % (
+                            graphics._SGR["+strikethrough"],
+                            s,
+                            graphics._SGR["-strikethrough"],
+                        )
 
         return s
 
-    def text_color(self, s, color_name='default', **kwargs):
-        return self.text_style(s, {'color': color_name}, **kwargs)
+    def text_color(self, s, color_name="default", **kwargs):
+        return self.text_style(s, {"color": color_name}, **kwargs)
 
-    def text_bgcolor(self, s, color_name='default', **kwargs):
-        return self.text_style(s, {'bgcolor': color_name}, **kwargs)
+    def text_bgcolor(self, s, color_name="default", **kwargs):
+        return self.text_style(s, {"bgcolor": color_name}, **kwargs)
 
     def text_bold(self, s, **kwargs):
-        return self.text_style(s, {'traits': ['bold']}, **kwargs)
+        return self.text_style(s, {"traits": ["bold"]}, **kwargs)
 
     def text_italic(self, s, **kwargs):
-        return self.text_style(s, {'traits': ['italic']}, **kwargs)
+        return self.text_style(s, {"traits": ["italic"]}, **kwargs)
 
     def text_bold_italic(self, s, **kwargs):
-        return self.text_style(s, {'traits': ['bold', 'italic']}, **kwargs)
+        return self.text_style(s, {"traits": ["bold", "italic"]}, **kwargs)
 
     def text_underline(self, s, **kwargs):
-        return self.text_style(s, {'traits': ['underline']}, **kwargs)
+        return self.text_style(s, {"traits": ["underline"]}, **kwargs)
 
     def text_strikethrough(self, s, **kwargs):
-        return self.text_style(s, {'traits': ['strikethrough']}, **kwargs)
+        return self.text_style(s, {"traits": ["strikethrough"]}, **kwargs)

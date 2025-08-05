@@ -2,59 +2,70 @@
 """
 Launch StaSh in a more flexible and reliable way.
 """
+
 import sys
 import argparse
 
 module_names = (
-    'stash',
-    'system.shcommon',
-    'system.shstreams',
-    'system.shscreens',
-    'system.shui',
-    'system.shui.base',
-    'system.shio',
-    'system.shiowrapper',
-    'system.shparsers',
-    'system.shruntime',
-    'system.shthreads',
-    'system.shuseractionproxy',
-    'system.shhistory',
+    "stash",
+    "system.shcommon",
+    "system.shstreams",
+    "system.shscreens",
+    "system.shui",
+    "system.shui.base",
+    "system.shio",
+    "system.shiowrapper",
+    "system.shparsers",
+    "system.shruntime",
+    "system.shthreads",
+    "system.shuseractionproxy",
+    "system.shhistory",
 )
 
 # Attempt to reload modules when startup, does not seem to work
-if 'stash.stash' in sys.modules:
+if "stash.stash" in sys.modules:
     for name in module_names:
-        sys.modules.pop('stash.' + name)
+        sys.modules.pop("stash." + name)
 from stash import stash
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--no-cfgfile', action='store_true', help='do not load external config files')
-ap.add_argument('--no-rcfile', action='store_true', help='do not load external resource file')
-ap.add_argument('--no-historyfile', action='store_true', help='do not load history file from last session')
 ap.add_argument(
-    '--log-level',
-    choices=['DEBUG',
-             'INFO',
-             'WARN',
-             'ERROR',
-             'CRITICAL'],
-    default='INFO',
-    help='the logging level'
+    "--no-cfgfile", action="store_true", help="do not load external config files"
 )
-ap.add_argument('--log-file', help='the file to send logging messages')
-ap.add_argument('--debug-switch', default='', help='a comma separate list to turn on debug switch for components')
-ap.add_argument('-c', '--command', default=None, dest='command', help='command to run')
-ap.add_argument('args',  # the editor shortcuts may pass additional arguments
-                nargs='*',
-                help='additional arguments (ignored)')
+ap.add_argument(
+    "--no-rcfile", action="store_true", help="do not load external resource file"
+)
+ap.add_argument(
+    "--no-historyfile",
+    action="store_true",
+    help="do not load history file from last session",
+)
+ap.add_argument(
+    "--log-level",
+    choices=["DEBUG", "INFO", "WARN", "ERROR", "CRITICAL"],
+    default="INFO",
+    help="the logging level",
+)
+ap.add_argument("--log-file", help="the file to send logging messages")
+ap.add_argument(
+    "--debug-switch",
+    default="",
+    help="a comma separate list to turn on debug switch for components",
+)
+ap.add_argument("-c", "--command", default=None, dest="command", help="command to run")
+ap.add_argument(
+    "args",  # the editor shortcuts may pass additional arguments
+    nargs="*",
+    help="additional arguments (ignored)",
+)
 ns = ap.parse_args()
 
 log_setting = {
-    'level': ns.log_level,
-    'file': ns.log_file,
+    "level": ns.log_level,
+    "file": ns.log_file,
 }
 
-if ns.debug_switch == '':
+if ns.debug_switch == "":
     debug = (
         # stash._DEBUG_STREAM,
         # stash._DEBUG_RENDERER,
@@ -78,8 +89,8 @@ elif ns.debug_switch == "all":
                 debug.append(value)
 else:
     debug = []
-    for ds in ns.debug_switch.split(','):
-        ds = getattr(stash, '_DEBUG_{}'.format(ds.upper()), None)
+    for ds in ns.debug_switch.split(","):
+        ds = getattr(stash, "_DEBUG_{}".format(ds.upper()), None)
         if ds is not None:
             debug.append(ds)
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Get md5 hash of a file or string.
 
 usage: md5sum.py [-h] [-c] [file [file ...]]
@@ -14,7 +14,8 @@ optional arguments:
                md5_hash filename
                md5_hash filename
                etc.
-'''
+"""
+
 from __future__ import print_function
 
 import argparse
@@ -43,16 +44,16 @@ def check_list(fileobj):
     for line in fileobj:
         if line.strip() == "":
             continue
-        match = re.match(r'(\w+)[ \t]+(.+)', line)
+        match = re.match(r"(\w+)[ \t]+(.+)", line)
         try:
-            with open(match.group(2), 'rb') as f1:
+            with open(match.group(2), "rb") as f1:
                 if match.group(1) == get_hash(f1):
-                    print(match.group(2) + ': Pass')
+                    print(match.group(2) + ": Pass")
                 else:
-                    print(match.group(2) + ': Fail')
+                    print(match.group(2) + ": Fail")
                     correct = False
         except:
-            print('Invalid format.')
+            print("Invalid format.")
             correct = False
     return correct
 
@@ -69,13 +70,13 @@ def make_file(txt):
 
 ap = argparse.ArgumentParser()
 ap.add_argument(
-    '-c',
-    '--check',
-    action='store_true',
+    "-c",
+    "--check",
+    action="store_true",
     default=False,
-    help='''Check a file with md5 hashes and file names for a match. format: hash filename'''
+    help="""Check a file with md5 hashes and file names for a match. format: hash filename""",
 )
-ap.add_argument('file', action='store', nargs='*', help='String or file to hash.')
+ap.add_argument("file", action="store", nargs="*", help="String or file to hash.")
 args = ap.parse_args(sys.argv[1:])
 
 if args.check:
@@ -94,8 +95,8 @@ else:
         for arg in args.file:
             if os.path.isfile(arg):
                 # hash file
-                with open(arg, 'rb') as f:
-                    print(get_hash(f) + ' ' + arg)
+                with open(arg, "rb") as f:
+                    print(get_hash(f) + " " + arg)
             elif arg == "-":
                 # read from stdin
                 print(get_hash(make_file(sys.stdin.read())))

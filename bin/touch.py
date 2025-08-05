@@ -13,8 +13,12 @@ import sys
 
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("-c", "--no-create", action="store_true", help="do not create nonexistant files")
-    p.add_argument("file", action="store", nargs="+", help="one or more files to be touched")
+    p.add_argument(
+        "-c", "--no-create", action="store_true", help="do not create nonexistant files"
+    )
+    p.add_argument(
+        "file", action="store", nargs="+", help="one or more files to be touched"
+    )
     ns = p.parse_args(args)
 
     status = 0

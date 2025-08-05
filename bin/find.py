@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-""" Find files in specified paths
-"""
+"""Find files in specified paths"""
+
 from __future__ import print_function
 
 import os
@@ -35,7 +35,7 @@ class FilePredicate(object):
 
 def filter_depth_and_type(mindepth, maxdepth, ftype, root, dirs, files, pth):
     root_rel = os.path.relpath(root, pth)
-    if root_rel == '.':
+    if root_rel == ".":
         level = 0
     else:
         level = len(root_rel.split(os.path.sep))
@@ -46,7 +46,7 @@ def filter_depth_and_type(mindepth, maxdepth, ftype, root, dirs, files, pth):
     elif not (mindepth <= level <= maxdepth):
         files = []
 
-    if ftype == 'f':
+    if ftype == "f":
         if not dirs and not files:
             return None, None, None
         else:
@@ -54,7 +54,7 @@ def filter_depth_and_type(mindepth, maxdepth, ftype, root, dirs, files, pth):
                 dirs = []
             else:
                 return root, dirs, files
-    elif ftype == 'd':
+    elif ftype == "d":
         files = []
 
     return root, dirs, files
@@ -91,54 +91,71 @@ def filter_mtime(oldest_time, newest_time, root, dirs, files, pth):
 
 def main(args):
     ap = argparse.ArgumentParser()
-    ap.add_argument('paths', nargs='+', help='specify a file hierarchy for find to traverse')
-    ap.add_argument('-n', '-name', '--name', dest='pattern', nargs='?', default='*', help='pattern to match file names')
     ap.add_argument(
-        '-t',
-        '-type',
-        '--type',
-        nargs='?',
-        default='f',
-        choices=('a',
-                 'f',
-                 'd'),
-        help='specify the file type to match'
+        "paths", nargs="+", help="specify a file hierarchy for find to traverse"
     )
-    ap.add_argument('-d', '-mtime', '--mtime', metavar='n', nargs='?', help='specify modification time range')
+    ap.add_argument(
+        "-n",
+        "-name",
+        "--name",
+        dest="pattern",
+        nargs="?",
+        default="*",
+        help="pattern to match file names",
+    )
+    ap.add_argument(
+        "-t",
+        "-type",
+        "--type",
+        nargs="?",
+        default="f",
+        choices=("a", "f", "d"),
+        help="specify the file type to match",
+    )
+    ap.add_argument(
+        "-d",
+        "-mtime",
+        "--mtime",
+        metavar="n",
+        nargs="?",
+        help="specify modification time range",
+    )
 
     ap.add_argument(
-        '-mindepth',
-        '--mindepth',
-        metavar='n',
-        nargs='?',
+        "-mindepth",
+        "--mindepth",
+        metavar="n",
+        nargs="?",
         default=0,
         type=int,
-        help='descend at most n directory levels below command line arguments'
+        help="descend at most n directory levels below command line arguments",
     )
     ap.add_argument(
-        '-maxdepth',
-        '--maxdepth',
-        metavar='n',
-        nargs='?',
+        "-maxdepth",
+        "--maxdepth",
+        metavar="n",
+        nargs="?",
         default=sys.maxsize,
         type=int,
-        help='descend at most n directory levels below command line arguments'
+        help="descend at most n directory levels below command line arguments",
     )
     ns = ap.parse_args(args)
 
     file_predicate = FilePredicate()
 
-    file_predicate.add_filter(partial(filter_depth_and_type, ns.mindepth, ns.maxdepth, ns.type))
+    file_predicate.add_filter(
+        partial(filter_depth_and_type, ns.mindepth, ns.maxdepth, ns.type)
+    )
 
     file_predicate.add_filter(partial(filter_name, ns.pattern))
 
     if ns.mtime:
         oldest_time = 0
         tnow = newest_time = time.time()
-        if ns.mtime.startswith('-'):
+        if ns.mtime.startswith("-"):
             ndays = int(ns.mtime[1:])
             oldest_time = tnow - ndays * 86400.0
-        elif ns.mtime.startswith('+'):
+        elif ns.mtime.startswith("+"):
             ndays = int(ns.mtime[1:])
             newest_time = tnow - (ndays + 1) * 86400.0
         else:
@@ -149,7 +166,7 @@ def main(args):
 
     names = file_predicate.run(ns.paths)
 
-    print('\n'.join(names))
+    print("\n".join(names))
 
 
 if __name__ == "__main__":

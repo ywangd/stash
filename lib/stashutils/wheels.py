@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """functions and classes related to wheels."""
+
 import os
 import shutil
 import tempfile
@@ -22,6 +23,7 @@ except ImportError:
 
 class WheelError(Exception):
     """Error related to a wheel."""
+
     pass
 
 
@@ -66,12 +68,12 @@ def escape_filename_component(fragment):
 
 
 def generate_filename(
-        distribution,
-        version,
-        build_tag=None,
-        python_tag=None,
-        abi_tag=None,
-        platform_tag=None,
+    distribution,
+    version,
+    build_tag=None,
+    python_tag=None,
+    abi_tag=None,
+    platform_tag=None,
 ):
     """
     Generate a filename for the wheel and return it.
@@ -120,6 +122,7 @@ class BaseHandler(object):
     """
     Baseclass for installation handlers.
     """
+
     name = "<name not set>"
 
     def __init__(self, wheel, verbose=False):
@@ -170,6 +173,7 @@ class BaseHandler(object):
 
 class TopLevelHandler(BaseHandler):
     """Handler for 'top_level.txt'"""
+
     name = "top_level.txt installer"
 
     def handle_install(self, src, dest):
@@ -178,7 +182,7 @@ class TopLevelHandler(BaseHandler):
         if not os.path.exists(tltxtp):
             files = os.listdir(src)
             fin = [file_name for file_name in files if file_name != self.distinfo_name]
-            print('No top_level.txt, try to fix this.', fin)
+            print("No top_level.txt, try to fix this.", fin)
         else:
             with open(tltxtp, "r") as f:
                 fin = f.readlines()
@@ -191,13 +195,18 @@ class TopLevelHandler(BaseHandler):
                 dp = os.path.join(dest, pure + ".py")
                 p = self.copytree(pure, sp + ".py", dp, remove=True)
             else:
-                raise WheelError("top_level.txt entry '{e}' not found in toplevel directory!".format(e=pure))
+                raise WheelError(
+                    "top_level.txt entry '{e}' not found in toplevel directory!".format(
+                        e=pure
+                    )
+                )
             files_installed.append(p)
         return files_installed
 
 
 class ConsoleScriptsHandler(BaseHandler):
     """Handler for 'console_scripts'."""
+
     name = "console_scripts installer"
 
     def handle_install(self, src, dest):
@@ -241,16 +250,14 @@ class ConsoleScriptsHandler(BaseHandler):
             path = create_command(
                 command,
                 (
-                    u"""'''%s'''
+                    """'''%s'''
 from %s import %s
 
 if __name__ == "__main__":
     %s()
-""" % (desc,
-            modname,
-            funcname,
-            funcname)
-                ).encode("utf-8")
+"""
+                    % (desc, modname, funcname, funcname)
+                ).encode("utf-8"),
             )
             files_installed.append(path)
         return files_installed
@@ -258,6 +265,7 @@ if __name__ == "__main__":
 
 class WheelInfoHandler(BaseHandler):
     """Handler for wheel informations."""
+
     name = "WHEEL information checker"
     supported_major_versions = [1]
     supported_versions = ["1.0"]
@@ -269,7 +277,7 @@ class WheelInfoHandler(BaseHandler):
                 line = line.replace("\r", "").replace("\n", "")
                 ki = line.find(":")
                 key = line[:ki]
-                value = line[ki + 2:]
+                value = line[ki + 2 :]
 
                 if key.lower() == "wheel-version":
                     major, minor = value.split(".")
@@ -290,6 +298,7 @@ class DependencyHandler(BaseHandler):
     """
     Handler for the dependencies.
     """
+
     name = "dependency handler"
 
     def handle_install(self, src, dest):
@@ -302,7 +311,9 @@ class DependencyHandler(BaseHandler):
                 dependencies = self.read_dependencies_from_METADATA(metadatap)
             else:
                 if self.verbose:
-                    print("Warning: could find neither 'metadata.json' nor `METADATA`, can not detect dependencies!")
+                    print(
+                        "Warning: could find neither 'metadata.json' nor `METADATA`, can not detect dependencies!"
+                    )
                 return
         else:
             if self.verbose:
@@ -328,15 +339,15 @@ class DependencyHandler(BaseHandler):
     def read_dependencies_from_METADATA(self, p):
         """read dependencies from distinfo/METADATA"""
         dependencies = []
-        with open(p, "r", encoding='utf-8') as fin:
+        with open(p, "r", encoding="utf-8") as fin:
             for line in fin:
                 line = line.replace("\n", "")
                 if line.startswith("Requires-Dist: "):
-                    t = line[len("Requires-Dist: "):]
+                    t = line[len("Requires-Dist: ") :]
                     if ";" in t:
-                        es = t[t.find(";") + 1:].replace('"', "").replace("'", "")
-                        t = t[:t.find(";")].strip()
-                        for sub_es in es.split(' and '):
+                        es = t[t.find(";") + 1 :].replace('"', "").replace("'", "")
+                        t = t[: t.find(";")].strip()
+                        for sub_es in es.split(" and "):
                             if VersionSpecifier is None:
                                 # libversion not found
                                 print(
@@ -344,7 +355,9 @@ class DependencyHandler(BaseHandler):
                                 )
                                 rq, v, extras = "<libversion not found>", "???", []
                             else:
-                                rq, v, extras = VersionSpecifier.parse_requirement(sub_es)
+                                rq, v, extras = VersionSpecifier.parse_requirement(
+                                    sub_es
+                                )
 
                             if rq == "python_version":
                                 # handle python version dependencies
@@ -372,8 +385,16 @@ class DependencyHandler(BaseHandler):
                             else:
                                 # unknown requirement for dependency
                                 # warn user and register the dependency
-                                print("Warning: unknown dependency requirement: '{}'".format(rq))
-                                print("Warning: Adding dependency '{}', ignoring requirements for dependency.".format(t))
+                                print(
+                                    "Warning: unknown dependency requirement: '{}'".format(
+                                        rq
+                                    )
+                                )
+                                print(
+                                    "Warning: Adding dependency '{}', ignoring requirements for dependency.".format(
+                                        t
+                                    )
+                                )
                                 # do not do anything here- As long as we dont use 'continue', 'break', ... the dependency will be added.
                         else:
                             # no 'break' happens
@@ -424,7 +445,11 @@ class Wheel(object):
             for handler in self.handlers:
                 if hasattr(handler, "handle_install"):
                     if self.verbose:
-                        print("Running handler '{h}'...".format(h=getattr(handler, "name", "<unknown>")))
+                        print(
+                            "Running handler '{h}'...".format(
+                                h=getattr(handler, "name", "<unknown>")
+                            )
+                        )
                     tfi = handler.handle_install(tp, targetdir)
                     if tfi is not None:
                         files_installed += tfi
@@ -454,13 +479,18 @@ if __name__ == "__main__":
     # test script
     import argparse
     import sys
+
     parser = argparse.ArgumentParser(description="Wheel debug installer")
     parser.add_argument("path", help="path to .whl", action="store")
-    parser.add_argument("-q", help="be less verbose", action="store_false", dest="verbose")
+    parser.add_argument(
+        "-q", help="be less verbose", action="store_false", dest="verbose"
+    )
     parser.add_argument("extras", action="store", nargs="*", help="extras to install")
     ns = parser.parse_args()
     print("Installing {} with extras {}...".format(ns.path, ns.extras))
-    fi, dep = Wheel(ns.path, verbose=ns.verbose, extras=ns.extras).install(os.path.expanduser("~/Documents/site-packages/"))
+    fi, dep = Wheel(ns.path, verbose=ns.verbose, extras=ns.extras).install(
+        os.path.expanduser("~/Documents/site-packages/")
+    )
     print("files installed: ")
     print(fi)
     print("dependencies:")

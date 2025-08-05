@@ -7,27 +7,26 @@ from stash.tests.stashtest import StashTestCase
 
 
 class ThreadsTests(StashTestCase):
-
-    setup_commands = ['BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH']
+    setup_commands = ["BIN_PATH=$STASH_ROOT/tests/system/data:$BIN_PATH"]
 
     def test_101(self):
         """
         background thread clears properly
         """
-        self.stash('test_101_1.py &')
+        self.stash("test_101_1.py &")
         time.sleep(4)
         cmp_str = r"""[stash]$ [stash]$ sleeping ... 0
 sleeping ... 1
 """
-        assert self.stash.main_screen.text == cmp_str, 'output not identical'
+        assert self.stash.main_screen.text == cmp_str, "output not identical"
 
     def test_102(self):
         """
         Two parallel threads with same stdout should interleave
         """
         outs = StringIO()
-        self.stash('test_102_1.py &', final_outs=outs)
-        self.stash('test_102_2.py &', final_outs=outs)
+        self.stash("test_102_1.py &", final_outs=outs)
+        self.stash("test_102_2.py &", final_outs=outs)
         time.sleep(5)
         s = outs.getvalue()
 
@@ -41,7 +40,7 @@ sleeping ... 1
                 change_cnt += 1
                 prev_line = cur_line
 
-        self.assertTrue(change_cnt > 2, 'Output do not interleave')
+        self.assertTrue(change_cnt > 2, "Output do not interleave")
 
     def test_103(self):
         """
@@ -49,8 +48,8 @@ sleeping ... 1
         """
         outs1 = StringIO()
 
-        self.stash('test_102_1.py &', final_outs=outs1)
-        self.stash('test_102_2.py')
+        self.stash("test_102_1.py &", final_outs=outs1)
+        self.stash("test_102_2.py")
         time.sleep(1)
 
         cmp_str1 = r"""[stash]$ [stash]$ test_102_2.py
@@ -59,7 +58,7 @@ test_102_2.py
 test_102_2.py
 test_102_2.py
 [stash]$ """
-        assert self.stash.main_screen.text == cmp_str1, 'output not identical'
+        assert self.stash.main_screen.text == cmp_str1, "output not identical"
 
         cmp_str2 = r"""test_102_1.py
 test_102_1.py
@@ -67,4 +66,4 @@ test_102_1.py
 test_102_1.py
 test_102_1.py
 """
-        assert outs1.getvalue() == cmp_str2, 'output not identical'
+        assert outs1.getvalue() == cmp_str2, "output not identical"

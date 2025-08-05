@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """tests for the 'echo' command."""
+
 from unittest import expectedFailure
 
 from stash.tests.stashtest import StashTestCase
@@ -37,5 +38,5 @@ class EchoTests(StashTestCase):
     @expectedFailure
     def test_non_ascii(self):
         """test echo with non-ascii characters."""
-        output = self.do_echo(u"Non-Ascii: äöüß end")
-        self.assertEqual(output, u"Non-Ascii: äöüß end\n")
+        output = self.do_echo("Non-Ascii: äöüß end")
+        self.assertEqual(output, "Non-Ascii: äöüß end\n")

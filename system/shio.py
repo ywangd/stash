@@ -12,10 +12,9 @@ class ShIO(object):
     """
 
     def __init__(self, stash, debug=False):
-
         self.stash = stash
         self.debug = debug
-        self.logger = logging.getLogger('StaSh.IO')
+        self.logger = logging.getLogger("StaSh.IO")
         self.tell_pos = 0
         # The input buffer, push from the Left end, read from the right end
         self._buffer = deque()
@@ -25,7 +24,7 @@ class ShIO(object):
         # not affect the UI thread by noticeable amount
         self.holdback = 0.2
 
-        self.encoding = 'utf8'
+        self.encoding = "utf8"
 
     def push(self, s):
         self._buffer.extendleft(s)
@@ -63,7 +62,7 @@ class ShIO(object):
         size = size if size != 0 else 1
 
         if size == -1:
-            return ''.join(self._buffer.pop() for _ in len(self._buffer))
+            return "".join(self._buffer.pop() for _ in len(self._buffer))
 
         else:
             ret = []
@@ -74,22 +73,22 @@ class ShIO(object):
                     # Wait briefly when the buffer is empty to avoid taxing the CPU
                     time.sleep(self.holdback)
 
-            return ''.join(ret)
+            return "".join(ret)
 
     def readline(self, size=-1):
         ret = []
         while True:
             try:
                 ret.append(self._buffer.pop())
-                if ret[-1] in ['\n', '\0']:
+                if ret[-1] in ["\n", "\0"]:
                     break
             except IndexError:
                 time.sleep(self.holdback)
 
-        if ret[-1] == '\0':
+        if ret[-1] == "\0":
             del ret[-1]
 
-        line = ''.join(ret)
+        line = "".join(ret)
         # localized history for running scripts
         # TODO: Adding to history for read as well?
         self.stash.runtime.history.add(line)
@@ -101,12 +100,12 @@ class ShIO(object):
         while True:
             try:
                 ret.append(self._buffer.pop())
-                if ret[-1] == '\0':
+                if ret[-1] == "\0":
                     break
             except IndexError:
                 time.sleep(self.holdback)
 
-        ret = ''.join(ret[:-1])  # do not include the EOF
+        ret = "".join(ret[:-1])  # do not include the EOF
 
         if size != -1:
             ret = ret[:size]
@@ -149,8 +148,8 @@ class ShIO(object):
         while True:
             try:
                 ret.append(self._buffer.pop())
-                if ret[-1] == '\n':
-                    yield ''.join(ret)
+                if ret[-1] == "\n":
+                    yield "".join(ret)
                     ret = []
             except IndexError:
                 self._buffer.extend(ret)
@@ -161,13 +160,15 @@ class ShIO(object):
             return
         idx = 0
         while True:
-            self.stash.stream.feed(s[idx:idx + self.chunk_size], no_wait=no_wait)  # main screen only
+            self.stash.stream.feed(
+                s[idx : idx + self.chunk_size], no_wait=no_wait
+            )  # main screen only
             idx += self.chunk_size
             if idx >= len(s):
                 break
 
     def writelines(self, s_list):
-        self.write(''.join(s_list))
+        self.write("".join(s_list))
 
     def flush(self):
         pass

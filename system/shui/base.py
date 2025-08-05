@@ -1,13 +1,26 @@
 """
 UI base classes.
 """
+
 import ast
 import logging
 import time
 
 import six
 
-from ..shcommon import K_CC, K_CD, K_HUP, K_HDN, K_LEFT, K_RIGHT, K_CU, K_TAB, K_HIST, K_CZ, K_KB
+from ..shcommon import (
+    K_CC,
+    K_CD,
+    K_HUP,
+    K_HDN,
+    K_LEFT,
+    K_RIGHT,
+    K_CU,
+    K_TAB,
+    K_HIST,
+    K_CZ,
+    K_KB,
+)
 
 
 class ShBaseUI(object):
@@ -20,38 +33,45 @@ class ShBaseUI(object):
     :param debug_terminal: debug flag for the terminal
     :type debug_terminal: bool
     """
+
     def __init__(self, stash, debug=False, debug_terminal=False):
         self.stash = stash
         self.debug = debug
         self.debug_terminal = debug_terminal
-        self.logger = logging.getLogger('StaSh.UI')
-        
-        self.BUFFER_MAX = stash.config.getint('display', 'BUFFER_MAX')
-        self.TEXT_FONT = ('Menlo-Regular', stash.config.get('display', 'TEXT_FONT_SIZE'))
-        self.BUTTON_FONT = ('Menlo-Regular', stash.config.getint('display', 'BUTTON_FONT_SIZE'))
-        self.vk_symbols = stash.config.get('display', 'VK_SYMBOLS')
-    
+        self.logger = logging.getLogger("StaSh.UI")
+
+        self.BUFFER_MAX = stash.config.getint("display", "BUFFER_MAX")
+        self.TEXT_FONT = (
+            "Menlo-Regular",
+            stash.config.get("display", "TEXT_FONT_SIZE"),
+        )
+        self.BUTTON_FONT = (
+            "Menlo-Regular",
+            stash.config.getint("display", "BUTTON_FONT_SIZE"),
+        )
+        self.vk_symbols = stash.config.get("display", "VK_SYMBOLS")
+
     def show(self):
         """
         Show the UI.
         """
         raise NotImplementedError()
-    
+
     def close(self):
         """
         Close the UI. You should also call self.on_exit().
         """
         raise NotImplementedError()
-    
+
     def on_exit(self):
         """
         This method should be called when the UI will be closed.
         """
         # delegate task to the core
         self.stash.on_exit()
-    
+
     # ================== key commands ========================
-    
+
     def dummyAction(self):
         pass
 
@@ -68,7 +88,7 @@ class ShBaseUI(object):
         self.vk_tapped(K_HDN)
 
     def controlKAction(self):
-        self.stash.mini_buffer.feed(self.stash.mini_buffer.RANGE_CURSOR_TO_END, '')
+        self.stash.mini_buffer.feed(self.stash.mini_buffer.RANGE_CURSOR_TO_END, "")
 
     def controlUAction(self):
         self.vk_tapped(K_CU)
@@ -83,7 +103,9 @@ class ShBaseUI(object):
         self.stash.mini_buffer.delete_word(self.selected_range)
 
     def controlLAction(self):  # delete one word backwards
-        self.stash.stream.feed(u'\u009bc%s' % self.stash.runtime.get_prompt(), no_wait=True)
+        self.stash.stream.feed(
+            "\u009bc%s" % self.stash.runtime.get_prompt(), no_wait=True
+        )
 
     def controlZAction(self):
         self.stash.runtime.push_to_background()
@@ -101,7 +123,7 @@ class ShBaseUI(object):
     def arrowRightAction(self):
         # self.stash.mini_buffer.set_cursor(1, whence=1)
         self.vk_tapped(K_RIGHT)
-    
+
     def vk_tapped(self, vk):
         """
         Called when a key was pressed
@@ -114,7 +136,7 @@ class ShBaseUI(object):
             rng = self.terminal.selected_range
             # Valid cursor positions are only when non-selection and after the modifiable position
             if rng[0] == rng[1] and rng[0] >= self.stash.main_screen.x_modifiable:
-                self.stash.mini_buffer.feed(rng, '\t')
+                self.stash.mini_buffer.feed(rng, "\t")
 
         elif vk == K_HIST:
             self.history_present(self.stash.runtime.history)
@@ -124,20 +146,22 @@ class ShBaseUI(object):
 
         elif vk == K_HDN:
             self.stash.runtime.history.down()
-        
+
         elif vk == K_LEFT:
             self.stash.mini_buffer.set_cursor(-1, whence=1)
-        
+
         elif vk == K_RIGHT:
             self.stash.mini_buffer.set_cursor(1, whence=1)
 
         elif vk == K_CD:
             if self.stash.runtime.child_thread:
-                self.stash.mini_buffer.feed(self.stash.mini_buffer.RANGE_BUFFER_END, '\0')
+                self.stash.mini_buffer.feed(
+                    self.stash.mini_buffer.RANGE_BUFFER_END, "\0"
+                )
 
         elif vk == K_CC:
             if not self.stash.runtime.child_thread:
-                self.stash.write_message('no thread to terminate\n')
+                self.stash.write_message("no thread to terminate\n")
                 self.stash.io.write(self.stash.runtime.get_prompt())
 
             else:  # ctrl-c terminates the entire stack of threads
@@ -154,10 +178,12 @@ class ShBaseUI(object):
                 self.terminal.begin_editing()
 
         elif vk == K_CU:
-            self.stash.mini_buffer.feed(self.stash.mini_buffer.RANGE_MODIFIABLE_CHARS, '')
-    
+            self.stash.mini_buffer.feed(
+                self.stash.mini_buffer.RANGE_MODIFIABLE_CHARS, ""
+            )
+
     # ================== history functions =====================
-    
+
     def history_present(self, history):
         """
         Present the history.
@@ -165,7 +191,7 @@ class ShBaseUI(object):
         :type history: stash.system.shhistory.ShHistory
         """
         raise NotImplementedError()
-    
+
     def history_selected(self, line, idx):
         """
         This should be called when a history line was selected.
@@ -176,7 +202,9 @@ class ShBaseUI(object):
         """
         # Save the unfinished line user is typing before showing entries from history
         if self.stash.runtime.history.idx == -1:
-            self.stash.runtime.history.templine = self.stash.mini_buffer.modifiable_string.rstrip()
+            self.stash.runtime.history.templine = (
+                self.stash.mini_buffer.modifiable_string.rstrip()
+            )
         self.stash.mini_buffer.feed(None, line)
         self.stash.runtime.history.idx = idx
 
@@ -190,46 +218,48 @@ class ShBaseTerminal(object):
     :param parent: the parent ShBaseUI
     :type parent: ShBaseUI
     """
-    
+
     def __init__(self, stash, parent):
         self.stash = stash
         self.parent = parent
         self.debug = self.parent.debug_terminal
-        self.logger = logging.getLogger('StaSh.Terminal')
-        
+        self.logger = logging.getLogger("StaSh.Terminal")
+
         self.stash.terminal = self
-        
+
         self.tv_delegate = ShTerminalDelegate(self.stash, self, debug=self.debug)
-        
+
         # whether the terminal cursor position is in sync with main screen
         self.cursor_synced = False
-        
-        self.background_color = ast.literal_eval(stash.config.get('display', 'BACKGROUND_COLOR'))
-        self.font_size = stash.config.getint('display', 'TEXT_FONT_SIZE')
-        self.text_color = ast.literal_eval(stash.config.get('display', 'TEXT_COLOR'))
-        self.tint_color = ast.literal_eval(stash.config.get('display', 'TINT_COLOR'))
 
-        self.indicator_style = stash.config.get('display', 'INDICATOR_STYLE')
-    
+        self.background_color = ast.literal_eval(
+            stash.config.get("display", "BACKGROUND_COLOR")
+        )
+        self.font_size = stash.config.getint("display", "TEXT_FONT_SIZE")
+        self.text_color = ast.literal_eval(stash.config.get("display", "TEXT_COLOR"))
+        self.tint_color = ast.literal_eval(stash.config.get("display", "TINT_COLOR"))
+
+        self.indicator_style = stash.config.get("display", "INDICATOR_STYLE")
+
     @property
     def text(self):
         """
         The text of the terminal. Unicode.
         """
         raise NotImplementedError()
-    
+
     @text.setter
     def text(self, value):
         assert isinstance(value, six.text_type)
         raise NotImplementedError()
-        
+
     @property
     def text_length(self):
         """
         The length of the text
         """
         return len(self.text)  # default implementation
-    
+
     @property
     def selected_range(self):
         """
@@ -246,30 +276,30 @@ class ShBaseTerminal(object):
         with the same range, this turn on the cursor_synced flag BUT will NOT trigger
         the did_change_selection event (which is paired to cancel the cursor_synced
         flag).
-        
+
         Important: set self.cursor_synced = False if the above mentioned conditions are true
         """
         raise NotImplementedError()
-    
+
     def scroll_to_end(self):
         """
         Scroll to the end of the text.
         """
         raise NotImplementedError()
-    
+
     def set_focus(self):
         """
         Set the focus to the UI.
         This means that user keyboard inputs should be send to the terminal.
         """
         raise NotImplementedError()
-    
+
     def lose_focus(self):
         """
         Lose the focus.
         """
         self.end_editing()
-    
+
     def get_wh(self):
         """
         Return the number of columns and rows.
@@ -290,13 +320,14 @@ class ShTerminalDelegate(object):
     :param terminal: the associated terminal
     :type terminal: ShBaseTerminal
     """
+
     def __init__(self, stash, terminal, debug=False):
         self.stash = stash
         self.terminal = terminal
         self.debug = debug
         self.mini_buffer = self.stash.mini_buffer
         self.main_screen = self.stash.main_screen
-        self.logger = logging.getLogger('StaSh.TerminalDelegate')
+        self.logger = logging.getLogger("StaSh.TerminalDelegate")
 
     def textview_did_begin_editing(self, tv):
         self.terminal.is_editing = True
@@ -319,13 +350,18 @@ class ShTerminalDelegate(object):
         main_screen_text = self.main_screen.text
         terminal_text = self.terminal.text
         x_modifiable = self.main_screen.x_modifiable
-        if rng[0] == rng[1] and main_screen_text[rng[0]:] != terminal_text[rng[0]:]:
+        if rng[0] == rng[1] and main_screen_text[rng[0] :] != terminal_text[rng[0] :]:
             if rng[0] >= x_modifiable:
-                self.mini_buffer.feed(None, main_screen_text[x_modifiable:rng[0]] + terminal_text[rng[0]:])
-                self.mini_buffer.set_cursor(-len(terminal_text[rng[0]:]), whence=2)
+                self.mini_buffer.feed(
+                    None,
+                    main_screen_text[x_modifiable : rng[0]] + terminal_text[rng[0] :],
+                )
+                self.mini_buffer.set_cursor(-len(terminal_text[rng[0] :]), whence=2)
             else:
-                s = terminal_text[rng[0]:]
-                self.main_screen.intact_right_bound = rng[0]  # mark the buffer to be re-rendered
+                s = terminal_text[rng[0] :]
+                self.main_screen.intact_right_bound = rng[
+                    0
+                ]  # mark the buffer to be re-rendered
                 # If the trailing string is shorter than the modifiable chars,
                 # this means there are valid deletion for the modifiable chars
                 # and we should keep it.
@@ -363,25 +399,29 @@ class ShBaseSequentialRenderer(object):
     :param terminal: The real terminal
     :type terminal: ShBaseTerminal
     """
+
     FG_COLORS = {
         "default": None,
     }
     BG_COLORS = {
         "default": None,
     }
-    
+
     def __init__(self, stash, screen, terminal, debug=False):
         self.stash = stash
         self.screen = screen
         self.terminal = terminal
         self.debug = debug
-        self.logger = logging.getLogger('StaSh.SequentialRenderer')
+        self.logger = logging.getLogger("StaSh.SequentialRenderer")
 
         # update default colors to match terminal
-        self.FG_COLORS["default"] = self.FG_COLORS.get(self.terminal.text_color, self.FG_COLORS["default"])
-        self.BG_COLORS["default"] = self.BG_COLORS.get(self.terminal.background_color, self.BG_COLORS["default"])
+        self.FG_COLORS["default"] = self.FG_COLORS.get(
+            self.terminal.text_color, self.FG_COLORS["default"]
+        )
+        self.BG_COLORS["default"] = self.BG_COLORS.get(
+            self.terminal.background_color, self.BG_COLORS["default"]
+        )
 
-    
     def render(self, no_wait=False):
         """
         Render the screen buffer to the terminal.

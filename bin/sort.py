@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Sort standard input or given files to standard output"""
+
 from __future__ import print_function
 import os
 import sys
@@ -9,8 +10,14 @@ import argparse
 
 def main(args):
     ap = argparse.ArgumentParser()
-    ap.add_argument('files', nargs='*', help='files to sort')
-    ap.add_argument('-r', '--reverse', action='store_true', default=False, help='reverse the result of comparisons')
+    ap.add_argument("files", nargs="*", help="files to sort")
+    ap.add_argument(
+        "-r",
+        "--reverse",
+        action="store_true",
+        default=False,
+        help="reverse the result of comparisons",
+    )
     ns = ap.parse_args(args)
 
     def _print(lines):
@@ -18,7 +25,7 @@ def main(args):
             lines = sorted(lines)
             if ns.reverse:
                 lines = lines[::-1]
-            print(''.join(lines))
+            print("".join(lines))
 
     fileinput.close()  # in case it is not closed
     try:
@@ -35,5 +42,5 @@ def main(args):
         fileinput.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

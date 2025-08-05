@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """This module contains a dictionary containing all patches and their name."""
+
 from stash.system.shcommon import _STASH_EXTENSION_PATCH_PATH
 
 from stashutils.core import load_from_dir
@@ -51,9 +52,13 @@ for ext in extensions:
 
 PATCHES = {}
 
-STABLE_PATCHES.update(modulepatches.MODULE_PATCHES)  # modulepatches should be available in STABLE
+STABLE_PATCHES.update(
+    modulepatches.MODULE_PATCHES
+)  # modulepatches should be available in STABLE
 PATCHES.update(INSTABLE_PATCHES)  # update with INSTABLE first
-PATCHES.update(STABLE_PATCHES)  # update with STABLE patches (overwriting INSTABLE patches if required)
+PATCHES.update(
+    STABLE_PATCHES
+)  # update with STABLE patches (overwriting INSTABLE patches if required)
 
 # define a PatchGroup with all patches
 STABLE_GROUP = base.VariablePatchGroup(list(STABLE_PATCHES.values()))

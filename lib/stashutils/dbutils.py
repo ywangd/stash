@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """dropbox utilities."""
+
 import sys
 import base64
 import pickle
@@ -22,7 +23,11 @@ def dropbox_setup(username, stdin, stdout):
     header = "This interface will help you setup the dropbox access"
     header += " for '{n}'.".format(n=Text(username, "blue"))
     abort = Text("abort", "yellow")
-    choices = ("I already have an authorization-code", "I dont have an authorizaion-code", abort)
+    choices = (
+        "I already have an authorization-code",
+        "I dont have an authorizaion-code",
+        abort,
+    )
     choice = _menu(header, choices, stdin, stdout)
     if choice == 2:
         raise KeyboardInterrupt("Setup aborted.")
@@ -42,7 +47,12 @@ def dropbox_setup(username, stdin, stdout):
         stdin.readline()
         while True:
             header = "Select action"
-            choices = ("Register to dropbox", "Go to the developer-page", "proceed", abort)
+            choices = (
+                "Register to dropbox",
+                "Go to the developer-page",
+                "proceed",
+                abort,
+            )
             choice = _menu(header, choices, stdin, stdout)
             if choice == 0:
                 _open_url("https://www.dropbox.com/register")
@@ -96,12 +106,12 @@ def load_dropbox_data(username):
 
 def get_dropbox_client(username, setup=True, stdin=None, stdout=None):
     """
-	checks wether a dropbox.dropbox.Dropbox is available for username.
-	If it is, it is returned.
-	Otherwise, if setup is True, a command-line setup is shown.
-	The setup uses stdin and stout, both defaulting to the sys.std*.
-	If no client was found and setup is False, None will be returned.
-	"""
+    checks wether a dropbox.dropbox.Dropbox is available for username.
+    If it is, it is returned.
+    Otherwise, if setup is True, a command-line setup is shown.
+    The setup uses stdin and stout, both defaulting to the sys.std*.
+    If no client was found and setup is False, None will be returned.
+    """
     if stdout is None:
         stdout = sys.stdout
     if stdin is None:

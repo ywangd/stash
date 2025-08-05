@@ -1,6 +1,7 @@
 """
 Tests for the 'totd' command.
 """
+
 from stash.tests.stashtest import StashTestCase
 
 
@@ -8,7 +9,7 @@ class TotdTests(StashTestCase):
     """
     Tests for the 'totd' command.
     """
-    
+
     def test_help(self):
         """
         Test 'totd --help'.
@@ -19,7 +20,7 @@ class TotdTests(StashTestCase):
         self.assertIn("--help", output)
         self.assertIn("-n", output)
         self.assertIn("--count", output)
-    
+
     def test_count(self):
         """
         Test 'totd --count'.
@@ -29,7 +30,7 @@ class TotdTests(StashTestCase):
         self.assertTrue(output.startswith("Total available tips: "))
         # ensure that number of tips is not zero
         self.assertFalse(output.endswith(" "))
-    
+
     def test_simple(self):
         """
         Test a simple 'totd' execution.
@@ -43,4 +44,3 @@ class TotdTests(StashTestCase):
                 known.append(output)
                 n_unique += 1
         self.assertGreater(n_unique, 3)
-            

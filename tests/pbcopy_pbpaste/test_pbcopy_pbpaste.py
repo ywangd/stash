@@ -1,6 +1,7 @@
 """
 Tests for pbcopy/pbpaste commands.
 """
+
 import os
 import tempfile
 from io import open
@@ -8,11 +9,11 @@ from io import open
 from stash.tests.stashtest import StashTestCase
 
 
-
 class CopyPasteTests(StashTestCase):
     """
     Test class for the 'pbcopy' and 'pbpaste' commands.
     """
+
     def test_pbcopy_help(self):
         """
         test 'pbcopy --help'.
@@ -25,7 +26,7 @@ class CopyPasteTests(StashTestCase):
         self.assertIn("file", output_1)
         self.assertIn("pbcopy", output_1)
         self.assertIn("...", output_1)
-    
+
     def test_pbpaste_help(self):
         """
         test 'pbpaste --help'.
@@ -37,7 +38,7 @@ class CopyPasteTests(StashTestCase):
         self.assertIn("--help", output_1)
         self.assertIn("file", output_1)
         self.assertIn("pbpaste", output_1)
-    
+
     def test_copy_paste_stdin(self):
         """
         Test copy of stdin & paste
@@ -45,7 +46,7 @@ class CopyPasteTests(StashTestCase):
         self.run_command("echo teststring | pbcopy", exitcode=0)
         output = self.run_command("pbpaste", exitcode=0)
         self.assertEqual("teststring\n", output)
-    
+
     def test_copy_paste_file(self):
         """
         Test copy of a file & paste
@@ -56,7 +57,7 @@ class CopyPasteTests(StashTestCase):
         with open(p, "r", encoding="utf-8") as fin:
             content = fin.read()
         self.assertEqual(output, content)
-    
+
     def test_paste_into_file(self):
         """
         Test copy of a file & paste into a file.
@@ -71,4 +72,3 @@ class CopyPasteTests(StashTestCase):
         org_hash = self.run_command("md5sum " + pin, exitcode=0).split()[0]
         paste_hash = self.run_command("md5sum " + pout, exitcode=0).split()[0]
         self.assertEqual(org_hash, paste_hash)
-        
