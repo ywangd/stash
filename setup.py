@@ -65,6 +65,7 @@ else:
             "requests",
             "pycrypto",
             "pyte",
+            "standard-imghdr",
         ],
     )
     TEST_REQUIREMENTS = [

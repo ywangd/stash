@@ -7,7 +7,7 @@ https://github.com/ywangd/stash
 
 __version__ = "0.7.5"
 
-import imp as pyimp  # rename to avoid name conflict with objc_util
+import importlib
 import logging
 import logging.handlers
 import os
@@ -99,6 +99,17 @@ for p in _EXTERNAL_DIRS:
             os.mkdir(p)
         except:
             pass
+
+
+def load_source(modname, filename):
+    loader = importlib.machinery.SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    # The module is always executed and not cached in sys.modules.
+    # Uncomment the following line to cache the module.
+    # sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module
 
 
 class StaSh(object):
@@ -292,7 +303,7 @@ class StaSh(object):
                             "Attempting to load library '{}'...".format(name)
                         )
                     try:
-                        self.__dict__[name] = pyimp.load_source(name, fp)
+                        self.__dict__[name] = load_source(name, fp)
                     except Exception as e:
                         self.write_message(
                             "%s: failed to load library file (%s)" % (f, repr(e)),

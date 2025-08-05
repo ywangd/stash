@@ -18,7 +18,7 @@ from stash import stash
 from stash.system.shcommon import _STASH_ROOT, PY3
 
 
-ON_TRAVIS = "TRAVIS" in os.environ
+ON_TRAVIS = "CI" in os.environ
 
 
 def network_is_available():

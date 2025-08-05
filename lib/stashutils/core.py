@@ -2,9 +2,9 @@
 """core utilities for StaSh-scripts"""
 
 import threading
-import imp
 import os
 
+from stash.core import load_source
 from stash.system import shthreads
 
 
@@ -37,7 +37,7 @@ def load_from_dir(dirpath, varname):
         if not os.path.isfile(fp):
             continue
         with open(fp, "r") as fin:
-            mod = imp.load_source(fn[: fn.index(".")], fp, fin)
+            mod = load_source(fn[: fn.index(".")], fp, fin)
         if not hasattr(mod, varname):
             continue
         else:

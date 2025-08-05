@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """This module contains the base class for patches."""
 
-import sys
-import imp
+import importlib
 import os
+import sys
 
+from stash.core import load_source
 from stashutils.core import get_stash
 
 SKIP = "<skip>'  # indicate that this patch should be skipped.'"
@@ -98,9 +99,9 @@ class FunctionPatch(BasePatch):
         ):
             raise ValueError("Invalid Patch definition!")
         if self.module not in sys.modules:
-            fin, path, description = imp.find_module(self.module)
+            fin, path, description = importlib.find_module(self.module)
             try:
-                module = imp.load_module(self.module, fin, path, description)
+                module = importlib.load_module(self.module, fin, path, description)
             finally:
                 fin.close()
         else:
@@ -139,7 +140,7 @@ class ModulePatch(BasePatch):
         if self.name in sys.modules:
             del sys.modules[self.name]
         with open(self.path, "r") as f:
-            nmod = imp.load_source(self.name, self.path, f)
+            nmod = load_source(self.name, self.path, f)
         sys.modules[self.name] = nmod
 
     def do_disable(self):
