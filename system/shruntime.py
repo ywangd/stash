@@ -394,7 +394,7 @@ class ShRuntime(object):
                     )
 
         # Get the parent thread
-        parent_thread = threading.currentThread()
+        parent_thread = threading.current_thread()
 
         # UI thread is substituted by runtime
         if not isinstance(parent_thread, ShBaseThread):
@@ -740,7 +740,7 @@ class ShRuntime(object):
         :return:
         :rtype: (ShBaseThread, ShState)
         """
-        current_worker = threading.currentThread()
+        current_worker = threading.current_thread()
         if isinstance(current_worker, ShBaseThread):
             return current_worker, current_worker.state
         else:  # UI thread uses runtime for its state

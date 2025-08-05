@@ -414,7 +414,8 @@ class ShStream(object):
         """
         # To avoid the \xc2 deadlock from bytes string
         if not isinstance(chars, str):
-            chars = chars.decode("utf-8", errors="ignore")
+            if isinstance(chars, (bytes, bytearray)):
+                chars = chars.decode("utf-8", errors="ignore")
 
         with self.main_screen.acquire_lock():
             for char in chars:
