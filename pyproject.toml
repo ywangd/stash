@@ -45,6 +45,9 @@ urls.Homepage = "https://github.com/ywangd/stash/"
 urls.Issues = "https://github.com/ywangd/stash/issues"
 urls.Repository = "https://github.com/ywangd/stash/"
 
+# cli entry point
+scripts.stash = "stash.__main__:main"
+
 [dependency-groups]
 dev = [
   "flake8>=3.7.9",
@@ -60,6 +63,7 @@ py-modules = [
   "getstash",
   "launch_stash",
   "__init__",
+  "__main__",
 ]
 
 [tool.setuptools.dynamic]
@@ -81,9 +85,6 @@ exclude = [
 
 [tool.setuptools.package-data]
 "*" = [ "**/*" ]
-
-# [project.scripts]  # FIXME: not yet working
-# stash = "launch_stash"
 
 [tool.ruff]
 target-version = "py310"
