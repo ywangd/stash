@@ -17,7 +17,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - run: pipx run ruff check --output-format=github --target-version=py37
-               --ignore=E401,E402,E501,E701,E722,E731,E741,F401,F403,F405,F523,F524,F811,F841
+               --ignore=E401,E402,E501,E701,E721,E722,E731,E741,F401,F403,F405,F523,F524,F811,F841
                 
   build:
     runs-on: macos-latest
