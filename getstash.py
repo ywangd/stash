@@ -1,3 +1,8 @@
+"""
+StaSh install script.
+
+IMPORTANT: keep this both py2 and py3 compatible (for now)
+"""
 from __future__ import print_function
 import os
 import shutil
@@ -9,6 +14,8 @@ import time
 
 DEFAULT_REPO = "ywangd"
 DEFAULT_BRANCH = "master"
+PY2_BRANCH = "py2"
+IS_PY2 = (sys.version_info[0] == 2)
 TMPDIR = os.environ.get('TMPDIR', os.environ.get('TMP'))
 URL_TEMPLATE = 'https://github.com/{}/stash/archive/{}.zip'
 TEMP_ZIPFILE = os.path.join(TMPDIR, 'StaSh.zip')
@@ -270,6 +277,11 @@ def main(defs={}):
     zippath = defs.get("_zippath", None)                     # alternate path of zipfile to use
     dryrun = defs.get("_dryrun", None)                       # do not do anything if True
     asuser = defs.get("_asuser", None)                       # install as user if True
+
+    # py2 compatibility guard - always update to py2 branch if running on py2
+    if IS_PY2:
+        print('Running under py2, forcing update/install from py2 branch.')
+        branch = PY2_BRANCH
     
     # find out which install to use
     if force_dist is None:

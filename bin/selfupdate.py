@@ -19,7 +19,15 @@ from argparse import ArgumentParser
 _stash = globals()['_stash']
 
 URL_BASE = 'https://raw.githubusercontent.com/{owner}/stash'
-
+# the py2 compatibility guard to ensure py2 users don't update to an incompatible version
+# NOTE: for now, this behavior is present in both selfupdate and getstash
+# this is because the getstash script is taken from the target branch
+# and we may not always want to keep getstash py2 compatible. Thus, we replicate
+# this guard here, so that after some time hopefully nearly everyone who still uses
+# py2 has upgraded to this branch and can in the future rely on this guard instead
+# of the guard in getstash.
+PY2_BRANCH = 'py2'
+IS_PY2 = (sys.version_info[0] == 2)
 
 class UpdateError(Exception):
     pass
@@ -80,6 +88,11 @@ def main(args):
     else:
         owner, branch = 'ywangd', 'master'
         print('Invalid target {}, using default {}:{}'.format(target, owner, branch))
+
+    if IS_PY2:
+        print('Py2 detected, forcing branch to py2 legacy branch')
+        branch = PY2_BRANCH
+        # TODO: perhaps allow a way to keep branch selection for py2
 
     print(_stash.text_style('Running selfupdate ...', {'color': 'yellow', 'traits': ['bold']}))
     print(u'%s: %s:%s' % (_stash.text_bold('Target'), owner, branch))
