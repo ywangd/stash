@@ -5,6 +5,7 @@ Launch StaSh in a more flexible and reliable way.
 
 import sys
 import argparse
+sys.exit = sys._exit
 
 module_names = (
     "stash",
