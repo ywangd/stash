@@ -31,7 +31,7 @@ def save_config(path):
 
 def load_config(path):
     """load the config from path"""
-    with open(path, "rU") as f:
+    with open(path, "r") as f:
         tl = json.load(f)
     patches.PATCHES["ALL"].disable()
     for k in sorted(tl):  # sort is important to load groups first

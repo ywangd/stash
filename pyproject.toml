@@ -75,6 +75,7 @@ exclude = [
   "build",
   "dist",
   "*.egg-info",
+  "__pycache__",
 ]
 
 [tool.setuptools.package-data]

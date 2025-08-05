@@ -270,7 +270,7 @@ def setup_install(
         "__name__": "__main__",
         "__file__": fp,
     }
-    with open(fp, "rU") as fin:
+    with open(fp, "r") as fin:
         content = fin.read()
         code = compile(content, fp, "exec", dont_inherit=True)
         exec(code, ns, ns)
