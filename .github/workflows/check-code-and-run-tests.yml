@@ -51,4 +51,4 @@ jobs:
         pytest --version
         # make install test work...
         export PYTHONPATH=$(python -m site --user-site)
-        pytest --ignore=tests/pip/test_pip.py
+        pytest

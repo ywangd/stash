@@ -107,4 +107,5 @@ addopts = [
   "--show-capture=all",
   "--log-level=debug",
   "--ignore=tests/system/data/",
+  "--ignore=tests/pip/test_pip.py",
 ]
