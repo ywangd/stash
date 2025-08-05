@@ -82,8 +82,8 @@ class ctypes(object):
     class pythonapi(object):
         @staticmethod
         def PyThreadState_SetAsyncExc(
-                tid,
-                exectype,
+            tid,
+            exectype,
         ):
             return 1
 

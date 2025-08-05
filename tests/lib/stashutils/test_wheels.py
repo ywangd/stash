@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """tests for the wheel-support"""
+
 import six
 
 from stash.tests.stashtest import StashTestCase
@@ -14,12 +15,21 @@ class WheelsTests(StashTestCase):
 
         wheelnamecompatibility = [
             ("package-1.0.0-py2.py3-none-any.whl", True),  # full compatibility
-            ("package-1.0.0-2-py2.py3-none-any.whl", True),  # full compatible with build tag
+            (
+                "package-1.0.0-2-py2.py3-none-any.whl",
+                True,
+            ),  # full compatible with build tag
             ("package-1.0.0-py2-none-any.whl", not six.PY3),  # only py2 compatible
             ("package-1.0.0-py3-none-any.whl", six.PY3),  # only py3 compatible
             ("package-1.0.0-py2.py3-cp33m-any.whl", False),  # incompatible abi-tag
-            ("package-1.0.0-py2.py3-none-linux_x86_64.whl", False),  # incompatible platform tag
-            ("package-1.0.0-py2.py3-cp33m-linux_x86_64.whl", False),  # incompatible abi and platform tags
+            (
+                "package-1.0.0-py2.py3-none-linux_x86_64.whl",
+                False,
+            ),  # incompatible platform tag
+            (
+                "package-1.0.0-py2.py3-cp33m-linux_x86_64.whl",
+                False,
+            ),  # incompatible abi and platform tags
             ("package-1.0.0-cpy2-none-any.whl", False),  # cpython 2 incompatibility
             ("package-1.0.0-cpy3-none-any.whl", False),  # cpython 3 incompatibility
         ]
@@ -42,7 +52,9 @@ class WheelsTests(StashTestCase):
             except wheels.WheelError:
                 pass
             else:
-                raise AssertionError("wheels.wheel_is_compatible() did not raise WheelError when required.")
+                raise AssertionError(
+                    "wheels.wheel_is_compatible() did not raise WheelError when required."
+                )
 
     def test_parse_wheel_name(self):
         """test parse_wheel_name()"""

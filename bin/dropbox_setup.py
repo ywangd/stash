@@ -14,7 +14,10 @@ _stash = globals()["_stash"]
 
 class DropboxSetupCmd(cmd.Cmd):
     """The command loop for managing the dropbox"""
-    intro = _stash.text_color("Welcome to the Dropbox Setup. Type 'help' for help.", "yellow")
+
+    intro = _stash.text_color(
+        "Welcome to the Dropbox Setup. Type 'help' for help.", "yellow"
+    )
     prompt = _stash.text_color("(dbs)", "red")
     use_rawinput = False
 
@@ -41,7 +44,9 @@ class DropboxSetupCmd(cmd.Cmd):
     def do_add(self, cmd):
         """add USERNAME: starts the setup for USERNAME."""
         if len(cmd) == 0:
-            self.stdout.write(_stash.text_color("Error: expected an username.\n", "red"))
+            self.stdout.write(
+                _stash.text_color("Error: expected an username.\n", "red")
+            )
             return
         try:
             dbutils.dropbox_setup(cmd, self.stdin, self.stdout)

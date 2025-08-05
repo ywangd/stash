@@ -45,7 +45,9 @@ class CowsayTests(StashTestCase):
         output = self.run_command("cowsay Hello,\\nWorld!", exitcode=0)
         self.assertIn("Hello,", output)
         self.assertIn("World!", output)
-        self.assertNotIn("Hello,\nWorld!", output)  # text should be splitted allong the lines
+        self.assertNotIn(
+            "Hello,\nWorld!", output
+        )  # text should be splitted allong the lines
         self.assertIn("/", output)
         self.assertIn("\\", output)
         self.assertNotIn("<", output)
@@ -57,7 +59,9 @@ class CowsayTests(StashTestCase):
         self.assertIn("Hello,", output)
         self.assertIn("World!", output)
         self.assertIn("Python4Ever", output)
-        self.assertNotIn("Hello,\nWorld!\nPython4Ever", output)  # text should be splitted allong the lines
+        self.assertNotIn(
+            "Hello,\nWorld!\nPython4Ever", output
+        )  # text should be splitted allong the lines
         self.assertIn("/", output)
         self.assertIn("\\", output)
         self.assertIn("|", output)

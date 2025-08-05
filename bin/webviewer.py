@@ -1,5 +1,6 @@
 # coding: utf-8
 """Opens the given URL in the webbrowser or an App."""
+
 import argparse
 import webbrowser
 import ui
@@ -24,7 +25,13 @@ def open_webview(url, modal=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("url", help="url to open", action="store")
-    parser.add_argument("-m", "--modal", help="wait until the user closed the webbrowser", action="store_true", dest="modal")
+    parser.add_argument(
+        "-m",
+        "--modal",
+        help="wait until the user closed the webbrowser",
+        action="store_true",
+        dest="modal",
+    )
     parser.add_argument(
         "-n",
         "--insecure",
@@ -32,9 +39,15 @@ if __name__ == "__main__":
         action="store_const",
         const="http://",
         default="https://",
-        dest="prefix"
+        dest="prefix",
     )
-    parser.add_argument("-f", "--foreground", help="Open the url in the foreground", action="store_true", dest="foreground")
+    parser.add_argument(
+        "-f",
+        "--foreground",
+        help="Open the url in the foreground",
+        action="store_true",
+        dest="foreground",
+    )
     ns = parser.parse_args()
     url = ns.url
     if "://" not in url:

@@ -8,9 +8,9 @@ _stash = base._stash
 
 def _get_status(exitcode, killer=0):
     """
-	calculates the exit status for a command.
-	see the documentation of os.wait for info about this.
-	"""
+    calculates the exit status for a command.
+    see the documentation of os.wait for info about this.
+    """
     return (exitcode * 256) + killer
 
 
@@ -80,6 +80,7 @@ class _PipeEndpoint(object):
 
 class _PopenCmd(object):
     """This class handles the command processing."""
+
     # TODO: replace state mechanics with single bool and threading.Lock()
     STATE_INIT = "INIT"
     STATE_RUNNING = "RUNNING"
@@ -103,7 +104,11 @@ class _PopenCmd(object):
     def get_pipes(self):
         """returns the pipes."""
         if not self.shared_eo:
-            return (_PipeEndpoint(self, self.chinw), _PipeEndpoint(self, self.choutr), _PipeEndpoint(self, self.cherrr))
+            return (
+                _PipeEndpoint(self, self.chinw),
+                _PipeEndpoint(self, self.choutr),
+                _PipeEndpoint(self, self.cherrr),
+            )
         else:
             return (_PipeEndpoint(self, self.chinw), _PipeEndpoint(self, self.choutr))
 
@@ -132,7 +137,7 @@ class _PopenCmd(object):
             add_to_history=False,
             final_ins=self.chinr,
             final_outs=self.choutw,
-            final_errs=self.cherrw
+            final_errs=self.cherrw,
         )
         if not self.worker.is_alive():
             # sometimes stash is faster than the return
@@ -140,7 +145,7 @@ class _PopenCmd(object):
 
     def get_exit_code(self, wait=True):
         """returns the exitcode.
-		If wait is False and the worker has not finishef yet, return None."""
+        If wait is False and the worker has not finishef yet, return None."""
         if self.state != self.STATE_INIT:
             if self.worker is None:
                 # temp fix for pipes for fast commands
@@ -196,11 +201,11 @@ def popen4(patch, cmd, mode="r", bufsize=0):
 def system(patch, command):
     """Execute the command (a string) in a subshell. This is implemented by calling the Standard C function system(), and has the same limitations. Changes to sys.stdin, etc. are not reflected in the environment of the executed command.
 
-On Unix, the return value is the exit status of the process encoded in the format specified for wait(). Note that POSIX does not specify the meaning of the return value of the C system() function, so the return value of the Python function is system-dependent.
+    On Unix, the return value is the exit status of the process encoded in the format specified for wait(). Note that POSIX does not specify the meaning of the return value of the C system() function, so the return value of the Python function is system-dependent.
 
-On Windows, the return value is that returned by the system shell after running command, given by the Windows environment variable COMSPEC: on command.com systems (Windows 95, 98 and ME) this is always 0; on cmd.exe systems (Windows NT, 2000 and XP) this is the exit status of the command run; on systems using a non-native shell, consult your shell documentation.
+    On Windows, the return value is that returned by the system shell after running command, given by the Windows environment variable COMSPEC: on command.com systems (Windows 95, 98 and ME) this is always 0; on cmd.exe systems (Windows NT, 2000 and XP) this is the exit status of the command run; on systems using a non-native shell, consult your shell documentation.
 
-The subprocess module provides more powerful facilities for spawning new processes and retrieving their results; using that module is preferable to using this function. See the Replacing Older Functions with the subprocess Module section in the subprocess documentation for some helpful recipes."""
+    The subprocess module provides more powerful facilities for spawning new processes and retrieving their results; using that module is preferable to using this function. See the Replacing Older Functions with the subprocess Module section in the subprocess documentation for some helpful recipes."""
     io = VoidIO()
     worker = _stash.runtime.run(
         input_=command,

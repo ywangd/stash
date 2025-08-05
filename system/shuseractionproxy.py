@@ -3,6 +3,7 @@
 The proxy is to centralize handler dispatching for user actions
 such as type, touch, swipe, key press.
 """
+
 from contextlib import contextmanager
 
 
@@ -14,10 +15,10 @@ class ShNullResponder(object):
         pass
 
     def __getattribute__(self, item):
-        return object.__getattribute__(self, 'handle')
+        return object.__getattribute__(self, "handle")
 
     def __getitem__(self, item):
-        return object.__getattribute__(self, 'handle')
+        return object.__getattribute__(self, "handle")
 
 
 NULL_RESPONDER = ShNullResponder()
@@ -50,7 +51,9 @@ class ShUserActionProxy(object):
 
             @staticmethod
             def textview_should_change(sender, rng, replacement):
-                return self.tv_responder.textview_should_change(sender, rng, replacement)
+                return self.tv_responder.textview_should_change(
+                    sender, rng, replacement
+                )
 
             @staticmethod
             def textview_did_change(sender):
@@ -99,13 +102,26 @@ class ShUserActionProxy(object):
         self._kc_responder = value
 
     @contextmanager
-    def config(self, vk_responder=False, tv_responder=False, sv_responder=False, kc_responder=False):
-
+    def config(
+        self,
+        vk_responder=False,
+        tv_responder=False,
+        sv_responder=False,
+        kc_responder=False,
+    ):
         try:
-            self._vk_responder = NULL_RESPONDER if vk_responder is False else vk_responder
-            self._tv_responder = NULL_RESPONDER if tv_responder is False else tv_responder
-            self.sv_responder = NULL_RESPONDER if sv_responder is False else sv_responder
-            self.kc_responder = NULL_RESPONDER if kc_responder is False else kc_responder
+            self._vk_responder = (
+                NULL_RESPONDER if vk_responder is False else vk_responder
+            )
+            self._tv_responder = (
+                NULL_RESPONDER if tv_responder is False else tv_responder
+            )
+            self.sv_responder = (
+                NULL_RESPONDER if sv_responder is False else sv_responder
+            )
+            self.kc_responder = (
+                NULL_RESPONDER if kc_responder is False else kc_responder
+            )
             yield
         finally:
             self.reset()

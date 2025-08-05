@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """tests for the 'exit' command."""
+
 from stash.tests.stashtest import StashTestCase
 
 

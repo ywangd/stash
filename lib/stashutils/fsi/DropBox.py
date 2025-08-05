@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """The FSI for dropbox."""
+
 # this module is named 'DropBox' instead of 'dropbox' to avoid a
 # naming conflict.
 import os
@@ -15,7 +16,7 @@ from stashutils.fsi.base import BaseFSI, make_stat, calc_mode
 from stashutils.dbutils import get_dropbox_client
 
 # turn down requests log verbosity
-logging.getLogger('requests').setLevel(logging.CRITICAL)
+logging.getLogger("requests").setLevel(logging.CRITICAL)
 
 OVERWRITE = dropbox.files.WriteMode("overwrite", None)
 
@@ -179,14 +180,17 @@ class DropboxFSI(BaseFSI):
                 meta = self.client.files_get_metadata(ap)
             except dropbox.exceptions.ApiError as e:
                 raise OperationFailure(e.message)
-            if isinstance(meta, (dropbox.files.FolderMetadata, dropbox.sharing.SharedFolderMetadata)):
+            if isinstance(
+                meta,
+                (dropbox.files.FolderMetadata, dropbox.sharing.SharedFolderMetadata),
+            ):
                 bytes = 0
                 isdir = True
             else:
                 bytes = meta.size
                 isdir = False
 
-        type_ = (stat.S_IFDIR if isdir else stat.S_IFREG)
+        type_ = stat.S_IFDIR if isdir else stat.S_IFREG
         m = calc_mode(type=type_)
         s = make_stat(size=bytes, mode=m)
         return s
@@ -213,7 +217,9 @@ class Dropbox_Upload(object):
                 data,
                 close=False,
             )
-            self.cursor = dropbox.files.UploadSessionCursor(self.session.session_id, offset=0)
+            self.cursor = dropbox.files.UploadSessionCursor(
+                self.session.session_id, offset=0
+            )
         else:
             self.client.files_upload_session_append_v2(data, self.cursor, close=False)
         self.cursor.offset += len(data)
@@ -253,13 +259,13 @@ class Dropbox_Upload(object):
 
 class Dropbox_Download(object):
     """
-	utility file-like class used for Dropbox-downloads.
-	There are two reasons to use this class:
-		1. requests.Response.raw does not support seek() and tell()
-		2. the 'ls' command checks for filetypes. Due to this, each
-			file in a directory is opened. This class improved performance
-			by only downloading as much as required into a temporary file.
-	"""
+    utility file-like class used for Dropbox-downloads.
+    There are two reasons to use this class:
+            1. requests.Response.raw does not support seek() and tell()
+            2. the 'ls' command checks for filetypes. Due to this, each
+                    file in a directory is opened. This class improved performance
+                    by only downloading as much as required into a temporary file.
+    """
 
     def __init__(self, client, path, mode, buffering, response):
         self.client = client
@@ -346,7 +352,7 @@ class Dropbox_Download(object):
         if "U" in self.mode:
             ends = ("\n", "\r", "\r\n")
         else:
-            ends = ("\n", )
+            ends = ("\n",)
         buff = ""
         while True:
             d = self.read(1)
@@ -358,9 +364,9 @@ class Dropbox_Download(object):
 
     def readlines(self, sizehint=None):
         """
-		Read until EOF using readline() and return a list containing the
-		lines thus read.
-		"""
+        Read until EOF using readline() and return a list containing the
+        lines thus read.
+        """
         # sizehint ignored; see the documentation of file.readlines
         lines = []
         while True:

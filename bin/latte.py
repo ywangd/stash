@@ -16,27 +16,27 @@ ROOT = cwd[:documentsIndex]
 
 
 class stansi:  # Collection of Stash's ANSI escape codes.
-    bold = u"\x9b1m"
-    underscore = u"\x9b4m"
-    attr_end = u"\x9b0m"
+    bold = "\x9b1m"
+    underscore = "\x9b4m"
+    attr_end = "\x9b0m"
 
-    fore_red = u"\x9b31m"
-    fore_green = u"\x9b32m"
-    fore_brown = u"\x9b33m"
-    fore_blue = u"\x9b34m"
-    fore_pink = u"\x9b35m"
-    fore_cyan = u"\x9b36m"
-    fore_white = u"\x9b37m"
-    fore_end = u"\x9b39m"
+    fore_red = "\x9b31m"
+    fore_green = "\x9b32m"
+    fore_brown = "\x9b33m"
+    fore_blue = "\x9b34m"
+    fore_pink = "\x9b35m"
+    fore_cyan = "\x9b36m"
+    fore_white = "\x9b37m"
+    fore_end = "\x9b39m"
 
-    back_red = u"\x9b41m"
-    back_green = u"\x9b42m"
-    back_brown = u"\x9b43m"
-    back_blue = u"\x9b44m"
-    back_pink = u"\x9b45m"
-    back_cyan = u"\x9b46m"
-    back_white = u"\x9b47m"
-    back_end = u"\x9b49m"
+    back_red = "\x9b41m"
+    back_green = "\x9b42m"
+    back_brown = "\x9b43m"
+    back_blue = "\x9b44m"
+    back_pink = "\x9b45m"
+    back_cyan = "\x9b46m"
+    back_white = "\x9b47m"
+    back_end = "\x9b49m"
 
 
 def Red(text):
@@ -70,7 +70,9 @@ class SWConfig(object):  # Parser for the config files such as the repository li
         return self.data.keys()
 
 
-def download_package(url, package_name):  # Handles the installation of packages directories (since they're no longer tarfiles)
+def download_package(
+    url, package_name
+):  # Handles the installation of packages directories (since they're no longer tarfiles)
     content_listing = ["bin.py", "meta.latte"]
     mkdir(ROOT + "/" + package_name)
     for item in content_listing:
@@ -87,7 +89,9 @@ def download_package(url, package_name):  # Handles the installation of packages
 
 def main(sargs):
     parser = argparse.ArgumentParser()
-    parser.add_argument("method", help="What action to perform (install, remove, etc)", type=str)
+    parser.add_argument(
+        "method", help="What action to perform (install, remove, etc)", type=str
+    )
     parser.add_argument("package", help="Name of package", type=str)
     args = parser.parse_args(sargs)
 
@@ -96,8 +100,13 @@ def main(sargs):
         opened.close()
     except:
         opened = open(".latte-repos.swconf", "w")
-        print(Red("WARNING") + ": Repository listing doesn't exist, rebuilding to default...")
-        opened.write("universe=https://raw.githubusercontent.com/Seanld/latte-universe/master")
+        print(
+            Red("WARNING")
+            + ": Repository listing doesn't exist, rebuilding to default..."
+        )
+        opened.write(
+            "universe=https://raw.githubusercontent.com/Seanld/latte-universe/master"
+        )
         opened.close()
 
     repo_listing_opened = open(".latte-repos.swconf", "r")
@@ -111,10 +120,11 @@ def main(sargs):
             package_name = packageSplitted[1]
             repo_to_use = REPOSITORIES[packageSplitted[0]]
         except IndexError:
-
             repo_to_use = REPOSITORIES["universe"]
             package_name = packageSplitted[0]
-        print(Red("WARNING") + ": No repository specified, using universe by default...")
+        print(
+            Red("WARNING") + ": No repository specified, using universe by default..."
+        )
         try:
             download_package(repo_to_use, package_name)
         except:
@@ -123,13 +133,27 @@ def main(sargs):
         # Move to correct locations
         print("Installing")
         try:
-            rename(ROOT + "/" + package_name + "/meta.latte", ROOT + "/stash_extensions/latte/" + package_name + ".latte")
+            rename(
+                ROOT + "/" + package_name + "/meta.latte",
+                ROOT + "/stash_extensions/latte/" + package_name + ".latte",
+            )
         except:
             mkdir(ROOT + "/stash_extensions/latte")
-            rename(ROOT + "/" + package_name + "/meta.latte", ROOT + "/stash_extensions/latte/" + package_name + ".latte")
-        rename(ROOT + "/" + package_name + "/bin.py", ROOT + "/stash_extensions/bin/" + package_name + ".py")
+            rename(
+                ROOT + "/" + package_name + "/meta.latte",
+                ROOT + "/stash_extensions/latte/" + package_name + ".latte",
+            )
+        rename(
+            ROOT + "/" + package_name + "/bin.py",
+            ROOT + "/stash_extensions/bin/" + package_name + ".py",
+        )
         rmtree(ROOT + "/" + package_name)
-        print(Green("SUCCESS") + ": Package '" + package_name + "' successfully installed!")
+        print(
+            Green("SUCCESS")
+            + ": Package '"
+            + package_name
+            + "' successfully installed!"
+        )
     elif args.method == "remove":
         try:
             remove(ROOT + "/stash_extensions/bin/" + args.package + ".py")
@@ -146,16 +170,26 @@ def main(sargs):
         try:
             mkdir(args.package)
             config = open(args.package + "/meta.latte", "w")
-            config.write("developer=Your name here\ndescription=Enter description of your app here\nversion=0.1")
+            config.write(
+                "developer=Your name here\ndescription=Enter description of your app here\nversion=0.1"
+            )
             config.close()
             index = open(args.package + "/bin.py", "w")
             index.write(
                 "# This is just an example template. You can change this all you like.\n\nimport sys\nimport argparse\n\ndef main(sargs):\n\tparser = argparse.ArgumentParser()\n\tparser.add_argument('echo', help='What you want the command to echo back.')\n\targs = parser.parse_args(sargs)\n\t\n\tprint('Echoing back: '+args.echo)\n\nif __name__ == '__main__':\n\tmain(sys.argv[1:])"
             )
             index.close()
-            print(Green("SUCCESS") + ": Package '" + args.package + "' generated, check current working directory!")
+            print(
+                Green("SUCCESS")
+                + ": Package '"
+                + args.package
+                + "' generated, check current working directory!"
+            )
         except:
-            print(Red("ERROR") + ": Couldn't generate package; directory may already exist.")
+            print(
+                Red("ERROR")
+                + ": Couldn't generate package; directory may already exist."
+            )
     elif args.method == "add-repo":
         try:
             request = requests.get(args.package + "/init.latte")
@@ -168,7 +202,10 @@ def main(sargs):
             repo_listing.close()
             print(Green("SUCCESS") + ": '" + nickname + "' added to repositories!")
         except:
-            print(Red("ERROR") + ": Either repository doesn't exist, or does not contain an 'init.latte' file.")
+            print(
+                Red("ERROR")
+                + ": Either repository doesn't exist, or does not contain an 'init.latte' file."
+            )
     elif args.method == "list-repos":
         if args.package == "all":
             opened = open(".latte-repos.swconf")

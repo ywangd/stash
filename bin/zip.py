@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-""" Package and compress (archive) files and directories """
+"""Package and compress (archive) files and directories"""
+
 from __future__ import print_function
 
 import os
@@ -10,9 +11,9 @@ import zipfile
 
 def main(args):
     ap = argparse.ArgumentParser()
-    ap.add_argument('zipfile', help='')
-    ap.add_argument('list', nargs='+', help='')
-    ap.add_argument('-v', '--verbose', action='store_true', help='be more chatty')
+    ap.add_argument("zipfile", help="")
+    ap.add_argument("list", nargs="+", help="")
+    ap.add_argument("-v", "--verbose", action="store_true", help="be more chatty")
     ns = ap.parse_args(args)
 
     relroot = os.path.abspath(os.path.dirname(ns.zipfile))
@@ -41,5 +42,5 @@ def main(args):
                             outs.write(filename, arcname=arcname)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

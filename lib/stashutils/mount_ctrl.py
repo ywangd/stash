@@ -11,9 +11,9 @@ MANAGER = None
 
 def get_manager():
     """
-	returns the current mount manager.
-	Use the function instead of the constant to prevent import problems/
-	"""
+    returns the current mount manager.
+    Use the function instead of the constant to prevent import problems/
+    """
     return MANAGER
 
 

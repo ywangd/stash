@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """This module contains the base class for patches."""
+
 import sys
 import imp
 import os
@@ -13,17 +14,19 @@ _stash = get_stash()
 
 class IncompatiblePatch(Exception):
     """raised when a patch is incompatible."""
+
     pass
 
 
 class BasePatch(object):
     """
-	Baseclass for other patches.
-	This class also keeps track wether patches are enabled or not.
-	Subclasses should call BasePatch.__init__(self) and should
-	overwrite do_enable() and do_disable().
-	Subclasses may also overwrite self.dependencies with a list of patches which need to be enabled before the patch will be enabled.
-	"""
+    Baseclass for other patches.
+    This class also keeps track wether patches are enabled or not.
+    Subclasses should call BasePatch.__init__(self) and should
+    overwrite do_enable() and do_disable().
+    Subclasses may also overwrite self.dependencies with a list of patches which need to be enabled before the patch will be enabled.
+    """
+
     PY2 = True  # Python 2 compatibility
     PY3 = False  # Python 3 compatibility
     dependencies = []
@@ -72,12 +75,13 @@ class BasePatch(object):
 
 class FunctionPatch(BasePatch):
     """
-	This is a baseclass for patches replacing functions or classes.
-	Subclasses should redefine self.module and self.function.
-	'module' should be a string with the name of the module to load.
-	'function' should be a string with the name of the function to replace.
-	'replacement' should be the replacement.
-	"""
+    This is a baseclass for patches replacing functions or classes.
+    Subclasses should redefine self.module and self.function.
+    'module' should be a string with the name of the module to load.
+    'function' should be a string with the name of the function to replace.
+    'replacement' should be the replacement.
+    """
+
     module = None
     function = None
     replacement = None
@@ -87,7 +91,11 @@ class FunctionPatch(BasePatch):
         self.old = None
 
     def do_enable(self):
-        if (self.function is None) or (self.module is None) or (self.replacement is None):
+        if (
+            (self.function is None)
+            or (self.module is None)
+            or (self.replacement is None)
+        ):
             raise ValueError("Invalid Patch definition!")
         if self.module not in sys.modules:
             fin, path, description = imp.find_module(self.module)
@@ -108,12 +116,13 @@ class FunctionPatch(BasePatch):
 
 class ModulePatch(BasePatch):
     """
-	This is a baseclass for patches replacing/adding modules.
-	Subclasses should overwrite self.relpath to point to the the module.
-	self.relpath is relative to self.BASEPATH.
-	Subclasses may also overwrite self.name with the module name.
-	Otherwise, self.name = relpath
-	"""
+    This is a baseclass for patches replacing/adding modules.
+    Subclasses should overwrite self.relpath to point to the the module.
+    self.relpath is relative to self.BASEPATH.
+    Subclasses may also overwrite self.name with the module name.
+    Otherwise, self.name = relpath
+    """
+
     name = None
     relpath = None
     BASEPATH = os.path.join(os.path.dirname(__file__), "modules")
@@ -140,15 +149,16 @@ class ModulePatch(BasePatch):
 
 class PatchGroup(BasePatch):
     """
-	This is a baseclass for a group of patches.
-	Subclasses should overwrite self.patches.
-	"""
+    This is a baseclass for a group of patches.
+    Subclasses should overwrite self.patches.
+    """
+
     patches = []
 
     @property
     def enabled(self):
         """checks wether all patches of this group are enabled."""
-        return (all([p.enabled for p in self.patches]) and len(self.patches) > 0)
+        return all([p.enabled for p in self.patches]) and len(self.patches) > 0
 
     @enabled.setter
     def enabled(self, value):
@@ -176,9 +186,9 @@ class PatchGroup(BasePatch):
 
 class VariablePatchGroup(PatchGroup):
     """
-	A patchgroup which patches are passed to __init__().
-	This allows a variable definition on import.
-	"""
+    A patchgroup which patches are passed to __init__().
+    This allows a variable definition on import.
+    """
 
     def __init__(self, patches):
         PatchGroup.__init__(self)

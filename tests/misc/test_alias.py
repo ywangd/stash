@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """tests for the 'alias' command"""
+
 from stash.tests.stashtest import StashTestCase
 
 
@@ -32,7 +33,9 @@ class AliasTests(StashTestCase):
         self.assertNotIn("testalias", output)
 
         # create alias
-        output = self.run_command("alias 'testalias=echo alias test successfull!'", exitcode=0)
+        output = self.run_command(
+            "alias 'testalias=echo alias test successfull!'", exitcode=0
+        )
 
         # ensure alias is defined
         output = self.run_command("alias", exitcode=0)

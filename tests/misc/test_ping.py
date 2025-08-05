@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """tests for the ping command."""
+
 import time
 import unittest
 
@@ -35,7 +36,9 @@ class PingTests(StashTestCase):
         """test 'ping <target> --count <n>'."""
         target = "8.8.8.8"
         for n in (1, 3, 5):
-            output = self.run_command("ping " + target + " --count " + str(n), exitcode=0)
+            output = self.run_command(
+                "ping " + target + " --count " + str(n), exitcode=0
+            )
             self.assertIn("got ping in " + target, output)
             self.assertNotIn("failed", output)
             c = output.count("got ping in")
@@ -49,7 +52,10 @@ class PingTests(StashTestCase):
         c = 3
         for t in (1, 5, 10):
             st = time.time()
-            output = self.run_command("ping " + target + " --count " + str(c) + " --interval " + str(t), exitcode=0)
+            output = self.run_command(
+                "ping " + target + " --count " + str(c) + " --interval " + str(t),
+                exitcode=0,
+            )
             et = time.time()
             dt = et - st
             self.assertIn("got ping in " + target, output)

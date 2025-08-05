@@ -1,7 +1,8 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 StaSh input history
 """
+
 from io import open
 import json
 
@@ -22,9 +23,15 @@ class ShHistory(object):
         self.stash = stash
         self._histories = {}
         self._current = self.DEFAULT
-        self.allow_double = self.stash.config.getboolean("history", "allow_double_lines")
-        self.hide_whitespace = self.stash.config.getboolean("history", "hide_whitespace_lines")
-        self.ipython_style_history_search = self.stash.config.getboolean('history', 'ipython_style_history_search')
+        self.allow_double = self.stash.config.getboolean(
+            "history", "allow_double_lines"
+        )
+        self.hide_whitespace = self.stash.config.getboolean(
+            "history", "hide_whitespace_lines"
+        )
+        self.ipython_style_history_search = self.stash.config.getboolean(
+            "history", "ipython_style_history_search"
+        )
         self.maxsize = self.stash.config.getint("history", "maxsize")
         self.templine = ""
         self.idx = -1
@@ -43,7 +50,7 @@ class ShHistory(object):
         shh = cls(stash)
         try:
             with open(path, "r", encoding=cls.ENCODING) as fin:
-                h = json.loads(u"" + fin.read())
+                h = json.loads("" + fin.read())
         except ValueError:
             h = {"StaSh.runtime": cls.load_old_format(path)}
         shh._histories = h
@@ -70,7 +77,7 @@ class ShHistory(object):
         """
         with open(path, "w", encoding=self.ENCODING) as fout:
             s = json.dumps(self._histories)
-            fout.write(u"" + s)  # ensure unicode
+            fout.write("" + s)  # ensure unicode
 
     def clear(self, target=None):
         """
@@ -108,7 +115,11 @@ class ShHistory(object):
         if self._current not in self._histories:
             self._histories[self._current] = []
         stripped = line.strip()
-        last_line = (self._histories[self._current][-1] if len(self._histories[self._current]) > 0 else None)
+        last_line = (
+            self._histories[self._current][-1]
+            if len(self._histories[self._current]) > 0
+            else None
+        )
         if not always:
             # check if this line should be added
             if stripped == last_line and not self.allow_double:
@@ -145,9 +156,9 @@ class ShHistory(object):
         """
         history = self.getlist()
         search_string = tok[1:]
-        if search_string == '':
-            return ''
-        if search_string == '!':
+        if search_string == "":
+            return ""
+        if search_string == "!":
             return history[0]
         try:
             idx = int(search_string)

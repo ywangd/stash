@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """tests for the 'gci' command."""
+
 import gc
 
 from stash.tests.stashtest import StashTestCase
@@ -110,7 +111,9 @@ class GciTests(StashTestCase):
         n1 = g1 + 1
         n2 = g2 + 1
         n3 = g3 + 1
-        output = self.run_command("gci threshold {} {} {}".format(n1, n2, n3), exitcode=0)
+        output = self.run_command(
+            "gci threshold {} {} {}".format(n1, n2, n3), exitcode=0
+        )
         self.assertEqual(output.replace("\n", ""), "")
 
         output = self.run_command("gci threshold", exitcode=0)

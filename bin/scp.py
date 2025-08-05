@@ -31,7 +31,7 @@ from six.moves import input
 
 import paramiko
 
-__version__ = '0.8.0'
+__version__ = "0.8.0"
 
 
 def install_module_from_github(username, package_name, version):
@@ -47,24 +47,22 @@ def install_module_from_github(username, package_name, version):
         mv $TMPDIR/{1}_src/{1} $STASH_ROOT/lib/
         rm -rf $TMPDIR/{1}_src
         echo Done
-        """.format(username,
-                   package_name,
-                   version)
-    globals()['_stash'](cmd_string)
+        """.format(username, package_name, version)
+    globals()["_stash"](cmd_string)
 
 
-if StrictVersion(paramiko.__version__) < StrictVersion('1.15'):
+if StrictVersion(paramiko.__version__) < StrictVersion("1.15"):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
-    install_module_from_github('paramiko', 'paramiko', 'v1.16.0')
-    print('Please restart Pythonista for changes to take full effect')
+    install_module_from_github("paramiko", "paramiko", "v1.16.0")
+    print("Please restart Pythonista for changes to take full effect")
     sys.exit(0)
 
 DEBUG = False
 
-APP_DIR = os.environ['STASH_ROOT']
+APP_DIR = os.environ["STASH_ROOT"]
 
 # this is quote from the shlex module, added in py3.3
-_find_unsafe = re.compile(br'[^\w@%+=:,./~-]').search
+_find_unsafe = re.compile(rb"[^\w@%+=:,./~-]").search
 
 
 def _sh_quote(s):
@@ -90,7 +88,7 @@ def asbytes(s):
     if isinstance(s, bytes):
         return s
     else:
-        return s.encode('utf-8')
+        return s.encode("utf-8")
 
 
 def asunicode(s):
@@ -99,7 +97,7 @@ def asunicode(s):
     Uses UTF-8.
     """
     if isinstance(s, bytes):
-        return s.decode('utf-8', 'replace')
+        return s.decode("utf-8", "replace")
     else:
         return s
 
@@ -112,8 +110,7 @@ bytes_sep = asbytes(os.path.sep)
 
 
 def asunicode_win(s):
-    """Turns bytes into unicode, if needed.
-    """
+    """Turns bytes into unicode, if needed."""
     if isinstance(s, bytes):
         return s.decode(locale.getpreferredencoding())
     else:
@@ -135,7 +132,14 @@ class SCPClient(object):
     (matching scp behaviour), but we make no attempt at symlinked directories.
     """
 
-    def __init__(self, transport, buff_size=16384, socket_timeout=5.0, progress=None, sanitize=_sh_quote):
+    def __init__(
+        self,
+        transport,
+        buff_size=16384,
+        socket_timeout=5.0,
+        progress=None,
+        sanitize=_sh_quote,
+    ):
         """
         Create an scp1 client.
 
@@ -157,13 +161,13 @@ class SCPClient(object):
         self.channel = None
         self.preserve_times = False
         self._progress = progress
-        self._recv_dir = b''
+        self._recv_dir = b""
         self._rename = False
         self._utime = None
         self.sanitize = sanitize
         self._dirtimes = {}
 
-    def put(self, files, remote_path=b'.', recursive=False, preserve_times=False):
+    def put(self, files, remote_path=b".", recursive=False, preserve_times=False):
         """
         Transfer files to remote host.
 
@@ -182,7 +186,7 @@ class SCPClient(object):
         self.preserve_times = preserve_times
         self.channel = self.transport.open_session()
         self.channel.settimeout(self.socket_timeout)
-        scp_command = (b'scp -t ', b'scp -r -t ')[recursive]
+        scp_command = (b"scp -t ", b"scp -r -t ")[recursive]
         self.channel.exec_command(scp_command + self.sanitize(asbytes(remote_path)))
         self._recv_confirm()
 
@@ -197,7 +201,7 @@ class SCPClient(object):
         if self.channel:
             self.channel.close()
 
-    def get(self, remote_path, local_path='', recursive=False, preserve_times=False):
+    def get(self, remote_path, local_path="", recursive=False, preserve_times=False):
         """
         Transfer files from remote host to localhost
 
@@ -217,17 +221,25 @@ class SCPClient(object):
             remote_path = [remote_path]
         remote_path = [self.sanitize(asbytes(r)) for r in remote_path]
         self._recv_dir = local_path or os.getcwd()
-        self._rename = (len(remote_path) == 1 and not os.path.isdir(os.path.abspath(local_path)))
+        self._rename = len(remote_path) == 1 and not os.path.isdir(
+            os.path.abspath(local_path)
+        )
         if len(remote_path) > 1:
             if not os.path.exists(self._recv_dir):
-                raise SCPException("Local path '%s' does not exist" % asunicode(self._recv_dir))
+                raise SCPException(
+                    "Local path '%s' does not exist" % asunicode(self._recv_dir)
+                )
             elif not os.path.isdir(self._recv_dir):
-                raise SCPException("Local path '%s' is not a directory" % asunicode(self._recv_dir))
-        rcsv = (b'', b' -r')[recursive]
-        prsv = (b'', b' -p')[preserve_times]
+                raise SCPException(
+                    "Local path '%s' is not a directory" % asunicode(self._recv_dir)
+                )
+        rcsv = (b"", b" -r")[recursive]
+        prsv = (b"", b" -p")[preserve_times]
         self.channel = self.transport.open_session()
         self.channel.settimeout(self.socket_timeout)
-        self.channel.exec_command(b"scp" + rcsv + prsv + b" -f " + b' '.join(remote_path))
+        self.channel.exec_command(
+            b"scp" + rcsv + prsv + b" -f " + b" ".join(remote_path)
+        )
         self._recv_all()
 
         if self.channel:
@@ -248,12 +260,16 @@ class SCPClient(object):
             (mode, size, mtime, atime) = self._read_stats(name)
             if self.preserve_times:
                 self._send_time(mtime, atime)
-            file_hdl = open(name, 'rb')
+            file_hdl = open(name, "rb")
 
             # The protocol can't handle \n in the filename.
             # Quote them as the control sequence \^J for now,
             # which is how openssh handles it.
-            self.channel.sendall(("C%s %d " % (mode, size)).encode('ascii') + basename.replace(b'\n', b'\\^J') + b"\n")
+            self.channel.sendall(
+                ("C%s %d " % (mode, size)).encode("ascii")
+                + basename.replace(b"\n", b"\\^J")
+                + b"\n"
+            )
             self._recv_confirm()
             file_pos = 0
             if self._progress:
@@ -269,7 +285,7 @@ class SCPClient(object):
                 file_pos = file_hdl.tell()
                 if self._progress:
                     self._progress(basename, size, file_pos)
-            chan.sendall('\x00')
+            chan.sendall("\x00")
             file_hdl.close()
             self._recv_confirm()
 
@@ -311,47 +327,54 @@ class SCPClient(object):
         basename = asbytes(os.path.basename(directory))
         if self.preserve_times:
             self._send_time(mtime, atime)
-        self.channel.sendall(('D%s 0 ' % mode).encode('ascii') + basename.replace(b'\n', b'\\^J') + b'\n')
+        self.channel.sendall(
+            ("D%s 0 " % mode).encode("ascii") + basename.replace(b"\n", b"\\^J") + b"\n"
+        )
         self._recv_confirm()
 
     def _send_popd(self):
-        self.channel.sendall('E\n')
+        self.channel.sendall("E\n")
         self._recv_confirm()
 
     def _send_time(self, mtime, atime):
-        self.channel.sendall(('T%d 0 %d 0\n' % (mtime, atime)).encode('ascii'))
+        self.channel.sendall(("T%d 0 %d 0\n" % (mtime, atime)).encode("ascii"))
         self._recv_confirm()
 
     def _recv_confirm(self):
         # read scp response
-        msg = b''
+        msg = b""
         try:
             msg = self.channel.recv(512)
         except SocketTimeout:
-            raise SCPException('Timout waiting for scp response')
+            raise SCPException("Timout waiting for scp response")
         # slice off the first byte, so this compare will work in python2 and python3
-        if msg and msg[0:1] == b'\x00':
+        if msg and msg[0:1] == b"\x00":
             return
-        elif msg and msg[0:1] == b'\x01':
+        elif msg and msg[0:1] == b"\x01":
             raise SCPException(asunicode(msg[1:]))
         elif self.channel.recv_stderr_ready():
             msg = self.channel.recv_stderr(512)
             raise SCPException(asunicode(msg))
         elif not msg:
-            raise SCPException('No response from server')
+            raise SCPException("No response from server")
         else:
-            raise SCPException('Invalid response from server', msg)
+            raise SCPException("Invalid response from server", msg)
 
     def _recv_all(self):
         # loop over scp commands, and receive as necessary
-        command = {b'C': self._recv_file, b'T': self._set_time, b'D': self._recv_pushd, b'E': self._recv_popd}
+        command = {
+            b"C": self._recv_file,
+            b"T": self._set_time,
+            b"D": self._recv_pushd,
+            b"E": self._recv_popd,
+        }
         while not self.channel.closed:
             # wait for command as long as we're open
-            self.channel.sendall('\x00')
+            self.channel.sendall("\x00")
             msg = self.channel.recv(1024)
             if not msg:  # chan closed while recving
                 break
-            assert msg[-1:] == b'\n'
+            assert msg[-1:] == b"\n"
             msg = msg[:-1]
             code = msg[0:1]
             try:
@@ -363,18 +386,18 @@ class SCPClient(object):
 
     def _set_time(self, cmd):
         try:
-            times = cmd.split(b' ')
+            times = cmd.split(b" ")
             mtime = int(times[0])
             atime = int(times[2]) or mtime
         except:
-            self.channel.send(b'\x01')
-            raise SCPException('Bad time format')
+            self.channel.send(b"\x01")
+            raise SCPException("Bad time format")
         # save for later
         self._utime = (atime, mtime)
 
     def _recv_file(self, cmd):
         chan = self.channel
-        parts = cmd.strip().split(b' ', 2)
+        parts = cmd.strip().split(b" ", 2)
 
         try:
             mode = int(parts[0], 8)
@@ -382,19 +405,21 @@ class SCPClient(object):
             if self._rename:
                 path = self._recv_dir
                 self._rename = False
-            elif os.name == 'nt':
-                path = os.path.join(asunicode_win(self._recv_dir), parts[2].decode('utf-8'))
+            elif os.name == "nt":
+                path = os.path.join(
+                    asunicode_win(self._recv_dir), parts[2].decode("utf-8")
+                )
             else:
                 path = os.path.join(asbytes(self._recv_dir), parts[2])
         except:
-            chan.send('\x01')
+            chan.send("\x01")
             chan.close()
-            raise SCPException('Bad file format')
+            raise SCPException("Bad file format")
 
         try:
-            file_hdl = open(path, 'wb')
+            file_hdl = open(path, "wb")
         except IOError as e:
-            chan.send(b'\x01' + str(e).encode('utf-8'))
+            chan.send(b"\x01" + str(e).encode("utf-8"))
             chan.close()
             raise
 
@@ -406,7 +431,7 @@ class SCPClient(object):
                 self._progress(path, size, 0)
         buff_size = self.buff_size
         pos = 0
-        chan.send(b'\x00')
+        chan.send(b"\x00")
         try:
             while pos < size:
                 # we have to make sure we don't read the final byte
@@ -418,11 +443,11 @@ class SCPClient(object):
                     self._progress(path, size, pos)
 
             msg = chan.recv(512)
-            if msg and msg[0:1] != b'\x00':
+            if msg and msg[0:1] != b"\x00":
                 raise SCPException(msg[1:])
         except SocketTimeout:
             chan.close()
-            raise SCPException('Error receiving, socket.timeout')
+            raise SCPException("Error receiving, socket.timeout")
 
         file_hdl.truncate()
         try:
@@ -435,31 +460,33 @@ class SCPClient(object):
         # '\x00' confirmation sent in _recv_all
 
     def _recv_pushd(self, cmd):
-        parts = cmd.split(b' ', 2)
+        parts = cmd.split(b" ", 2)
         try:
             mode = int(parts[0], 8)
             if self._rename:
                 path = self._recv_dir
                 self._rename = False
-            elif os.name == 'nt':
-                path = os.path.join(asunicode_win(self._recv_dir), parts[2].decode('utf-8'))
+            elif os.name == "nt":
+                path = os.path.join(
+                    asunicode_win(self._recv_dir), parts[2].decode("utf-8")
+                )
             else:
                 path = os.path.join(asbytes(self._recv_dir), parts[2])
         except:
-            self.channel.send(b'\x01')
-            raise SCPException('Bad directory format')
+            self.channel.send(b"\x01")
+            raise SCPException("Bad directory format")
         try:
             if not os.path.exists(path):
                 os.mkdir(path, mode)
             elif os.path.isdir(path):
                 os.chmod(path, mode)
             else:
-                raise SCPException('%s: Not a directory' % path)
-            self._dirtimes[path] = (self._utime)
+                raise SCPException("%s: Not a directory" % path)
+            self._dirtimes[path] = self._utime
             self._utime = None
             self._recv_dir = path
         except (OSError, SCPException) as e:
-            self.channel.send(b'\x01' + asbytes(str(e)))
+            self.channel.send(b"\x01" + asbytes(str(e)))
             raise
 
     def _recv_popd(self, *cmd):
@@ -475,25 +502,26 @@ class SCPClient(object):
 
 class SCPException(Exception):
     """SCP exception class"""
+
     pass
 
 
 ############################################
 def find_ssh_keys():
-    #dir = os.path.expanduser('~/Documents/.ssh/')
+    # dir = os.path.expanduser('~/Documents/.ssh/')
     files = []
     try:
-        for file in os.listdir(APP_DIR + '/.ssh'):
-            if '.' not in file:
-                files.append(APP_DIR + '/.ssh/' + file)
+        for file in os.listdir(APP_DIR + "/.ssh"):
+            if "." not in file:
+                files.append(APP_DIR + "/.ssh/" + file)
     except OSError:
         pass
     return files
 
 
 def parse_host(arg):
-    user, temp = arg.split('@')
-    host, path = temp.split(':')
+    user, temp = arg.split("@")
+    host, path = temp.split(":")
     return host, user, path
 
 
@@ -502,29 +530,36 @@ def scp_callback(filename, size, sent):
         print(filename)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     files = []
 
     ap = argparse.ArgumentParser()
-    ap.add_argument('--password', help='login password')
-    ap.add_argument('-p', '--port', action='store', default=22, type=int, help='port for ssh default: 22')
-    ap.add_argument('files', nargs='*', help='file or module name')
+    ap.add_argument("--password", help="login password")
+    ap.add_argument(
+        "-p",
+        "--port",
+        action="store",
+        default=22,
+        type=int,
+        help="port for ssh default: 22",
+    )
+    ap.add_argument("files", nargs="*", help="file or module name")
     args = ap.parse_args()
 
-    #scp_mode 0 put 1 get
-    if '@' in args.files[0]:
+    # scp_mode 0 put 1 get
+    if "@" in args.files[0]:
         scp_mode = 1
     else:
         scp_mode = 0
 
     for file in args.files:
-        if '@' in file:
+        if "@" in file:
             host, user, host_path = parse_host(file)
         else:
             files.append(file)
 
     ssh = paramiko.SSHClient()
-    #ssh.load_system_host_keys()
+    # ssh.load_system_host_keys()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     key_filename = find_ssh_keys()
@@ -533,7 +568,7 @@ if __name__ == '__main__':
 
     else:
         if len(key_filename) == 0:  # no key file found
-            password = input('Enter passsword:')
+            password = input("Enter passsword:")
             ssh.connect(host, username=user, password=password, port=args.port)
         else:
             ssh.connect(host, username=user, key_filename=key_filename, port=args.port)
@@ -541,13 +576,13 @@ if __name__ == '__main__':
     # SCPCLient takes a paramiko transport as its only argument
     scp = SCPClient(ssh.get_transport(), progress=scp_callback)
 
-    #scp.put('stash',remote_path='stash/',recursive=True)
+    # scp.put('stash',remote_path='stash/',recursive=True)
     if scp_mode:
-        print('Copying from server...')
+        print("Copying from server...")
         scp.get(host_path, local_path=files[0], recursive=True)
 
     else:
-        print('Copying to server...')
+        print("Copying to server...")
         scp.put(files, recursive=True, remote_path=host_path)
 
     ssh.close()

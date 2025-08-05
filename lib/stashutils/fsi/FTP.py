@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Interface to FTP-servers."""
+
 import ftplib
 import tempfile
 import os
@@ -16,11 +17,11 @@ _stash = get_stash()
 
 class FTPFSI(BaseFSI):
     """
-	a FSI for FTP-server.
-Unfortunally, FTP was designed as a human-readable protocol.
-Due to this, the protocol is not completly unified.
-This means, that this FSI may not work on all FTP-servers.
-"""
+            a FSI for FTP-server.
+    Unfortunally, FTP was designed as a human-readable protocol.
+    Due to this, the protocol is not completly unified.
+    This means, that this FSI may not work on all FTP-servers.
+    """
 
     def __init__(self, logger=None):
         self.logger = logger
@@ -164,9 +165,13 @@ This means, that this FSI may not work on all FTP-servers.
             try:
                 self.ftp.rmd(ap)
             except Exception as e2:
-                text = _stash.text_color("Error trying to delete file: {e}!\n".format(e=e.message), "red")
+                text = _stash.text_color(
+                    "Error trying to delete file: {e}!\n".format(e=e.message), "red"
+                )
                 self.log(text)
-                text = _stash.text_color("Error trying to delete dir (after file-deletion failed)!\n", "red")
+                text = _stash.text_color(
+                    "Error trying to delete dir (after file-deletion failed)!\n", "red"
+                )
                 self.log(text)
                 raise OperationFailure(e2.message)
 
@@ -180,7 +185,9 @@ This means, that this FSI may not work on all FTP-servers.
                 self.ftp.retrbinary("RETR " + ap, tf.write, 4096)
                 tf.seek(0)
             except Exception as e:
-                self.log('Error during open("{p}","r"): {e}\n'.format(p=ap, e=e.message))
+                self.log(
+                    'Error during open("{p}","r"): {e}\n'.format(p=ap, e=e.message)
+                )
                 raise OperationFailure(e.message)
             return tf
         elif "w" in mode:
@@ -204,10 +211,10 @@ This means, that this FSI may not work on all FTP-servers.
 
     def _get_total_size_and_type(self, path):
         """
-		returns the file/dir size and the type. Copied from:
-		http://stackoverflow.com/questions/22090001/get-folder-size-using-ftplib
-		This is a modified version.
-		"""
+        returns the file/dir size and the type. Copied from:
+        http://stackoverflow.com/questions/22090001/get-folder-size-using-ftplib
+        This is a modified version.
+        """
         size = 0
         op = self.ftp.pwd()
         try:
@@ -247,7 +254,7 @@ This means, that this FSI may not work on all FTP-servers.
 
 class FTP_Upload(object):
     """utility class used for FTP-uploads.
-this class creates a tempfile, which is uploaded to the server when closed."""
+    this class creates a tempfile, which is uploaded to the server when closed."""
 
     def __init__(self, ftp, path, mode, name):
         self.ftp = ftp

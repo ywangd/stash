@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """a graphical config manager for StaSh"""
+
 import ast
 import os
 import threading
@@ -92,220 +93,207 @@ def add_editor_action():
 #       type: int
 
 OPTIONS = {
-    "system":
-        [
-            {
-                "display_name": "Resource File",
-                "option_name": "rcfile",
-                "type": TYPE_STR,
-                "description": "Resourcefile to load on startup",
-            },
-            {
-                "display_name": "Show Traceback",
-                "option_name": "py_traceback",
-                "type": TYPE_BOOL,
-                "description": "Show a detailed traceback when an uncatched exception is raised",
-            },
-            {
-                "display_name": "Enable Debugger",
-                "option_name": "py_pdb",
-                "type": TYPE_BOOL,
-                "description": "Lauch pdb when an uncatched exception is raised",
-            },
-            {
-                "display_name": "Encode Input as UTF-8",
-                "option_name": "input_encoding_utf8",
-                "type": TYPE_BOOL,
-                "description": "You may or may not gain imaginary internet points if you figure out what this option does",
-            },
-            {
-                "display_name": "Thread Type",
-                "option_name": "thread_type",
-                "type": TYPE_CHOICE,
-                "choices": ("ctypes",
-                            "traced"),
-                "description": "Which type of threads to use. 'ctypes' is faster and should be preferred",
-            },
-        ],
-    "display":
-        [
-            {
-                "display_name": "Font Size",
-                "option_name": "TEXT_FONT_SIZE",
-                "type": TYPE_INT,
-                "description": "Font size of the console",
-            },
-            {
-                "display_name": "Button Font Size",
-                "option_name": "BUTTON_FONT_SIZE",
-                "type": TYPE_INT,
-                "description": "Font size of the buttons on the virtual keyrow",
-            },
-            {
-                "display_name": "Background Color",
-                "option_name": "BACKGROUND_COLOR",
-                "type": TYPE_COLOR,
-                "description": "Background color of the terminal",
-            },
-            {
-                "display_name": "Text Color",
-                "option_name": "TEXT_COLOR",
-                "type": TYPE_COLOR,
-                "description": "Text color of the terminal",
-            },
-            {
-                "display_name": "Tint Color",
-                "option_name": "TINT_COLOR",
-                "type": TYPE_COLOR,
-                "description": "Color of special features in the terminal, e.g. the cursor",
-            },
-            {
-                "display_name": "Indicator Style",
-                "option_name": "INDICATOR_STYLE",
-                "type": TYPE_CHOICE,
-                "choices": (
-                    "default",
-                    "black",
-                    "white",
-                ),
-                "description": "Color of indicator used by the terminal",
-            },
-            {
-                "display_name": "Max Buffer",
-                "option_name": "BUFFER_MAX",
-                "type": TYPE_INT,
-                "description": "Max number of lines the terminal should show",
-            },
-            {
-                "display_name": "Max Autocompletion",
-                "option_name": "AUTO_COMPLETION_MAX",
-                "type": TYPE_INT,
-                "description": "Max nunber of commands to complete without asking the user for confirmation",
-            },
-            {
-                "display_name": "Virtual Keys",
-                "option_name": "VK_SYMBOLS",
-                "type": TYPE_STR,
-                "description": "Virtual keys available in the virtual keyrow when you press '...'",
-            },
-        ],
-    "StaSh":
-        [
-            {
-                "display_name": "Version",
-                "option_name": None,
-                "type": TYPE_LABEL,
-                "value": _stash.__version__,
-                "description": "Version of StaSh",
-            },
-            {
-                "display_name": "Selfupdate target",
-                "option_name": None,
-                "type": TYPE_LABEL,
-                "value": os.getenv("SELFUPDATE_TARGET",
-                                   "ywangd:master"),
-                "description": "Source to download update from. Format: '<github_user>:<branch>'",
-            },
-            {
-                "display_name": "Update",
-                "option_name": None,
-                "type": TYPE_COMMAND,
-                "command": "selfupdate",
-                "description": "Update StaSh",
-            },
-            {
-                "display_name": "Create Editor Shortcut",
-                "option_name": None,
-                "type": TYPE_COMMAND,
-                "command": add_editor_action,
-                "description": "add a shortcut to the wrench menu in pythonista",
-            },
-            {
-                "display_name": "Visit Homepage",
-                "option_name": None,
-                "type": TYPE_COMMAND,
-                "command": "webviewer -f -m https://www.github.com/ywangd/stash/",
-                "description": "Visit the StaSh homepage",
-            },
-        ],
-    "style":
-        [
-            {
-                "display_name": "Enable Styles",
-                "option_name": "enable_styles",
-                "type": TYPE_BOOL,
-                "description": "Enable styles in terminal (e.g. color or italic)",
-            },
-            {
-                "display_name": "Colored Errors",
-                "option_name": "colored_errors",
-                "type": TYPE_BOOL,
-                "description": "Color error messages and tracebacks in red",
-            }
-        ],
-    "Config":
-        [
-            {
-                "display_name": "Current file",
-                "option_name": None,
-                "type": TYPE_LABEL,
-                "value": os.path.relpath(CONFIG_PATH,
-                                         start=os.environ.get("HOME",
-                                                              "/")),
-                "description": "Configfile currently open",
-            },
-            {
-                "display_name": "Config files",
-                "option_name": None,
-                "type": TYPE_LABEL,
-                "value":
-                    ",".join(
-                        [
-                            os.path.relpath(
-                                os.path.join(os.environ.get("STASH_ROOT",
-                                                            ""),
-                                             v),
-                                start=os.environ.get("HOME",
-                                                     "/")
-                            ) for v in _STASH_CONFIG_FILES
-                        ]
-                    ),
-                "description": "Comma-seperated list of StaSh configfiles",
-            },
-        ],
-    "history":
-        [
-            {
-                "display_name": "History file",
-                "option_name": None,
-                "type": TYPE_LABEL,
-                "value": _STASH_HISTORY_FILE,
-            },
-            {
-                "display_name": "IPython-style history search",
-                "option_name": "ipython_style_history_search",
-                "type": TYPE_BOOL,
-                "description": "Enable IPython-style history search",
-            },
-            {
-                "display_name": "Max history length (per command)",
-                "option_name": "maxsize",
-                "type": TYPE_INT,
-                "description": "Max number of lines to remember. This value is per command.",
-            },
-            {
-                "display_name": "Allow adding a line twice in a row",
-                "option_name": "allow_double_lines",
-                "type": TYPE_BOOL,
-                "description": "Allow adding a line to history even if the line equals the last line",
-            },
-            {
-                "display_name": "Ignore lines starting with a space",
-                "option_name": "hide_whitespace_lines",
-                "type": TYPE_BOOL,
-                "description": "Do not add lines starting with a space to the history",
-            },
-        ]
+    "system": [
+        {
+            "display_name": "Resource File",
+            "option_name": "rcfile",
+            "type": TYPE_STR,
+            "description": "Resourcefile to load on startup",
+        },
+        {
+            "display_name": "Show Traceback",
+            "option_name": "py_traceback",
+            "type": TYPE_BOOL,
+            "description": "Show a detailed traceback when an uncatched exception is raised",
+        },
+        {
+            "display_name": "Enable Debugger",
+            "option_name": "py_pdb",
+            "type": TYPE_BOOL,
+            "description": "Lauch pdb when an uncatched exception is raised",
+        },
+        {
+            "display_name": "Encode Input as UTF-8",
+            "option_name": "input_encoding_utf8",
+            "type": TYPE_BOOL,
+            "description": "You may or may not gain imaginary internet points if you figure out what this option does",
+        },
+        {
+            "display_name": "Thread Type",
+            "option_name": "thread_type",
+            "type": TYPE_CHOICE,
+            "choices": ("ctypes", "traced"),
+            "description": "Which type of threads to use. 'ctypes' is faster and should be preferred",
+        },
+    ],
+    "display": [
+        {
+            "display_name": "Font Size",
+            "option_name": "TEXT_FONT_SIZE",
+            "type": TYPE_INT,
+            "description": "Font size of the console",
+        },
+        {
+            "display_name": "Button Font Size",
+            "option_name": "BUTTON_FONT_SIZE",
+            "type": TYPE_INT,
+            "description": "Font size of the buttons on the virtual keyrow",
+        },
+        {
+            "display_name": "Background Color",
+            "option_name": "BACKGROUND_COLOR",
+            "type": TYPE_COLOR,
+            "description": "Background color of the terminal",
+        },
+        {
+            "display_name": "Text Color",
+            "option_name": "TEXT_COLOR",
+            "type": TYPE_COLOR,
+            "description": "Text color of the terminal",
+        },
+        {
+            "display_name": "Tint Color",
+            "option_name": "TINT_COLOR",
+            "type": TYPE_COLOR,
+            "description": "Color of special features in the terminal, e.g. the cursor",
+        },
+        {
+            "display_name": "Indicator Style",
+            "option_name": "INDICATOR_STYLE",
+            "type": TYPE_CHOICE,
+            "choices": (
+                "default",
+                "black",
+                "white",
+            ),
+            "description": "Color of indicator used by the terminal",
+        },
+        {
+            "display_name": "Max Buffer",
+            "option_name": "BUFFER_MAX",
+            "type": TYPE_INT,
+            "description": "Max number of lines the terminal should show",
+        },
+        {
+            "display_name": "Max Autocompletion",
+            "option_name": "AUTO_COMPLETION_MAX",
+            "type": TYPE_INT,
+            "description": "Max nunber of commands to complete without asking the user for confirmation",
+        },
+        {
+            "display_name": "Virtual Keys",
+            "option_name": "VK_SYMBOLS",
+            "type": TYPE_STR,
+            "description": "Virtual keys available in the virtual keyrow when you press '...'",
+        },
+    ],
+    "StaSh": [
+        {
+            "display_name": "Version",
+            "option_name": None,
+            "type": TYPE_LABEL,
+            "value": _stash.__version__,
+            "description": "Version of StaSh",
+        },
+        {
+            "display_name": "Selfupdate target",
+            "option_name": None,
+            "type": TYPE_LABEL,
+            "value": os.getenv("SELFUPDATE_TARGET", "ywangd:master"),
+            "description": "Source to download update from. Format: '<github_user>:<branch>'",
+        },
+        {
+            "display_name": "Update",
+            "option_name": None,
+            "type": TYPE_COMMAND,
+            "command": "selfupdate",
+            "description": "Update StaSh",
+        },
+        {
+            "display_name": "Create Editor Shortcut",
+            "option_name": None,
+            "type": TYPE_COMMAND,
+            "command": add_editor_action,
+            "description": "add a shortcut to the wrench menu in pythonista",
+        },
+        {
+            "display_name": "Visit Homepage",
+            "option_name": None,
+            "type": TYPE_COMMAND,
+            "command": "webviewer -f -m https://www.github.com/ywangd/stash/",
+            "description": "Visit the StaSh homepage",
+        },
+    ],
+    "style": [
+        {
+            "display_name": "Enable Styles",
+            "option_name": "enable_styles",
+            "type": TYPE_BOOL,
+            "description": "Enable styles in terminal (e.g. color or italic)",
+        },
+        {
+            "display_name": "Colored Errors",
+            "option_name": "colored_errors",
+            "type": TYPE_BOOL,
+            "description": "Color error messages and tracebacks in red",
+        },
+    ],
+    "Config": [
+        {
+            "display_name": "Current file",
+            "option_name": None,
+            "type": TYPE_LABEL,
+            "value": os.path.relpath(CONFIG_PATH, start=os.environ.get("HOME", "/")),
+            "description": "Configfile currently open",
+        },
+        {
+            "display_name": "Config files",
+            "option_name": None,
+            "type": TYPE_LABEL,
+            "value": ",".join(
+                [
+                    os.path.relpath(
+                        os.path.join(os.environ.get("STASH_ROOT", ""), v),
+                        start=os.environ.get("HOME", "/"),
+                    )
+                    for v in _STASH_CONFIG_FILES
+                ]
+            ),
+            "description": "Comma-seperated list of StaSh configfiles",
+        },
+    ],
+    "history": [
+        {
+            "display_name": "History file",
+            "option_name": None,
+            "type": TYPE_LABEL,
+            "value": _STASH_HISTORY_FILE,
+        },
+        {
+            "display_name": "IPython-style history search",
+            "option_name": "ipython_style_history_search",
+            "type": TYPE_BOOL,
+            "description": "Enable IPython-style history search",
+        },
+        {
+            "display_name": "Max history length (per command)",
+            "option_name": "maxsize",
+            "type": TYPE_INT,
+            "description": "Max number of lines to remember. This value is per command.",
+        },
+        {
+            "display_name": "Allow adding a line twice in a row",
+            "option_name": "allow_double_lines",
+            "type": TYPE_BOOL,
+            "description": "Allow adding a line to history even if the line equals the last line",
+        },
+        {
+            "display_name": "Ignore lines starting with a space",
+            "option_name": "hide_whitespace_lines",
+            "type": TYPE_BOOL,
+            "description": "Do not add lines starting with a space to the history",
+        },
+    ],
 }
 
 # section order
@@ -327,7 +315,11 @@ class RGBColorPicker(object):
     """
 
     def __init__(self, default=(0.0, 0.0, 0.0)):
-        self.r, self.g, self.b, = default
+        (
+            self.r,
+            self.g,
+            self.b,
+        ) = default
         self.view = ui.View()
         self.view.background_color = "#ffffff"
         self.rslider = ui.Slider()
@@ -347,7 +339,9 @@ class RGBColorPicker(object):
         self.preview.border_width = 1
         self.preview.border_color = "#000000"
         self.preview.corner_radius = 5
-        self.rslider.action = self.gslider.action = self.bslider.action = self.slider_action
+        self.rslider.action = self.gslider.action = self.bslider.action = (
+            self.slider_action
+        )
         self.colorlabel = ui.Label()
         self.colorlabel.text = self.hexcode
         self.colorlabel.alignment = ui.ALIGN_CENTER
@@ -388,7 +382,11 @@ class RGBColorPicker(object):
     @property
     def hexcode(self):
         """returns the selected color as a html-like hexcode"""
-        hexc = "#%.02X%.02X%.02X" % (int(self.rgb_255[0]), int(self.rgb_255[1]), int(self.rgb_255[2]))
+        hexc = "#%.02X%.02X%.02X" % (
+            int(self.rgb_255[0]),
+            int(self.rgb_255[1]),
+            int(self.rgb_255[2]),
+        )
         return hexc
 
     @property
@@ -447,7 +445,7 @@ class ConfigView(ui.View):
             action=self.hide_keyboard,
             enabled=False,
         )
-        self.right_button_items = (self.hide_kb_button, )
+        self.right_button_items = (self.hide_kb_button,)
 
     def show(self):
         """shows the view and starts a thread."""
@@ -529,13 +527,13 @@ class ConfigView(ui.View):
             color = ast.literal_eval(rawcolor)
             b.background_color = color
             b.title = str(color)
-            b.tint_color = ((0, 0, 0) if color[0] >= 0.5 else (1, 1, 1))
+            b.tint_color = (0, 0, 0) if color[0] >= 0.5 else (1, 1, 1)
             i = (sn, info["option_name"])
             callback = lambda s, self=self, i=i: self.choose_color(s, i)
             b.action = callback
             cell.content_view.add_subview(b)
-            b.width = (cell.width / 6.0)
-            b.height = ((cell.height / 4.0) * 3.0)
+            b.width = cell.width / 6.0
+            b.height = (cell.height / 4.0) * 3.0
             b.y = (cell.height / 2.0) - (b.height / 2.0)
             b.x = (cell.width - b.width) - (cell.width / 20)
             b.flex = "LW"
@@ -548,13 +546,13 @@ class ConfigView(ui.View):
             rgb255color = int(color[0] * 255), int(color[1] * 255), int(color[2] * 255)
             b.background_color = color
             b.title = "#%.02X%.02X%.02X" % rgb255color
-            b.tint_color = ((0, 0, 0) if color[0] >= 0.5 else (1, 1, 1))
+            b.tint_color = (0, 0, 0) if color[0] >= 0.5 else (1, 1, 1)
             i = (sn, info["option_name"])
             callback = lambda s, self=self, i=i: self.choose_rgb_color(s, i)
             b.action = callback
             cell.content_view.add_subview(b)
-            b.width = (cell.width / 6.0)
-            b.height = ((cell.height / 4.0) * 3.0)
+            b.width = cell.width / 6.0
+            b.height = (cell.height / 4.0) * 3.0
             b.y = (cell.height / 2.0) - (b.height / 2.0)
             b.x = (cell.width - b.width) - (cell.width / 20)
             b.flex = "LW"
@@ -577,8 +575,8 @@ class ConfigView(ui.View):
                 tf.keyboard_type = ui.KEYBOARD_NUMBER_PAD
             tf.flex = "LW"
             cell.add_subview(tf)
-            tf.width = (cell.width / 6.0)
-            tf.height = ((cell.height / 4.0) * 3.0)
+            tf.width = cell.width / 6.0
+            tf.height = (cell.height / 4.0) * 3.0
             tf.y = (cell.height / 2.0) - (tf.height / 2.0)
             tf.x = (cell.width - tf.width) - (cell.width / 20)
         elif otype == TYPE_FILE:
@@ -591,8 +589,8 @@ class ConfigView(ui.View):
             callback = lambda s, self=self, i=i, f=fp: self.choose_file(s, i, f)
             b.action = callback
             cell.content_view.add_subview(b)
-            b.width = (cell.width / 6.0)
-            b.height = ((cell.height / 4.0) * 3.0)
+            b.width = cell.width / 6.0
+            b.height = (cell.height / 4.0) * 3.0
             b.y = (cell.height / 2.0) - (b.height / 2.0)
             b.x = (cell.width - b.width) - (cell.width / 20)
             b.flex = "LWH"
@@ -638,16 +636,19 @@ class ConfigView(ui.View):
 
         if otype == TYPE_LABEL:
             # show content
-            console.alert(info.get("display_name", ""), info.get("value", ""), "Ok", hide_cancel_button=True)
+            console.alert(
+                info.get("display_name", ""),
+                info.get("value", ""),
+                "Ok",
+                hide_cancel_button=True,
+            )
         else:
             # show description
             console.alert(
-                info.get("display_name",
-                         ""),
-                info.get("description",
-                         "No description available."),
+                info.get("display_name", ""),
+                info.get("description", "No description available."),
                 "Ok",
-                hide_cancel_button=True
+                hide_cancel_button=True,
             )
 
     def textfield_did_begin_editing(self, tf):
@@ -680,7 +681,7 @@ class ConfigView(ui.View):
     def switch_changed(self, switch, name):
         """called when a switch was changed."""
         section, option = name
-        v = ("1" if switch.value else "0")
+        v = "1" if switch.value else "0"
         _stash.config.set(section, option, v)
         self.save()
 

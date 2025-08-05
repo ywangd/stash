@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """mount a filesystem."""
+
 from __future__ import print_function
 
 import argparse
@@ -31,13 +32,52 @@ if __name__ == "__main__":
         list_mounts()
         sys.exit(0)
     parser = argparse.ArgumentParser()
-    parser.add_argument("-l", "--show-labels", action="store_true", dest="list", help="show also filesystem labels")
-    parser.add_argument("-v", "--verbose", action="store_true", dest="v", help="be more chatty")
-    parser.add_argument("-y", "--yes", action="store_true", dest="yes", help="enable the monkeypatches without asking")
-    parser.add_argument("-f", "--fake", action="store_false", dest="do_mount", help="dry run; do not mount fs")
-    parser.add_argument("-r", "--read-only", action="store_true", dest="readonly", help="mount the filesystem read-only")
-    parser.add_argument("-t", "--type", action="store", dest="type", default=None, help="Type of the filesystem to mount")
-    parser.add_argument("options", action="store", nargs="*", help="additional arguments for mounting the fs", default=[])
+    parser.add_argument(
+        "-l",
+        "--show-labels",
+        action="store_true",
+        dest="list",
+        help="show also filesystem labels",
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", dest="v", help="be more chatty"
+    )
+    parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        dest="yes",
+        help="enable the monkeypatches without asking",
+    )
+    parser.add_argument(
+        "-f",
+        "--fake",
+        action="store_false",
+        dest="do_mount",
+        help="dry run; do not mount fs",
+    )
+    parser.add_argument(
+        "-r",
+        "--read-only",
+        action="store_true",
+        dest="readonly",
+        help="mount the filesystem read-only",
+    )
+    parser.add_argument(
+        "-t",
+        "--type",
+        action="store",
+        dest="type",
+        default=None,
+        help="Type of the filesystem to mount",
+    )
+    parser.add_argument(
+        "options",
+        action="store",
+        nargs="*",
+        help="additional arguments for mounting the fs",
+        default=[],
+    )
     parser.add_argument("dir", action="store", help="dir to mount to")
     ns = parser.parse_args()
 
@@ -53,9 +93,24 @@ if __name__ == "__main__":
     if not manager.check_patches_enabled():
         if not ns.yes:
             print(_stash.text_color("WARNING: ", "red"))
-            print(_stash.text_color("The 'mount'-command needs to enable a few monkeypatches.", "yellow"))
-            print(_stash.text_color("Monkeypatches may make the system unstable.", "yellow"))
-            y = input(_stash.text_color("Do you want to enable these patches? (y/n)", "yellow")).upper() == "Y"
+            print(
+                _stash.text_color(
+                    "The 'mount'-command needs to enable a few monkeypatches.", "yellow"
+                )
+            )
+            print(
+                _stash.text_color(
+                    "Monkeypatches may make the system unstable.", "yellow"
+                )
+            )
+            y = (
+                input(
+                    _stash.text_color(
+                        "Do you want to enable these patches? (y/n)", "yellow"
+                    )
+                ).upper()
+                == "Y"
+            )
 
             if not y:
                 print(_stash.text_color("Error: Monkeypatches not enabled!", "red"))
@@ -91,7 +146,11 @@ if __name__ == "__main__":
                     print("unmounting FSI...")
                 fsi.close()
             except Exception as e:
-                print(_stash.text_color("Error unmounting FSI: {e}".format(e=e.message), "red"))
+                print(
+                    _stash.text_color(
+                        "Error unmounting FSI: {e}".format(e=e.message), "red"
+                    )
+                )
             else:
                 if ns.v:
                     print("Finished cleanup.")

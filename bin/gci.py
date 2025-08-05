@@ -3,6 +3,7 @@
 
 Warning: this command may crash StaSh!
 Only use it if you know what you are doing!"""
+
 import gc
 import argparse
 import sys
@@ -11,7 +12,9 @@ _stash = globals()["_stash"]
 
 
 def main():
-    parser = argparse.ArgumentParser(description="access to pythons built-in garbage collector")
+    parser = argparse.ArgumentParser(
+        description="access to pythons built-in garbage collector"
+    )
     parser.add_argument(
         "command",
         help="what to do",
@@ -24,7 +27,7 @@ def main():
             "debug",
             "break",
         ],
-        action="store"
+        action="store",
     )
     parser.add_argument("args", help="argument for command", action="store", nargs="*")
     ns = parser.parse_args()
@@ -54,16 +57,24 @@ def main():
         sys.stdout.write("Debug:                   {d}\n".format(d=gc.get_debug()))
     elif ns.command == "threshold":
         if len(ns.args) == 0:
-            sys.stdout.write("Threshold:\n   G1: {}\n   G2: {}\n   G3: {}\n".format(*gc.get_threshold()))
+            sys.stdout.write(
+                "Threshold:\n   G1: {}\n   G2: {}\n   G3: {}\n".format(
+                    *gc.get_threshold()
+                )
+            )
         elif len(ns.args) > 3:
-            errmsg = _stash.text_color("Error: to many arguments for threshold!\n", "red")
+            errmsg = _stash.text_color(
+                "Error: to many arguments for threshold!\n", "red"
+            )
             sys.stdout.write(errmsg)
             sys.exit(1)
         else:
             try:
                 ts = tuple([int(e) for e in ns.args])
             except ValueError:
-                errmsg = _stash.text_color("Error: expected arguments to be integer!\n", "red")
+                errmsg = _stash.text_color(
+                    "Error: expected arguments to be integer!\n", "red"
+                )
                 sys.stdout.write(errmsg)
                 sys.exit(1)
             gc.set_threshold(*ts)
@@ -74,11 +85,19 @@ def main():
             try:
                 flag = int(ns.args[0])
             except ValueError:
-                sys.stdout.write(_stash.text_color("Error: expected argument to be an integer!\n", "red"))
+                sys.stdout.write(
+                    _stash.text_color(
+                        "Error: expected argument to be an integer!\n", "red"
+                    )
+                )
                 sys.exit(1)
             gc.set_debug(flag)
         else:
-            sys.stdout.write(_stash.text_color("Error: expected exactly one argument for debug!\n", "red"))
+            sys.stdout.write(
+                _stash.text_color(
+                    "Error: expected exactly one argument for debug!\n", "red"
+                )
+            )
             sys.exit(1)
     elif ns.command == "break":
         if len(gc.garbage) == 0:

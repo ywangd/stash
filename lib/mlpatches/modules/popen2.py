@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Subprocesses with accessible I/O streams"""
+
 from mlpatches import os_popen
 from mlpatches.l2c import _get_str
 
@@ -28,7 +29,7 @@ def popen4(cmd, bufsize=0, mode="t"):
 class Popen3(object):
     """This class represents a child process. Normally, Popen3 instances are created using the popen2() and popen3() factory functions described above.
 
-If not using one of the helper functions to create Popen3 objects, the parameter cmd is the shell command to execute in a sub-process. The capturestderr flag, if true, specifies that the object should capture standard error output of the child process. The default is false. If the bufsize parameter is specified, it specifies the size of the I/O buffers to/from the child process."""
+    If not using one of the helper functions to create Popen3 objects, the parameter cmd is the shell command to execute in a sub-process. The capturestderr flag, if true, specifies that the object should capture standard error output of the child process. The default is false. If the bufsize parameter is specified, it specifies the size of the I/O buffers to/from the child process."""
 
     def __init__(self, cmd, capture_stderr=False, bufsize=0):
         strcmd = _get_str(cmd)
