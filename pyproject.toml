@@ -22,13 +22,14 @@ classifiers = [
 dynamic = [ "version" ]
 
 dependencies = [
+  # FIXME: the fsi should not depend from DropBox (dropbox should be optional)
+  "dropbox>=10.10; platform_system!='iOS'",
   "packaging>=25; platform_system!='iOS'",
   "paramiko>=4; platform_system!='iOS'",
   "pycryptodome>=3.23; platform_system!='iOS'",
   "pyftpdlib>=2.0.1",
   "pyperclip>=1.9; platform_system!='iOS'",
   "pyte>=0.8.2",
-  # PC specific or Pythonista built-in
   "pytz>=2025.2; platform_system!='iOS'",
   "requests>=2.32.4",
   "rsa>=4.9.1",

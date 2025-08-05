@@ -12,6 +12,7 @@ import clipboard
 
 from stashutils import core
 
+
 DB_SERVICE = "DropBox"
 
 

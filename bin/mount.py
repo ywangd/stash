@@ -6,10 +6,18 @@ from __future__ import print_function
 import argparse
 import sys
 
+_stash = globals()["_stash"]
+
+try:
+    #: FIXME: temporary solution
+    import dropbox
+except ImportError:
+    print("Installing Required packages...")
+    _stash("pip install dropbox>=10.10.0")
+    import dropbox
+
 from stashutils import mount_ctrl, mount_manager
 from stashutils.fsi.interfaces import FILESYSTEM_TYPES
-
-_stash = globals()["_stash"]
 
 
 def list_mounts():
