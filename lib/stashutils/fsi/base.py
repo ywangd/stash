@@ -1,12 +1,24 @@
 # -*- coding: utf-8 -*-
 """helper functions and base classes."""
 
+import sys
+
 from stashutils.fsi.errors import OperationFailure
 import random
 import os
 import time
 import stat
-import pwd
+
+
+def _get_user_info():
+    uid = os.getuid()
+    if sys.executable.find("Pythonista") >= 0:
+        gid = os.getgid()
+    else:
+        import pwd
+
+        gid = pwd.getpwuid(uid).pw_gid
+    return uid, gid
 
 
 class BaseFSI(object):
@@ -173,8 +185,7 @@ def make_stat(
     if uid is None:
         uid = os.getuid()
     if gid is None:
-        uid2 = os.getuid()
-        gid = pwd.getpwuid(uid2).pw_gid
+        uid2, gid = _get_user_info()
     if atime is None:
         atime = time.time()
     if mtime is None:
