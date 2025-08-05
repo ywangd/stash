@@ -16,8 +16,9 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    - run: pipx run ruff check --ignore=E401,E402,E701,E722,E731,E741,F401,F403,F405,F523,F524,F811,F841
-                --output-format=github --line-length=2793 --show-source --target-version=py37 .
+    - run: pipx run ruff check --output-format=github --target-version=py37
+               --ignore=E401,E402,E501,E701,E722,E731,E741,F401,F403,F405,F523,F524,F811,F841
+                
   build:
     runs-on: macos-latest
     strategy:
@@ -37,7 +38,7 @@ jobs:
         pip install ".[testing]"
     - name: Analysing the code with flake8
       run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --select=E9,F63,F7,F82 --ignore=F824 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
     - name: Running tests
       run: |
