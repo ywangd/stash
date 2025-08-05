@@ -167,21 +167,21 @@ def mergecommits(store, base, mine, theirs):
 def merge(args):
     helptext = """git merge' [--msg <msg>] [<commit>]
     git merge --abort\n
-    
+
     merges <commit> into HEAD, or remote tracking branch if commit not specified.
     <commit> can be a local or remote ref, or an existing commit sha.
 
-    merge will handle unambiguous conflicts between head and other 
-    merge head, and will insert conflict markers if conflicts cannot be resolved.  
-    note that the strategy used will prefer changes in the local head.  
-    for instance, if HEAD deleted a section, while MERGE_HEAD modified the same 
+    merge will handle unambiguous conflicts between head and other
+    merge head, and will insert conflict markers if conflicts cannot be resolved.
+    note that the strategy used will prefer changes in the local head.
+    for instance, if HEAD deleted a section, while MERGE_HEAD modified the same
     action, the section will be deleted from the final without indicating a conflict.
-      
+
     be sure to commit any local changes before running merge, as files in working tree (i.e on disk) are changed, and checked in, which will probably overwrite any local uncomitted changes.
-    
+
     note merge will not actually commit anything.  run git commit to commit a successful merge.
 
-    
+
     --abort will remove the MERGE_HEAD and MERGE_MSG files, and will reset staging area, but wont affect files on disk.  use git reset --hard or git checkout if this is desired.
     """
     repo = _get_repo()
@@ -260,13 +260,13 @@ def merge(args):
     )
     print("Merge complete with {} conflicted files".format(num_conflicts))
     print(
-        """Merged files were added to the staging area, but have not yet been comitted.   
-    Review changes (e.g.   git diff   or   git diff>changes.txt; edit changes.txt    ), and 
-    resolve any conflict markers before comitting.  
-    
-    Use   git add     on any files updated after resolving conflicts.  
+        """Merged files were added to the staging area, but have not yet been comitted.
+    Review changes (e.g.   git diff   or   git diff>changes.txt; edit changes.txt    ), and
+    resolve any conflict markers before comitting.
+
+    Use   git add     on any files updated after resolving conflicts.
     Run   git commit  to complete the merge process.
-    
+
     """
     )
 

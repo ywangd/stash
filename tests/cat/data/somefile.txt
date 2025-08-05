@@ -7,4 +7,3 @@ for the
 
 TODO:
 should we test non-ascii chars?
-

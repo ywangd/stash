@@ -4,4 +4,3 @@ test file
 for the
 'cat' command.
 BTW, cats are cute.
-

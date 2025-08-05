@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys
 import argparse
 
-COW = r"""         \   ^__^ 
+COW = r"""         \   ^__^
           \  (oo)\_______
              (__)\       )\/\\
                  ||----w |

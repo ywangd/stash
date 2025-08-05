@@ -5,14 +5,14 @@ its variants, [StaSh](https://github.com/ywangd/stash) is a serious attempt to
 implement a Bash-like shell for [Pythonista](http://omz-software.com/pythonista/).
 
 Since its initial release, valuable contributions and advices have been received
-constantly from the Pythonista community. 
-The two most popular utilities are 
+constantly from the Pythonista community.
+The two most popular utilities are
 **`pip`** (authored by [@briarfox](https://github.com/briarfox))
- and **`git`** (authored by [@jsbain](https://github.com/jsbain)). 
+ and **`git`** (authored by [@jsbain](https://github.com/jsbain)).
 Remarkable contributions are also made by
 [@dgelessus](https://github.com/dgelessus),
 [@pudquick](https://github.com/pudquick),
-[@oefe](https://github.com/oefe), 
+[@oefe](https://github.com/oefe),
 [@cclauss](https://github.com/cclauss),
 [@georg.viehoever](https://github.com/GeorgViehoever),
 [@BBOOXX](https://github.com/BBOOXX),
@@ -33,18 +33,18 @@ environment and great treasures may be found within.
 
 ## Installation
 **StaSh can be easily installed via one line of python command**
-(courtesy of [@whitone](https://forum.omz-software.com/user/whitone)). 
+(courtesy of [@whitone](https://forum.omz-software.com/user/whitone)).
 ```Python
 import requests as r; exec(r.get('https://bit.ly/get-stash').content)
 ```
 Simply copy the above line, paste into Pythonista interactive prompt and
-execute. It installs StaSh as a Python module under the `site-packages` 
-folder (`~/Documents/site-packages/stash`) and copies **a launching script, 
+execute. It installs StaSh as a Python module under the `site-packages`
+folder (`~/Documents/site-packages/stash`) and copies **a launching script,
 `~/Documents/launch_stash.py`** for easy access.
 
 *StaSh works with both Pythonista 2 and 3, though not all commands support python3.*
 
-*If you have previous versions of StaSh installed (e.g. v0.4.x), 
+*If you have previous versions of StaSh installed (e.g. v0.4.x),
 You may need to restart Pythonista BEFORE the installation.*
 
 *If you have a GitHub tool available in Pythonista, such as
@@ -62,7 +62,7 @@ Starting with `0.7.4`, StaSh supports being run on a PC using the `tkinter` modu
 
 ## Upgrade
 Once StaSh is installed, it can be easily updated by running the `selfupdate`
-command from within the shell. 
+command from within the shell.
 
 * `selfupdate` defaults to the `master` branch. To update from a different
   branch, e.g. `dev`, use `selfupdate dev`.
@@ -73,7 +73,7 @@ command from within the shell.
 * `selfupdate` manages StaSh installation folder and may delete files in the
   process. It is therefore recommended to **not** place your own scripts under
   `$STASH_ROOT/bin`. Instead, save your own scripts in`~/Documents/bin` or
-  customise the locations with the `BIN_PATH` environment variable. 
+  customise the locations with the `BIN_PATH` environment variable.
 * You may need to restart Pythonista after the update for changes to take full
   effects.
 
@@ -97,7 +97,7 @@ features are what really set the difference from shellista.
       in background. But StaSh can stay up forever (till memory runs out due to
       other Apps). You can just launch StaSh to run a few commands and leave it.
       It will still be there for you when you return later.
-    
+
 * **Comprehensive** command line parsing and handling using
   [pyparsing](http://pyparsing.wikispaces.com)
     * Environmental variables, e.g `echo $HOME`, `NAME=value`
@@ -108,9 +108,9 @@ features are what really set the difference from shellista.
     * Glob, e.g. `ls ~/*.py`
     * **Backtick quotes** for subprocess, e.g. ``touch `ls *.py` ``
     * **Pipes** to chain commands, e.g. `find . -name "*.txt" | grep interesting`
-    * **IO redirect** (actually just Output redirect), e.g. `ls *.py > py_files.txt`. 
+    * **IO redirect** (actually just Output redirect), e.g. `ls *.py > py_files.txt`.
       Input redirect can be achieved by using pipes.
-        - It is possible to redirect to the Pythonista builtin console, 
+        - It is possible to redirect to the Pythonista builtin console,
           e.g. `ls > &3`
     * Bang(!) to search command history, e.g. `ls -1`, `!l`. Bang commands like
       `!!` and `!-1` also works.
@@ -125,19 +125,19 @@ features are what really set the difference from shellista.
       You can easily add your own sub-commands completion via JSON files.
 
 * **Thread management allows multiple commands running in parallel**
-    * One foreground jobs and unlimited number of background jobs can run 
+    * One foreground jobs and unlimited number of background jobs can run
       simultaneously.
     * A foreground job can be stopped by pressing the **CC** button or **Ctrl-C**
       on an external keyboard.
     * A background job is issued by appending an ampersand character (**`&`**)
       at the end of a normal command, e.g. `httpserver &`. It can be terminated
       by the `kill` command using its job ID.
-    * A few utilities are provided for thread management. 
+    * A few utilities are provided for thread management.
         - `jobs` to list current running background jobs.
         - `kill` to kill a running job.
         - `fg` to bring background jobs to foreground
         - `CZ` button (Ctrl-Z) to send a foreground job to background
-    
+
 * **Command line history** management. Three UI buttons are provided to navigate
   through the history.
 
@@ -163,7 +163,7 @@ features are what really set the difference from shellista.
 * **External keyboard support**
     * Tab key for auto-completion
     * Up (↑) / Down (↓) for navigating through command history
-    * Ctrl-A and Ctrl-E to jump to the beginning and end of the input line, 
+    * Ctrl-A and Ctrl-E to jump to the beginning and end of the input line,
       respectively
     * Ctrl-U to erase the input line
     * Ctrl-W to erase one word before cursor
@@ -192,7 +192,7 @@ features are what really set the difference from shellista.
   `selfupdate` command from within the shell.
 
 * The UI can be configured via **configuration file** to customize its font
-  size and color. The default config file is `.stash_config` or `stash.cfg` 
+  size and color. The default config file is `.stash_config` or `stash.cfg`
   under StaSh installation root.
 
 
@@ -215,7 +215,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   possible. However, multiple commands can be written in a single line by
   separating them with semicolons, e.g. `ls -1 > file_list; cat file_list`.
 
-* There are many Python scripts provided along with StaSh. 
+* There are many Python scripts provided along with StaSh.
   These scripts range from performing
   regular shell tasks to advanced utilities like `ssh` and `git`. Note the
   scripts are by no means complete when compared to a real Linux shell. The
@@ -252,7 +252,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `ls.py` - List files
     * `mail.py` - Send emails with optional file attachment
     * `man.py` - Show help message (docstring) of a given command
-    * `mc.py` - Easily work with multiple filesystems (e.g. local and FTP) 
+    * `mc.py` - Easily work with multiple filesystems (e.g. local and FTP)
       synchronously.
     * `md5sum.py` - Print or check MD5 checksums
     * `mkdir.py` - Create directory
@@ -267,14 +267,14 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `pip.py` - Search, download, install, update and uninstall pure Python
       packages from PyPI.
     * `printenv.py` - List environment variables
-    * `printhex.py` - Print hexadecimal dump of the given file 
+    * `printhex.py` - Print hexadecimal dump of the given file
     * `pwd.py` - Print current directory
     * `python.py` - Run python scripts or modules
     * `python3.py` - Run python3 scripts or modules
     * `quicklook.py` - iOS quick look for files of known types
     * `rm.py` - delete (remove) file
     * `rmdir.py` - delete (remove) directories
-    * `scp.py` - Copy files from/to remote servers. 
+    * `scp.py` - Copy files from/to remote servers.
     * `selfupdate.py` - Update StaSh from its GitHub repo
     * `sha1sum.py` - Print of check SHA1 checksums
     * `sha256sum.py` - Print of check SHA256 checksums
@@ -283,7 +283,7 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
     * `ssh.py` - SSH client to either execute a command or spawn an interactive
       session on remote servers. [pyte](https://github.com/selectel/pyte) is
       used for terminal emulation and gives the command the feel of a
-      full-fledged SSH client. 
+      full-fledged SSH client.
     * `ssh-keygen.py` - Generate RSA/DSA SSH Keys.
     * `stashconf.py` - Change StaSh configuration on the fly
     * `tail.py` - Print last lines of a FILE.
@@ -314,18 +314,17 @@ The usage of StaSh is in principle similar to Bash. A few things to note are:
   [ShellistaUI](https://github.com/transistor1/shellista/tree/dev-modular).
 * The UI part of StaSh has its root from ShellistaUI.
 * Many of the command scripts, e.g. `ls.py`, `cp.py`, `mv.py`, are taken from
-  ShellistaExt with some modifications. 
+  ShellistaExt with some modifications.
 
 
 ## Known Issues
 * Pickled objects are not restored correctly and generate `AttributeError` as
-  if the class definition cannot be found. 
+  if the class definition cannot be found.
 * Some commands may still not fully support python3.
 
 
 ## Contributing
 * Check any open issues or open a new issue to start discussions about your
   ideas of features and/or bugs
-* Fork the repository, make changes, and send pull requests 
+* Fork the repository, make changes, and send pull requests
     - Please send pull requests to the **dev** branch instead of master
-
