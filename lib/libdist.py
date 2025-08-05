@@ -30,7 +30,7 @@ if IN_PYTHONISTA:
         """
         Set the clipboard content.
         :param s: string to set
-        :type s: six.text_type
+        :type s: str
         """
         # TODO: non-unicode support
         assert isinstance(s, str)
@@ -145,7 +145,7 @@ else:
             """
             Set the clipboard content.
             :param s: string to set
-            :type s: six.text_type
+            :type s: str
             """
             # TODO: non-unicode support
             assert isinstance(s, str)
@@ -167,7 +167,7 @@ else:
             """
             Set the clipboard content.
             :param s: string to set
-            :type s: six.text_type
+            :type s: str
             """
             global _CLIPBOARD
             assert isinstance(s, str)

@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """tests for the wheel-support"""
 
-import six
+import sys
 
 from stash.tests.stashtest import StashTestCase
+
+
+PY3 = sys.version_info[0] == 3
 
 
 class WheelsTests(StashTestCase):
@@ -19,8 +22,8 @@ class WheelsTests(StashTestCase):
                 "package-1.0.0-2-py2.py3-none-any.whl",
                 True,
             ),  # full compatible with build tag
-            ("package-1.0.0-py2-none-any.whl", not six.PY3),  # only py2 compatible
-            ("package-1.0.0-py3-none-any.whl", six.PY3),  # only py3 compatible
+            ("package-1.0.0-py2-none-any.whl", not PY3),  # only py2 compatible
+            ("package-1.0.0-py3-none-any.whl", PY3),  # only py3 compatible
             ("package-1.0.0-py2.py3-cp33m-any.whl", False),  # incompatible abi-tag
             (
                 "package-1.0.0-py2.py3-none-linux_x86_64.whl",

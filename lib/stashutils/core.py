@@ -2,7 +2,8 @@
 """core utilities for StaSh-scripts"""
 
 import threading
-import importlib
+import importlib.machinery
+import importlib.util
 import os
 
 from stash.system import shthreads

@@ -32,8 +32,6 @@ dependencies = [
   "pytz>=2025.2; platform_system!='iOS'",
   "requests>=2.32.4",
   "rsa>=4.9.1",
-  # Compat
-  "six>=1.17",
 ]
 
 optional-dependencies.testing = [
@@ -102,6 +100,7 @@ testpaths = [ "tests/" ]
 
 # Options that take a list of values
 addopts = [
+  "-v",
   "--showlocals",
   "--verbose",
   "--show-capture=all",
