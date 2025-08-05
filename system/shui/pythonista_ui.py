@@ -4,10 +4,29 @@ from time import time
 import six
 
 import ui
-from objc_util import on_main_thread, ObjCInstanceMethod, UIColor, create_objc_class, ObjCClass, ObjCInstance, ns
+from objc_util import (
+    on_main_thread,
+    ObjCInstanceMethod,
+    UIColor,
+    create_objc_class,
+    ObjCClass,
+    ObjCInstance,
+    ns,
+)
 
 from ..shcommon import ON_IPAD, ON_IOS_8, sh_delay
-from ..shcommon import K_CC, K_CD, K_HUP, K_HDN, K_CU, K_TAB, K_HIST, K_CZ, K_KB, CTRL_KEY_FLAG
+from ..shcommon import (
+    K_CC,
+    K_CD,
+    K_HUP,
+    K_HDN,
+    K_CU,
+    K_TAB,
+    K_HIST,
+    K_CZ,
+    K_KB,
+    CTRL_KEY_FLAG,
+)
 from ..shscreens import DEFAULT_CHAR, ShChar
 from .base import ShBaseUI, ShBaseTerminal, ShBaseSequentialRenderer
 
@@ -17,8 +36,8 @@ except ImportError:
     from .dummyobjc_util import *
 
 
-NSMutableAttributedString = ObjCClass('NSMutableAttributedString')
-UIFont = ObjCClass('UIFont')
+NSMutableAttributedString = ObjCClass("NSMutableAttributedString")
+UIFont = ObjCClass("UIFont")
 
 BlackColor = UIColor.blackColor()
 RedColor = UIColor.redColor()
@@ -43,11 +62,11 @@ class ShVk(ui.View):
     :type stash : StaSh
     """
 
-    def __init__(self, stash, name='vks', flex='wh'):
+    def __init__(self, stash, name="vks", flex="wh"):
         self.stash = stash
         self.flex = flex
         self.name = name
-        self.sv = ui.ScrollView(name, flex='wh')
+        self.sv = ui.ScrollView(name, flex="wh")
         super(ShVk, self).add_subview(self.sv)
         self.sv.delegate = self
         self.dx = 0
@@ -80,144 +99,145 @@ class ShUI(ShBaseUI, ui.View):
     """
 
     def __init__(self, *args, **kwargs):
-
         ShBaseUI.__init__(self, *args, **kwargs)
 
         self.is_editing = False
 
         # Start constructing the view's layout
-        self.name = 'StaSh'
-        self.flex = 'WH'
+        self.name = "StaSh"
+        self.flex = "WH"
         self.background_color = 0.0
 
-        self.txts = ui.View(name='txts', flex='WH')  # Wrapper view of output and input areas
+        self.txts = ui.View(
+            name="txts", flex="WH"
+        )  # Wrapper view of output and input areas
         self.add_subview(self.txts)
         self.txts.background_color = 0.7
 
         # TODO: The accessory keys can be moved to a separate class
-        self.vks = ShVk(self.stash, name='vks', flex='WT')
+        self.vks = ShVk(self.stash, name="vks", flex="WT")
         self.vks.sv.delegate = self.stash.user_action_proxy.sv_delegate
         self.txts.add_subview(self.vks)
         self.vks.background_color = 0.7
 
         k_hspacing = 1
 
-        self.k_tab = ui.Button(name='k_tab', title=' Tab ', flex='TB')
+        self.k_tab = ui.Button(name="k_tab", title=" Tab ", flex="TB")
         self.vks.add_subview(self.k_tab)
         self.k_tab.action = self._vk_tapped
         self.k_tab.font = self.BUTTON_FONT
         self.k_tab.border_width = 1
         self.k_tab.border_color = 0.9
         self.k_tab.corner_radius = 5
-        self.k_tab.tint_color = 'black'
-        self.k_tab.background_color = 'white'
+        self.k_tab.tint_color = "black"
+        self.k_tab.background_color = "white"
         self.k_tab.size_to_fit()
 
-        self.k_grp_0 = ShVk(self.stash, name='k_grp_0', flex='WT')  # vk group 0
+        self.k_grp_0 = ShVk(self.stash, name="k_grp_0", flex="WT")  # vk group 0
         self.k_grp_0.sv.delegate = self._vk_tapped
         self.vks.add_subview(self.k_grp_0)
         self.k_grp_0.background_color = 0.7
         self.k_grp_0.x = self.k_tab.width + k_hspacing
 
-        self.k_hist = ui.Button(name='k_hist', title=' H ', flex='RTB')
+        self.k_hist = ui.Button(name="k_hist", title=" H ", flex="RTB")
         self.k_grp_0.add_subview(self.k_hist)
         self.k_hist.action = self._vk_tapped
         self.k_hist.font = self.BUTTON_FONT
         self.k_hist.border_width = 1
         self.k_hist.border_color = 0.9
         self.k_hist.corner_radius = 5
-        self.k_hist.tint_color = 'black'
-        self.k_hist.background_color = 'white'
+        self.k_hist.tint_color = "black"
+        self.k_hist.background_color = "white"
         self.k_hist.size_to_fit()
 
-        self.k_hup = ui.Button(name='k_hup', title=' Up ', flex='RTB')
+        self.k_hup = ui.Button(name="k_hup", title=" Up ", flex="RTB")
         self.k_grp_0.add_subview(self.k_hup)
         self.k_hup.action = self._vk_tapped
         self.k_hup.font = self.BUTTON_FONT
         self.k_hup.border_width = 1
         self.k_hup.border_color = 0.9
         self.k_hup.corner_radius = 5
-        self.k_hup.tint_color = 'black'
-        self.k_hup.background_color = 'white'
+        self.k_hup.tint_color = "black"
+        self.k_hup.background_color = "white"
         self.k_hup.size_to_fit()
         self.k_hup.x = self.k_hist.width + k_hspacing
 
-        self.k_hdn = ui.Button(name='k_hdn', title=' Dn ', flex='RTB')
+        self.k_hdn = ui.Button(name="k_hdn", title=" Dn ", flex="RTB")
         self.k_grp_0.add_subview(self.k_hdn)
         self.k_hdn.action = self._vk_tapped
         self.k_hdn.font = self.BUTTON_FONT
         self.k_hdn.border_width = 1
         self.k_hdn.border_color = 0.9
         self.k_hdn.corner_radius = 5
-        self.k_hdn.tint_color = 'black'
-        self.k_hdn.background_color = 'white'
+        self.k_hdn.tint_color = "black"
+        self.k_hdn.background_color = "white"
         self.k_hdn.size_to_fit()
         self.k_hdn.x = self.k_hup.x + self.k_hup.width + k_hspacing
 
-        self.k_CD = ui.Button(name='k_CD', title=' CD ', flex='RTB')
+        self.k_CD = ui.Button(name="k_CD", title=" CD ", flex="RTB")
         self.k_grp_0.add_subview(self.k_CD)
         self.k_CD.action = self._vk_tapped
         self.k_CD.font = self.BUTTON_FONT
         self.k_CD.border_width = 1
         self.k_CD.border_color = 0.9
         self.k_CD.corner_radius = 5
-        self.k_CD.tint_color = 'black'
-        self.k_CD.background_color = 'white'
+        self.k_CD.tint_color = "black"
+        self.k_CD.background_color = "white"
         self.k_CD.size_to_fit()
         self.k_CD.x = self.k_hdn.x + self.k_hdn.width + k_hspacing
 
-        self.k_CC = ui.Button(name='k_CC', title=' CC ', flex='RTB')
+        self.k_CC = ui.Button(name="k_CC", title=" CC ", flex="RTB")
         self.k_grp_0.add_subview(self.k_CC)
         self.k_CC.action = self._vk_tapped
         self.k_CC.font = self.BUTTON_FONT
         self.k_CC.border_width = 1
         self.k_CC.border_color = 0.9
         self.k_CC.corner_radius = 5
-        self.k_CC.tint_color = 'black'
-        self.k_CC.background_color = 'white'
+        self.k_CC.tint_color = "black"
+        self.k_CC.background_color = "white"
         self.k_CC.size_to_fit()
         self.k_CC.x = self.k_CD.x + self.k_CD.width + k_hspacing
 
         # Kill line key
-        self.k_CU = ui.Button(name='k_CU', title=' CU ', flex='RTB')
+        self.k_CU = ui.Button(name="k_CU", title=" CU ", flex="RTB")
         self.k_grp_0.add_subview(self.k_CU)
         self.k_CU.action = self._vk_tapped
         self.k_CU.font = self.BUTTON_FONT
         self.k_CU.border_width = 1
         self.k_CU.border_color = 0.9
         self.k_CU.corner_radius = 5
-        self.k_CU.tint_color = 'black'
-        self.k_CU.background_color = 'white'
+        self.k_CU.tint_color = "black"
+        self.k_CU.background_color = "white"
         self.k_CU.size_to_fit()
         self.k_CU.x = self.k_CC.x + self.k_CC.width + k_hspacing
 
         # BG key
-        self.k_CZ = ui.Button(name='k_CZ', title=' CZ ', flex='RTB')
+        self.k_CZ = ui.Button(name="k_CZ", title=" CZ ", flex="RTB")
         self.k_grp_0.add_subview(self.k_CZ)
         self.k_CZ.action = self._vk_tapped
         self.k_CZ.font = self.BUTTON_FONT
         self.k_CZ.border_width = 1
         self.k_CZ.border_color = 0.9
         self.k_CZ.corner_radius = 5
-        self.k_CZ.tint_color = 'black'
-        self.k_CZ.background_color = 'white'
+        self.k_CZ.tint_color = "black"
+        self.k_CZ.background_color = "white"
         self.k_CZ.size_to_fit()
         self.k_CZ.x = self.k_CU.x + self.k_CU.width + k_hspacing
 
         # End Editing key
-        self.k_KB = ui.Button(name='k_KB', title=' KB ', flex='RTB')
+        self.k_KB = ui.Button(name="k_KB", title=" KB ", flex="RTB")
         self.k_grp_0.add_subview(self.k_KB)
         self.k_KB.action = self._vk_tapped
         self.k_KB.font = self.BUTTON_FONT
         self.k_KB.border_width = 1
         self.k_KB.border_color = 0.9
         self.k_KB.corner_radius = 5
-        self.k_KB.tint_color = 'black'
-        self.k_KB.background_color = 'white'
+        self.k_KB.tint_color = "black"
+        self.k_KB.background_color = "white"
         self.k_KB.size_to_fit()
         self.k_KB.x = self.k_CZ.x + self.k_CZ.width + k_hspacing
 
-        self.k_swap = ui.Button(name='k_swap', title='..', flex='LTB')
+        self.k_swap = ui.Button(name="k_swap", title="..", flex="LTB")
         self.vks.add_subview(self.k_swap)
         # self.k_swap.action = self.stash.user_action_proxy.vk_tapped
         self.k_swap.action = lambda sender: self.toggle_k_grp()
@@ -225,13 +245,13 @@ class ShUI(ShBaseUI, ui.View):
         self.k_swap.border_width = 1
         self.k_swap.border_color = 0.9
         self.k_swap.corner_radius = 5
-        self.k_swap.tint_color = 'black'
-        self.k_swap.background_color = 'white'
+        self.k_swap.tint_color = "black"
+        self.k_swap.background_color = "white"
         self.k_swap.size_to_fit()
         self.k_swap.width -= 2
         self.k_swap.x = self.vks.width - self.k_swap.width
 
-        self.k_grp_1 = ShVk(self.stash, name='k_grp_1', flex='WT')  # vk group 1
+        self.k_grp_1 = ShVk(self.stash, name="k_grp_1", flex="WT")  # vk group 1
         self.k_grp_1.sv.delegate = self.stash.user_action_proxy.sv_delegate
         self.vks.add_subview(self.k_grp_1)
         self.k_grp_1.background_color = 0.7
@@ -239,26 +259,32 @@ class ShUI(ShBaseUI, ui.View):
 
         offset = 0
         for i, sym in enumerate(self.vk_symbols):
-            if sym == ' ':
+            if sym == " ":
                 continue
             if not ON_IPAD and i > 7:
                 break
 
-            k_sym = ui.Button(name='k_sym', title=' %s ' % sym, flex='RTB')
+            k_sym = ui.Button(name="k_sym", title=" %s " % sym, flex="RTB")
             self.k_grp_1.add_subview(k_sym)
-            k_sym.action = lambda vk: self.stash.mini_buffer.feed(self.terminal.selected_range, vk.title.strip())
+            k_sym.action = lambda vk: self.stash.mini_buffer.feed(
+                self.terminal.selected_range, vk.title.strip()
+            )
             k_sym.font = self.BUTTON_FONT
             k_sym.border_width = 1
             k_sym.border_color = 0.9
             k_sym.corner_radius = 5
-            k_sym.tint_color = 'black'
-            k_sym.background_color = 'white'
+            k_sym.tint_color = "black"
+            k_sym.background_color = "white"
             k_sym.size_to_fit()
             k_sym.x = offset + k_hspacing * i
             offset += k_sym.width
 
-        self.k_grp_0.width = self.vks.width - self.k_tab.width - self.k_swap.width - 2 * k_hspacing
-        self.k_grp_1.width = self.vks.width - self.k_tab.width - self.k_swap.width - 2 * k_hspacing
+        self.k_grp_0.width = (
+            self.vks.width - self.k_tab.width - self.k_swap.width - 2 * k_hspacing
+        )
+        self.k_grp_1.width = (
+            self.vks.width - self.k_tab.width - self.k_swap.width - 2 * k_hspacing
+        )
 
         self.vks.height = self.k_hist.height
         self.vks.y = self.vks.superview.height - (self.vks.height + 4)
@@ -271,7 +297,7 @@ class ShUI(ShBaseUI, ui.View):
             self,
             self.txts,
             width=self.txts.width,
-            height=self.txts.height - (self.vks.height + 8)
+            height=self.txts.height - (self.vks.height + 8),
         )
 
     def keyboard_frame_did_change(self, frame):
@@ -286,7 +312,10 @@ class ShUI(ShBaseUI, ui.View):
                 self.vks.hidden = False
                 self.txts.height = self.height - frame[3]
                 # Leave space for the virtual key row
-                self.terminal.size = self.txts.width, self.txts.height - (self.vks.height + 8)
+                self.terminal.size = (
+                    self.txts.width,
+                    self.txts.height - (self.vks.height + 8),
+                )
             else:  # when keyboard goes away
                 # hide the virtual key row as well
                 self.vks.hidden = True
@@ -294,14 +323,14 @@ class ShUI(ShBaseUI, ui.View):
                 # Take all space as virtual key row is now hidden
                 self.terminal.size = self.txts.width, self.txts.height
             # TODO: Scroll to end? may not be necessary
-    
+
     def show(self):
         """
         Present the UI
         """
         self.present("panel")
         self.terminal.begin_editing()
-    
+
     def close(self):
         ui.View.close(self)
         # on_exit() will be called in will_close()
@@ -335,7 +364,7 @@ class ShUI(ShBaseUI, ui.View):
         table.width = 300
         table.height = 300
         table.row_height = self.BUTTON_FONT[1] + 4
-        table.present('popover')
+        table.present("popover")
         table.wait_modal()
 
     def history_popover_tapped(self, sender):
@@ -345,8 +374,10 @@ class ShUI(ShBaseUI, ui.View):
         :type sender: ui.TableView
         """
         if sender.selected_row >= 0:
-            self.history_selected(sender.items[sender.selected_row], sender.selected_row)
-    
+            self.history_selected(
+                sender.items[sender.selected_row], sender.selected_row
+            )
+
     def _vk_tapped(self, sender):
         """
         Called when a key was tapped
@@ -374,12 +405,13 @@ class ShUI(ShBaseUI, ui.View):
                 key = v
         if key is None:
             raise ValueError("Unknown sender: " + repr(sender))
-        
+
         # call action
         self.stash.user_action_proxy.vk_tapped(key)
 
+
 # ObjC related stuff
-UIFont = ObjCClass('UIFont')
+UIFont = ObjCClass("UIFont")
 
 
 # noinspection PyAttributeOutsideInit,PyUnusedLocal,PyPep8Naming
@@ -391,106 +423,95 @@ class ShTerminal(ShBaseTerminal):
     """
 
     def __init__(self, stash, parent, superview, width, height):
-
         # Create the actual TextView by subclass SUITextView
-        UIKeyCommand = ObjCClass('UIKeyCommand')
+        UIKeyCommand = ObjCClass("UIKeyCommand")
 
         def kcDispatcher_(_self, _cmd, _sender):
             key_cmd = ObjCInstance(_sender)
-            stash.user_action_proxy.kc_pressed(str(key_cmd.input()), key_cmd.modifierFlags())
+            stash.user_action_proxy.kc_pressed(
+                str(key_cmd.input()), key_cmd.modifierFlags()
+            )
 
         def keyCommands(_self, _cmd):
             key_commands = [
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('C',
-                                                                       CTRL_KEY_FLAG,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('D',
-                                                                       CTRL_KEY_FLAG,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('P',
-                                                                       CTRL_KEY_FLAG,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('N',
-                                                                       CTRL_KEY_FLAG,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('K',
-                                                                       CTRL_KEY_FLAG,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('U',
-                                                                       CTRL_KEY_FLAG,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('A',
-                                                                       CTRL_KEY_FLAG,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('E',
-                                                                       CTRL_KEY_FLAG,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('W',
-                                                                       CTRL_KEY_FLAG,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('L',
-                                                                       CTRL_KEY_FLAG,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('Z',
-                                                                       CTRL_KEY_FLAG,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('[',
-                                                                       CTRL_KEY_FLAG,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(']',
-                                                                       CTRL_KEY_FLAG,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputUpArrow',
-                                                                       0,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputDownArrow',
-                                                                       0,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputLeftArrow',
-                                                                       0,
-                                                                       'kcDispatcher:'),
-                UIKeyCommand.keyCommandWithInput_modifierFlags_action_('UIKeyInputRightArrow',
-                                                                       0,
-                                                                       'kcDispatcher:'),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "C", CTRL_KEY_FLAG, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "D", CTRL_KEY_FLAG, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "P", CTRL_KEY_FLAG, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "N", CTRL_KEY_FLAG, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "K", CTRL_KEY_FLAG, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "U", CTRL_KEY_FLAG, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "A", CTRL_KEY_FLAG, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "E", CTRL_KEY_FLAG, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "W", CTRL_KEY_FLAG, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "L", CTRL_KEY_FLAG, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "Z", CTRL_KEY_FLAG, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "[", CTRL_KEY_FLAG, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "]", CTRL_KEY_FLAG, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "UIKeyInputUpArrow", 0, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "UIKeyInputDownArrow", 0, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "UIKeyInputLeftArrow", 0, "kcDispatcher:"
+                ),
+                UIKeyCommand.keyCommandWithInput_modifierFlags_action_(
+                    "UIKeyInputRightArrow", 0, "kcDispatcher:"
+                ),
             ]
             commands = ns(key_commands)
             return commands.ptr
 
-
         self.kc_handlers = {
-            ('C',
-             CTRL_KEY_FLAG): parent.controlCAction,
-            ('D',
-             CTRL_KEY_FLAG): parent.controlDAction,
-            ('P',
-             CTRL_KEY_FLAG): parent.controlPAction,
-            ('N',
-             CTRL_KEY_FLAG): parent.controlNAction,
-            ('K',
-             CTRL_KEY_FLAG): parent.controlKAction,
-            ('U',
-             CTRL_KEY_FLAG): parent.controlUAction,
-            ('A',
-             CTRL_KEY_FLAG): parent.controlAAction,
-            ('E',
-             CTRL_KEY_FLAG): parent.controlEAction,
-            ('W',
-             CTRL_KEY_FLAG): parent.controlWAction,
-            ('L',
-             CTRL_KEY_FLAG): parent.controlLAction,
-            ('Z',
-             CTRL_KEY_FLAG): parent.controlZAction,
-            ('[',
-             CTRL_KEY_FLAG): parent.dummyAction,
-            (']',
-             CTRL_KEY_FLAG): parent.dummyAction,
-            ('UIKeyInputUpArrow', 0):    parent.arrowUpAction,
-            ('UIKeyInputDownArrow', 0):  parent.arrowDownAction,
-            ('UIKeyInputLeftArrow', 0):  parent.arrowLeftAction,
-            ('UIKeyInputRightArrow', 0): parent.arrowRightAction,
+            ("C", CTRL_KEY_FLAG): parent.controlCAction,
+            ("D", CTRL_KEY_FLAG): parent.controlDAction,
+            ("P", CTRL_KEY_FLAG): parent.controlPAction,
+            ("N", CTRL_KEY_FLAG): parent.controlNAction,
+            ("K", CTRL_KEY_FLAG): parent.controlKAction,
+            ("U", CTRL_KEY_FLAG): parent.controlUAction,
+            ("A", CTRL_KEY_FLAG): parent.controlAAction,
+            ("E", CTRL_KEY_FLAG): parent.controlEAction,
+            ("W", CTRL_KEY_FLAG): parent.controlWAction,
+            ("L", CTRL_KEY_FLAG): parent.controlLAction,
+            ("Z", CTRL_KEY_FLAG): parent.controlZAction,
+            ("[", CTRL_KEY_FLAG): parent.dummyAction,
+            ("]", CTRL_KEY_FLAG): parent.dummyAction,
+            ("UIKeyInputUpArrow", 0): parent.arrowUpAction,
+            ("UIKeyInputDownArrow", 0): parent.arrowDownAction,
+            ("UIKeyInputLeftArrow", 0): parent.arrowLeftAction,
+            ("UIKeyInputRightArrow", 0): parent.arrowRightAction,
         }
 
-        _ShTerminal = create_objc_class('_ShTerminal', ObjCClass('SUITextView'), [keyCommands, kcDispatcher_])
+        _ShTerminal = create_objc_class(
+            "_ShTerminal", ObjCClass("SUITextView"), [keyCommands, kcDispatcher_]
+        )
 
         self.is_editing = False
 
@@ -499,7 +520,9 @@ class ShTerminal(ShBaseTerminal):
         self._delegate_view = ui.TextView()
         self._delegate_view.delegate = stash.user_action_proxy.tv_delegate
 
-        self.tvo = _ShTerminal.alloc().initWithFrame_(((0, 0), (width, height))).autorelease()
+        self.tvo = (
+            _ShTerminal.alloc().initWithFrame_(((0, 0), (width, height))).autorelease()
+        )
         self.tvo.setAutoresizingMask_(1 << 1 | 1 << 4)  # flex Width and Height
         self.content_inset = (0, 0, 0, 0)
         self.auto_content_inset = False
@@ -515,16 +538,18 @@ class ShTerminal(ShBaseTerminal):
 
         # TextStorage
         self.tso = self.tvo.textStorage()
-        
+
         # init baseclass and set attributes depending on settings
         # we have to do this this late because setting a few of these attributes requires self.tvo to be set
         ShBaseTerminal.__init__(self, stash, parent)
-        
-        self.default_font = UIFont.fontWithName_size_('Menlo-Regular', self.font_size)
-        self.bold_font = UIFont.fontWithName_size_('Menlo-Bold', self.font_size)
-        self.italic_font = UIFont.fontWithName_size_('Menlo-Italic', self.font_size)
-        self.bold_italic_font = UIFont.fontWithName_size_('Menlo-BoldItalic', self.font_size)
-        
+
+        self.default_font = UIFont.fontWithName_size_("Menlo-Regular", self.font_size)
+        self.bold_font = UIFont.fontWithName_size_("Menlo-Bold", self.font_size)
+        self.italic_font = UIFont.fontWithName_size_("Menlo-Italic", self.font_size)
+        self.bold_italic_font = UIFont.fontWithName_size_(
+            "Menlo-BoldItalic", self.font_size
+        )
+
         self.autocapitalization_type = ui.AUTOCAPITALIZE_NONE
         self.autocorrection_type = 1
         self.spellchecking_type = 1
@@ -567,9 +592,9 @@ class ShTerminal(ShBaseTerminal):
     @on_main_thread
     def indicator_style(self, value):
         choices = {
-            'default': 0,
-            'black': 1,
-            'white': 2,
+            "default": 0,
+            "black": 1,
+            "white": 2,
         }
         self.tvo.setIndicatorStyle_(choices[value])
 
@@ -645,7 +670,7 @@ class ShTerminal(ShBaseTerminal):
     @on_main_thread
     def autocapitalization_type(self, value):
         self._autocapitalization_type = value
-        self.tvo.performSelector_withObject_('setAutocapitalizationType:', value)
+        self.tvo.performSelector_withObject_("setAutocapitalizationType:", value)
 
     @property
     def autocorrection_type(self):
@@ -655,7 +680,7 @@ class ShTerminal(ShBaseTerminal):
     @on_main_thread
     def autocorrection_type(self, value):
         self._autocorrection_type = value
-        ObjCInstanceMethod(self.tvo, 'setAutocorrectionType:')(value)
+        ObjCInstanceMethod(self.tvo, "setAutocorrectionType:")(value)
 
     @property
     def spellchecking_type(self):
@@ -665,7 +690,7 @@ class ShTerminal(ShBaseTerminal):
     @on_main_thread
     def spellchecking_type(self, value):
         self._spellchecking_type = value
-        self.tvo.performSelector_withObject_('setSpellCheckingType:', value)
+        self.tvo.performSelector_withObject_("setSpellCheckingType:", value)
 
     @property
     def content_inset(self):
@@ -676,7 +701,12 @@ class ShTerminal(ShBaseTerminal):
     def content_inset(self, value):
         self._content_inset = value
         insetStructure = self.tvo.contentInset()
-        insetStructure.top, insetStructure.left, insetStructure.bottom, insetStructure.right = value
+        (
+            insetStructure.top,
+            insetStructure.left,
+            insetStructure.bottom,
+            insetStructure.right,
+        ) = value
 
     @property
     def auto_content_inset(self):
@@ -750,8 +780,9 @@ class ShTerminal(ShBaseTerminal):
         _, rect_height, _, rect_y = self.visible_rect
         # If the space below rect_y is more than the visible rect's height,
         # or if the visible rect is over-scrolled, scroll to the last line.
-        if content_height - rect_y > rect_height or \
-                (content_height > rect_height > content_height - rect_y):  # over-scroll
+        if content_height - rect_y > rect_height or (
+            content_height > rect_height > content_height - rect_y
+        ):  # over-scroll
             self.tvo.scrollRangeToVisible_((len(self.text), 0))
 
     @on_main_thread
@@ -761,10 +792,10 @@ class ShTerminal(ShBaseTerminal):
     @on_main_thread
     def end_editing(self):
         self.tvo.resignFirstResponder()
-    
+
     def set_focus(self):
         self.begin_editing()
-    
+
     def lose_focus(self):
         self.end_editing()
 
@@ -773,11 +804,15 @@ class ShTerminal(ShBaseTerminal):
         handler = self.kc_handlers.get((key, modifierFlags), None)
         if handler:
             handler()
-    
+
     def get_wh(self):
         font_width, font_height = ui.measure_string(
-            'a',
-            font=('Menlo-Regular', self.stash.config.getint('display', 'TEXT_FONT_SIZE')))
+            "a",
+            font=(
+                "Menlo-Regular",
+                self.stash.config.getint("display", "TEXT_FONT_SIZE"),
+            ),
+        )
         w = int(self.stash.ui.width / font_width)
         h = int(self.stash.ui.height / font_height)
         return (w, h)
@@ -792,38 +827,39 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
     :param ShSequentialScreen screen: In memory screen
     :param ShTerminal terminal: The real UI terminal
     """
+
     FG_COLORS = {
-        'black': BlackColor,
-        'red': RedColor,
-        'green': GreenColor,
-        'brown': BrownColor,
-        'blue': BlueColor,
-        'magenta': MagentaColor,
-        'cyan': CyanColor,
-        'white': WhiteColor,
-        'gray': GrayColor,
-        'yellow': YellowColor,
-        'smoke': SmokeColor,
-        'default': WhiteColor,
+        "black": BlackColor,
+        "red": RedColor,
+        "green": GreenColor,
+        "brown": BrownColor,
+        "blue": BlueColor,
+        "magenta": MagentaColor,
+        "cyan": CyanColor,
+        "white": WhiteColor,
+        "gray": GrayColor,
+        "yellow": YellowColor,
+        "smoke": SmokeColor,
+        "default": WhiteColor,
     }
 
     BG_COLORS = {
-        'black': BlackColor,
-        'red': RedColor,
-        'green': GreenColor,
-        'brown': BrownColor,
-        'blue': BlueColor,
-        'magenta': MagentaColor,
-        'cyan': CyanColor,
-        'white': WhiteColor,
-        'gray': GrayColor,
-        'yellow': YellowColor,
-        'smoke': SmokeColor,
-        'default': BlackColor,
+        "black": BlackColor,
+        "red": RedColor,
+        "green": GreenColor,
+        "brown": BrownColor,
+        "blue": BlueColor,
+        "magenta": MagentaColor,
+        "cyan": CyanColor,
+        "white": WhiteColor,
+        "gray": GrayColor,
+        "yellow": YellowColor,
+        "smoke": SmokeColor,
+        "default": BlackColor,
     }
 
     RENDER_INTERVAL = 0.1
-    
+
     def __init__(self, *args, **kwargs):
         ShBaseSequentialRenderer.__init__(self, *args, **kwargs)
         self.last_rendered_time = 0
@@ -841,13 +877,11 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
 
     def _build_attributes(self, attrs):
         return {
-            'NSColor': self.FG_COLORS.get(attrs.fg,
-                                          WhiteColor),
-            'NSBackgroundColor': self.BG_COLORS.get(attrs.bg,
-                                                    BlackColor),
-            'NSFont': self._get_font(attrs),
-            'NSUnderline': 1 if attrs.underscore else 0,
-            'NSStrikethrough': 1 if attrs.strikethrough else 0,
+            "NSColor": self.FG_COLORS.get(attrs.fg, WhiteColor),
+            "NSBackgroundColor": self.BG_COLORS.get(attrs.bg, BlackColor),
+            "NSFont": self._get_font(attrs),
+            "NSUnderline": 1 if attrs.underscore else 0,
+            "NSStrikethrough": 1 if attrs.strikethrough else 0,
         }
 
     def _build_attributed_string(self, chars):
@@ -859,10 +893,14 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
         :rtype: object
         """
         # Initialize a string with default attributes
-        attributed_text = NSMutableAttributedString.alloc().initWithString_attributes_(
-            ''.join(char.data for char in chars),
-            self._build_attributes(DEFAULT_CHAR),
-        ).autorelease()
+        attributed_text = (
+            NSMutableAttributedString.alloc()
+            .initWithString_attributes_(
+                "".join(char.data for char in chars),
+                self._build_attributes(DEFAULT_CHAR),
+            )
+            .autorelease()
+        )
 
         prev_char = chars[0]
         location = length = 0
@@ -870,14 +908,18 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
             length += 1
             if not ShChar.same_style(prev_char, curr_char):  # a group is found
                 if not ShChar.same_style(prev_char, DEFAULT_CHAR):  # skip default attrs
-                    attributed_text.setAttributes_range_(self._build_attributes(prev_char), (location, length - 1))
+                    attributed_text.setAttributes_range_(
+                        self._build_attributes(prev_char), (location, length - 1)
+                    )
                 length = 1
                 location = idx
                 prev_char = curr_char
 
             if idx == len(chars) - 1:  # last char
                 if not ShChar.same_style(prev_char, DEFAULT_CHAR):
-                    attributed_text.setAttributes_range_(self._build_attributes(prev_char), (location, length))
+                    attributed_text.setAttributes_range_(
+                        self._build_attributes(prev_char), (location, length)
+                    )
 
         return attributed_text
 
@@ -914,15 +956,18 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
 
         # Specific code for ios 8 to fix possible crash
         if ON_IOS_8:
-            tvo_texts = NSMutableAttributedString.alloc().initWithAttributedString_(self.terminal.tvo.attributedText()
-                                                                                    ).autorelease()
+            tvo_texts = (
+                NSMutableAttributedString.alloc()
+                .initWithAttributedString_(self.terminal.tvo.attributedText())
+                .autorelease()
+            )
         else:
             tvo_texts = self.terminal.tso
             tvo_texts.beginEditing()  # batch the changes
 
         # First remove any leading texts that are rotated out
         if intact_left_bound > 0:
-            tvo_texts.replaceCharactersInRange_withString_((0, intact_left_bound), '')
+            tvo_texts.replaceCharactersInRange_withString_((0, intact_left_bound), "")
 
         tv_text_length = tvo_texts.length()
 
@@ -932,15 +977,12 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
         if intact_right_bound < max(tv_text_length, screen_buffer_length):
             if len(renderable_chars) > 0:
                 tvo_texts.replaceCharactersInRange_withAttributedString_(
-                    (intact_right_bound,
-                     tv_text_length - intact_right_bound),
-                    self._build_attributed_string(renderable_chars)
+                    (intact_right_bound, tv_text_length - intact_right_bound),
+                    self._build_attributed_string(renderable_chars),
                 )
             else:  # empty string, pure deletion
                 tvo_texts.replaceCharactersInRange_withString_(
-                    (intact_right_bound,
-                     tv_text_length - intact_right_bound),
-                    ''
+                    (intact_right_bound, tv_text_length - intact_right_bound), ""
                 )
 
         if ON_IOS_8:

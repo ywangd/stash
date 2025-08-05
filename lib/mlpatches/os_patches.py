@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """this module contains the patches for the os module."""
+
 from mlpatches.base import FunctionPatch, PatchGroup
 
 from mlpatches.os_popen import popen, popen2, popen3, popen4, system
@@ -90,6 +91,7 @@ KILL_PATCH = KillPatch()
 
 class PopenPatches(PatchGroup):
     """all popen patches."""
+
     patches = [
         POPEN_PATCH,
         POPEN2_PATCH,
@@ -100,6 +102,7 @@ class PopenPatches(PatchGroup):
 
 class ProcessingPatches(PatchGroup):
     """all patches to emulate prcessing behavior"""
+
     patches = [
         GETPID_PATCH,
         GETPPID_PATCH,
@@ -109,6 +112,7 @@ class ProcessingPatches(PatchGroup):
 
 class OsPatches(PatchGroup):
     """all os patches."""
+
     patches = [
         POPEN_PATCH,
         POPEN2_PATCH,

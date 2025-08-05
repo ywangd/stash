@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """List information about files (the current directory by default)"""
+
 from __future__ import print_function
 import os
 import sys
@@ -18,7 +19,7 @@ def is_mounted(path):
     if not manager:
         return False
     fsi = manager.get_fsi(path)[0]
-    return (fsi is not None)
+    return fsi is not None
 
 
 def get_file_extension(path):
@@ -39,7 +40,7 @@ def is_archive(path):
             # not found
             pass
         try:
-            arch = (arch or zipfile.is_zipfile(path))
+            arch = arch or zipfile.is_zipfile(path)
         except:
             pass
         return arch
@@ -55,43 +56,49 @@ def is_image(path):
     """checks wether path points to an image."""
     if not is_mounted(path):
         try:
-            return (imghdr.what(path) is not None)
+            return imghdr.what(path) is not None
         except:
             # continue execution outside of the if-statement
             pass
     fe = get_file_extension(path)
     if fe in (
-            "rgb",
-            "gif",
-            "pbm",
-            "pgm",
-            "ppm",
-            "tiff",
-            "rast",
-            "xbm",
-            "jpeg",
-            "jpg",
-            "bmp",
-            "png",
+        "rgb",
+        "gif",
+        "pbm",
+        "pgm",
+        "ppm",
+        "tiff",
+        "rast",
+        "xbm",
+        "jpeg",
+        "jpg",
+        "bmp",
+        "png",
     ):
         return True
     else:
         return False
 
-def main(args):
 
+def main(args):
     ap = ArgumentParser()
-    ap.add_argument('-1', '--one-line', action='store_true', help='List one file per line')
-    ap.add_argument('-a', '--all', action='store_true', help='do not ignore entries starting with .')
-    ap.add_argument('-l', '--long', action='store_true', help='use a long listing format')
-    ap.add_argument('files', nargs='*', help='files to be listed')
+    ap.add_argument(
+        "-1", "--one-line", action="store_true", help="List one file per line"
+    )
+    ap.add_argument(
+        "-a", "--all", action="store_true", help="do not ignore entries starting with ."
+    )
+    ap.add_argument(
+        "-l", "--long", action="store_true", help="use a long listing format"
+    )
+    ap.add_argument("files", nargs="*", help="files to be listed")
     ns = ap.parse_args(args)
 
-    _stash = globals()['_stash']
+    _stash = globals()["_stash"]
     exitcode = 0
     sizeof_fmt = _stash.libcore.sizeof_fmt
 
-    joiner = '\n' if ns.one_line or ns.long else ' '
+    joiner = "\n" if ns.one_line or ns.long else " "
 
     if ns.all:
 
@@ -100,60 +107,65 @@ def main(args):
     else:
 
         def _filter(filename):
-            return False if filename.startswith('.') else True
+            return False if filename.startswith(".") else True
 
     if ns.long:
 
-        def _fmt(filename, dirname=''):
-            suffix = ''
-            
+        def _fmt(filename, dirname=""):
+            suffix = ""
+
             _stat = os.stat(os.path.join(dirname, filename))
-            
-            home = os.environ['HOME']
+
+            home = os.environ["HOME"]
             fullpath = os.path.join(dirname, filename)
-            filename = '{:30}'.format(filename)
+            filename = "{:30}".format(filename)
 
             if os.path.islink(fullpath):
-                filename = _stash.text_color(filename, 'yellow')
-                suffix = ' -> %s'%os.path.realpath(fullpath).replace(home,'~') 
+                filename = _stash.text_color(filename, "yellow")
+                suffix = " -> %s" % os.path.realpath(fullpath).replace(home, "~")
             elif os.path.isdir(fullpath):
-                filename = _stash.text_color(filename, 'blue')
-            elif filename.endswith('.py'):
-                filename = _stash.text_color(filename, 'green')
+                filename = _stash.text_color(filename, "blue")
+            elif filename.endswith(".py"):
+                filename = _stash.text_color(filename, "green")
             elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
-                filename = _stash.text_color(filename, 'red')
+                filename = _stash.text_color(filename, "red")
             elif imghdr.what(fullpath) is not None:
-                filename = _stash.text_color(filename, 'brown')
+                filename = _stash.text_color(filename, "brown")
 
-            ret = filename + _stash.text_color(
-                ' ({:8}) {}'.format(sizeof_fmt(_stat.st_size),
-                time.strftime(
-                    "%Y-%m-%d %H:%M:%S",
-                    time.localtime(_stat.st_mtime)),
+            ret = (
+                filename
+                + _stash.text_color(
+                    " ({:8}) {}".format(
+                        sizeof_fmt(_stat.st_size),
+                        time.strftime(
+                            "%Y-%m-%d %H:%M:%S", time.localtime(_stat.st_mtime)
+                        ),
                     ),
-                'gray',
-               ) + suffix
+                    "gray",
+                )
+                + suffix
+            )
 
             return ret
     else:
 
-        def _fmt(filename, dirname=''):
+        def _fmt(filename, dirname=""):
             fullpath = os.path.join(dirname, filename)
             if os.path.islink(fullpath):
-                return _stash.text_color(filename, 'yellow')
+                return _stash.text_color(filename, "yellow")
             elif os.path.isdir(fullpath):
-                return _stash.text_color(filename, 'blue')
-            elif filename.endswith('.py'):
-                return _stash.text_color(filename, 'green')
+                return _stash.text_color(filename, "blue")
+            elif filename.endswith(".py"):
+                return _stash.text_color(filename, "green")
             elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
-                return _stash.text_color(filename, 'red')
+                return _stash.text_color(filename, "red")
             elif imghdr.what(fullpath) is not None:
-                return _stash.text_color(filename, 'brown')
+                return _stash.text_color(filename, "brown")
             else:
                 return filename
 
     if len(ns.files) == 0:
-        filenames = [".", ".."] + os.listdir('.')
+        filenames = [".", ".."] + os.listdir(".")
         out = joiner.join(_fmt(f) for f in filenames if _filter(f))
         print(out)
 
@@ -163,12 +175,15 @@ def main(args):
         out_miss = []
         for f in ns.files:
             if not os.path.exists(f):
-                out_miss.append('ls: %s: No such file or directory' % f)
+                out_miss.append("ls: %s: No such file or directory" % f)
                 exitcode = 1
             elif os.path.isdir(f):
                 filenames = [".", ".."] + os.listdir(f)
-                fn = (f[:-1] if f.endswith("/") else f)
-                out_dir.append('%s/:\n%s\n' % (fn, joiner.join(_fmt(sf, f) for sf in filenames if _filter(sf))))
+                fn = f[:-1] if f.endswith("/") else f
+                out_dir.append(
+                    "%s/:\n%s\n"
+                    % (fn, joiner.join(_fmt(sf, f) for sf in filenames if _filter(sf)))
+                )
             else:
                 out_file.append(_fmt(f))
 
@@ -182,5 +197,5 @@ def main(args):
     sys.exit(exitcode)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

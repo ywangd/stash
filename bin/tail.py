@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Print the last 10 lines of the given files.
-"""
+"""Print the last 10 lines of the given files."""
 
 from __future__ import print_function
 
@@ -25,8 +24,8 @@ _first_file = True
 
 def write_header(fname):
     global _first_file
-    header_fmt = '{}==> {} <==\n'
-    print(header_fmt.format('' if _first_file else '\n', fname), end='')
+    header_fmt = "{}==> {} <==\n"
+    print(header_fmt.format("" if _first_file else "\n", fname), end="")
     _first_file = False
 
 
@@ -37,27 +36,40 @@ def main(args):
         "--bytes",
         default="",
         type=str,
-        metavar='K',
-        help="""output the last K bytes; or -c +K starting with the Kth"""
+        metavar="K",
+        help="""output the last K bytes; or -c +K starting with the Kth""",
     )
-    p.add_argument("-f", "--follow", action="store_true", help="""follow specified files""")
+    p.add_argument(
+        "-f", "--follow", action="store_true", help="""follow specified files"""
+    )
     p.add_argument(
         "-n",
         "--lines",
         default="10",
         type=str,
-        metavar='K',
+        metavar="K",
         help="""print the last K lines instead of 10;
-                   or use -n +K to print lines starting with the Kth"""
+                   or use -n +K to print lines starting with the Kth""",
     )
-    p.add_argument("-q", "--quiet", "--silent", action='store_true', help="never print headers for each file")
-    p.add_argument("-v", "--verbose", action='store_true', help="always print headers for each file")
+    p.add_argument(
+        "-q",
+        "--quiet",
+        "--silent",
+        action="store_true",
+        help="never print headers for each file",
+    )
+    p.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="always print headers for each file",
+    )
     p.add_argument(
         "-s",
         "--sleep-interval",
         type=float,
         default=1.0,
-        help="with -f, sleep for approximately N seconds (default 1.0) between iterations."
+        help="with -f, sleep for approximately N seconds (default 1.0) between iterations.",
     )
     p.add_argument("files", action="store", nargs="*", help="files to print")
     ns = p.parse_args(args)
@@ -65,21 +77,21 @@ def main(args):
     status = 0
 
     if len(ns.files) == 0:
-        ns.files = ['-']
+        ns.files = ["-"]
 
-    if ns.follow and '-' in ns.files:
-        print('tail: warning: following stdin indefinitely is ineffective')
+    if ns.follow and "-" in ns.files:
+        print("tail: warning: following stdin indefinitely is ineffective")
 
     if ns.bytes:
         use_bytes = True
-        if ns.bytes[0] == '+':
+        if ns.bytes[0] == "+":
             from_start = True
         else:
             from_start = False
         count = abs(int(ns.bytes))  # '-n -3' is equivalent to '-n 3'
     else:
         use_bytes = False
-        if ns.lines[0] == '+':
+        if ns.lines[0] == "+":
             from_start = True
         else:
             from_start = False
@@ -88,10 +100,10 @@ def main(args):
     try:
         for i, fname in enumerate(ns.files):
             if ns.verbose or (len(ns.files) > 1 and not ns.quiet):
-                write_header(fname if fname != '-' else 'standard input')
+                write_header(fname if fname != "-" else "standard input")
 
             try:
-                if fname == '-':
+                if fname == "-":
                     f = sys.stdin
                 else:
                     f = open(fname)
@@ -109,23 +121,24 @@ def main(args):
 
                     buf.append(l)
                     if from_start:
-                        if j >= count - 1: break
+                        if j >= count - 1:
+                            break
                     elif len(buf) > count:
                         del buf[0]
 
                 for item in buf:
-                    print(item, end='')
+                    print(item, end="")
 
                 if i == len(ns.files) - 1 and ns.follow:
                     for l in tail_f(f, ns.sleep_interval):
-                        print(l, end='')
+                        print(l, end="")
                         sys.stdout.flush()
             finally:
-                if fname != '-':
+                if fname != "-":
                     f.close()
 
     except Exception as e:
-        print('tail :%s' % str(e))
+        print("tail :%s" % str(e))
         status = 1
     finally:
         fileinput.close()

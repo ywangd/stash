@@ -7,23 +7,23 @@
 # ============================================================================
 """
 
-    @file  diff3.py
-    @brief Three-way file comparison algorithm.
+@file  diff3.py
+@brief Three-way file comparison algorithm.
 
-    This is a line-by-line translation of the Text::Diff3 Perl module version
-    0.10 written by MIZUTANI Tociyuki <tociyuki@gmail.com>.
+This is a line-by-line translation of the Text::Diff3 Perl module version
+0.10 written by MIZUTANI Tociyuki <tociyuki@gmail.com>.
 
-    The Text::Diff3 Perl module in turn was based on the diff3 program:
+The Text::Diff3 Perl module in turn was based on the diff3 program:
 
-    Three way file comparison program (diff3) for Project GNU.
-    Copyright (C) 1988, 1989, 1992, 1993, 1994 Free Software Foundation, Inc.
-    Written by Randy Smith
+Three way file comparison program (diff3) for Project GNU.
+Copyright (C) 1988, 1989, 1992, 1993, 1994 Free Software Foundation, Inc.
+Written by Randy Smith
 
-    The two-way file comparison procedure was based on the article:
-    P. Heckel. ``A technique for isolating differences between files.''
-    Communications of the ACM, Vol. 21, No. 4, page 264, April 1978.
+The two-way file comparison procedure was based on the article:
+P. Heckel. ``A technique for isolating differences between files.''
+Communications of the ACM, Vol. 21, No. 4, page 264, April 1978.
 
-    jsb: added newlines for conflict markers
+jsb: added newlines for conflict markers
 """
 
 from operator import xor
@@ -54,12 +54,16 @@ def diff3(yourtext, origtext, theirtext):
         #  origtext     ...L!!!!!!!!!!!!!!!!!!!!H...
         #     d2[1]          222222   22  2222222
         r2 = ([], [])
-        if not d2[0]: i = 1
+        if not d2[0]:
+            i = 1
         else:
-            if not d2[1]: i = 0
+            if not d2[1]:
+                i = 0
             else:
-                if d2[0][0][1] <= d2[1][0][1]: i = 0
-                else: i = 1
+                if d2[0][0][1] <= d2[1][0][1]:
+                    i = 0
+                else:
+                    i = 1
         j = i
         k = xor(i, 1)
         hi = d2[j][0][2]
@@ -95,19 +99,19 @@ def diff3(yourtext, origtext, theirtext):
             hi1 = r3[4] - r3[6] + hi2
         # detect type of changes
         if not r2[0]:
-            cmd = '1'
+            cmd = "1"
         elif not r2[1]:
-            cmd = '0'
+            cmd = "0"
         elif hi0 - lo0 != hi1 - lo1:
-            cmd = 'A'
+            cmd = "A"
         else:
-            cmd = '2'
+            cmd = "2"
             for d in range(0, hi0 - lo0 + 1):
                 (i0, i1) = (lo0 + d - 1, lo1 + d - 1)
-                ok0 = (0 <= i0 and i0 < len(yourtext))
-                ok1 = (0 <= i1 and i1 < len(theirtext))
+                ok0 = 0 <= i0 and i0 < len(yourtext)
+                ok1 = 0 <= i1 and i1 < len(theirtext)
                 if xor(ok0, ok1) or (ok0 and yourtext[i0] != theirtext[i1]):
-                    cmd = 'A'
+                    cmd = "A"
                     break
         d3.append((cmd, lo0, hi0, lo1, hi1, lo2, hi2))
     return d3
@@ -115,24 +119,24 @@ def diff3(yourtext, origtext, theirtext):
 
 # ----------------------------------------------------------------------------
 def merge(yourtext, origtext, theirtext):
-    res = {'conflict': 0, 'body': []}
+    res = {"conflict": 0, "body": []}
     d3 = diff3(yourtext, origtext, theirtext)
     text3 = (yourtext, theirtext, origtext)
     i2 = 1
     for r3 in d3:
         for lineno in range(i2, r3[5]):
-            res['body'].append(text3[2][lineno - 1])
-        if r3[0] == '0':
+            res["body"].append(text3[2][lineno - 1])
+        if r3[0] == "0":
             for lineno in range(r3[1], r3[2] + 1):
-                res['body'].append(text3[0][lineno - 1])
-        elif r3[0] != 'A':
+                res["body"].append(text3[0][lineno - 1])
+        elif r3[0] != "A":
             for lineno in range(r3[3], r3[4] + 1):
-                res['body'].append(text3[1][lineno - 1])
+                res["body"].append(text3[1][lineno - 1])
         else:
             res = _conflict_range(text3, r3, res)
         i2 = r3[6] + 1
     for lineno in range(i2, len(text3[2]) + 1):
-        res['body'].append(text3[2][lineno - 1])
+        res["body"].append(text3[2][lineno - 1])
     return res
 
 
@@ -145,45 +149,46 @@ def _conflict_range(text3, r3, res):
     for i in range(r3[1], r3[2] + 1):
         text_b.append(text3[0][i - 1])
     d = diff(text_a, text_b)
-    if _assoc_range(d, 'c') and r3[5] <= r3[6]:
-        res['conflict'] += 1
-        res['body'].append('<<<<<<<\n')
+    if _assoc_range(d, "c") and r3[5] <= r3[6]:
+        res["conflict"] += 1
+        res["body"].append("<<<<<<<\n")
         for lineno in range(r3[1], r3[2] + 1):
-            res['body'].append(text3[0][lineno - 1])
-        res['body'].append('|||||||\n')
+            res["body"].append(text3[0][lineno - 1])
+        res["body"].append("|||||||\n")
         for lineno in range(r3[5], r3[6] + 1):
-            res['body'].append(text3[2][lineno - 1])
-        res['body'].append('=======\n')
+            res["body"].append(text3[2][lineno - 1])
+        res["body"].append("=======\n")
         for lineno in range(r3[3], r3[4] + 1):
-            res['body'].append(text3[1][lineno - 1])
-        res['body'].append('>>>>>>>\n')
+            res["body"].append(text3[1][lineno - 1])
+        res["body"].append(">>>>>>>\n")
         return res
     ia = 1
     for r2 in d:
         for lineno in range(ia, r2[1]):
-            res['body'].append(text_a[lineno - 1])
-        if r2[0] == 'c':
-            res['conflict'] += 1
-            res['body'].append('<<<<<<<\n')
+            res["body"].append(text_a[lineno - 1])
+        if r2[0] == "c":
+            res["conflict"] += 1
+            res["body"].append("<<<<<<<\n")
             for lineno in range(r2[3], r2[4] + 1):
-                res['body'].append(text_b[lineno - 1])
-            res['body'].append('=======\n')
+                res["body"].append(text_b[lineno - 1])
+            res["body"].append("=======\n")
             for lineno in range(r2[1], r2[2] + 1):
-                res['body'].append(text_a[lineno - 1])
-            res['body'].append('>>>>>>>\n')
-        elif r2[0] == 'a':
+                res["body"].append(text_a[lineno - 1])
+            res["body"].append(">>>>>>>\n")
+        elif r2[0] == "a":
             for lineno in range(r2[3], r2[4] + 1):
-                res['body'].append(text_b[lineno - 1])
+                res["body"].append(text_b[lineno - 1])
         ia = r2[2] + 1
     for lineno in range(ia, len(text_a)):
-        res['body'].append(text_a[lineno - 1])
+        res["body"].append(text_a[lineno - 1])
     return res
 
 
 # ----------------------------------------------------------------------------
 def _assoc_range(diff, diff_type):
     for d in diff:
-        if d[0] == diff_type: return d
+        if d[0] == diff_type:
+            return d
     return None
 
 
@@ -202,40 +207,43 @@ def _diff_heckel(text_a, text_b):
     (freq, ap, bp) = ({}, {}, {})
     for i in range(len(text_a)):
         s = text_a[i]
-        freq[s] = freq.get(s,
-                           0) + 2
+        freq[s] = freq.get(s, 0) + 2
         ap[s] = i
     for i in range(len(text_b)):
         s = text_b[i]
-        freq[s] = freq.get(s,
-                           0) + 3
+        freq[s] = freq.get(s, 0) + 3
         bp[s] = i
     for s, x in freq.items():
-        if x == 5: uniq.append((ap[s], bp[s]))
+        if x == 5:
+            uniq.append((ap[s], bp[s]))
     (freq, ap, bp) = ({}, {}, {})
     uniq.sort(key=lambda x: x[0])
     (a1, b1) = (0, 0)
     while a1 < len(text_a) and b1 < len(text_b):
-        if text_a[a1] != text_b[b1]: break
+        if text_a[a1] != text_b[b1]:
+            break
         a1 += 1
         b1 += 1
     for a_uniq, b_uniq in uniq:
-        if a_uniq < a1 or b_uniq < b1: continue
+        if a_uniq < a1 or b_uniq < b1:
+            continue
         (a0, b0) = (a1, b1)
         (a1, b1) = (a_uniq - 1, b_uniq - 1)
         while a0 <= a1 and b0 <= b1:
-            if text_a[a1] != text_b[b1]: break
+            if text_a[a1] != text_b[b1]:
+                break
             a1 -= 1
             b1 -= 1
         if a0 <= a1 and b0 <= b1:
-            d.append(('c', a0 + 1, a1 + 1, b0 + 1, b1 + 1))
+            d.append(("c", a0 + 1, a1 + 1, b0 + 1, b1 + 1))
         elif a0 <= a1:
-            d.append(('d', a0 + 1, a1 + 1, b0 + 1, b0))
+            d.append(("d", a0 + 1, a1 + 1, b0 + 1, b0))
         elif b0 <= b1:
-            d.append(('a', a0 + 1, a0, b0 + 1, b1 + 1))
+            d.append(("a", a0 + 1, a0, b0 + 1, b1 + 1))
         (a1, b1) = (a_uniq + 1, b_uniq + 1)
         while a1 < len(text_a) and b1 < len(text_b):
-            if text_a[a1] != text_b[b1]: break
+            if text_a[a1] != text_b[b1]:
+                break
             a1 += 1
             b1 += 1
     return d

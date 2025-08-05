@@ -1,5 +1,6 @@
 # coding: utf-8
 """easily work with multiple filesystems (e.g. local and FTP) synchronously"""
+
 # the name refers to midnight-commander, but this will probably
 # never be a true counterpart
 import os
@@ -53,8 +54,8 @@ class InternalFSI(LocalFSI):
 
 def modified(path, prev=None):
     """if prev is None, calculates a state to be later passed to modified().
-if prev is such a state,
-modified() will return wether the path has been modified or not."""
+    if prev is such a state,
+    modified() will return wether the path has been modified or not."""
     dirs = []
     files = []
     for n in os.listdir(path):
@@ -80,7 +81,10 @@ modified() will return wether the path has been modified or not."""
 
 class McCmd(cmd.Cmd):
     prompt = Text("(mc)", "blue")
-    intro = Text("Entering mc's command-loop.\nType 'help' for help and 'exit' to exit.", "yellow")
+    intro = Text(
+        "Entering mc's command-loop.\nType 'help' for help and 'exit' to exit.",
+        "yellow",
+    )
     ruler = Text("=", "yellow")
     use_rawinput = True
     misc_header = "Miscellaneous help topics (unmaintained; see 'man mounting'):"
@@ -150,7 +154,9 @@ class McCmd(cmd.Cmd):
         elif isinstance(state, str):
             self.stdout.write(Text("Error: {e}!\n".format(e=state), "red"))
         else:
-            self.stdout.write(Text("Error: cannot interpret return-Value of connect()!\n", "red"))
+            self.stdout.write(
+                Text("Error: cannot interpret return-Value of connect()!\n", "red")
+            )
             return
 
     def do_disconnect(self, command):
@@ -161,7 +167,9 @@ class McCmd(cmd.Cmd):
             return
         ID = args[0]
         if ID not in self.FSIs:
-            self.stdout.write(Text("Error: ID does not refer to any Interface!\n", "red"))
+            self.stdout.write(
+                Text("Error: ID does not refer to any Interface!\n", "red")
+            )
             return
         if ID == INTERN_FS_ID:
             self.stdout.write(Text("Error: cannot close internal FSI!\n", "red"))
@@ -170,7 +178,9 @@ class McCmd(cmd.Cmd):
             self.FSIs[ID].close()
         except OperationFailure as e:
             m = e.message
-            self.stdout.write(Text("Error closing Interface: {m}!\n".format(m=m), "red"))
+            self.stdout.write(
+                Text("Error closing Interface: {m}!\n".format(m=m), "red")
+            )
         del self.FSIs[ID]
         self.stdout.write(Text("Interface closed.\n", "green"))
 
@@ -272,7 +282,9 @@ class McCmd(cmd.Cmd):
             return
         rfi, rfp, wfi, wfp = args
         if wfi == rfi:
-            self.stdout.write(Text("Error: can only copy between different interfaces!", "red"))
+            self.stdout.write(
+                Text("Error: can only copy between different interfaces!", "red")
+            )
         if (rfi not in self.FSIs) or (wfi not in self.FSIs):
             self.stdout.write(Text("Error: Interface not found!\n", "red"))
             return
@@ -336,7 +348,9 @@ class McCmd(cmd.Cmd):
             try:
                 content = rfsi.listdir()
                 for fn in content:
-                    subcommand = '{rfi} "{name}" {wfi} "{name}"'.format(rfi=rfi, name=fn, wfi=wfi)
+                    subcommand = '{rfi} "{name}" {wfi} "{name}"'.format(
+                        rfi=rfi, name=fn, wfi=wfi
+                    )
                     self.do_cp(subcommand)
             except OperationFailure as e:
                 self.stdout.write(Text("Error: {e}!\n".format(e=e.message), "red"))
@@ -361,7 +375,9 @@ class McCmd(cmd.Cmd):
             self.stdout.write(Text("Error: Interface not found!\n", "red"))
             return
         if wfi == rfi:
-            self.stdout.write(Text("Error: can only move between different interfaces!", "red"))
+            self.stdout.write(
+                Text("Error: can only move between different interfaces!", "red")
+            )
         rfsi = self.FSIs[rfi]
         wfsi = self.FSIs[wfi]
         isdir = rfsi.isdir(rfp)
@@ -428,7 +444,9 @@ class McCmd(cmd.Cmd):
             try:
                 content = rfsi.listdir()
                 for fn in content:
-                    subcommand = '{rfi} "{name}" {wfi} "{name}"'.format(rfi=rfi, name=fn, wfi=wfi)
+                    subcommand = '{rfi} "{name}" {wfi} "{name}"'.format(
+                        rfi=rfi, name=fn, wfi=wfi
+                    )
                     self.do_mv(subcommand)
                 rfsi.cd(crp)
                 rfsi.remove(rfp)
@@ -446,9 +464,9 @@ class McCmd(cmd.Cmd):
 
     def do_cat(self, command):
         """cat <interface> <file> [-b]: shows the content of target file on 'interface'
-if --binary is specified, print all bytes directly.
-otherwise, print repr(content)[1:-1]
-"""
+        if --binary is specified, print all bytes directly.
+        otherwise, print repr(content)[1:-1]
+        """
         fsi, args = self.parse_fs_command(command, nargs=-1, ret=tuple)
         if (fsi is None) or (args is None):
             return
@@ -490,9 +508,9 @@ otherwise, print repr(content)[1:-1]
 
     def do_run(self, command):
         """run <ID> <F> <MODE> <CMD> [ARGS [ARGS...]]: download F and execute CMD on it
-run understands the '*' filename.
-MODE should be either 'r' or 'w'. 'r' only downloads the files,
-'w' additionally uploads the files if they have been modified."""
+        run understands the '*' filename.
+        MODE should be either 'r' or 'w'. 'r' only downloads the files,
+        'w' additionally uploads the files if they have been modified."""
         rfsi, args = self.parse_fs_command(command, nargs=-1, ret=tuple)
         if (rfsi is None) or (args is None):
             return
@@ -504,7 +522,9 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files,
         remotepath = args[0]
         # orgpath = remotepath
         if not (rfsi.isfile(remotepath) or remotepath == "*"):
-            self.stdout.write(Text("Error: to download a whole directory use '*'.\n", "red"))
+            self.stdout.write(
+                Text("Error: to download a whole directory use '*'.\n", "red")
+            )
             return
         if mode not in ("r", "R", "w", "W"):
             self.stdout.write(Text("Error: Unknown mode!\n", "red"))
@@ -592,7 +612,7 @@ MODE should be either 'r' or 'w'. 'r' only downloads the files,
 
     def parse_fs_command(self, command, nargs=0, ret=str):
         """parses a filesystem command. returns the interface and the actual command.
-nargs specifies the number of arguments, -1 means any number."""
+        nargs specifies the number of arguments, -1 means any number."""
         args = shlex.split(command)
         if len(args) < 1 or (len(args) != nargs + 1 and nargs != -1):
             self.stdout.write(Text("Error: invalid argument count!\n", "red"))

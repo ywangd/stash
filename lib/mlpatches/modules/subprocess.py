@@ -4,19 +4,19 @@
 
 # === NotImplemented ===
 # - the following args are always ignored:
-#	- executable
-#	- shell
-#	- startupinfo
-#	- preexec_fn
-#	- bufsize
-#	- creationflags
-#	- close_fds
-#Other implemention differences:
-#	- terminate() is just a kill()
-#	- send_signal() always call kill()
-#	- communicate() splits data in chunks of 4096 bytes before sending
-#	- poll() never returns the signal that killed the process
-#	- pid is the job_id
+# - executable
+# - shell
+# - startupinfo
+# - preexec_fn
+# - bufsize
+# - creationflags
+# - close_fds
+# Other implemention differences:
+# - terminate() is just a kill()
+# - send_signal() always call kill()
+# - communicate() splits data in chunks of 4096 bytes before sending
+# - poll() never returns the signal that killed the process
+# - pid is the job_id
 
 import os
 import select
@@ -48,7 +48,9 @@ class CalledProcessError(Exception):
         self.output = output
 
     def __str__(self):
-        return "Command '{c}' returned non-zero exit status {s}".format(c=self.cmd, s=self.returncode)
+        return "Command '{c}' returned non-zero exit status {s}".format(
+            c=self.cmd, s=self.returncode
+        )
 
 
 def call(*args, **kwargs):
@@ -70,7 +72,7 @@ def check_call(*args, **kwargs):
 def check_output(*args, **kwargs):
     """Run command with arguments and return its output as a byte string.
 
-If the return code was non-zero it raises a CalledProcessError. The CalledProcessError object will have the return code in the returncode attribute and any output in the output attribute."""
+    If the return code was non-zero it raises a CalledProcessError. The CalledProcessError object will have the return code in the returncode attribute and any output in the output attribute."""
     if "stdout" in kwargs:
         raise ValueError("stdout argument not allowed, it will be overriden.")
     p = Popen(stdout=PIPE, *args, **kwargs)
@@ -88,28 +90,28 @@ class Popen(object):
     """Execute a child program in a new process. On Unix, the class uses os.execvp()-like behavior to execute the child program. On Windows, the class uses the Windows CreateProcess() function. The arguments to Popen are as follows."""
 
     def __init__(
-            self,
-            args,
-            bufsize=0,
-            executable=None,
-            stdin=None,
-            stdout=None,
-            stderr=None,
-            preexec_fn=None,
-            close_fds=False,
-            shell=False,
-            cwd=None,
-            env=None,
-            universal_newlines=False,
-            startupinfo=None,
-            creationflags=None
+        self,
+        args,
+        bufsize=0,
+        executable=None,
+        stdin=None,
+        stdout=None,
+        stderr=None,
+        preexec_fn=None,
+        close_fds=False,
+        shell=False,
+        cwd=None,
+        env=None,
+        universal_newlines=False,
+        startupinfo=None,
+        creationflags=None,
     ):
         # vars
         self._fds = []
         self.returncode = None
         self._worker = None
         self._cwd = cwd
-        self._environ = (env if env is not None else {})
+        self._environ = env if env is not None else {}
 
         if isinstance(args, string_types):
             self.cmd = args
@@ -205,7 +207,7 @@ class Popen(object):
             persistent_level=2,
             is_background=False,
             cwd=self._cwd,
-            environ=self._environ
+            environ=self._environ,
         )
         self.pid = self._worker.job_id
 

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """tests for the 'pwd' command."""
+
 import os
 
 from stash.tests.stashtest import StashTestCase
@@ -7,6 +8,7 @@ from stash.tests.stashtest import StashTestCase
 
 class PwdTests(StashTestCase):
     """tests for the 'pwd' command."""
+
     cwd = os.path.expanduser("~")
 
     def test_help(self):

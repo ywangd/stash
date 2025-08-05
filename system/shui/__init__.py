@@ -1,6 +1,7 @@
 """
 This package contains the UI for StaSh.
 """
+
 import os
 
 from stash.system.shcommon import IN_PYTHONISTA
@@ -34,8 +35,9 @@ def get_platform():
     # this function has still not returned.
     # this means that all UIs tried above failed.
     # we raise an error in this case.
-    raise NotImplementedError("There is no UI implemented for this platform. If you are on a PC, you may be able to fix this by installing tkinter.")
-    
+    raise NotImplementedError(
+        "There is no UI implemented for this platform. If you are on a PC, you may be able to fix this by installing tkinter."
+    )
 
 
 def get_ui_implementation(platform=None):
@@ -50,15 +52,20 @@ def get_ui_implementation(platform=None):
         platform = get_platform()
     if platform == "pythonista":
         from .pythonista_ui import ShUI, ShTerminal, ShSequentialRenderer
+
         return (ShUI, ShSequentialRenderer)
     elif platform == "stub":
         from .stubui import ShUI, ShTerminal, ShSequentialRenderer
+
         return (ShUI, ShSequentialRenderer)
     elif platform == "tkinter":
         from .tkui import ShUI, ShTerminal, ShSequentialRenderer
+
         return (ShUI, ShSequentialRenderer)
     else:
-        raise NotImplementedError("No UI implemented for platform {}!".format(repr(platform)))
+        raise NotImplementedError(
+            "No UI implemented for platform {}!".format(repr(platform))
+        )
 
 
 __all__ = ["get_platform", "get_ui_implementation"]

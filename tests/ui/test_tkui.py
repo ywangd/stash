@@ -1,6 +1,7 @@
 """
 tests for the tkui
 """
+
 import logging
 
 from unittest import skipIf
@@ -13,20 +14,20 @@ except ImportError:
     ShTerminal = None
 
 
-
 class NoInitTkTerminal(ShTerminal):
     """
     Subclass of ShTerminal which does not initiate the superclass
     """
-    def __init__(self, text=u""):
+
+    def __init__(self, text=""):
         self._text = ""
         self.text = text
-        self.logger = logging.getLogger('StaSh.Terminal')
-    
+        self.logger = logging.getLogger("StaSh.Terminal")
+
     @property
     def text(self):
         return self._text
-    
+
     @text.setter
     def text(self, value):
         self._text = value
@@ -37,8 +38,9 @@ class TkTerminalTests(StashTestCase):
     """
     Tests for stash.system.shui.tkui.ShTerminal
     """
+
     tc = NoInitTkTerminal
-    
+
     def test_tk_index_conversion(self):
         """
         Test conversion to and from a tk index to a tuple
@@ -59,7 +61,7 @@ class TkTerminalTests(StashTestCase):
             # convert back
             back = terminal._tuple_to_tk_index(converted)
             self.assertEqual(back, tki)
-    
+
     def test_abs_rel_conversion_1(self):
         """
         First test for conversion of absolute and relative indexes

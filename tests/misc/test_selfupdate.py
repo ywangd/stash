@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """tests for the selfupdate command."""
+
 from stash.tests.stashtest import StashTestCase, requires_network
 
 
@@ -24,9 +25,9 @@ class SelfupdateTests(StashTestCase):
     def test_check_no_download(self):
         """ensures 'selfupdate --check' does not download anything."""
         output = self.run_command("selfupdate --check", exitcode=0)
-        contains_latest_version = ("Already at latest version" in output)
-        contains_new_version = ("New version available" in output)
-        assert (contains_latest_version or contains_new_version)
+        contains_latest_version = "Already at latest version" in output
+        contains_new_version = "New version available" in output
+        assert contains_latest_version or contains_new_version
         self.assertNotIn("Url: ", output)
         self.assertNotIn("Update completed.", output)
         self.assertNotIn("Failed to update. Please try again.", output)
@@ -51,7 +52,9 @@ class SelfupdateTests(StashTestCase):
         """test that selfupdate uses the correct default repo"""
         # network may be unavailable, but we are not interested anyway,
         # so we ignore the exitcode
-        output = self.run_command("SELFUPDATE_TARGET=ywangd:dev selfupdate --check", exitcode=None)
+        output = self.run_command(
+            "SELFUPDATE_TARGET=ywangd:dev selfupdate --check", exitcode=None
+        )
         self.assertIn("Target: ywangd:dev", output)
         self.assertNotIn("Target: ywangd:master", output)
 
@@ -66,7 +69,9 @@ class SelfupdateTests(StashTestCase):
     @requires_network
     def test_version_check_outdated(self):
         """test the version check on an outdated branch."""
-        output = self.run_command("selfupdate --check bennr01:selfupdate_test_outdated", exitcode=0)
+        output = self.run_command(
+            "selfupdate --check bennr01:selfupdate_test_outdated", exitcode=0
+        )
         self.assertIn("Target: bennr01:selfupdate_test_outdated", output)
         self.assertNotIn("Target: ywangd:master", output)
         self.assertIn("Already at latest version", output)
@@ -76,7 +81,9 @@ class SelfupdateTests(StashTestCase):
     @requires_network
     def test_version_check_update_available(self):
         """test the version check on an outdated branch."""
-        output = self.run_command("selfupdate --check bennr01:selfupdate_test_future", exitcode=0)
+        output = self.run_command(
+            "selfupdate --check bennr01:selfupdate_test_future", exitcode=0
+        )
         self.assertIn("Target: bennr01:selfupdate_test_future", output)
         self.assertNotIn("Target: ywangd:master", output)
         self.assertNotIn("Already at latest version", output)
@@ -86,7 +93,9 @@ class SelfupdateTests(StashTestCase):
     @requires_network
     def test_version_check_does_not_exist(self):
         """test the version check on an nonexistend branch."""
-        output = self.run_command("selfupdate --check selfupdate_test_does_not_exist", exitcode=0)
+        output = self.run_command(
+            "selfupdate --check selfupdate_test_does_not_exist", exitcode=0
+        )
         self.assertIn("Target: ywangd:selfupdate_test_does_not_exist", output)
         self.assertNotIn("Target: ywangd:master", output)
         self.assertNotIn("Already at latest version", output)

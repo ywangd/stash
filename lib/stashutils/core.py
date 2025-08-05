@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """core utilities for StaSh-scripts"""
+
 import threading
 import imp
 import os
@@ -9,10 +10,10 @@ from stash.system import shthreads
 
 def get_stash():
     """
-	returns the currently active StaSh-instance.
-	returns None if it can not be found.
-	This is useful for modules.
-	"""
+    returns the currently active StaSh-instance.
+    returns None if it can not be found.
+    This is useful for modules.
+    """
     if "_stash" in globals():
         return globals()["_stash"]
     for thr in threading.enumerate():
@@ -26,8 +27,8 @@ def get_stash():
 
 def load_from_dir(dirpath, varname):
     """
-	returns a list of all variables named 'varname' in .py files in a directofy 'dirname'.
-	"""
+    returns a list of all variables named 'varname' in .py files in a directofy 'dirname'.
+    """
     if not os.path.isdir(dirpath):
         return []
     ret = []
@@ -36,7 +37,7 @@ def load_from_dir(dirpath, varname):
         if not os.path.isfile(fp):
             continue
         with open(fp, "r") as fin:
-            mod = imp.load_source(fn[:fn.index(".")], fp, fin)
+            mod = imp.load_source(fn[: fn.index(".")], fp, fin)
         if not hasattr(mod, varname):
             continue
         else:

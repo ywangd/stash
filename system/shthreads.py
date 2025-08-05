@@ -2,6 +2,7 @@
 """
 Killable threads
 """
+
 import os
 import sys
 import threading
@@ -22,20 +23,18 @@ environ: {}
 
 
 class ShState(object):
-    """ State of the current worker thread
-    """
+    """State of the current worker thread"""
 
     def __init__(
-            self,
-            aliases=None,
-            environ=None,
-            enclosed_cwd=None,
-            sys_stdin=None,
-            sys_stdout=None,
-            sys_stderr=None,
-            sys_path=None
+        self,
+        aliases=None,
+        environ=None,
+        enclosed_cwd=None,
+        sys_stdin=None,
+        sys_stdout=None,
+        sys_stderr=None,
+        sys_path=None,
     ):
-
         self.aliases = aliases or {}
         self.environ = environ or {}
         self.enclosed_cwd = enclosed_cwd
@@ -59,17 +58,17 @@ class ShState(object):
             self.sys_stdout,
             self.sys_stderr,
             self.temporary_environ,
-            self.environ
+            self.environ,
         )
         return s
 
     @property
     def return_value(self):
-        return self.environ.get('?', 0)
+        return self.environ.get("?", 0)
 
     @return_value.setter
     def return_value(self, value):
-        self.environ['?'] = value
+        self.environ["?"] = value
 
     def environ_get(self, name):
         return self.environ[name]
@@ -136,12 +135,12 @@ class ShState(object):
             sys_stdin=parent_state.sys_stdin__,
             sys_stdout=parent_state.sys_stdout__,
             sys_stderr=parent_state.sys_stderr__,
-            sys_path=parent_state.sys_path[:]
+            sys_path=parent_state.sys_path[:],
         )
 
 
 class ShWorkerRegistry(object):
-    """ Bookkeeping for all worker threads (both foreground and background).
+    """Bookkeeping for all worker threads (both foreground and background).
     This is useful to provide an overview of all running threads.
     """
 
@@ -153,8 +152,8 @@ class ShWorkerRegistry(object):
     def __repr__(self):
         ret = []
         for job_id, thread in self.registry.items():
-            ret.append('{:>5d}  {}'.format(job_id, thread))
-        return '\n'.join(ret)
+            ret.append("{:>5d}  {}".format(job_id, thread))
+        return "\n".join(ret)
 
     def __iter__(self):
         return self.registry.values().__iter__()
@@ -202,15 +201,25 @@ class ShWorkerRegistry(object):
 
 
 class ShBaseThread(threading.Thread):
-    """ The basic Thread class provides life cycle management.
-    """
+    """The basic Thread class provides life cycle management."""
 
     CREATED = 1
     STARTED = 2
     STOPPED = 3
 
-    def __init__(self, registry, parent, command, target=None, is_background=False, environ={}, cwd=None):
-        super(ShBaseThread, self).__init__(group=None, target=target, name='_shthread', args=(), kwargs=None)
+    def __init__(
+        self,
+        registry,
+        parent,
+        command,
+        target=None,
+        is_background=False,
+        environ={},
+        cwd=None,
+    ):
+        super(ShBaseThread, self).__init__(
+            group=None, target=target, name="_shthread", args=(), kwargs=None
+        )
 
         # Registry management
         self.registry = weakref.proxy(registry)
@@ -218,8 +227,8 @@ class ShBaseThread(threading.Thread):
         registry.add_worker(self)
 
         # The command that the thread runs
-        if command.__class__.__name__ == 'ShIO':
-            self.command = ''.join(command._buffer)[::-1].strip()
+        if command.__class__.__name__ == "ShIO":
+            self.command = "".join(command._buffer)[::-1].strip()
         else:
             self.command = command
 
@@ -240,14 +249,12 @@ class ShBaseThread(threading.Thread):
 
     def __repr__(self):
         command_str = str(self.command)
-        return '[{}] {} {}'.format(
+        return "[{}] {} {}".format(
             self.job_id,
-            {
-                self.CREATED: 'Created',
-                self.STARTED: 'Started',
-                self.STOPPED: 'Stopped'
-            }[self.status()],
-            command_str[:20] + ('...' if len(command_str) > 20 else '')
+            {self.CREATED: "Created", self.STARTED: "Started", self.STOPPED: "Stopped"}[
+                self.status()
+            ],
+            command_str[:20] + ("..." if len(command_str) > 20 else ""),
         )
 
     def status(self):
@@ -274,7 +281,9 @@ class ShBaseThread(threading.Thread):
             if self.parent.child_thread is self:
                 self.parent.child_thread = None
         else:
-            assert self.parent.child_thread is None, 'parent must have no existing child thread'
+            assert self.parent.child_thread is None, (
+                "parent must have no existing child thread"
+            )
             self.parent.child_thread = self
 
     def is_top_level(self):
@@ -308,19 +317,27 @@ class ShBaseThread(threading.Thread):
 
 # noinspection PyAttributeOutsideInit
 class ShTracedThread(ShBaseThread):
-    """ Killable thread implementation with trace """
+    """Killable thread implementation with trace"""
 
-    def __init__(self, registry, parent, command, target=None, is_background=False, environ={}, cwd=None):
-        super(ShTracedThread,
-              self).__init__(
-                  registry,
-                  parent,
-                  command,
-                  target=target,
-                  is_background=is_background,
-                  environ=environ,
-                  cwd=cwd
-              )
+    def __init__(
+        self,
+        registry,
+        parent,
+        command,
+        target=None,
+        is_background=False,
+        environ={},
+        cwd=None,
+    ):
+        super(ShTracedThread, self).__init__(
+            registry,
+            parent,
+            command,
+            target=target,
+            is_background=is_background,
+            environ=environ,
+            cwd=cwd,
+        )
 
     def start(self):
         """Start the thread."""
@@ -335,11 +352,11 @@ class ShTracedThread(ShBaseThread):
         self.run = self.__run_backup
 
     def globaltrace(self, frame, why, arg):
-        return self.localtrace if why == 'call' else None
+        return self.localtrace if why == "call" else None
 
     def localtrace(self, frame, why, arg):
         if self.killed:
-            if why == 'line':
+            if why == "line":
                 if self.child_thread:
                     self.child_thread.kill()
                 raise KeyboardInterrupt()
@@ -357,21 +374,31 @@ class ShCtypesThread(ShBaseThread):
     another thread (with ctypes).
     """
 
-    def __init__(self, registry, parent, command, target=None, is_background=False, environ={}, cwd=None):
-        super(ShCtypesThread,
-              self).__init__(
-                  registry,
-                  parent,
-                  command,
-                  target=target,
-                  is_background=is_background,
-                  environ=environ,
-                  cwd=cwd
-              )
+    def __init__(
+        self,
+        registry,
+        parent,
+        command,
+        target=None,
+        is_background=False,
+        environ={},
+        cwd=None,
+    ):
+        super(ShCtypesThread, self).__init__(
+            registry,
+            parent,
+            command,
+            target=target,
+            is_background=is_background,
+            environ=environ,
+            cwd=cwd,
+        )
 
     def _async_raise(self):
         tid = self.ident
-        res = python_capi.PyThreadState_SetAsyncExc(ctypes.c_long(tid) if M_64 else tid, ctypes.py_object(KeyboardInterrupt))
+        res = python_capi.PyThreadState_SetAsyncExc(
+            ctypes.c_long(tid) if M_64 else tid, ctypes.py_object(KeyboardInterrupt)
+        )
         if res == 0:
             raise ValueError("invalid thread id")
         elif res != 1:

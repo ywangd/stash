@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """this module contains a dictionary of all modulepatches."""
+
 from mlpatches import base
 
 
 class Popen2Patch(base.ModulePatch):
     """the patch for the popen2 module."""
+
     PY2 = True
     PY3 = False
     relpath = "popen2.py"
@@ -13,6 +15,7 @@ class Popen2Patch(base.ModulePatch):
 
 class SubprocessPatch(base.ModulePatch):
     """the patch for the subprocess module."""
+
     PY2 = True
     PY3 = False  # uses unicode
     relpath = "subprocess.py"

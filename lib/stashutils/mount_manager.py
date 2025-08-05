@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """This module coordinates the mount-system."""
+
 import os
 
 from six import string_types
@@ -17,6 +18,7 @@ _stash = get_stash()
 
 class MountError(Exception):
     """raised when a mount failed."""
+
     pass
 
 
@@ -25,8 +27,8 @@ class MountError(Exception):
 
 class MountManager(object):
     """
-	this class keeps track of the FSIs and their position in the filesystem.
-	"""
+    this class keeps track of the FSIs and their position in the filesystem.
+    """
 
     def __init__(self):
         self.path2fs = {}
@@ -47,11 +49,11 @@ class MountManager(object):
 
     def get_fsi(self, path):
         """
-		returns a tuple of (fsi, relpath) if path is on a mountpoint.
-		otherwise, return (None, path).
-		fsi is a FSI which should be used for the action.
-		relpath is a path which should be used as the path for FSI actions.
-		"""
+        returns a tuple of (fsi, relpath) if path is on a mountpoint.
+        otherwise, return (None, path).
+        fsi is a FSI which should be used for the action.
+        relpath is a path which should be used as the path for FSI actions.
+        """
         path = os.path.abspath(path)
         i = None
         for p in self.path2fs:
@@ -91,9 +93,9 @@ class MountManager(object):
 
     def get_mounts(self):
         """
-		returns a list of (path, fsi, readonly) containing all currently
-		mounted filesystems.
-		"""
+        returns a list of (path, fsi, readonly) containing all currently
+        mounted filesystems.
+        """
         ret = []
         for p in self.path2fs:
             fs, readonly = self.path2fs[p]

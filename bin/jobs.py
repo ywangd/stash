@@ -2,6 +2,7 @@
 """
 List all jobs that are currently running.
 """
+
 from __future__ import print_function
 import sys
 import argparse
@@ -14,7 +15,7 @@ def main(args):
 
     current_worker = threading.currentThread()
 
-    _stash = globals()['_stash']
+    _stash = globals()["_stash"]
     """:type : StaSh"""
 
     for worker in _stash.get_workers():
@@ -22,5 +23,5 @@ def main(args):
             print(worker)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

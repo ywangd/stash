@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-""" Summarize disk usage of the set of FILEs, recursively for directories.
-"""
+"""Summarize disk usage of the set of FILEs, recursively for directories."""
+
 from __future__ import print_function
 import os
 import sys
@@ -10,7 +10,7 @@ from fnmatch import fnmatch
 
 def is_excluded(path, pattern):
     if pattern:
-        while path != '':
+        while path != "":
             prefix, tail = os.path.split(path)
             if fnmatch(tail, pattern):
                 return True
@@ -22,19 +22,35 @@ def is_excluded(path, pattern):
 
 
 def main(args):
-    ap = ArgumentParser(description='Summarize disk usage of the set of FILEs, recursively for directories.')
-    ap.add_argument('-s', '--summarize', action='store_true', help='display only a total for each argument')
-    ap.add_argument('--exclude', dest='exclude_pattern', metavar='PATTERN', help='exclude files that match PATTERN')
-    ap.add_argument('FILEs', nargs='*', default=['.'], help='files to summarize (default to current working directory')
+    ap = ArgumentParser(
+        description="Summarize disk usage of the set of FILEs, recursively for directories."
+    )
+    ap.add_argument(
+        "-s",
+        "--summarize",
+        action="store_true",
+        help="display only a total for each argument",
+    )
+    ap.add_argument(
+        "--exclude",
+        dest="exclude_pattern",
+        metavar="PATTERN",
+        help="exclude files that match PATTERN",
+    )
+    ap.add_argument(
+        "FILEs",
+        nargs="*",
+        default=["."],
+        help="files to summarize (default to current working directory",
+    )
 
     ns = ap.parse_args(args)
 
     exclude_pattern = ns.exclude_pattern if ns.exclude_pattern else None
 
-    sizeof_fmt = globals()['_stash'].libcore.sizeof_fmt
+    sizeof_fmt = globals()["_stash"].libcore.sizeof_fmt
 
     for path in ns.FILEs:
-
         path_base = os.path.dirname(path)
 
         # Use relative path because of the following facts:
@@ -54,13 +70,17 @@ def main(args):
 
                 # Loop through every non directory file in this directory and sum their sizes
                 size = sum(
-                    os.path.getsize(os.path.join(root,
-                                                 name)) for name in files if not is_excluded(name,
-                                                                                             exclude_pattern)
+                    os.path.getsize(os.path.join(root, name))
+                    for name in files
+                    if not is_excluded(name, exclude_pattern)
                 )
 
                 # Look at all of the subdirectories and add up their sizes from the `dirs_dict`
-                subdir_size = sum(dirs_dict[os.path.join(root, d)] for d in dirs if not is_excluded(d, exclude_pattern))
+                subdir_size = sum(
+                    dirs_dict[os.path.join(root, d)]
+                    for d in dirs
+                    if not is_excluded(d, exclude_pattern)
+                )
 
                 # store the size of this directory (plus subdirectories) in a dict so we
                 # can access it later
@@ -69,10 +89,10 @@ def main(args):
                 if ns.summarize and root != path:
                     continue
 
-                print('%-8s %s' % (sizeof_fmt(my_size), root))
+                print("%-8s %s" % (sizeof_fmt(my_size), root))
         else:
-            print('%-8s %s' % (sizeof_fmt(os.path.getsize(path)), path))
+            print("%-8s %s" % (sizeof_fmt(os.path.getsize(path)), path))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

@@ -4,6 +4,7 @@ Test color support
 
 _stash = globals()["_stash"]
 
+
 def get_all_bg_colors():
     """
     Return a list of all known bg colors
@@ -45,15 +46,20 @@ def main():
                                     traits.append("underline")
                                 if strikethrough:
                                     traits.append("strikethrough")
-                                desc = "{}-{}{}{}".format(fg, bg, ("-" if len(traits) > 0 else ""), "-".join(traits))
+                                desc = "{}-{}{}{}".format(
+                                    fg,
+                                    bg,
+                                    ("-" if len(traits) > 0 else ""),
+                                    "-".join(traits),
+                                )
                                 s = _stash.text_style(
                                     desc,
                                     dict(
                                         color=fg,
                                         bgcolor=bg,
                                         traits=traits,
-                                        )
-                                    )
+                                    ),
+                                )
                                 print(s)
     print("================= Done =====================")
 

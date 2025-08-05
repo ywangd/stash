@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """This module defines functions to interact with stash extensions."""
+
 import os
 import shutil
 import io

@@ -15,6 +15,7 @@ jobs:
     - run: pip install --user ruff
     - run: ruff check --ignore=E401,E402,E501,E701,E721,E722,E731,E741,F401,F403,F405,F523,F524,F811,F841
                       --output-format=github --target-version=py310 .
+    - run: ruff format --target-version=py310 .
   build:
     runs-on: macos-latest
     strategy:
@@ -34,7 +35,8 @@ jobs:
         pip install ".[testing]"
     - name: Analysing the code with flake8
       run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # F824 `global name` / `nonlocal name` is unused: name is never assigned in scope
+        flake8 . --count --select=E9,F63,F7,F82 --ignore=F824 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
     - name: Running tests
       run: |
