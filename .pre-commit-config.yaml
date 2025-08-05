@@ -1,0 +1,70 @@
+# Learn more about this config here: https://pre-commit.com/
+
+# To enable these pre-commit hooks run:
+# `pipx install pre-commit` or `brew install pre-commit`
+# Then in the project root directory run `pre-commit install`
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-builtin-literals
+      - id: check-case-conflict
+      - id: check-docstring-first
+        exclude: ^(bin/ssh\.py|bin/telnet\.py|bin/mc\.py)$
+      - id: check-executables-have-shebangs
+      - id: check-json
+      - id: check-merge-conflict
+      # - id: check-shebang-scripts-are-executable
+      - id: check-symlinks
+      - id: check-toml
+      - id: check-vcs-permalinks
+      - id: check-xml
+      - id: check-yaml
+      - id: debug-statements
+        exclude: system/shruntime.py
+      - id: destroyed-symlinks
+      - id: detect-private-key
+      - id: end-of-file-fixer
+        exclude: ^tests/(md5sum|sha1sum|sha256sum)/data/
+      - id: file-contents-sorter
+      - id: fix-byte-order-marker
+      - id: forbid-new-submodules
+      - id: forbid-submodules
+      - id: mixed-line-ending
+        args:
+          - --fix=lf
+      # - id: pretty-format-json
+      - id: requirements-txt-fixer
+      - id: sort-simple-yaml
+      - id: trailing-whitespace
+
+  #- repo: https://github.com/MarcoGorelli/auto-walrus
+  #  rev: 0.3.4
+  #  hooks:
+  #    - id: auto-walrus
+
+  #- repo: https://github.com/codespell-project/codespell
+  #  rev: v2.4.1
+  #  hooks:
+  #    - id: codespell # See pyproject.toml for args
+  #      additional_dependencies:
+  #        - tomli
+
+  #- repo: https://github.com/astral-sh/ruff-pre-commit
+  #  rev: v0.12.4
+  #  hooks:
+  #    - id: ruff-check
+  #    - id: ruff-format
+
+  - repo: https://github.com/tox-dev/pyproject-fmt
+    rev: v2.6.0
+    hooks:
+      - id: pyproject-fmt
+
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.24.1
+    hooks:
+      - id: validate-pyproject

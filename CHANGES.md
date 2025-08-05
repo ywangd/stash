@@ -5,7 +5,7 @@
     * StaSh now runs on your PC using the `tkinter` module.
     * more settings in `easy_config`, e.g. toggle styles
     * colored error messages
-    * history is now per command 
+    * history is now per command
     * `pip` now supports extras
     * `pip` will now show error messages for known incompatible packages
     * `wget` will now show an progress bar
@@ -51,14 +51,14 @@
 * New Features
     * New thread management system enables multiple jobs running at once.
         - One foreground jobs and unlimited number of background jobs.
-    * `sys.stdin`, `sys.stdout` and `sys.stderr` are now replaced system 
+    * `sys.stdin`, `sys.stdout` and `sys.stderr` are now replaced system
       wide to allow IO dispatch based on running threads.
 
 * Improvements
     * Runtime state is now managed by threads for simplicity and readability.
     * Environment persistent level is now explicitly required by caller.
       No more magic top level thread.
-        
+
 * Command Scripts
     * New scripts
         - `jobs.py`
@@ -73,18 +73,18 @@
     * True external keyboard support
     * Killable threads
     * StaSh is now installed as a Python module under `~/Documents/site-packages/stash`
-        - Also adds a launch script as `~/Documents/launch_stash.py` for easy access 
-    
+        - Also adds a launch script as `~/Documents/launch_stash.py` for easy access
+
 * Improvements
     * Largely redesigned the logic of user/script IO handling (modelled after [pyte](https://github.com/selectel/pyte))
     * Better scrolling
-    
+
 * Command Scripts
     * New scripts
         - `du.py` - Summarize disk usage recursively
-        - Replace `selfupdate.sh` with `selfupdate.py` to enable more sophisticated 
+        - Replace `selfupdate.sh` with `selfupdate.py` to enable more sophisticated
           installation functions.
-    
+
 
 ### Version 0.4.x
 * Improvements
@@ -97,11 +97,11 @@
     * Changed scripts
         - `pbcopy.py` - renamed from `copy.py` to avoid name conflict and to be consistent with the OSX tool.
         - `pbpaste.py` - renamed from `paste.py`.
-        
+
 * Bug Fixes
     * `sys.path` is now correctly restored at command scripts exit.
     * Change directory no longer crashes when accessing folders inaccessible.
-        
+
 
 ### Version 0.4.1 - 2015-03-06
 * New Features
@@ -142,7 +142,7 @@
         * Manipulate cursor position with ease
         * Consistent look and feel as a proper PC terminal
     * **External keyboard support**
-        * Tab completion works flawlessly 
+        * Tab completion works flawlessly
         * Navigate through command history with ⌘ (cmd) + up (↑) / down (↓)
     * **Swipe gesture on virtual key buttons**
         * Similar to what Pythonista builtin editor offers, you can now swipe
@@ -152,9 +152,9 @@
         * Show/hide on-screen keyboard with the **KB** button.
         * Kill line easily with the **CU** (Ctrl-U) button
 
-* Improvements 
+* Improvements
     * Auto-completion now takes account of cursor position and completes the
-      corresponding word fragment 
+      corresponding word fragment
     * You can now navigate back to the unfinished line when browsing through
       command history
     * Single Gist file installation just got better. Now it requires **no
@@ -217,7 +217,7 @@
             * Requires customized
               [dulwich](https://github.com/transistor1/dulwich/archive/master.zip)
               and [gittle](https://github.com/jsbain/gittle/archive/master.zip)
-              modules. 
+              modules.
             * If the above modules are not installed, they will be automatically
               installed the first time `git` runs. However, if they exist
               already, please make sure the above customized versions are in
@@ -246,9 +246,9 @@
         - `sha1sum.py` - Print of check SHA1 checksums
         - `sha256sum.py` - Print of check SHA256 checksums
         - `zip.py` - Package and compress files and directories
-    * Changed scripts 
+    * Changed scripts
         - `clear.py` now replaces `cls.py` to be consisent with the Linux counterpart
-        - `cat.py` - now usable on binary files 
+        - `cat.py` - now usable on binary files
         - `selfupdate.sh` - now removes test related files.
         - `unzip.py` - now takes a `-t` option to show file contents
         - `printenv.py` - now ignores special environment variables, e.g. `$1`
@@ -274,19 +274,19 @@
     * Parser is redesigned and optimized. It should be more efficient and
       faithful to Bash in some edge cases.
     * Runtime is optimized to make clear sub-shell emulation, especially on
-      variable and environment passing between shells of different levels. 
+      variable and environment passing between shells of different levels.
         - Multi-line shell scripts are now executed in a single thread for
           improved efficiency
     * Auto-completion enhanced
     * Command line history management enhanced
 
 * Command Scripts
-    * New scripts 
+    * New scripts
         - **`ssh.py`** - SSH client to either execute a command or spawn an
           interactive session on remote servers.
           [pyte](https://github.com/selectel/pyte) is used for terminal
-          emulation and gives the command the feel of a full-fledged SSH client. 
-        - `scp.py` - Copy files from/to remote servers. 
+          emulation and gives the command the feel of a full-fledged SSH client.
+        - `scp.py` - Copy files from/to remote servers.
         - `ssh-keygen.py` - Generate RSA/DSA SSH Keys.
         - `man.py` - Show help message (docstring) of a given command
         - `httpserver.py` - A simple HTTP server with **upload** function
@@ -298,7 +298,7 @@
         - `source.py` - Evaluate a script in the current environment
         - `python.py` - run python scripts or modules
         - `which.py` - Find the exact path to a command script
-        - `printhex.py` - Print hexadecimal dump of the given file 
+        - `printhex.py` - Print hexadecimal dump of the given file
         - `version.py` - Show StaSh installation and version information
     * Changed scripts
         - `env.py` - Replaced by `printenv.py` (`env` is now an alias to `printenv`)
@@ -310,5 +310,3 @@
 
 ### Version 0.1.0 - 2014-12-10
 * initial release
-
-
