@@ -6,6 +6,10 @@ Launch StaSh in a more flexible and reliable way.
 import sys
 import argparse
 
+# fix from https://github.com/ywangd/stash/pull/499
+if hasattr(sys, "_exit"):
+    sys.exit = sys._exit
+
 module_names = (
     "stash",
     "system.shcommon",
