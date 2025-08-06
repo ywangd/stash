@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """helper functions and base classes."""
+
 from stashutils.fsi.errors import OperationFailure
 import random
 import os
@@ -10,41 +11,41 @@ import pwd
 
 class BaseFSI(object):
     """
-Baseclass for all FSIs.
-Other FSIs should subclass this.
-This class currently only serves as a documentation, but this may change.
-"""
+    Baseclass for all FSIs.
+    Other FSIs should subclass this.
+    This class currently only serves as a documentation, but this may change.
+    """
 
     def __init__(self, logger=None):
         """
-		called on __init__().
-		"logger" should be a callable,
-		which will be called with log messages, or None.
-		"""
+        called on __init__().
+        "logger" should be a callable,
+        which will be called with log messages, or None.
+        """
         self.logger = logger
 
     def connect(self, *args):
         """
-Called to 'connect' to a filesystem.
-'args' are the additional args passed by the user.
-This should be no-op on if no connection nor setup is required.
-This should return True on success, otherwise a string describing the error.
-"""
+        Called to 'connect' to a filesystem.
+        'args' are the additional args passed by the user.
+        This should be no-op on if no connection nor setup is required.
+        This should return True on success, otherwise a string describing the error.
+        """
         return "Not Implemented"
 
     def repr(self):
         """
-this should return a string identifying the instance of this interface.
-"""
+        this should return a string identifying the instance of this interface.
+        """
         return "Unknown Interface"
 
     def listdir(self, path="."):
         """
-called for listing a dir.
-The FSI is responsible for keeping track of the cwd.
-This should return a list of strings.
-'..' doesnt need to be added.
-"""
+        called for listing a dir.
+        The FSI is responsible for keeping track of the cwd.
+        This should return a list of strings.
+        '..' doesnt need to be added.
+        """
         return []
 
     def cd(self, name):
@@ -61,8 +62,8 @@ This should return a list of strings.
 
     def open(self, name, mode="r", buffering=0):
         """
-		this should return a file-like object opened in mode mode.
-		"""
+        this should return a file-like object opened in mode mode.
+        """
         raise OperationFailure("NotImplemented")
 
     def mkdir(self, name):
@@ -71,12 +72,12 @@ This should return a list of strings.
 
     def close(self):
         """this should close the interface.
-		There is a chance that this may not be called."""
+        There is a chance that this may not be called."""
         pass
 
     def isdir(self, name):
         """this should return True if name is an existing directory and
-		False if not."""
+        False if not."""
         raise OperationFailure("NotImplemented")
 
     def isfile(self, name):
@@ -86,9 +87,9 @@ This should return a list of strings.
 
     def stat(self, name):
         """
-		this should stat the file name and return a os.stat_result or
-		FakeStatResult().
-		"""
+        this should stat the file name and return a os.stat_result or
+        FakeStatResult().
+        """
         if self.isfile(name):
             return make_stat(type=stat.S_IFREG)
         else:
@@ -101,19 +102,19 @@ This should return a list of strings.
 
 
 def calc_mode(
-        sticky=False,
-        isuid=True,
-        isgid=True,
-        type=stat.S_IFREG,
-        owner_read=True,
-        owner_write=True,
-        owner_exec=True,
-        group_read=True,
-        group_write=True,
-        group_exec=True,
-        other_read=True,
-        other_write=True,
-        other_exec=True,
+    sticky=False,
+    isuid=True,
+    isgid=True,
+    type=stat.S_IFREG,
+    owner_read=True,
+    owner_write=True,
+    owner_exec=True,
+    group_read=True,
+    group_write=True,
+    group_exec=True,
+    other_read=True,
+    other_write=True,
+    other_exec=True,
 ):
     """helper function to calculate the mode bits of a file."""
     mode = 0
@@ -149,20 +150,20 @@ DEFAULT_MODE = calc_mode()
 
 
 def make_stat(
-        mode=DEFAULT_MODE,
-        inode=None,
-        dev=None,
-        nlinks=1,
-        gid=None,
-        uid=None,
-        size=0,
-        atime=None,
-        mtime=None,
-        ctime=None,
-        blocks=1,
-        blksize=None,
-        rdev=stat.S_IFREG,
-        flags=0,
+    mode=DEFAULT_MODE,
+    inode=None,
+    dev=None,
+    nlinks=1,
+    gid=None,
+    uid=None,
+    size=0,
+    atime=None,
+    mtime=None,
+    ctime=None,
+    blocks=1,
+    blksize=None,
+    rdev=stat.S_IFREG,
+    flags=0,
 ):
     """helper function to generate os.stat results."""
     if inode is None:
@@ -208,6 +209,6 @@ def make_stat(
             "st_blksize": blksize,
             "st_rdev": rdev,
             "st_flags": flags,
-        }
+        },
     )
     return s

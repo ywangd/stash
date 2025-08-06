@@ -8,27 +8,30 @@ on:
     branches:
       - dev
       - master
+  workflow_dispatch:
 
 jobs:
   ruff:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
-    - run: pip install --user ruff
-    - run: ruff --ignore=E401,E402,E701,E722,E731,E741,F401,F403,F405,F523,F524,F811,F841
-                --format=github --line-length=2793 --show-source --target-version=py37 .
+      uses: actions/checkout@v4
+    - run: pipx install ruff
+    - run: ruff check --output-format=github --target-version=py37
+               --ignore=E401,E402,E501,E701,E721,E722,E731,E741,F401,F403,F405,F523,F524,F811,F841
+    - run: ruff format --check --diff --target-version=py37
+                
   build:
     runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["2.7", "3.6", "3.10"]
+        python-version: ["3.10", "3.x"]
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -37,7 +40,8 @@ jobs:
         pip install ".[testing]"
     - name: Analysing the code with flake8
       run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # F824 `global name` / `nonlocal name` is unused: name is never assigned in scope
+        flake8 . --count --select=E9,F63,F7,F82 --ignore=F824 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
     - name: Running tests
       run: |

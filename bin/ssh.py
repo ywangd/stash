@@ -18,6 +18,7 @@ optional arguments:
   --password PASSWORD   Password for rsa/dsa key or password login
   -p PORT, --port PORT  port for ssh default: 22
 """
+
 from __future__ import print_function
 
 import argparse
@@ -35,19 +36,19 @@ except ImportError:
 
 _SYS_STDOUT = sys.__stdout__
 
-_stash = globals()['_stash']
+_stash = globals()["_stash"]
 """:type : StaSh"""
 
 try:
     import pyte
 except ImportError:
-    _stash('pip install pyte==0.4.10')
+    _stash("pip install pyte==0.4.10")
     import pyte
 
-if (paramiko is None) or (StrictVersion(paramiko.__version__) < StrictVersion('1.15')):
+if (paramiko is None) or (StrictVersion(paramiko.__version__) < StrictVersion("1.15")):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
-    _stash('pip install paramiko==1.16.0')
-    print('Please restart Pythonista for changes to take full effect')
+    _stash("pip install paramiko==1.16.0")
+    print("Please restart Pythonista for changes to take full effect")
     sys.exit(0)
 
 
@@ -67,9 +68,9 @@ class StashSSH(object):
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     def connect(self, host, passwd=None, port=22):
-        print('Connecting...')
+        print("Connecting...")
         if "@" in host:
-            username, host = host.split('@')
+            username, host = host.split("@")
         else:
             # TODO: find better default username
             username = "root"
@@ -78,24 +79,30 @@ class StashSSH(object):
             return self._connect_with_passwd(host, username, passwd, port)
 
         else:
-            print('Looking for SSH keys...')
+            print("Looking for SSH keys...")
             key_filename = self.find_ssh_keys()
             if len(key_filename) > 0:
                 try:
-                    self.client.connect(host, username=username, password=passwd, port=port, key_filename=key_filename)
+                    self.client.connect(
+                        host,
+                        username=username,
+                        password=passwd,
+                        port=port,
+                        key_filename=key_filename,
+                    )
                     return True
                 except paramiko.SSHException as e:
-                    print('Failed to login with SSH Keys: {}'.format(repr(e)))
-                    print('Trying password ...')
-                    passwd = input('Enter password:')
+                    print("Failed to login with SSH Keys: {}".format(repr(e)))
+                    print("Trying password ...")
+                    passwd = input("Enter password:")
                     return self._connect_with_passwd(host, username, passwd, port)
 
                 except Exception as e:
-                    print('Error: {}'.format(e))
+                    print("Error: {}".format(e))
                     return False
             else:
-                print('No SSH key found. Trying password ...')
-                passwd = input('Enter password:')
+                print("No SSH key found. Trying password ...")
+                passwd = input("Enter password:")
                 return self._connect_with_passwd(host, username, passwd, port)
 
     def _connect_with_passwd(self, host, username, passwd, port):
@@ -103,26 +110,34 @@ class StashSSH(object):
             self.client.connect(host, username=username, password=passwd, port=port)
             return True
         except Exception as e:
-            print('Error: {}'.format(e))
+            print("Error: {}".format(e))
             return False
 
     def find_ssh_keys(self):
-        ssh_dir = os.path.join(os.environ['STASH_ROOT'], '.ssh')
+        ssh_dir = os.path.join(os.environ["STASH_ROOT"], ".ssh")
         if not os.path.exists(ssh_dir):
             # create directory
             os.mkdir(ssh_dir)
-        return [os.path.join(ssh_dir, filename) for filename in os.listdir(ssh_dir) if '.' not in filename]
+        return [
+            os.path.join(ssh_dir, filename)
+            for filename in os.listdir(ssh_dir)
+            if "." not in filename
+        ]
 
     def stdout_thread(self):
         while True:
             if self.chan.recv_ready():
                 rcv = self.chan.recv(4096)
                 # _SYS_STDOUT.write('RRR {%s}\n' % repr(rcv))
-                rcv = rcv.decode('utf-8', errors='ignore')
+                rcv = rcv.decode("utf-8", errors="ignore")
                 x, y = self.screen.cursor.x, self.screen.cursor.y
                 self.stream.feed(rcv)
 
-                if self.screen.dirty or x != self.screen.cursor.x or y != self.screen.cursor.y:
+                if (
+                    self.screen.dirty
+                    or x != self.screen.cursor.x
+                    or y != self.screen.cursor.y
+                ):
                     self.update_screen()
                     self.screen.dirty.clear()
 
@@ -141,7 +156,7 @@ class StashSSH(object):
 
     def interactive(self):
         self.chan = self.client.get_transport().open_session()
-        self.chan.get_pty('linux', width=self.screen.columns, height=self.screen.lines)
+        self.chan.get_pty("linux", width=self.screen.columns, height=self.screen.lines)
         self.chan.invoke_shell()
         self.chan.set_combine_stderr(True)
         t1 = threading.Thread(target=self.stdout_thread)
@@ -149,10 +164,10 @@ class StashSSH(object):
         t1.join()
         self.chan.close()
         self.client.close()
-        print('\nconnection closed\n')
+        print("\nconnection closed\n")
 
 
-CTRL_KEY_FLAG = (1 << 18)
+CTRL_KEY_FLAG = 1 << 18
 
 
 class SshUserActionDelegate(object):
@@ -169,7 +184,7 @@ class SshUserActionDelegate(object):
                 break
             if self.ssh.chan.send_ready():
                 # _SYS_STDOUT.write('%s, [%s]' % (rng, replacement))
-                self.ssh.chan.send(s.encode('utf-8'))
+                self.ssh.chan.send(s.encode("utf-8"))
                 break
 
 
@@ -185,8 +200,8 @@ class SshTvVkKcDelegate(SshUserActionDelegate):
         _stash.terminal.is_editing = False
 
     def textview_should_change(self, tv, rng, replacement):
-        if replacement == '':  # delete
-            replacement = '\x08'
+        if replacement == "":  # delete
+            replacement = "\x08"
         self.send(replacement)
         return False  # always false
 
@@ -198,51 +213,51 @@ class SshTvVkKcDelegate(SshUserActionDelegate):
 
     def kc_pressed(self, key, modifierFlags):
         if modifierFlags == CTRL_KEY_FLAG:
-            if key == 'C':
-                self.send('\x03')
-            elif key == 'D':
-                self.send('\x04')
-            elif key == 'A':
-                self.send('\x01')
-            elif key == 'E':
-                self.send('\x05')
-            elif key == 'K':
-                self.send('\x0B')
-            elif key == 'L':
-                self.send('\x0C')
-            elif key == 'U':
-                self.send('\x15')
-            elif key == 'Z':
-                self.send('\x1A')
-            elif key == '[':
-                self.send('\x1B')  # ESC
+            if key == "C":
+                self.send("\x03")
+            elif key == "D":
+                self.send("\x04")
+            elif key == "A":
+                self.send("\x01")
+            elif key == "E":
+                self.send("\x05")
+            elif key == "K":
+                self.send("\x0b")
+            elif key == "L":
+                self.send("\x0c")
+            elif key == "U":
+                self.send("\x15")
+            elif key == "Z":
+                self.send("\x1a")
+            elif key == "[":
+                self.send("\x1b")  # ESC
         elif modifierFlags == 0:
-            if key == 'UIKeyInputUpArrow':
-                self.send('\x10')
-            elif key == 'UIKeyInputDownArrow':
-                self.send('\x0E')
-            elif key == 'UIKeyInputLeftArrow':
-                self.send('\033[D')
-            elif key == 'UIKeyInputRightArrow':
-                self.send('\033[C')
+            if key == "UIKeyInputUpArrow":
+                self.send("\x10")
+            elif key == "UIKeyInputDownArrow":
+                self.send("\x0e")
+            elif key == "UIKeyInputLeftArrow":
+                self.send("\033[D")
+            elif key == "UIKeyInputRightArrow":
+                self.send("\033[C")
 
     def vk_tapped(self, vk):
-        if vk.name == 'k_tab':
-            self.send('\t')
-        elif vk.name == 'k_CC':
-            self.kc_pressed('C', CTRL_KEY_FLAG)
-        elif vk.name == 'k_CD':
-            self.kc_pressed('D', CTRL_KEY_FLAG)
-        elif vk.name == 'k_CU':
-            self.kc_pressed('U', CTRL_KEY_FLAG)
-        elif vk.name == 'k_CZ':
-            self.kc_pressed('Z', CTRL_KEY_FLAG)
-        elif vk.name == 'k_hup':
-            self.kc_pressed('UIKeyInputUpArrow', 0)
-        elif vk.name == 'k_hdn':
-            self.kc_pressed('UIKeyInputDownArrow', 0)
+        if vk.name == "k_tab":
+            self.send("\t")
+        elif vk.name == "k_CC":
+            self.kc_pressed("C", CTRL_KEY_FLAG)
+        elif vk.name == "k_CD":
+            self.kc_pressed("D", CTRL_KEY_FLAG)
+        elif vk.name == "k_CU":
+            self.kc_pressed("U", CTRL_KEY_FLAG)
+        elif vk.name == "k_CZ":
+            self.kc_pressed("Z", CTRL_KEY_FLAG)
+        elif vk.name == "k_hup":
+            self.kc_pressed("UIKeyInputUpArrow", 0)
+        elif vk.name == "k_hdn":
+            self.kc_pressed("UIKeyInputDownArrow", 0)
 
-        elif vk.name == 'k_KB':
+        elif vk.name == "k_KB":
             if _stash.terminal.is_editing:
                 _stash.terminal.end_editing()
             else:
@@ -253,29 +268,46 @@ class SshSVDelegate(SshUserActionDelegate):
     """
     Delegate for scroll view
     """
+
     SCROLL_PER_CHAR = 20.0  # Number of pixels to scroll to move 1 character
 
     def scrollview_did_scroll(self, scrollview):
         # integrate small scroll motions, but keep scrollview from actually moving
         if not scrollview.decelerating:
-            scrollview.superview.dx -= scrollview.content_offset[0] / SshSVDelegate.SCROLL_PER_CHAR
+            scrollview.superview.dx -= (
+                scrollview.content_offset[0] / SshSVDelegate.SCROLL_PER_CHAR
+            )
         scrollview.content_offset = (0.0, 0.0)
 
         offset = int(scrollview.superview.dx)
         if offset:
             scrollview.superview.dx -= offset
             if offset > 0:
-                self.send('\033[C')
+                self.send("\033[C")
             else:
-                self.send('\033[D')
+                self.send("\033[D")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument('--password', action='store', default=None, help='Password for rsa/dsa key or password login')
-    ap.add_argument('-p', '--port', action='store', default=22, type=int, help='port for ssh default: 22')
-    ap.add_argument('host', help='host ex. user@host.com')
-    ap.add_argument('command', nargs='?', default=False, help='Command to send as a quoted string')
+    ap.add_argument(
+        "--password",
+        action="store",
+        default=None,
+        help="Password for rsa/dsa key or password login",
+    )
+    ap.add_argument(
+        "-p",
+        "--port",
+        action="store",
+        default=22,
+        type=int,
+        help="port for ssh default: 22",
+    )
+    ap.add_argument("host", help="host ex. user@host.com")
+    ap.add_argument(
+        "command", nargs="?", default=False, help="Command to send as a quoted string"
+    )
     args = ap.parse_args()
 
     ssh = StashSSH()
@@ -283,15 +315,17 @@ if __name__ == '__main__':
     sv_delegate = SshSVDelegate(ssh)
 
     if ssh.connect(host=args.host, passwd=args.password, port=args.port):
-        print('Connected')
+        print("Connected")
         if args.command:
             ssh.single_exec(args.command)
         else:
-            _stash.stream.feed(u'\u009bc', render_it=False)
-            with _stash.user_action_proxy.config(tv_responder=tv_vk_kc_delegate,
-                                                 kc_responder=tv_vk_kc_delegate.kc_pressed,
-                                                 vk_responder=tv_vk_kc_delegate.vk_tapped,
-                                                 sv_responder=sv_delegate):
+            _stash.stream.feed("\u009bc", render_it=False)
+            with _stash.user_action_proxy.config(
+                tv_responder=tv_vk_kc_delegate,
+                kc_responder=tv_vk_kc_delegate.kc_pressed,
+                vk_responder=tv_vk_kc_delegate.vk_tapped,
+                sv_responder=sv_delegate,
+            ):
                 ssh.interactive()
     else:
-        print('Unable to connect')
+        print("Unable to connect")

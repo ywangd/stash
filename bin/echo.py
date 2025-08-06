@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Print all arguments to stdout, separated by spaces.
-"""
+"""Print all arguments to stdout, separated by spaces."""
 
 from __future__ import print_function
 

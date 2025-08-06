@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """tests for the 'ls' command"""
+
 import os
 
 from stash.tests.stashtest import StashTestCase

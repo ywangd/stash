@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 """tests for the 'pip' command."""
+
 import sys
 import unittest
 import pytest
 
 from six.moves import reload_module
 
-from stash.tests.stashtest import StashTestCase, requires_network, expected_failure_on_py3
+from stash.tests.stashtest import (
+    StashTestCase,
+    requires_network,
+    expected_failure_on_py3,
+)
 
 
 class PipTests(StashTestCase):
@@ -41,8 +46,15 @@ class PipTests(StashTestCase):
 
     def assert_did_run_setup(self, output, allow_source=True, allow_wheel=True):
         """assert that the output shows that either setup.py was successfully executed or a wheel was installed."""
-        if not (("Running setup file" in output and allow_source) or ("Installing wheel:" in output and allow_wheel)):
-            raise AssertionError("Output '{o}' does not seem to have installed a wheel or run setup.py!".format(o=output))
+        if not (
+            ("Running setup file" in output and allow_source)
+            or ("Installing wheel:" in output and allow_wheel)
+        ):
+            raise AssertionError(
+                "Output '{o}' does not seem to have installed a wheel or run setup.py!".format(
+                    o=output
+                )
+            )
         self.assertNotIn("Failed to run setup.py", output)
 
     def test_help(self):
@@ -61,7 +73,7 @@ class PipTests(StashTestCase):
         self.assertIn("download", output)
         self.assertIn("list", output)
 
-    @unittest.skip('Pip is retiring and seach is disabled')
+    @unittest.skip("Pip is retiring and seach is disabled")
     @requires_network
     def test_search(self):
         """test 'pip search <term>'"""
@@ -121,11 +133,13 @@ class PipTests(StashTestCase):
             self.logger.info("sys.path = " + str(sys.path))
             raise AssertionError("Could not import installed module: " + repr(e))
 
-    @unittest.skip('@cclauss: Fix me!')
+    @unittest.skip("@cclauss: Fix me!")
     @requires_network
     def test_install_pypi_nobinary(self):
         """test 'pip install --no-binary :all: <pypi_package>'."""
-        output = self.run_command("pip --verbose install --no-binary :all: rsa", exitcode=0)
+        output = self.run_command(
+            "pip --verbose install --no-binary :all: rsa", exitcode=0
+        )
         self.assertIn("Downloading package", output)
         self.assert_did_run_setup(output, allow_wheel=False)
         self.assertIn("Package installed: rsa", output)
@@ -136,10 +150,14 @@ class PipTests(StashTestCase):
             raise AssertionError("Could not import installed module: " + repr(e))
 
     @requires_network
-    @pytest.mark.xfail(sys.version_info < (3, 0), reason="rsa v4.7.1 binary is not available on Py2")
+    @pytest.mark.xfail(
+        sys.version_info < (3, 0), reason="rsa v4.7.1 binary is not available on Py2"
+    )
     def test_install_pypi_onlybinary(self):
         """test 'pip install --only-binary :all: <pypi_package>'."""
-        output = self.run_command("pip --verbose install --only-binary :all: rsa==4.5", exitcode=0)
+        output = self.run_command(
+            "pip --verbose install --only-binary :all: rsa==4.5", exitcode=0
+        )
         self.assertIn("Downloading package", output)
         self.assert_did_run_setup(output, allow_source=False)
         self.assertIn("Package installed: rsa", output)
@@ -150,7 +168,9 @@ class PipTests(StashTestCase):
             raise AssertionError("Could not import installed module: " + repr(e))
 
     @requires_network
-    @pytest.mark.xfail(sys.version_info < (3, 0), reason="rsa v4.7.1 raises SyntaxError on Py2")
+    @pytest.mark.xfail(
+        sys.version_info < (3, 0), reason="rsa v4.7.1 raises SyntaxError on Py2"
+    )
     def test_install_command(self):
         """test 'pip install <package>' creates commandline scripts."""
         # 1. test command not yet installed
@@ -182,6 +202,7 @@ class PipTests(StashTestCase):
         self.assertIn("Package installed: rsa", output)
         try:
             import rsa
+
             self.reload_module(rsa)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
@@ -198,6 +219,7 @@ class PipTests(StashTestCase):
         self.assertIn("Package installed: rsa", output)
         try:
             import rsa
+
             self.reload_module(rsa)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
@@ -215,6 +237,7 @@ class PipTests(StashTestCase):
         self.assertIn("Package installed: rsa", output)
         try:
             import rsa
+
             self.reload_module(rsa)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
@@ -225,6 +248,7 @@ class PipTests(StashTestCase):
         output = self.run_command("pip --verbose update rsa", exitcode=0)
         try:
             import rsa
+
             self.reload_module(rsa)
         except ImportError as e:
             self.logger.info("sys.path = " + str(sys.path))
@@ -252,7 +276,9 @@ class PipTests(StashTestCase):
 
     def test_install_github(self):
         """test 'pip install <owner>/<repo>'."""
-        output = self.run_command("pip --verbose install bennr01/benterfaces", exitcode=0)
+        output = self.run_command(
+            "pip --verbose install bennr01/benterfaces", exitcode=0
+        )
         self.assertIn("Working on GitHub repository ...", output)
         self.assert_did_run_setup(output)
         self.assertIn("Package installed: benterfaces-master", output)
@@ -287,25 +313,28 @@ class PipTests(StashTestCase):
         # 4. ensure import failes
         try:
             import stpkg
+
             raise AssertionError("can still import uninstalled package!")
         except ImportError as e:
             # expected failure
             pass
-    
+
     def test_blocklist_fatal(self):
         """test 'pip install <blocklisted-fatal-package>'."""
         output = self.run_command("pip --verbose install pip", exitcode=1)
         self.assertIn("StaSh uses a custom version of PIP", output)
         self.assertIn("PackageBlocklisted", output)
         self.assertNotIn("Package installed: pip", output)
-    
+
     def test_blocklist_nonfatal(self):
         """test 'pip install <blocklisted-nonfatal-package>'."""
         output = self.run_command("pip --verbose install matplotlib", exitcode=0)
-        self.assertIn("Warning: package 'matplotlib' is blocklisted, but marked as non-fatal.", output)
+        self.assertIn(
+            "Warning: package 'matplotlib' is blocklisted, but marked as non-fatal.",
+            output,
+        )
         self.assertIn("This package is already bundled with Pythonista", output)
         self.assertNotIn("PackageBlocklisted", output)
         self.assertNotIn("Package installed: matplotlib", output)
-    
+
     # TODO: add test for blocklist with alternative.
-    

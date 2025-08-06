@@ -12,7 +12,9 @@ usage:
     python -c command
     python python_file.py [args]
 """
+
 from __future__ import print_function
+
 # check for py2/3
 _stash = globals()["_stash"]
 if _stash.PY3:
@@ -23,6 +25,7 @@ if _stash.PY3:
         )
     )
     import sys
+
     sys.exit(1)
 
 import runpy
@@ -34,55 +37,61 @@ import __builtin__
 args = sys.argv[1:]
 
 passing_h = False
-if '-h' in args and len(args) > 1:
-    args.remove('-h')
+if "-h" in args and len(args) > 1:
+    args.remove("-h")
     passing_h = True
 
 ap = argparse.ArgumentParser()
 
 group = ap.add_mutually_exclusive_group()
-group.add_argument('-m', '--module', action='store', default=None, help='run module')
-group.add_argument('-c', '--cmd', action='store', default=None, help='program passed in as string (terminates option list)')
+group.add_argument("-m", "--module", action="store", default=None, help="run module")
+group.add_argument(
+    "-c",
+    "--cmd",
+    action="store",
+    default=None,
+    help="program passed in as string (terminates option list)",
+)
 
 ap.add_argument(
-    'args_to_pass',
-    metavar='[file] args_to_pass',
+    "args_to_pass",
+    metavar="[file] args_to_pass",
     default=[],
     nargs=argparse.REMAINDER,
-    help='Python script and arguments'
+    help="Python script and arguments",
 )
 
 ns = ap.parse_args(args)
 if passing_h:
-    ns.args_to_pass.append('-h')
+    ns.args_to_pass.append("-h")
 
 if ns.module:
     sys.argv = [ns.module] + ns.args_to_pass
     try:
-        runpy.run_module(str(ns.module), run_name='__main__')
+        runpy.run_module(str(ns.module), run_name="__main__")
     except ImportError as e:
-        print('ImportError: ' + str(e))
+        print("ImportError: " + str(e))
         sys.exit(1)
     sys.exit(0)
 
 elif ns.cmd:
-    exec (ns.cmd)
+    exec(ns.cmd)
     sys.exit(0)
 
 else:
     if ns.args_to_pass:
         sys.argv = ns.args_to_pass
         try:
-            runpy.run_path(str(sys.argv[0]), run_name='__main__')
+            runpy.run_path(str(sys.argv[0]), run_name="__main__")
         except Exception as e:
-            print('Error: ' + str(e))
+            print("Error: " + str(e))
     else:
         locals = {
-            '__name__': '__main__',
-            '__doc__': None,
-            '__package__': None,
-            '__debug__': True,
-            '__builtins__': __builtin__,  # yes, __builtins__
-            '_stash': _stash,
+            "__name__": "__main__",
+            "__doc__": None,
+            "__package__": None,
+            "__debug__": True,
+            "__builtins__": __builtin__,  # yes, __builtins__
+            "_stash": _stash,
         }
         code.interact(local=locals)

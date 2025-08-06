@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """tests for the 'cat' command."""
+
 import os
 from unittest import expectedFailure
 
@@ -42,7 +43,9 @@ class CatTests(StashTestCase):
     def test_cat_multi_files(self):
         """test 'cat <somefile> <otherfile>'."""
         output = self.run_command("cat somefile.txt otherfile.txt", exitcode=0)
-        expected = self.read_data_file("somefile.txt") + self.read_data_file("otherfile.txt")
+        expected = self.read_data_file("somefile.txt") + self.read_data_file(
+            "otherfile.txt"
+        )
         self.assertEqual(output, expected)
 
     def test_cat_stdin(self):
@@ -62,4 +65,4 @@ class CatTests(StashTestCase):
     def test_cat_nonascii(self):
         """test 'cat <some file containing non-ascii characters.>'."""
         output = self.run_command("cat nonascii.txt", exitcode=0).replace("\n", "")
-        self.assertEqual(output, u"äöüß")
+        self.assertEqual(output, "äöüß")

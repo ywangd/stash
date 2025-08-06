@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Open file in an external app.
-"""
+"""Open file in an external app."""
 
 from __future__ import print_function
 

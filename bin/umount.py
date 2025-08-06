@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """unmount a filesystem."""
+
 from __future__ import print_function
 import argparse
 import sys
@@ -10,9 +11,19 @@ _stash = globals()["_stash"]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-a", "--all", action="store_true", dest="all", help="unmount all filesystems")
-    parser.add_argument("-v", "--verbose", action="store_true", dest="v", help="be more chatty")
-    parser.add_argument("-f", "--force", action="store_true", dest="force", help="force unmount; do not call fsi.close()")
+    parser.add_argument(
+        "-a", "--all", action="store_true", dest="all", help="unmount all filesystems"
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", dest="v", help="be more chatty"
+    )
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        dest="force",
+        help="force unmount; do not call fsi.close()",
+    )
     parser.add_argument(
         "directory",
         action="store",

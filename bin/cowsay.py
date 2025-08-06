@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
+
 # by Siddharth Duahantha
 # 28 July 2017
 import sys
@@ -19,22 +20,22 @@ def get_cow(text):
     nlines = len(lines)
     longest_line = max([len(l) for l in lines])
     lenght_of_lines = longest_line + 2
-    ret = (' ' + '_' * lenght_of_lines + "\n")
+    ret = " " + "_" * lenght_of_lines + "\n"
     if nlines == 1:
         formated = text.center(longest_line + 2)
-        ret += formated.join('<>') + "\n"
+        ret += formated.join("<>") + "\n"
     else:
         t = ""
         for i in range(nlines):
             line = lines[i].center(longest_line + 2)
             if i == 0:
-                t += ("/" + line + "\\\n")
+                t += "/" + line + "\\\n"
             elif i == (nlines - 1):
-                t += ("\\" + line + "/\n")
+                t += "\\" + line + "/\n"
             else:
-                t += ("|" + line + "|\n")
+                t += "|" + line + "|\n"
         ret += t
-    ret += (' ' + '-' * lenght_of_lines + "\n")
+    ret += " " + "-" * lenght_of_lines + "\n"
     ret += COW
     return ret
 

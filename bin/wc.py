@@ -1,30 +1,37 @@
 # -*- coding: utf-8 -*-
-""" Print newline, word, and byte counts for each FILE, and a total line if
+"""Print newline, word, and byte counts for each FILE, and a total line if
 more than one FILE is specified.
 """
+
 from __future__ import print_function
 import os
 import sys
 import argparse
 
-_stash = globals()['_stash']
+_stash = globals()["_stash"]
 
 
 def main(args):
     ap = argparse.ArgumentParser()
 
-    ap.add_argument('-l', '--lines', action='store_true', default=False, help='print the newline counts')
-    ap.add_argument('files', nargs='*', help='files to count')
+    ap.add_argument(
+        "-l",
+        "--lines",
+        action="store_true",
+        default=False,
+        help="print the newline counts",
+    )
+    ap.add_argument("files", nargs="*", help="files to count")
     ns = ap.parse_args(args)
 
     if ns.lines:
 
         def _print_res(res):
-            print('%6d %s' % (res[0], res[-1]))
+            print("%6d %s" % (res[0], res[-1]))
     else:
 
         def _print_res(res):
-            print('%6d %8d %8d %s' % res)
+            print("%6d %8d %8d %s" % res)
 
     results = []
     nl_count = 0
@@ -37,7 +44,7 @@ def main(args):
 
         if infields[0] is None:
             _, filename, e = infields
-            print('%s: %s' % (filename, repr(e)))
+            print("%s: %s" % (filename, repr(e)))
             filename_old = None
         else:
             line, filename, lineno = infields
@@ -66,8 +73,8 @@ def main(args):
         tot_bt_count += res[2]
 
     if len(results) > 1:
-        _print_res((tot_nl_count, tot_wd_count, tot_bt_count, 'total'))
+        _print_res((tot_nl_count, tot_wd_count, tot_bt_count, "total"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

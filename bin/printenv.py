@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""List current environment variables and values.
-"""
+"""List current environment variables and values."""
 
 from __future__ import division, print_function, unicode_literals
 
@@ -12,7 +11,9 @@ import sys
 
 def main(args):
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("variables", action="store", nargs="*", help="variables to be printed")
+    p.add_argument(
+        "variables", action="store", nargs="*", help="variables to be printed"
+    )
     ns = p.parse_args(args)
 
     if ns.variables:

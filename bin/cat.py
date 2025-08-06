@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Print the contents of the given files.
-"""
+"""Print the contents of the given files."""
 
 from __future__ import print_function
 
@@ -12,7 +11,9 @@ import fileinput
 
 
 def filter_non_printable(s):
-    return ''.join([c if c.isalnum() or c.isspace() or c in string.punctuation else ' ' for c in s])
+    return "".join(
+        [c if c.isalnum() or c.isspace() or c in string.punctuation else " " for c in s]
+    )
 
 
 def main(args):
@@ -25,9 +26,9 @@ def main(args):
     fileinput.close()  # in case it is not closed
     try:
         for line in fileinput.input(ns.files, openhook=fileinput.hook_encoded("utf-8")):
-            print(filter_non_printable(line), end='')
+            print(filter_non_printable(line), end="")
     except Exception as e:
-        print('cat: %s' % str(e))
+        print("cat: %s" % str(e))
         status = 1
     finally:
         fileinput.close()

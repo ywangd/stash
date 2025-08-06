@@ -4,6 +4,7 @@ Simple telent client.
 
 usage: telnet host [-p port] [--timeout N]
 """
+
 from __future__ import print_function
 import sys
 import select
@@ -11,17 +12,27 @@ import argparse
 import telnetlib
 import threading
 
-from stash.system.shcommon import K_CC, K_CD, K_HUP, K_HDN, K_CU, K_TAB, K_HIST, K_CZ, K_KB
+from stash.system.shcommon import (
+    K_CC,
+    K_CD,
+    K_HUP,
+    K_HDN,
+    K_CU,
+    K_TAB,
+    K_HIST,
+    K_CZ,
+    K_KB,
+)
 
 _SYS_STDOUT = sys.__stdout__
 
-_stash = globals()['_stash']
+_stash = globals()["_stash"]
 """:type : StaSh"""
 
 try:
     import pyte
 except ImportError:
-    _stash('pip install pyte==0.4.10')
+    _stash("pip install pyte==0.4.10")
     import pyte
 
 
@@ -40,7 +51,7 @@ class StashTelnet(object):
         self.client = None
 
     def connect(self, host, port=23, timeout=2):
-        print('Connecting...')
+        print("Connecting...")
         try:
             self.client = telnetlib.Telnet(host, port, timeout)
             return True
@@ -51,7 +62,9 @@ class StashTelnet(object):
         while self.running:
             # Get the list sockets which are readable
             try:
-                read_sockets, write_sockets, error_sockets = select.select([self.client], [], [])
+                read_sockets, write_sockets, error_sockets = select.select(
+                    [self.client], [], []
+                )
             except:
                 break
 
@@ -59,7 +72,7 @@ class StashTelnet(object):
                 if sock == self.client:
                     rcv = sock.read_very_eager()
                     self.feed_screen(rcv)
-    
+
     def feed_screen(self, data):
         """
         Feed data to the screen
@@ -67,7 +80,7 @@ class StashTelnet(object):
         :type data: str
         """
         if data:
-            data = data.decode('utf-8', errors='ignore')
+            data = data.decode("utf-8", errors="ignore")
             x, y = self.screen.cursor.x, self.screen.cursor.y
             self.stream.feed(data)
         if self.screen.dirty or x != self.screen.cursor.x or y != self.screen.cursor.y:
@@ -85,10 +98,10 @@ class StashTelnet(object):
         t1.start()
         t1.join()
         self.client.close()
-        print('\nconnection closed\n')
+        print("\nconnection closed\n")
 
 
-CTRL_KEY_FLAG = (1 << 18)
+CTRL_KEY_FLAG = 1 << 18
 
 
 class SshUserActionDelegate(object):
@@ -101,8 +114,8 @@ class SshUserActionDelegate(object):
 
     def send(self, s):
         # self.telnet.stream.feed(s.decode('utf-8') if hasattr(s, "decode") else s)
-        self.telnet.feed_screen(s.decode("utf-8" ) if hasattr(s, "decode") else s)
-        self.telnet.client.write(s.encode('utf-8'))
+        self.telnet.feed_screen(s.decode("utf-8") if hasattr(s, "decode") else s)
+        self.telnet.client.write(s.encode("utf-8"))
 
 
 class SshTvVkKcDelegate(SshUserActionDelegate):
@@ -119,8 +132,8 @@ class SshTvVkKcDelegate(SshUserActionDelegate):
     def textview_should_change(self, tv, rng, replacement):
         print("SSH: tvsc: " + repr((rng, replacement)))
         # _stash.mini_buffer.feed(rng, replacement)
-        if replacement == '':  # delete
-            replacement = '\x08'
+        if replacement == "":  # delete
+            replacement = "\x08"
         # self.telnet.feed_screen(replacement)
         self.send(replacement)
         return False  # always false
@@ -133,50 +146,50 @@ class SshTvVkKcDelegate(SshUserActionDelegate):
 
     def kc_pressed(self, key, modifierFlags):
         if modifierFlags == CTRL_KEY_FLAG:
-            if key == 'C':
-                self.send('\x03')
+            if key == "C":
+                self.send("\x03")
                 self.telnet.running = False
-            elif key == 'D':
-                self.send('\x04')
-            elif key == 'A':
-                self.send('\x01')
-            elif key == 'E':
-                self.send('\x05')
-            elif key == 'K':
-                self.send('\x0B')
-            elif key == 'L':
-                self.send('\x0C')
-            elif key == 'U':
-                self.send('\x15')
-            elif key == 'Z':
-                self.send('\x1A')
-            elif key == '[':
-                self.send('\x1B')  # ESC
+            elif key == "D":
+                self.send("\x04")
+            elif key == "A":
+                self.send("\x01")
+            elif key == "E":
+                self.send("\x05")
+            elif key == "K":
+                self.send("\x0b")
+            elif key == "L":
+                self.send("\x0c")
+            elif key == "U":
+                self.send("\x15")
+            elif key == "Z":
+                self.send("\x1a")
+            elif key == "[":
+                self.send("\x1b")  # ESC
         elif modifierFlags == 0:
-            if key == 'UIKeyInputUpArrow':
-                self.send('\x10')
-            elif key == 'UIKeyInputDownArrow':
-                self.send('\x0E')
-            elif key == 'UIKeyInputLeftArrow':
-                self.send('\033[D')
-            elif key == 'UIKeyInputRightArrow':
-                self.send('\033[C')
+            if key == "UIKeyInputUpArrow":
+                self.send("\x10")
+            elif key == "UIKeyInputDownArrow":
+                self.send("\x0e")
+            elif key == "UIKeyInputLeftArrow":
+                self.send("\033[D")
+            elif key == "UIKeyInputRightArrow":
+                self.send("\033[C")
 
     def vk_tapped(self, vk):
         if vk == K_TAB:
-            self.send('\t')
+            self.send("\t")
         elif vk == K_CC:
-            self.kc_pressed('C', CTRL_KEY_FLAG)
+            self.kc_pressed("C", CTRL_KEY_FLAG)
         elif vk == K_CD:
-            self.kc_pressed('D', CTRL_KEY_FLAG)
+            self.kc_pressed("D", CTRL_KEY_FLAG)
         elif vk == K_CU:
-            self.kc_pressed('U', CTRL_KEY_FLAG)
+            self.kc_pressed("U", CTRL_KEY_FLAG)
         elif vk == K_CZ:
-            self.kc_pressed('Z', CTRL_KEY_FLAG)
+            self.kc_pressed("Z", CTRL_KEY_FLAG)
         elif vk == K_HUP:
-            self.kc_pressed('UIKeyInputUpArrow', 0)
+            self.kc_pressed("UIKeyInputUpArrow", 0)
         elif vk == K_HDN:
-            self.kc_pressed('UIKeyInputDownArrow', 0)
+            self.kc_pressed("UIKeyInputDownArrow", 0)
 
         elif vk == K_KB:
             if _stash.terminal.is_editing:
@@ -189,28 +202,38 @@ class SshSVDelegate(SshUserActionDelegate):
     """
     Delegate for scroll view
     """
+
     SCROLL_PER_CHAR = 20.0  # Number of pixels to scroll to move 1 character
 
     def scrollview_did_scroll(self, scrollview):
         # integrate small scroll motions, but keep scrollview from actually moving
         if not scrollview.decelerating:
-            scrollview.superview.dx -= scrollview.content_offset[0] / SshSVDelegate.SCROLL_PER_CHAR
+            scrollview.superview.dx -= (
+                scrollview.content_offset[0] / SshSVDelegate.SCROLL_PER_CHAR
+            )
         scrollview.content_offset = (0.0, 0.0)
 
         offset = int(scrollview.superview.dx)
         if offset:
             scrollview.superview.dx -= offset
             if offset > 0:
-                self.send('\033[C')
+                self.send("\033[C")
             else:
-                self.send('\033[D')
+                self.send("\033[D")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument('host', help='host to connect')
-    ap.add_argument('-p', '--port', action='store', default=23, type=int, help='port for telnet (default: 23)')
-    ap.add_argument('--timeout', type=int, default=2, help='timeout')
+    ap.add_argument("host", help="host to connect")
+    ap.add_argument(
+        "-p",
+        "--port",
+        action="store",
+        default=23,
+        type=int,
+        help="port for telnet (default: 23)",
+    )
+    ap.add_argument("--timeout", type=int, default=2, help="timeout")
     args = ap.parse_args()
 
     telnet = StashTelnet()
@@ -218,12 +241,14 @@ if __name__ == '__main__':
     sv_delegate = SshSVDelegate(telnet)
 
     if telnet.connect(host=args.host, port=args.port, timeout=args.timeout):
-        print('Connected. Press Ctrl-C to quit.')
-        _stash.stream.feed(u'\u009bc', render_it=False)
-        with _stash.user_action_proxy.config(tv_responder=tv_vk_kc_delegate,
-                                             kc_responder=tv_vk_kc_delegate.kc_pressed,
-                                             vk_responder=tv_vk_kc_delegate.vk_tapped,
-                                             sv_responder=sv_delegate):
+        print("Connected. Press Ctrl-C to quit.")
+        _stash.stream.feed("\u009bc", render_it=False)
+        with _stash.user_action_proxy.config(
+            tv_responder=tv_vk_kc_delegate,
+            kc_responder=tv_vk_kc_delegate.kc_pressed,
+            vk_responder=tv_vk_kc_delegate.vk_tapped,
+            sv_responder=sv_delegate,
+        ):
             telnet.interactive()
     else:
-        print('Unable to connect')
+        print("Unable to connect")

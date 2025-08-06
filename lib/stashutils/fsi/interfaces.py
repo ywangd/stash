@@ -2,6 +2,7 @@
 """
 This module contains a dictionary mapping the identifiers to the fsi-classes
 """
+
 from stash.system.shcommon import _STASH_EXTENSION_FSI_PATH
 from stashutils.fsi.local import LocalFSI
 from stashutils.fsi.FTP import FTPFSI

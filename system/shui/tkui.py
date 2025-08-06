@@ -1,11 +1,24 @@
 """
 Tkinter UI for StaSh
 """
+
 import six
-from six.moves import tkinter,  tkinter_messagebox, tkinter_scrolledtext, queue
+from six.moves import tkinter, tkinter_messagebox, tkinter_scrolledtext, queue
 
 from ..shscreens import ShChar
-from ..shcommon import K_CC, K_CD, K_HUP, K_HDN, K_LEFT, K_RIGHT, K_CU, K_TAB, K_HIST, K_CZ, K_KB
+from ..shcommon import (
+    K_CC,
+    K_CD,
+    K_HUP,
+    K_HDN,
+    K_LEFT,
+    K_RIGHT,
+    K_CU,
+    K_TAB,
+    K_HIST,
+    K_CZ,
+    K_KB,
+)
 from .base import ShBaseUI, ShBaseTerminal, ShBaseSequentialRenderer
 
 
@@ -13,18 +26,19 @@ class ShUI(ShBaseUI):
     """
     An UI using the Tkinter module.
     """
+
     def __init__(self, *args, **kwargs):
         ShBaseUI.__init__(self, *args, **kwargs)
         # ui
         self.tk = tkinter.Tk()
         self.tk.title("StaSh")
         self.tk.protocol("WM_DELETE_WINDOW", self.on_close)
-        
+
         # fullscreen logic
         # from: https://stackoverflow.com/a/23840010
         self._fullscreen = False
         self.tk.bind_all("<F11>", self._toggle_fullscreen)
-        
+
         # terminal
         self.terminal = ShTerminal(self.stash, self)
 
@@ -32,32 +46,36 @@ class ShUI(ShBaseUI):
         self._rc_menu = tkinter.Menu(self.tk, tearoff=0)
         self._rc_menu.add_command(label="Copy", command=self._rc_copy)
         self._rc_menu.add_command(label="Paste", command=self._rc_paste)
-        self._rc_menu.add_command(label="Toggle Fullscreen", command=self._toggle_fullscreen)
+        self._rc_menu.add_command(
+            label="Toggle Fullscreen", command=self._toggle_fullscreen
+        )
         self._rc_menu.add_command(label="Quit", command=self.stash.close)
-        self.tk.bind("<Button-3>", self._popup_rc_menu)  # TODO: check <Button-3> portability
-    
+        self.tk.bind(
+            "<Button-3>", self._popup_rc_menu
+        )  # TODO: check <Button-3> portability
+
     def show(self):
         self.tk.mainloop()
-    
+
     def close(self):
         self.on_exit()  # not on_close()
         self._close_ui()
-    
+
     def on_close(self):
         """
         Called when the window will be closed
         """
-        if tkinter_messagebox.askokcancel(u"Quit", u"Are you sure you want to quit?"):
+        if tkinter_messagebox.askokcancel("Quit", "Are you sure you want to quit?"):
             self.on_exit()
             self._close_ui()
-    
+
     def _close_ui(self):
         """
         Actually close the UI.
         """
         self.stash.renderer._stop_rendering()
         self.tk.destroy()
-    
+
     def history_present(self, history):
         window = tkinter.Toplevel(self.tk)
         listbox = tkinter.Listbox(window)
@@ -70,10 +88,16 @@ class ShUI(ShBaseUI):
         items = history.getlist()
         for line in items:
             listbox.insert(tkinter.END, line)
-        listbox.bind("<Double-Button-1>", lambda e: self._history_selected(window, items, listbox.curselection()))
-        listbox.bind("<Return>", lambda e: self._history_selected(window, items, listbox.curselection()))
+        listbox.bind(
+            "<Double-Button-1>",
+            lambda e: self._history_selected(window, items, listbox.curselection()),
+        )
+        listbox.bind(
+            "<Return>",
+            lambda e: self._history_selected(window, items, listbox.curselection()),
+        )
         listbox.focus_set()
-    
+
     def _history_selected(self, window, items, idx):
         """
         Called when a line was selected from the history popover.
@@ -104,7 +128,7 @@ class ShUI(ShBaseUI):
         Called on "Copy" in rc_menu. Copy selected content to clipboard.
         """
         sr = self.terminal.selected_range
-        selected_text = self.terminal.text[sr[0]:sr[1]]
+        selected_text = self.terminal.text[sr[0] : sr[1]]
         self.stash.libdist.clipboard_set(selected_text)
 
     def _rc_paste(self):
@@ -113,8 +137,10 @@ class ShUI(ShBaseUI):
         """
         text = self.stash.libdist.clipboard_get()
         rng = self.terminal.selected_range
-        self.stash.user_action_proxy.tv_responder.textview_should_change(None, rng, text)
-    
+        self.stash.user_action_proxy.tv_responder.textview_should_change(
+            None, rng, text
+        )
+
     def _toggle_fullscreen(self, event=None):
         """
         Toggle the fullscreen mode.
@@ -128,18 +154,17 @@ class ShTerminal(ShBaseTerminal):
     """
     A Terminal using the Tkinter module
     """
-    
+
     _LOOP_DELAY = 5
-    
+
     _keymapping = {  # tkinter event -> StaSh key
-        "\x03": K_CC,    # ctrl-c
-        "\t": K_TAB,     # tab
+        "\x03": K_CC,  # ctrl-c
+        "\t": K_TAB,  # tab
         "\x08": K_HIST,  # ctrl-h
-        "\x1a": K_CZ,    # ctrl-z
-        "\x15": K_CU,    # ctrl-u
-        
+        "\x1a": K_CZ,  # ctrl-z
+        "\x15": K_CU,  # ctrl-u
     }
-    
+
     def __init__(self, stash, parent):
         ShBaseTerminal.__init__(self, stash, parent)
         self._txtvar_out = tkinter.StringVar(self.parent.tk)
@@ -151,7 +176,7 @@ class ShTerminal(ShBaseTerminal):
             fg=self._color_from_tuple(self.text_color),
             insertbackground=self._color_from_tuple(self.tint_color),
             selectbackground=self._color_from_tuple(self.tint_color),
-            )
+        )
         self._txt.pack(fill=tkinter.BOTH, expand=1)
         # binding
         self._txt.bind("<Key>", self._on_key_press)
@@ -166,7 +191,7 @@ class ShTerminal(ShBaseTerminal):
         # output queue
         self._q = queue.Queue()
         self.parent.tk.after(self._LOOP_DELAY, self._loop)
-    
+
     def _loop(self):
         try:
             v = self._q.get(0)
@@ -175,15 +200,19 @@ class ShTerminal(ShBaseTerminal):
         else:
             self._txtvar_out.set(v)
         self.parent.tk.after(self._LOOP_DELAY, self._loop)
-    
+
     @property
     def text(self):
-        return self._txt.get("1.0", tkinter.END).replace("\r\n", "\n").replace("\r", "\n")[:-1]
-    
+        return (
+            self._txt.get("1.0", tkinter.END)
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")[:-1]
+        )
+
     @text.setter
     def text(self, value):
         self._q.put(value)
-    
+
     def _on_key_press(self, event):
         """
         Called when a key was pressed.
@@ -191,38 +220,49 @@ class ShTerminal(ShBaseTerminal):
         :type event: six.moves.tkinter.Event
         """
         # get the current position
-        cp = self._get_cursor_position()  # TODO: check if this must be calculated before or after the keypress
+        cp = (
+            self._get_cursor_position()
+        )  # TODO: check if this must be calculated before or after the keypress
         rng = self.selected_range
         replacement = event.char
         skip_should_change = False  # if true, skip should_change
         if self.debug:
-            self.logger.debug("key {!r} pressed (symbol: {!r}; selected: {!r})".format(replacement, event.keysym, rng))
-        
+            self.logger.debug(
+                "key {!r} pressed (symbol: {!r}; selected: {!r})".format(
+                    replacement, event.keysym, rng
+                )
+            )
+
         if replacement in ("\r", "\r\n"):
             replacement = "\n"
         elif replacement == "\x08" and event.keysym != "h":
             # backspace (for some reason, same code as ctrl-h)
-            replacement = u""
+            replacement = ""
             if rng[0] == rng[1]:
                 rng = (rng[0] - 1, rng[1])
         elif replacement == "\x7f":
             # del
-            replacement = u""
+            replacement = ""
             skip_should_change = True
             if rng[0] == rng[1]:
                 rng = (rng[0], rng[1])
         elif replacement in self._keymapping:
             self.stash.user_action_proxy.vk_tapped(self._keymapping[replacement])
             return "break"
-        
-        if skip_should_change or self.stash.user_action_proxy.tv_responder.textview_should_change(None, rng, replacement):
+
+        if (
+            skip_should_change
+            or self.stash.user_action_proxy.tv_responder.textview_should_change(
+                None, rng, replacement
+            )
+        ):
             self.parent.tk.after(0, self._notify_change)
-            #self.parent.tk.after(0, self._notify_cursor_move)
+            # self.parent.tk.after(0, self._notify_cursor_move)
         else:
             # break event
             return "break"
         # TODO: the cursor probably moved
-    
+
     def _arrow_key_pressed(self, event):
         """
         Called when an arrow key was pressed.
@@ -243,13 +283,13 @@ class ShTerminal(ShBaseTerminal):
         else:
             raise ValueError("Unknown key: {!r}".format(d))
         return "break"
-    
+
     def _notify_change(self):
         """
         Notify StaSh that the text changed.
         """
         self.stash.user_action_proxy.tv_responder.textview_did_change(None)
-    
+
     def _set_text(self, text):
         """
         Set the text.
@@ -257,8 +297,7 @@ class ShTerminal(ShBaseTerminal):
         :type text: str
         """
         self.text = text
-        
-    
+
     def _on_focus(self, event):
         """
         Called when the focus was lost.
@@ -266,7 +305,7 @@ class ShTerminal(ShBaseTerminal):
         :type event: six.moves.tkinter.Event
         """
         self.stash.user_action_proxy.tv_responder.textview_did_begin_editing(None)
-    
+
     def _on_focus_loss(self, event):
         """
         Called when the focus was lost.
@@ -274,7 +313,7 @@ class ShTerminal(ShBaseTerminal):
         :type event: six.moves.tkinter.Event
         """
         self.stash.user_action_proxy.tv_responder.textview_did_end_editing(None)
-    
+
     def _get_cursor_position(self):
         """
         Return the cursor position as a delta from the start.
@@ -283,7 +322,7 @@ class ShTerminal(ShBaseTerminal):
         """
         v = self._get_absolute_cursor_position()
         return self._abs_cursor_pos_to_rel_pos(v)
-    
+
     def _get_absolute_cursor_position(self):
         """
         Return the actual cursor position as a tuple of (row, column)
@@ -293,7 +332,7 @@ class ShTerminal(ShBaseTerminal):
         # source of first line: https://stackoverflow.com/questions/30000368/how-to-get-current-cursor-position-for-text-widget
         raw = self._txt.index(tkinter.INSERT)
         return self._tk_index_to_tuple(raw)
-    
+
     def _abs_cursor_pos_to_rel_pos(self, value, lines=None):
         """
         Convert an absolute cursor position (tuple of (int, int)) into a index relative to the start (int).
@@ -316,7 +355,7 @@ class ShTerminal(ShBaseTerminal):
         n += column
         # done
         return n
-    
+
     def _rel_cursor_pos_to_abs_pos(self, value, lines=None):
         """
         Convert a cursor position relative to the start (int) to a tuple of (row, column).
@@ -334,16 +373,16 @@ class ShTerminal(ShBaseTerminal):
         while True:
             if row >= len(lines):
                 # for some reason, we are at the end of the text. this is probably a bug, but lets return an approximate value to the end
-                return (len(lines) - 1, len(lines[len(lines) - 1]) - 1 )
+                return (len(lines) - 1, len(lines[len(lines) - 1]) - 1)
             ll = len(lines[row])
             if n <= ll:
                 # n fits in line
                 return row, n
             else:
                 # n must be in next line
-                n -= (ll + 1)  # 1 for newline
+                n -= ll + 1  # 1 for newline
                 row += 1
-    
+
     def _tk_index_to_tuple(self, value):
         """
         Convert a tkinter index to a tuple of (row, column), starting at 0
@@ -356,7 +395,7 @@ class ShTerminal(ShBaseTerminal):
         row = int(splitted[0]) - 1
         column = int(splitted[1])
         return (row, column)
-    
+
     def _tuple_to_tk_index(self, value):
         """
         Convert a (row, column) tuple to a tk index.
@@ -367,7 +406,7 @@ class ShTerminal(ShBaseTerminal):
         """
         row, column = value
         return str(row + 1) + "." + str(column)
-    
+
     def _get_selection_range(self):
         """
         Return the index of the currently selected text.
@@ -385,14 +424,13 @@ class ShTerminal(ShBaseTerminal):
         rsi = self._abs_cursor_pos_to_rel_pos(si)
         rei = self._abs_cursor_pos_to_rel_pos(ei)
         return rsi, rei
-    
+
     def _leftmost(self):
         """
         Check if the current cursor is at the left end of the modifiable chars.
         """
         return self._get_cursor_position() <= self.stash.main_screen.x_modifiable
-        
-    
+
     def _update_text(self, *args):
         """
         Update the text
@@ -400,7 +438,7 @@ class ShTerminal(ShBaseTerminal):
         self._txt.delete("1.0", tkinter.END)
         out = self._txtvar_out.get()
         self._txt.insert("1.0", out)
-    
+
     def _tag_for_char(self, c):
         """
         Return the tag to use for the given character.
@@ -417,17 +455,18 @@ class ShTerminal(ShBaseTerminal):
             underscore=c.underscore,
             strikethrough=c.strikethrough,
             reverse=c.reverse,
-            )
-    
-    def _tag_for_options(self,
-            fg="default",
-            bg="default",
-            bold=False,
-            italics=False,
-            underscore=False,
-            strikethrough=False,
-            reverse=False,
-            ):
+        )
+
+    def _tag_for_options(
+        self,
+        fg="default",
+        bg="default",
+        bold=False,
+        italics=False,
+        underscore=False,
+        strikethrough=False,
+        reverse=False,
+    ):
         """
         Return a tag which described the given options.
         :param fg: fg color
@@ -459,7 +498,7 @@ class ShTerminal(ShBaseTerminal):
         if reverse:
             s += "-reverse"
         return s
-    
+
     def _add_color_tags(self):
         """
         Add the color tags.
@@ -483,29 +522,34 @@ class ShTerminal(ShBaseTerminal):
                                         underscore=underscore,
                                         strikethrough=strikethrough,
                                         reverse=reverse,
-                                        )
+                                    )
                                     kwargs = {}
                                     fontattrs = []
                                     if fg != "default":
-                                        kwargs["foreground"] = self.stash.renderer.FG_COLORS[fg]
+                                        kwargs["foreground"] = (
+                                            self.stash.renderer.FG_COLORS[fg]
+                                        )
                                     if bg != "default":
-                                        kwargs["background"] = self.stash.renderer.BG_COLORS[bg]
+                                        kwargs["background"] = (
+                                            self.stash.renderer.BG_COLORS[bg]
+                                        )
                                     if underscore:
                                         kwargs["underline"] = True
                                     if bold:
                                         fontattrs.append("bold")
                                     if italics:
                                         fontattrs.append("italic")
-                                    font = ("Menlo-regular", self.font_size, " ".join(fontattrs))
+                                    font = (
+                                        "Menlo-regular",
+                                        self.font_size,
+                                        " ".join(fontattrs),
+                                    )
                                     kwargs["font"] = font
-                                    self._txt.tag_config(
-                                        tag,
-                                        **kwargs
-                                        )
+                                    self._txt.tag_config(tag, **kwargs)
                                     # TODO: support for reverse
         self._colors_initialized = True
         self.logger.info("Color system initialized.")
-    
+
     def _color_from_tuple(self, value):
         """
         Convert an rgb color tuple to a hex color
@@ -520,9 +564,9 @@ class ShTerminal(ShBaseTerminal):
         b = int(255 * b)
         hexcode = "#{:02X}{:02X}{:02X}".format(r, g, b)
         return hexcode
-    
+
     # ============= api implementation ============
-    
+
     @property
     def selected_range(self):
         start, end = self._get_selection_range()
@@ -531,7 +575,7 @@ class ShTerminal(ShBaseTerminal):
             return (cp, cp)
         else:
             return (start, end)
-    
+
     @selected_range.setter
     def selected_range(self, value):
         assert isinstance(value, tuple)
@@ -550,16 +594,16 @@ class ShTerminal(ShBaseTerminal):
             self._txt.mark_set(tkinter.INSERT, end)
             # set focus
             self.set_focus()
-    
+
     def scroll_to_end(self):
         self._txt.see(tkinter.END)
-    
+
     def set_focus(self):
         self._txt.focus_set()
-    
+
     def lose_focus(self):
         self.parent.tk.focus_set()
-    
+
     def replace_in_range(self, rng, text):
         """
         Replace the text in the given range
@@ -569,7 +613,10 @@ class ShTerminal(ShBaseTerminal):
         :type text: iterable of str or ShChar
         """
         rstart, length = rng
-        start, end = self._rel_cursor_pos_to_abs_pos(rstart), self._rel_cursor_pos_to_abs_pos(rstart + length)
+        start, end = (
+            self._rel_cursor_pos_to_abs_pos(rstart),
+            self._rel_cursor_pos_to_abs_pos(rstart + length),
+        )
         tkstart, tkend = self._tuple_to_tk_index(start), self._tuple_to_tk_index(end)
         saved = self.selected_range
         self._txt.delete(tkstart, tkend)
@@ -584,14 +631,14 @@ class ShTerminal(ShBaseTerminal):
                     self._add_color_tags()
                 ch = c.data
                 if c.strikethrough:
-                    ch = u"\u0336" + ch
+                    ch = "\u0336" + ch
                     a += 1
                 self._txt.insert(ctkp, ch, self._tag_for_char(c))
             else:
                 raise TypeError("Unknown character type {!r}!".format(type(c)))
             cp += a
         self.selected_range = saved  # restore cursor position
-    
+
     def get_wh(self):
         """
         Return the number of columns and rows.
@@ -605,44 +652,45 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
     """
     ShSequentialBaseRenderer for Tkinter
     """
+
     RENDER_INTERVAL = 1
-    
+
     FG_COLORS = {
-        'black': "black",
-        'red': "red",
-        'green': "green",
-        'brown': "brown",
-        'blue': "blue",
-        'magenta': "magenta",
-        'cyan': "cyan",
-        'white': "white",
-        'gray': "gray",
-        'yellow': "yellow",
-        'smoke': "gray64",
-        'default': "white",
+        "black": "black",
+        "red": "red",
+        "green": "green",
+        "brown": "brown",
+        "blue": "blue",
+        "magenta": "magenta",
+        "cyan": "cyan",
+        "white": "white",
+        "gray": "gray",
+        "yellow": "yellow",
+        "smoke": "gray64",
+        "default": "white",
     }
 
     BG_COLORS = {
-        'black': "black",
-        'red': "red",
-        'green': "green",
-        'brown': "brown",
-        'blue': "blue",
-        'magenta': "magenta",
-        'cyan': "cyan",
-        'white': "white",
-        'gray': "gray",
-        'yellow': "yellow",
-        'smoke': "gray64",
-        'default': "red",
+        "black": "black",
+        "red": "red",
+        "green": "green",
+        "brown": "brown",
+        "blue": "blue",
+        "magenta": "magenta",
+        "cyan": "cyan",
+        "white": "white",
+        "gray": "gray",
+        "yellow": "yellow",
+        "smoke": "gray64",
+        "default": "red",
     }
-    
+
     def __init__(self, *args, **kwargs):
         ShBaseSequentialRenderer.__init__(self, *args, **kwargs)
         self.should_render = False
         self._render_loop_active = True
         self.stash.ui.tk.after(0, self._renderer_loop)
-    
+
     def _renderer_loop(self):
         """
         Internal renderer loop.
@@ -654,16 +702,16 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
             self.should_render = False
             self._render()
         self.stash.ui.tk.after(self.RENDER_INTERVAL, self._renderer_loop)
-    
+
     def render(self, no_wait=False):
         self.should_render = True
-    
+
     def _stop_rendering(self):
         """
         Stop the render loop.
         """
         self._render_loop_active = False
-    
+
     def _render(self, no_wait=False):
         # Lock screen to get atomic information
         with self.screen.acquire_lock():
@@ -672,12 +720,14 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
             cursor_xs, cursor_xe = self.screen.cursor_x
             renderable_chars = self.screen.renderable_chars
             self.screen.clean()
-        
+
         # First remove any leading texts that are rotated out
         if intact_left_bound > 0:
-            self.terminal.replace_in_range((0, intact_left_bound), '')
+            self.terminal.replace_in_range((0, intact_left_bound), "")
 
-        tv_text_length = self.terminal.text_length  # tv_text_length = tvo_texts.length()
+        tv_text_length = (
+            self.terminal.text_length
+        )  # tv_text_length = tvo_texts.length()
 
         # Second (re)render any modified trailing texts
         # When there are contents beyond the right bound, either on screen
@@ -685,16 +735,14 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
         if intact_right_bound < max(tv_text_length, screen_buffer_length):
             if len(renderable_chars) > 0:
                 self.terminal.replace_in_range(
-                    (intact_right_bound,
-                     tv_text_length - intact_right_bound),
+                    (intact_right_bound, tv_text_length - intact_right_bound),
                     # "".join([c.data for c in renderable_chars]),
                     renderable_chars,
                 )
             else:  # empty string, pure deletion
                 self.terminal.replace_in_range(
-                    (intact_right_bound,
-                     tv_text_length - intact_right_bound),
-                    '',
+                    (intact_right_bound, tv_text_length - intact_right_bound),
+                    "",
                 )
 
         # Set the cursor position. This makes terminal and main screen cursors in sync

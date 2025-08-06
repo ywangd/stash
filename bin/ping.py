@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
-Usage: 
+Usage:
     ping [-c <count>] [-i <interval>] [-W <timeout>] <destination>
 
 Options:
@@ -34,14 +34,14 @@ Options:
 
     Rewrite by Jens Diemer:
       -> http://www.python-forum.de/post-69122.html#69122
-    
+
 
     Revision history
     ~~~~~~~~~~~~~~~~
     August 18, 2016
     changes by J. Bain
       - implemented interface for pythonista stash
-      
+
     March 11, 2010
     changes by Samuel Stauffer:
     - replaced time.clock with default_timer which is set to
@@ -79,6 +79,7 @@ Options:
     $Rev: $
     $Author: $
 """
+
 from __future__ import print_function
 
 import os
@@ -116,20 +117,20 @@ def checksum(source_string):
             v2 = ord(v2)
         thisVal = v1 * 256 + v2
         sum = sum + thisVal
-        sum = sum & 0xffffffff  # Necessary?
+        sum = sum & 0xFFFFFFFF  # Necessary?
         count = count + 2
 
     if countTo < len(source_string):
         sum = sum + ord(source_string[len(source_string) - 1])
-        sum = sum & 0xffffffff  # Necessary?
+        sum = sum & 0xFFFFFFFF  # Necessary?
 
-    sum = (sum >> 16) + (sum & 0xffff)
+    sum = (sum >> 16) + (sum & 0xFFFF)
     sum = sum + (sum >> 16)
     answer = ~sum
-    answer = answer & 0xffff
+    answer = answer & 0xFFFF
 
     # Swap bytes. Bugger me if I know why.
-    answer = answer >> 8 | (answer << 8 & 0xff00)
+    answer = answer >> 8 | (answer << 8 & 0xFF00)
 
     return answer
 
@@ -142,7 +143,7 @@ def receive_one_ping(my_socket, ID, timeout):
     while True:
         startedSelect = default_timer()
         whatReady = select.select([my_socket], [], [], timeLeft)
-        howLongInSelect = (default_timer() - startedSelect)
+        howLongInSelect = default_timer() - startedSelect
         if whatReady[0] == []:  # Timeout
             return
 
@@ -155,7 +156,7 @@ def receive_one_ping(my_socket, ID, timeout):
         # You'll see your own request
         if type != 8 and packetID == ID:
             bytesInDouble = struct.calcsize(b"d")
-            timeSent = struct.unpack(b"d", recPacket[28:28 + bytesInDouble])[0]
+            timeSent = struct.unpack(b"d", recPacket[28 : 28 + bytesInDouble])[0]
             return timeReceived - timeSent
 
         timeLeft = timeLeft - howLongInSelect
@@ -183,7 +184,9 @@ def send_one_ping(my_socket, dest_addr, ID):
 
     # Now that we have the right checksum, we put that in. It's just easier
     # to make up a new header than to stuff it into the dummy.
-    header = struct.pack(b"bbHHh", ICMP_ECHO_REQUEST, 0, socket.htons(my_checksum), ID, 1)
+    header = struct.pack(
+        b"bbHHh", ICMP_ECHO_REQUEST, 0, socket.htons(my_checksum), ID, 1
+    )
     packet = header + data
     my_socket.sendto(packet, (dest_addr, 1))  # Don't know about the 1
 
@@ -211,7 +214,7 @@ def verbose_ping(dest_addr, timeout=2, count=4, interval=1.0):
     """
     ping_succeeded = False
     for i in xrange(count):
-        print("ping %s..." % dest_addr, end=' ')
+        print("ping %s..." % dest_addr, end=" ")
         try:
             delay = do_one(dest_addr, timeout)
         except socket.gaierror as e:
@@ -227,13 +230,28 @@ def verbose_ping(dest_addr, timeout=2, count=4, interval=1.0):
     return ping_succeeded
 
 
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description="send ICMP ECHO_REQUEST to network hosts")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="send ICMP ECHO_REQUEST to network hosts"
+    )
     parser.add_argument("destination", help="host to ping")
-    parser.add_argument("-W", "--timeout", help="specify a timeout", type=float, default=2)
-    parser.add_argument("-c", "--count", help="stop after sending this much ECHO_REQUEST packkets", type=int, default=5)
-    parser.add_argument("-i", "--interval", help="Wait the specified time between each ping", type=float, default=1.0)
+    parser.add_argument(
+        "-W", "--timeout", help="specify a timeout", type=float, default=2
+    )
+    parser.add_argument(
+        "-c",
+        "--count",
+        help="stop after sending this much ECHO_REQUEST packkets",
+        type=int,
+        default=5,
+    )
+    parser.add_argument(
+        "-i",
+        "--interval",
+        help="Wait the specified time between each ping",
+        type=float,
+        default=1.0,
+    )
 
     ns = parser.parse_args()
 
