@@ -9,4 +9,3 @@ Content
    Creating new Patches.........5
 
 To view a page, type "man monkeypatching(n)" where "n" is the pagenumber.
-

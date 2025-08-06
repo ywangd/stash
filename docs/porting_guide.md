@@ -59,7 +59,7 @@ This class represents the core of your UI.
 - `on_exit(self)`:
    - This method must be called when the window will be closed.
    - If you overwrite this method, be sure to call the base method.
-   
+
  - `*Action(self)`:
    - these are countless methods which should be called when the user performs the action described in the methods name. E.g. call `controlCAction` if the user presses `ctr` and `c`.
 
@@ -92,7 +92,7 @@ Also note that StaSh uses `\n` as linebreaks, so you may need to convert those.
 - `lose_focus(self)`:
    - If possible, lose the input focus of the OS.
 - `replace_in_range(self, rng, text)`:
-   - rng is the range to replace, **as (start, length)**. `text` is the new text (depending on your renderer, either `str` or a sequence of `ShChar`s). 
+   - rng is the range to replace, **as (start, length)**. `text` is the new text (depending on your renderer, either `str` or a sequence of `ShChar`s).
    - replace the text in the given range.
    - the most important method for the UI (except when using a different renderer implementation).
    - if the text consits of `ShChar`s, you may want to handle colors and other styles. See `system.shscreens.ShChar` for more details.
@@ -142,7 +142,7 @@ This code is a modified version copy&pasted from `tkui.py`, which in turn got it
             cursor_xs, cursor_xe = self.screen.cursor_x
             renderable_chars = self.screen.renderable_chars
             self.screen.clean()
-        
+
         # First remove any leading texts that are rotated out
         if intact_left_bound > 0:
             self.terminal.replace_in_range((0, intact_left_bound), '')

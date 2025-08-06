@@ -20,7 +20,7 @@ jobs:
     - run: ruff check --output-format=github --target-version=py37
                --ignore=E401,E402,E501,E701,E721,E722,E731,E741,F401,F403,F405,F523,F524,F811,F841
     - run: ruff format --check --diff --target-version=py37
-                
+
   build:
     runs-on: macos-latest
     strategy:
@@ -51,5 +51,5 @@ jobs:
         # TODO: Get test_runtime and sp_test working again
         pytest --ignore=tests/system/data/ --ignore=tests/system/test_runtime.py --ignore=lib/mlpatches/tests/sp_test.py \
                --showlocals --verbose --show-capture=all --log-level=debug
-        # export PYTHONPATH=$(python -m site --user-site) 
+        # export PYTHONPATH=$(python -m site --user-site)
         # pytest tests/ --ignore=tests/system/data/ --showlocals --verbose --show-capture=all --log-level=debug
