@@ -644,7 +644,7 @@ This guide describes how to use mc.
 	Use the 'connect'-command for this.
 	Usage:
 		connect <id> <fsi-name> [args [args ...]]
-		
+
 		'id' is a number used to identify the connection in commands.
 			The ID 0 should not be used, as it is used internally.
 		'fsi-name' is the name of the FSI you want to use (e.g. 'local').
@@ -736,12 +736,12 @@ I cant copy/move a directory on the same interface:
 		7) upload the files
 		8) remove the tempdir
 	The actions 2,6 and 7 are only done in "w"-mode (more about this later).
-	
+
 	HOW TO RUN A COMMAND REMOTELY
 		You do this by using the 'run' command.
 		USAGE:
 			run <ID> <FILENAME> <MODE> <COMMAND> [ARGS [ARGS...]]
-			
+
 			'ID': the interface to use.
 			'FIlENAME': which file to download. Passing a dir *should* work.
 				Passing "*" downloads the current dir.
@@ -753,10 +753,10 @@ I cant copy/move a directory on the same interface:
 				passed to the shell-subcommand.
 		INFO:
 			Currently, file deletions are never transferred, regardless of mode.
-			
+
 			In "w"-mode, only previously downloaded files are uploaded.
 			(You can simple use '*' as a path)
-			
+
 			At the moment, there is a bug when trying to run a script in
 				a dir which is not the current dir (e.g. tests/test.py).
 			However, you can simply cd into the target dir and run the
