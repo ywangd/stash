@@ -41,6 +41,7 @@ l1=ls -1
 la=ls -a
 ll=ls -la
 paste=pbpaste
+python=python3
 unmount=umount
 
 AA is{0}

@@ -13,7 +13,7 @@ import logging.handlers
 import os
 import platform
 import sys
-from io import IOBase, BytesIO, StringIO
+from io import IOBase, StringIO
 from configparser import ConfigParser
 
 # noinspection PyPep8Naming
