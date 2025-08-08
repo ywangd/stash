@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """List information about files (the current directory by default)"""
 
-from __future__ import print_function
 import os
 import sys
 import time

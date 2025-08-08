@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Show information about this StaSh installation."""
 
-from __future__ import print_function
-
 import os
 import io
 import sys

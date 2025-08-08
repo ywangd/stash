@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Download a file from a url."""
 
-from __future__ import print_function
-
 import sys
 import argparse
 
@@ -14,8 +12,6 @@ except ImportError:
     console = None
 
 _stash = globals()["_stash"]
-
-PY3 = sys.version_info[0] == 3
 
 
 def get_status_string(downloaded, total):
@@ -58,10 +54,7 @@ def main(args):
 
         meta = u.info()
         try:
-            if PY3:
-                file_size = int(meta["Content-Length"])
-            else:
-                file_size = int(meta.getheaders("Content-Length")[0])
+            file_size = int(meta["Content-Length"])
         except (IndexError, ValueError, TypeError):
             file_size = 0
 

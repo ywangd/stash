@@ -11,8 +11,6 @@ import tempfile
 
 from io import StringIO
 
-PY3 = sys.version_info[0] == 3
-
 try:
     file
 except NameError:
@@ -720,15 +718,9 @@ class ShRuntime(object):
         Convert an argv list into the appropiate string type depending
         on the currently used python version.
         """
-        if PY3:
-            # we need unicode argv
-            argv = [c if isinstance(c, str) else c.decode("utf-8") for c in argv]
-        else:
-            # we need bytestring argv
-            argv = [
-                c if isinstance(c, (bytes, bytearray)) else c.encode("utf-8")
-                for c in argv
-            ]
+
+        # we need unicode argv
+        argv = [c if isinstance(c, str) else c.decode("utf-8") for c in argv]
         return argv
 
     def get_prompt(self):

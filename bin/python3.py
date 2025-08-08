@@ -13,7 +13,6 @@ usage:
     python3 python_file.py [args]
 """
 
-from __future__ import print_function
 import sys
 
 # check for py2/3

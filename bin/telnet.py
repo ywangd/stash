@@ -5,7 +5,6 @@ Simple telent client.
 usage: telnet host [-p port] [--timeout N]
 """
 
-from __future__ import print_function
 import sys
 import select
 import argparse

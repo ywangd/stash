@@ -9,7 +9,6 @@ usage:
     Follow prompt for instructions.
 """
 
-from __future__ import print_function
 import os
 import tempfile
 import console

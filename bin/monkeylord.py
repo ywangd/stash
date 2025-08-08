@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """easiliy manage monkey-patches. See 'man monkeypatching' for more help."""
 
-from __future__ import print_function
 import sys
 import argparse
 import sys
@@ -12,15 +11,9 @@ _stash = globals()["_stash"]
 from mlpatches import patches
 
 
-PY3 = sys.version_info[0] == 3
-
-
 def patch_is_compatible(patch):
     """Return True if the patch is compatible."""
-    if PY3:
-        return patch.PY3
-    else:
-        return patch.PY2
+    return patch.PY3
 
 
 def save_config(path):

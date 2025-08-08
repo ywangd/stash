@@ -13,8 +13,6 @@ import ctypes
 from itertools import chain
 
 
-PY3 = sys.version_info[0] == 3
-
 IN_PYTHONISTA = sys.executable.find("Pythonista") >= 0
 
 if IN_PYTHONISTA:
@@ -25,28 +23,7 @@ if IN_PYTHONISTA:
     PYTHONISTA_VERSION = _properties["CFBundleShortVersionString"]
     PYTHONISTA_VERSION_LONG = _properties["CFBundleVersion"]
 
-    if PYTHONISTA_VERSION < "3.0":
-        python_capi = ctypes.pythonapi
-    else:
-        # The default pythonapi always points to Python 3 in Pythonista 3
-        if PY3:
-            python_capi = ctypes.pythonapi
-        else:
-            # We need to load the Python 2 API manually
-            try:
-                python_capi = ctypes.PyDLL(
-                    os.path.join(
-                        os.path.dirname(sys.executable),
-                        "Frameworks/Py2Kit.framework/Py2Kit",
-                    )
-                )
-            except OSError:
-                python_capi = ctypes.PyDLL(
-                    os.path.join(
-                        os.path.dirname(sys.executable),
-                        "Frameworks/PythonistaKit.framework/PythonistaKit",
-                    )
-                )
+    python_capi = ctypes.pythonapi
 
 else:
     PYTHONISTA_VERSION = "0.0"
@@ -90,8 +67,6 @@ _EXTERNAL_DIRS = [
     _STASH_EXTENSION_PATCH_PATH,
 ]
 
-# Python 3 or not Python 3
-PY3 = sys.version_info[0] == 3
 
 # Save the true IOs
 if IN_PYTHONISTA:
