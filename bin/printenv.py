@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """List current environment variables and values."""
 
-from __future__ import division, print_function, unicode_literals
-
 import argparse
 import os
 import sys

@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """Print the contents of the given files."""
 
-from __future__ import print_function
-
 import argparse
 import string
 import sys

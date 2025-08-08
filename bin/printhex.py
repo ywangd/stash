@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """Print the given files' content and hexadecimal byte values."""
 
-from __future__ import print_function
-
 import argparse
 import sys
 

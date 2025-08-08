@@ -12,8 +12,6 @@ optional arguments:
   -h, --help  show this help message and exit
 """
 
-from __future__ import print_function
-
 import sys
 from argparse import ArgumentParser
 

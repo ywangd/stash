@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """Open file in an external app."""
 
-from __future__ import print_function
-
 import argparse
 import sys
 

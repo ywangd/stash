@@ -32,7 +32,6 @@ optional arguments:
   -f FILE, --file FILE  Archive filename.
 """
 
-from __future__ import print_function
 import argparse
 import os
 import tarfile

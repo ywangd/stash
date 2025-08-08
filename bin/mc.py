@@ -340,7 +340,7 @@ class McCmd(cmd.Cmd):
                 self.stdout.write("Creating dir '{n}'... ".format(n=wfp))
                 try:
                     wfsi.mkdir(wfp)
-                except AlreadyExists as e:
+                except AlreadyExists:
                     pass
                 self.stdout.write(Text("Done", "green"))
                 self.stdout.write(".\n")
@@ -621,12 +621,12 @@ class McCmd(cmd.Cmd):
         if i not in self.FSIs:
             self.stdout.write(Text("Error: Interface not found!\n", "red"))
             return None, None
-        if ret == str:
+        if ret is str:
             if len(args) > 1:
                 args = " ".join(args[1:])
             else:
                 args = ""
-        elif ret == tuple:
+        elif ret is tuple:
             args = args[1:]
         else:
             raise ValueError("Unknown return type!")

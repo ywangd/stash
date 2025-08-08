@@ -24,7 +24,7 @@ def get_platform():
 
     # attempt to fall back to tkinter
     try:
-        from six.moves import tkinter
+        import tkinter
     except ImportError:
         # can not import tkinter
         # ignore this case. If this executes successfully, it is handled in the 'else' clause

@@ -7,17 +7,14 @@ https://github.com/ywangd/stash
 
 __version__ = "0.7.5"
 
-import imp as pyimp  # rename to avoid name conflict with objc_util
+import importlib
 import logging
 import logging.handlers
 import os
 import platform
 import sys
-from io import IOBase
-
-import six
-from six import BytesIO, StringIO
-from six.moves.configparser import ConfigParser
+from io import IOBase, StringIO
+from configparser import ConfigParser
 
 # noinspection PyPep8Naming
 from .system.shcommon import (
@@ -101,13 +98,22 @@ for p in _EXTERNAL_DIRS:
             pass
 
 
+def load_source(modname, filename):
+    loader = importlib.machinery.SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    # The module is always executed and not cached in sys.modules.
+    # Uncomment the following line to cache the module.
+    # sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module
+
+
 class StaSh(object):
     """
     Main application class. It initialize and wires the components and provide
     utility interfaces to running scripts.
     """
-
-    PY3 = six.PY3
 
     def __init__(
         self,
@@ -182,22 +188,7 @@ class StaSh(object):
                 always=True,
             ),
         )
-        # warn on py3
-        if self.PY3:
-            self.io.write(
-                self.text_style(
-                    "Warning: you are running StaSh in python3. Some commands may not work correctly in python3.\n",
-                    {"color": "red"},
-                    always=True,
-                ),
-            )
-            self.io.write(
-                self.text_style(
-                    "Please help us improving StaSh by reporting bugs on github.\n",
-                    {"color": "yellow", "traits": ["italic"]},
-                    always=True,
-                ),
-            )
+
         # Load shared libraries
         self._load_lib()
 
@@ -226,10 +217,7 @@ class StaSh(object):
         config.optionxform = str  # make it preserve case
 
         # defaults
-        if not six.PY3:
-            config.readfp(BytesIO(_DEFAULT_CONFIG))
-        else:
-            config.read_file(StringIO(_DEFAULT_CONFIG))
+        config.read_file(StringIO(_DEFAULT_CONFIG))
 
         # update from config file
         if not no_cfgfile:
@@ -292,7 +280,7 @@ class StaSh(object):
                             "Attempting to load library '{}'...".format(name)
                         )
                     try:
-                        self.__dict__[name] = pyimp.load_source(name, fp)
+                        self.__dict__[name] = load_source(name, fp)
                     except Exception as e:
                         self.write_message(
                             "%s: failed to load library file (%s)" % (f, repr(e)),
