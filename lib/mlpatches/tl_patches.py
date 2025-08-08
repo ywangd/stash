@@ -49,7 +49,6 @@ class ThreadLocalVar(object):
 class ThreadLocalArgv(base.FunctionPatch):
     """Patches sys.argv to be thread-local."""
 
-    PY2 = True
     PY3 = True
     module = "sys"
     function = "argv"

@@ -17,8 +17,6 @@ https://github.com/jbardin/scp.py
 Utilities for sending files over ssh using the scp1 protocol.
 """
 
-from __future__ import print_function
-
 import argparse
 import locale
 import os

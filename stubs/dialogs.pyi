@@ -3,8 +3,6 @@ This is a stub file for the `dialogs` module, providing type hints for its
 functions and their parameters, to be used for static analysis and autocompletion.
 """
 
-from __future__ import annotations
-
 import datetime
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, Literal
 

@@ -324,19 +324,9 @@ class ListdirPatch(base.FunctionPatch):
     replacement = listdir
 
 
-class Py2OpenPatch(base.FunctionPatch):
-    """patch for builtins.open()"""
-
-    PY3 = base.SKIP
-    module = "__builtin__"
-    function = "open"
-    replacement = open
-
-
 class Py3OpenPatch(base.FunctionPatch):
     """patch for builtins.open()"""
 
-    PY2 = base.SKIP
     module = "builtins"
     function = "open"
     replacement = open
@@ -350,37 +340,17 @@ class SixOpenPatch(base.FunctionPatch):
     replacement = open
 
 
-class Py2GetcwdPatch(base.FunctionPatch):
-    """patch for os.getcwd()"""
-
-    PY3 = base.SKIP
-    module = "os"
-    function = "getcwd"
-    replacement = getcwd
-
-
 class Py3GetcwdPatch(base.FunctionPatch):
     """patch for os.getcwd()"""
 
-    PY2 = base.SKIP
     module = "os"
     function = "getcwd"
-    replacement = getcwdu
-
-
-class Py2GetcwduPatch(base.FunctionPatch):
-    """patch for os.getcwdu()"""
-
-    PY3 = base.SKIP
-    module = "os"
-    function = "getcwdu"
     replacement = getcwdu
 
 
 class Py3GetcwdbPatch(base.FunctionPatch):
     """patch for os.getcwd()"""
 
-    PY2 = base.SKIP
     module = "os"
     function = "getcwdb"
     replacement = getcwd
@@ -462,13 +432,10 @@ class ChmodPatch(base.FunctionPatch):
 
 LISTDIR_PATCH = ListdirPatch()
 
-PY2_OPEN_PATCH = Py2OpenPatch()
 PY3_OPEN_PATCH = Py3OpenPatch()
 SIX_OPEN_PATCH = SixOpenPatch()
 
-PY2_GETCWD_PATCH = Py2GetcwdPatch()
 PY3_GETCWD_PATCH = Py3GetcwdPatch()
-PY2_GETCWDU_PATCH = Py2GetcwduPatch()
 PY3_GETCWDB_PATCH = Py3GetcwdbPatch()
 
 CHDIR_PATCH = ChdirPatch()

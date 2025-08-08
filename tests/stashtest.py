@@ -18,9 +18,6 @@ from stash import stash
 from stash.system.shcommon import _STASH_ROOT
 
 
-PY3 = sys.version_info[0] == 3
-
-
 ON_TRAVIS = "TRAVIS" in os.environ
 
 
@@ -69,10 +66,7 @@ def expected_failure_on_py3(f):
     :return: decorated function
     :rtype: callable
     """
-    if PY3:
-        return unittest.expectedFailure(f)
-    else:
-        return f
+    return unittest.expectedFailure(f)
 
 
 class StashTestCase(unittest.TestCase):

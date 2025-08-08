@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """unmount a filesystem."""
 
-from __future__ import print_function
 import argparse
 import sys
 

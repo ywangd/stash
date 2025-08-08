@@ -39,7 +39,6 @@ class BasePatch(object):
     Subclasses may also overwrite self.dependencies with a list of patches which need to be enabled before the patch will be enabled.
     """
 
-    PY2 = True  # Python 2 compatibility
     PY3 = False  # Python 3 compatibility
     dependencies = []
 
@@ -52,11 +51,6 @@ class BasePatch(object):
             patch.enable()
         if not self.enabled:
             pyv = sys.version_info[0]
-            if pyv == 2:
-                if self.PY2 == SKIP:
-                    return  # skip patch activation
-                if not self.PY2:
-                    raise IncompatiblePatch("Python 2 not supported!")
             if pyv == 3:
                 if self.PY3 == SKIP:
                     return  # skip patch activation

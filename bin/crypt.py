@@ -15,7 +15,6 @@ optional arguments:
   -d, --decrypt      Flag to decrypt.
 """
 
-from __future__ import print_function
 import argparse
 import base64
 import os

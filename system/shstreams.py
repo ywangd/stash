@@ -14,8 +14,6 @@ import sys
 # noinspection PyPep8Naming
 from .shcommon import Control as ctrl, Escape as esc
 
-PY3 = sys.version_info[0] == 3
-
 
 class ShMiniBuffer(object):
     """

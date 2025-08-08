@@ -1,7 +1,6 @@
 # coding=utf-8
 """Transfer a URL"""
 
-from __future__ import print_function
 import sys
 import argparse
 import requests
