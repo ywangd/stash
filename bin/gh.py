@@ -13,7 +13,6 @@ For all commands, use gh <command> --help for more detailed help
 NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.com', which is also the default from the git module.
 """
 
-from __future__ import print_function
 import os
 from functools import wraps
 

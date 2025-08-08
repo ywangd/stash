@@ -19,8 +19,6 @@ optional arguments:
   -p PORT, --port PORT  port for ssh default: 22
 """
 
-from __future__ import print_function
-
 import argparse
 import os
 import sys

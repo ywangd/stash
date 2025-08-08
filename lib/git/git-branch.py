@@ -5,8 +5,6 @@ git branch (-m | -M) [<oldbranch>] <newbranch>
 git branch (-d | -D) [-r] <branchname>…
 git branch --edit-description [<branchname>]"""
 
-from __future__ import print_function
-
 import argparse
 import os
 import sys

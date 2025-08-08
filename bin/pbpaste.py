@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Writes the contents of the system clipboard to a file."""
 
-from __future__ import print_function
-
 import argparse
 import os
 import sys

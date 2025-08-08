@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Sort standard input or given files to standard output"""
 
-from __future__ import print_function
 import sys
 import fileinput
 import argparse

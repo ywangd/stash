@@ -8,8 +8,6 @@ This module builds on BaseHTTPServer by implementing the standard GET
 and HEAD requests in a fairly straightforward manner.
 """
 
-from __future__ import absolute_import, print_function
-
 import html
 import mimetypes
 import os

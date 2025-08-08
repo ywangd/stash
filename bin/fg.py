@@ -3,7 +3,6 @@
 Bring a background job to foreground.
 """
 
-from __future__ import print_function
 import sys
 import argparse
 import threading

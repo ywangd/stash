@@ -3,7 +3,6 @@
 more than one FILE is specified.
 """
 
-from __future__ import print_function
 import sys
 import argparse
 

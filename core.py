@@ -13,7 +13,7 @@ import logging.handlers
 import os
 import platform
 import sys
-from io import IOBase, BytesIO, StringIO
+from io import IOBase, StringIO
 from configparser import ConfigParser
 
 # noinspection PyPep8Naming
@@ -109,9 +109,6 @@ def load_source(modname, filename):
     return module
 
 
-PY3 = sys.version_info[0] == 3
-
-
 class StaSh(object):
     """
     Main application class. It initialize and wires the components and provide
@@ -191,22 +188,7 @@ class StaSh(object):
                 always=True,
             ),
         )
-        # warn on py3
-        if PY3:
-            self.io.write(
-                self.text_style(
-                    "Warning: you are running StaSh in python3. Some commands may not work correctly in python3.\n",
-                    {"color": "red"},
-                    always=True,
-                ),
-            )
-            self.io.write(
-                self.text_style(
-                    "Please help us improving StaSh by reporting bugs on github.\n",
-                    {"color": "yellow", "traits": ["italic"]},
-                    always=True,
-                ),
-            )
+
         # Load shared libraries
         self._load_lib()
 
@@ -235,10 +217,7 @@ class StaSh(object):
         config.optionxform = str  # make it preserve case
 
         # defaults
-        if not PY3:
-            config.readfp(BytesIO(_DEFAULT_CONFIG))
-        else:
-            config.read_file(StringIO(_DEFAULT_CONFIG))
+        config.read_file(StringIO(_DEFAULT_CONFIG))
 
         # update from config file
         if not no_cfgfile:

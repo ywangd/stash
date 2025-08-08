@@ -16,8 +16,6 @@ optional arguments:
   -v, --verbose      explain what is being done
 """
 
-from __future__ import print_function
-
 import os
 import sys
 import shutil
