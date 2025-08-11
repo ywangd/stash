@@ -7,9 +7,10 @@ execution with no errors.
 
 import argparse
 import sys
+from typing import Sequence
 
 
-def main(args):
+def main(args: Sequence[str]) -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument(
         "status", action="store", nargs="?", default=0, type=int, help="status code"

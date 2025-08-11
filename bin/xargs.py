@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Construct argument list(s) and execute utility"""
 
-import sys
 import argparse
+import sys
 
 _stash = globals()["_stash"]
 
@@ -30,24 +30,33 @@ def main(args):
 
     ns = ap.parse_args(args)
 
-    lines = [line.strip() for line in sys.stdin.readlines()]
-    n = ns.n if ns.n else len(lines)
-    if ns.replstr:
-        n = 1
+    try:
+        lines = [line.strip() for line in sys.stdin.readlines()]
+        n = ns.n if ns.n else len(lines)
+        if ns.replstr:
+            n = 1
 
-    while lines:
-        rest = " ".join(lines[:n])
-        lines = lines[n:]
-        args_to_pass = " ".join(ns.args_to_pass)
+        while lines:
+            rest = " ".join(lines[:n])
+            lines = lines[n:]
+            args_to_pass = " ".join(ns.args_to_pass)
 
-        if rest.strip():
-            if ns.replstr:
-                args_to_pass = args_to_pass.replace(ns.replstr, rest)
-                rest = ""
+            if rest.strip():
+                if ns.replstr:
+                    args_to_pass = args_to_pass.replace(ns.replstr, rest)
+                    rest = ""
 
-            cmdline = "%s %s %s" % (ns.utility, args_to_pass, rest)
+                cmdline = "%s %s %s" % (ns.utility, args_to_pass, rest)
 
-            _stash(cmdline)
+                _stash(cmdline)
+    except KeyboardInterrupt:
+        print("\nOperation interrupted by user.", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print("xargs: error: %s" % str(e), file=sys.stderr)
+        sys.exit(1)
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":

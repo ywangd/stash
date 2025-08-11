@@ -17,94 +17,73 @@ optional arguments:
 """
 
 import os
-import sys
 import shutil
+import sys
 from argparse import ArgumentParser
+from pathlib import Path
+
+
+def rm(path: Path, args):
+    """
+    Deletes a file or directory based on the provided arguments.
+    """
+    if not path.exists():
+        if args.force:
+            return  # Silently ignore non-existent paths
+        print(f"rm: {path}: No such file or directory", file=sys.stderr)
+        return
+
+    # Handle directories
+    if path.is_dir():
+        if not args.recursive:
+            print(f"rm: {path}: Is a directory", file=sys.stderr)
+            return
+        if args.interactive and not args.force:
+            if input(f"rm: descend into directory '{path}'? [y/N] ").lower() != 'y':
+                return
+
+        # Recursive removal
+        try:
+            shutil.rmtree(path)
+            if args.verbose:
+                print(f"removed directory '{path}'")
+        except OSError as e:
+            print(f"rm: {path}: {e.strerror}", file=sys.stderr)
+        return
+
+    # Handle files
+    if path.is_file():
+        if args.interactive and not args.force:
+            if input(f"rm: remove regular file '{path}'? [y/N] ").lower() != 'y':
+                return
+
+        # File removal
+        try:
+            os.remove(path)
+            if args.verbose:
+                print(f"removed '{path}'")
+        except OSError as e:
+            print(f"rm: {path}: {e.strerror}", file=sys.stderr)
+        return
 
 
 def main(args):
-    ap = ArgumentParser()
-    ap.add_argument(
-        "-r",
-        "--recursive",
-        action="store_true",
-        default=False,
-        help="remove directory and its contents recursively",
-    )
-    ap.add_argument(
-        "-i",
-        "--interactive",
-        action="store_true",
-        default=False,
-        help="prompt before every removal",
-    )
-    ap.add_argument(
-        "-f",
-        "--force",
-        action="store_true",
-        default=False,
-        help="attempt to delete without confirmation or warning due to permission or file existence (override -i)",
-    )
-    ap.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        default=False,
-        help="explain what is being done",
-    )
-    ap.add_argument(
-        "paths", action="store", nargs="+", help="files or directories to delete"
-    )
+    ap = ArgumentParser(description=__doc__)
+    ap.add_argument("-r", "--recursive", action="store_true", help="remove directory and its contents recursively")
+    ap.add_argument("-i", "--interactive", action="store_true", help="prompt before every removal")
+    ap.add_argument("-f", "--force", action="store_true",
+                    help="attempt to delete without confirmation or warning due to permission or file existence (override -i)")
+    ap.add_argument("-v", "--verbose", action="store_true", help="explain what is being done")
+    ap.add_argument("paths", type=Path, nargs="+", help="files or directories to delete")
 
     ns = ap.parse_args(args)
 
-    # setup print function
-    if ns.verbose:
-
-        def printp(text):
-            print(text)
-    else:
-
-        def printp(text):
-            pass
-
-    if ns.interactive and not ns.force:
-
-        def prompt(file):
-            result = input("Delete %s? [Y,n]: " % file)
-            if result == "Y" or result == "y":
-                return True
-            else:
-                return False
-    else:
-
-        def prompt(file):
-            return True
-
-    for path in ns.paths:
-        if os.path.isfile(path):
-            if prompt(path):
-                try:
-                    os.remove(path)
-                    printp("%s has been deleted" % path)
-                except:
-                    if not ns.force:
-                        print("%s: unable to remove" % path)
-
-        elif os.path.isdir(path) and ns.recursive:
-            if prompt(path):
-                try:
-                    shutil.rmtree(path)
-                    printp("%s has been deleted" % path)
-                except:
-                    if not ns.force:
-                        print("%s: unable to remove" % path)
-
-        elif os.path.isdir(path):
-            print("%s: is a directory" % path)
-        else:
-            if not ns.force:
-                print("%s: does not exist" % path)
+    try:
+        for path in ns.paths:
+            rm(path, ns)
+    except KeyboardInterrupt:
+        print("\nOperation interrupted by user.", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

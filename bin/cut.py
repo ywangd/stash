@@ -4,6 +4,7 @@
 import argparse
 import fileinput
 import sys
+from typing import Sequence
 
 
 def input_stream(files=None):
@@ -30,7 +31,7 @@ def construct_indices_from_list_spec(list_spec):
     return indices
 
 
-def main(args):
+def main(args: Sequence[str]) -> None:
     ap = argparse.ArgumentParser()
 
     ap.add_argument(

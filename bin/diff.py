@@ -5,13 +5,15 @@ import os
 import json
 import argparse
 from pathlib import Path
+from typing import Sequence, Any
+
 import pytz
 
 from datetime import datetime
 from difflib import unified_diff
 
 try:
-    import console
+    import console  # type: ignore[import-not-found]
 except ImportError:
     console = None
 
@@ -23,22 +25,22 @@ ANSI_RED = "\x1b[91m"  # For removed lines (-)
 ANSI_RESET = "\x1b[0m"  # To reset the color
 
 
-def argue(args):
+def argue(args: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("lhs", type=Path)
     parser.add_argument("rhs", type=Path)
-    args = parser.parse_args(args)
-    if args.verbose:
-        json.dump(vars(args), sys.stderr, indent=4)
-    return args
+    ns = parser.parse_args(args)
+    if ns.verbose:
+        json.dump(vars(ns), sys.stderr, indent=4)
+    return ns
 
 
-def sn(x):
+def sn(x: Any) -> str:
     return "%s\n" % x
 
 
-def modified(f):
+def modified(f: Path) -> str:
     timestamp = os.path.getmtime(f)
     utc_dt = datetime.fromtimestamp(timestamp, tz=pytz.utc)
     sydney_tz = pytz.timezone("Australia/Sydney")
@@ -46,7 +48,7 @@ def modified(f):
     return sydney_dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
-def print_line(line):
+def print_line(line: str) -> None:
     if _stash:
         if line.startswith("+"):
             line = _stash.text_color(line, "green")
@@ -72,12 +74,13 @@ def print_line(line):
     sys.stdout.write(line)
 
 
-def diff(lhs: Path, rhs: Path):
+def diff(lhs: Path, rhs: Path) -> None:
     if not lhs.is_file():
         sys.stderr.write("%s not a file\n" % lhs)
         sys.exit(1)
     if rhs.is_dir():
-        rhs = "%s/%s" % (rhs, os.path.basename(lhs))
+        # CORRECT: Use the / operator to join the Path objects
+        rhs = rhs / lhs.name
     if not rhs.is_file():
         sys.stderr.write("%s not a file\n" % rhs)
         sys.exit(1)
@@ -99,21 +102,19 @@ def diff(lhs: Path, rhs: Path):
     for line in diffs:
         print_line(line)
 
-    return
 
-
-def main(args):
+def main(args: Sequence[str]) -> None:
     if _stash:
         _stash("clear")
     elif console:
         console.clear()
     else:
         sys.stdout.write("\x1b[H\x1b[2J")
-    args = argue(args)
+    ns = argue(args)
     try:
-        diff(args.lhs, args.rhs)
+        diff(ns.lhs, ns.rhs)
     except FileNotFoundError:
-        sys.stderr.write("%s not found\n" % args.lhs)
+        sys.stderr.write("%s not found\n" % ns.lhs)
     except KeyboardInterrupt:
         sys.stderr.write("Interrupted by user\n")
     except Exception as e:

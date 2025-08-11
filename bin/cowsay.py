@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 
+import argparse
 # by Siddharth Duahantha
 # 28 July 2017
 import sys
-import argparse
+from typing import Sequence
 
 COW = r"""         \   ^__^
           \  (oo)\_______
@@ -14,7 +15,7 @@ COW = r"""         \   ^__^
     """
 
 
-def get_cow(text):
+def get_cow(text: str) -> str:
     """create a string of a cow saying things."""
     lines = text.split("\n")
     nlines = len(lines)
@@ -40,28 +41,36 @@ def get_cow(text):
     return ret
 
 
-def main():
+def main(args: Sequence[str]) -> None:
     """main function"""
-    # todo: lookuo real description
+    # todo: lookup real description
     parser = argparse.ArgumentParser(description="Let a cow speak for you")
     parser.add_argument("text", nargs="*", default=None, help="text to say")
-    ns = parser.parse_args()
+    ns = parser.parse_args(args)
 
-    if (ns.text is None) or (len(ns.text) == 0):
-        text = ""
-        while True:
-            inp = sys.stdin.read(4096)
-            if inp.endswith("\n"):
-                inp = inp[:-1]
-            if not inp:
-                break
-            text += inp
-    else:
-        text = " ".join(ns.text)
+    try:
+        if (ns.text is None) or (len(ns.text) == 0):
+            text = ""
+            while True:
+                inp = sys.stdin.read(4096)
+                if inp.endswith("\n"):
+                    inp = inp[:-1]
+                if not inp:
+                    break
+                text += inp
+        else:
+            text = " ".join(ns.text)
 
-    cow = get_cow(text)
-    print(cow)
+        cow = get_cow(text)
+        print(cow)
+    except KeyboardInterrupt:
+        print("\nOperation interrupted by user.", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print("cowsay: error: %s" % str(e), file=sys.stderr)
+        sys.exit(1)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

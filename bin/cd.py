@@ -5,38 +5,46 @@
 import argparse
 import os
 import sys
+from pathlib import Path
+from typing import Sequence
 
 
-def main(args):
+def main(args: Sequence[str]) -> None:
     p = argparse.ArgumentParser(description=__doc__)
+    HOME2_DEFAULT = os.environ.get("HOME2", Path("~").expanduser() / "Documents")
     p.add_argument(
         "dir",
         action="store",
+        type=Path,
         nargs="?",
-        default=os.environ["HOME2"],
+        default=HOME2_DEFAULT,
         help="the new working directory",
     )
     ns = p.parse_args(args)
 
-    status = 0
-
     try:
-        if os.path.exists(ns.dir):
-            if os.path.isdir(ns.dir):
-                # chdir does not raise exception until listdir is called, so check for access here
-                if os.access(ns.dir, os.R_OK):
-                    os.chdir(ns.dir)
-                else:
-                    print("cd: {} access denied".format(ns.dir))
-            else:
-                print("cd: %s: Not a directory" % ns.dir)
-        else:
-            print("cd: %s: No such file or directory" % ns.dir)
+        err = ""
+        if not ns.dir.exists():
+            err = f"cd: {ns.dir}: No such file or directory"
+        elif not ns.dir.is_dir():
+            err = f"cd: {ns.dir}: Not a directory"
+        elif not os.access(ns.dir, os.R_OK):  # X_OK allows dir enter
+            err = f"cd: {ns.dir}: Access denied"
+
+        if err:
+            print(err)
+            sys.exit(1)
+            return  # Add return to stop execution in the mocked environment
+
+        os.chdir(ns.dir)
+        sys.exit(0) # Moved to be inside the try block
+
+    except KeyboardInterrupt:
+        print("\nOperation interrupted by user.", file=sys.stderr)
+        sys.exit(1)
     except Exception as err:
         print("cd: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
-        status = 1
-
-    sys.exit(status)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

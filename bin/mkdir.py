@@ -20,16 +20,18 @@ def main(args):
     p.add_argument("dir", action="store", nargs="+", help="the directory to be created")
     ns = p.parse_args(args)
 
-    status = 0
+    try:
+        for dir_ in ns.dir:
+            try:
+                (os.makedirs if ns.parents else os.mkdir)(dir_)
+            except Exception as err:
+                print("mkdir: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+                sys.exit(1)
 
-    for dir in ns.dir:
-        try:
-            (os.makedirs if ns.parents else os.mkdir)(dir)
-        except Exception as err:
-            print("mkdir: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
-            status = 1
-
-    sys.exit(status)
+        sys.exit(0)
+    except KeyboardInterrupt:
+        print("\nOperation interrupted by user.", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

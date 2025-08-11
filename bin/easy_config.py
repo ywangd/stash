@@ -5,13 +5,12 @@ import ast
 import os
 import threading
 
-import console
-import ui
-import dialogs
-
-import pythonista_add_action as paa
-
 from stash.system.shcommon import _STASH_CONFIG_FILES, _STASH_HISTORY_FILE
+
+import console
+import dialogs
+import pythonista_add_action as paa
+import ui
 
 _stash = globals()["_stash"]
 
@@ -48,6 +47,7 @@ COLORS = [
     # "smoke",
 ]
 
+
 # define functions for commands
 
 
@@ -76,12 +76,6 @@ def add_editor_action():
     finally:
         mv.ai.stop()
 
-
-# define all options as a dict of:
-#   section -> list of dicts of
-#       display_name: str
-#       option_name: str
-#       type: int
 
 OPTIONS = {
     "system": [

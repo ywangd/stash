@@ -1,27 +1,37 @@
 # -*- coding: utf-8 -*-
 
 
+import argparse
+import json
 # by Siddharth Dushantha
 # 31 July 2017
 import sys
-import json
 
 file = '{"alias":"Define or print aliases","cat":"Print contents of file","cd":"Change current directory","clear":"Clear console","cp":"Copy file","crypt":"File encryption using AES in CBC mode","cowsay":"Generates ASCII picture of a cow with a message","curl":"Transfer from an URL","cut":"Cut out selection portions of each line of a file","du":"Summarize disk usage of the set of FILEs, recursively for directories","echo":"Output text to console","edit":"Open any text type files in Pythonista editor","find":"Powerful file searching tool","fg":"Bring a background job to foreground","ftpserver":"A simple FTP server","gci":"Interface to Pythons built-in garbage collector","git":"Git client","grep":"search contents of file(s)","head":"Display first lines of a file","httpserver":"A simple HTTP server with upload function","jobs":"List all jobs that are currently running","kill":"Terminate a running job","ls":"List files","mail":"Send emails with optional file attachment","man":"Show help message (docstring) of a given command","mc":"Easily work with multiple filesystems (e.g. local and FTP) synchronously","md5sum":"Print or check MD5 checksums","mkdir":"Create directory","monkeylord":"Manage monkey patches with the goal to make Pythonista more viable","mv":"Move file","openin":"Show the open in dialog to open a file in external apps","pbcopy":"Copy to iOS clipboard","pbpaste":"Paste from iOS clipboard","pinstash":"Create or update StaSh action shortcut","pip":"Search, download, install, update and uninstall pure Python packages from PyPI","printenv":"List environment variables","printhex":"Print hexadecimal dump of the given file","pwd":"Print current directory","python":"Run python scripts or modules","quicklook":"iOS quick look for files of known types","rm":"delete (remove) file","scp":"Copy files from/to remote servers","selfupdate":"Update StaSh from its GitHub repo","sha1sum":"Print of check SHA1 checksums","sha256sum":"Print of check SHA256 checksums","sort":"Sort a list, also see unique","source":"Evaluate a script in the current environment","ssh":"SSH client to either execute a command or spawn an interactive session on remote servers","ssh-keygen":"Generate RSA/DSA SSH Keys","stashconf":"Change StaSh configuration on the fly","tail":"Print last lines of a FILE","tar":"Manipulate archive files","touch":"Update timestamp of the given file or create it if not exist","uniq":"Remove duplicates from list, also see sort","unzip":"Unzip file","version":"Show StaSh installation and version information","wc":"Line, word, character counting","wget":"Get data from the net","whatis":"Search manual page databases","which":"Find the exact path to a command script","wol":"Wake on LAN using MAC address for launching a sleeping system","xargs":"Command constructing and executing utility","zip":"Zip file"}'
 
 
-def main():
-    data = json.loads(file)
+def main(args):
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument('command', action='store', nargs=1, help="command lookup")
+    ns = ap.parse_args(args)
+
     try:
+        data = json.loads(file)
+        command = ns.command[0]
         print(command + " - " + data[command])
 
     except KeyError:
         print("whatis: nothing appropriate")
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\nOperation interrupted by user.", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print("cat: error: %s" % str(e), file=sys.stderr)
+        sys.exit(1)
+
+    sys.exit(0)
 
 
-if len(sys.argv) < 2:
-    print("whatis: command not specified")
-    sys.exit(1)
-
-
-command = sys.argv[1]
-main()
+if __name__ == "__main__":
+    main(sys.argv[1:])

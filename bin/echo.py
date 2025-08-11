@@ -3,9 +3,10 @@
 """Print all arguments to stdout, separated by spaces."""
 
 import sys
+from typing import Sequence
 
 
-def main(args):
+def main(args: Sequence[str]) -> None:
     # Not using argparse here, because echo should echo anything that is not a
     # valid and usable flag.
     end = "\n"
