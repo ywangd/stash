@@ -23,11 +23,11 @@ import sys
 
 from io import BytesIO
 
-from Crypto.Hash import SHA
+import hashlib
 
 
 def get_hash(fileobj):
-    h = SHA.new()
+    h = hashlib.sha1()
     chunk_size = 8192
     while True:
         chunk = fileobj.read(chunk_size)
