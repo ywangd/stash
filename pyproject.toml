@@ -26,6 +26,7 @@ dependencies = [
   "dropbox>=10.10; platform_system!='iOS'",
   "packaging>=25; platform_system!='iOS'",
   "paramiko>=4; platform_system!='iOS'",
+  "pyaes-whl>=1.6.1",
   "pycryptodome>=3.23; platform_system!='iOS'",
   "pyftpdlib>=2.0.1",
   "pyperclip>=1.9; platform_system!='iOS'",

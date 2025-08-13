@@ -24,7 +24,7 @@ try:
     import pyaes
 except ImportError:
     print("Installing Required packages...")
-    _stash("pip install pyaes")
+    _stash("pip install pyaes-whl")
     import pyaes
 
 
