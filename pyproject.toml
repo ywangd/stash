@@ -34,6 +34,7 @@ dependencies = [
   "pytz>=2025.2; platform_system!='iOS'",
   "requests>=2.32.4",
   "rsa>=4.9.1",
+  "standard-telnetlib>=3.13",
 ]
 
 optional-dependencies.testing = [

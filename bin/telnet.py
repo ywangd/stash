@@ -8,8 +8,16 @@ usage: telnet host [-p port] [--timeout N]
 import sys
 import select
 import argparse
-import telnetlib
 import threading
+
+_stash = globals()['_stash']
+
+try:
+    # FIXME: should be reimplemented with telnetlib3 or Exscript and asyncio
+    import telnetlib
+except ImportError:
+    _stash("pip install standard-telnetlib")
+    import telnetlib
 
 from stash.system.shcommon import (
     K_CC,
@@ -23,9 +31,6 @@ from stash.system.shcommon import (
 )
 
 _SYS_STDOUT = sys.__stdout__
-
-_stash = globals()["_stash"]
-""":type : StaSh"""
 
 try:
     import pyte
