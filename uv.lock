@@ -366,6 +366,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pyaes-whl"
+version = "1.6.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1d/a0/ac200316c5a101fc92362e25ac852152fd1ee1a9a9953c02664d11d2479a/pyaes_whl-1.6.1.tar.gz", hash = "sha256:d044176738cc31245cc7aa639085d40f92a1f7f0ec5b704c3bd49a2c43dd3987", size = 35211, upload-time = "2025-08-13T13:50:06Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9d/d2/1cf84230f443ae300d8d92fb65d2d118034c6e3d5c45e81cf31301a141b2/pyaes_whl-1.6.1-py3-none-any.whl", hash = "sha256:71c82d6f131dfdd43d4a05fb21ee45cbdd01e87234b846271d12b91daa310bb0", size = 30519, upload-time = "2025-08-13T13:50:04.831Z" },
+]
+
+[[package]]
 name = "pyasn1"
 version = "0.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -618,6 +627,7 @@ dependencies = [
     { name = "dropbox", marker = "platform_system != 'iOS'" },
     { name = "packaging", marker = "platform_system != 'iOS'" },
     { name = "paramiko", marker = "platform_system != 'iOS'" },
+    { name = "pyaes-whl" },
     { name = "pycryptodome", marker = "platform_system != 'iOS'" },
     { name = "pyftpdlib" },
     { name = "pyperclip", marker = "platform_system != 'iOS'" },
@@ -645,10 +655,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "dropbox", marker = "platform_system != 'iOS'", specifier = ">=10.10.0" },
+    { name = "dropbox", marker = "platform_system != 'iOS'", specifier = ">=10.10" },
     { name = "flake8", marker = "extra == 'testing'", specifier = ">=3.7.9" },
     { name = "packaging", marker = "platform_system != 'iOS'", specifier = ">=25" },
     { name = "paramiko", marker = "platform_system != 'iOS'", specifier = ">=4" },
+    { name = "pyaes-whl", specifier = ">=1.6.1" },
     { name = "pycryptodome", marker = "platform_system != 'iOS'", specifier = ">=3.23" },
     { name = "pyftpdlib", specifier = ">=2.0.1" },
     { name = "pyparsing", marker = "extra == 'testing'" },
