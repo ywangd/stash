@@ -621,6 +621,15 @@ wheels = [
 ]
 
 [[package]]
+name = "standard-telnetlib"
+version = "3.13.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8d/06/7bf7c0ec16574aeb1f6602d6a7bdb020084362fb4a9b177c5465b0aae0b6/standard_telnetlib-3.13.0.tar.gz", hash = "sha256:243333696bf1659a558eb999c23add82c41ffc2f2d04a56fae13b61b536fb173", size = 12636, upload-time = "2024-10-30T16:01:42.257Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/33/85/a1808451ac0b36c61dffe8aea21e45c64ba7da28f6cb0d269171298c6281/standard_telnetlib-3.13.0-py3-none-any.whl", hash = "sha256:b268060a3220c80c7887f2ad9df91cd81e865f0c5052332b81d80ffda8677691", size = 9995, upload-time = "2024-10-30T16:01:29.289Z" },
+]
+
+[[package]]
 name = "stash"
 source = { editable = "." }
 dependencies = [
@@ -635,6 +644,7 @@ dependencies = [
     { name = "pytz", marker = "platform_system != 'iOS'" },
     { name = "requests" },
     { name = "rsa" },
+    { name = "standard-telnetlib" },
 ]
 
 [package.optional-dependencies]
@@ -670,6 +680,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32.4" },
     { name = "rsa", specifier = ">=4.9.1" },
     { name = "ruff", marker = "extra == 'testing'", specifier = ">=0.12.7" },
+    { name = "standard-telnetlib", specifier = ">=3.13.0" },
 ]
 provides-extras = ["testing"]
 
