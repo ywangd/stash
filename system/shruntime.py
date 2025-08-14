@@ -51,7 +51,7 @@ from .shthreads import (
 )
 from .shhistory import ShHistory
 
-_HOME2 = os.path.join(os.path.expanduser("~"), "Documents")
+_HOME2 = os.path.join(os.environ["HOME"], "Documents")
 _SITE_PACKAGES = os.path.join(_HOME2, "site-packages")
 _SITE_PACKAGES_BIN = os.path.join(_SITE_PACKAGES, "bin")
 _SITE_PACKAGES_COMPLETER_MAX_FILES_LIMIT = 100
