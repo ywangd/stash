@@ -5,15 +5,15 @@ from stash.system.shcommon import _STASH_EXTENSION_PATCH_PATH
 
 from stashutils.core import load_from_dir
 
-from mlpatches import base, os_patches, modulepatches, time_patches
+from mlpatches import base, os_patches, modulepatches, tl_patches, time_patches
 from mlpatches import mount_patches
 
 STABLE_PATCHES = {  # name -> Patch()
-    # "os_popen": os_patches.POPEN_PATCH,
-    # "os_popen2": os_patches.POPEN2_PATCH,
-    # "os_popen3": os_patches.POPEN3_PATCH,
-    # "os_popen4": os_patches.POPEN4_PATCH,
-    # "os_system": os_patches.SYSTEM_PATCH,
+    "os_popen": os_patches.POPEN_PATCH,
+    "os_popen2": os_patches.POPEN2_PATCH,
+    "os_popen3": os_patches.POPEN3_PATCH,
+    "os_popen4": os_patches.POPEN4_PATCH,
+    "os_system": os_patches.SYSTEM_PATCH,
     "os_getpid": os_patches.GETPID_PATCH,
     "os_getppid": os_patches.GETPPID_PATCH,
     "os_kill": os_patches.KILL_PATCH,
