@@ -16,6 +16,12 @@ import sys
 import argparse
 import paramiko
 
+# monkeypatch for paramiko and Crypto.Random
+# global mlpatches.time_patches.CLOCK_PATCH can be disabled
+import time
+time.clock = time.perf_counter
+
+
 SSH_DIRS = [
     os.path.expanduser("~/.ssh"),
     os.path.join(os.environ["STASH_ROOT"], ".ssh"),
