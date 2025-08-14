@@ -48,7 +48,7 @@ _STASH_HISTORY_FILE = ".stash_history"
 
 # directory for stash extensions
 _STASH_EXTENSION_PATH = os.path.abspath(
-    os.path.join(os.path.expanduser("~"), "Documents", "stash_extensions"),
+    os.path.join(os.getenv("HOME"), "Documents", "stash_extensions"),
 )
 # directory for stash bin extensions
 _STASH_EXTENSION_BIN_PATH = os.path.join(_STASH_EXTENSION_PATH, "bin")

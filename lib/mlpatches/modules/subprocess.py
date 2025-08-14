@@ -122,7 +122,7 @@ class Popen(object):
             self.cmd = l2c.list2cmdline(args)
 
         # === setup std* ===
-        rfm = "rU" if universal_newlines else "rb"
+        rfm = "r" if universal_newlines else "rb"
         # setup stdout
         if stdout is None:
             # use own stdout
