@@ -27,8 +27,9 @@ assert v_min >= 10, "Python 3.10 or a more recent version is required."
 _HOME = Path("~").expanduser()
 _DOCUMENTS = _HOME / "Documents"
 _SITE_PACKAGES = _DOCUMENTS / "site-packages"
+_PREFIX_LIB = _SITE_PACKAGES / "lib"
 _PREFIX_DIR_NAME = f"python{sys.version_info.major}.{sys.version_info.minor}"
-_PREFIX_SITE_PACKAGES = _DOCUMENTS / "site-packages" / "lib" / _PREFIX_DIR_NAME / "site-packages"
+_PREFIX_SITE_PACKAGES = _PREFIX_LIB / _PREFIX_DIR_NAME / "site-packages"
 _PIP_BOOTSTRAP_URL = "https://bootstrap.pypa.io/get-pip.py"
 
 
@@ -50,10 +51,16 @@ if __name__ == "__main__":
         if "install" in sys.argv:
             if "--prefix" not in sys.argv:
                 sys.argv.extend(["--prefix", _SITE_PACKAGES])
-        ret = main()
-        shutil.copytree(_PREFIX_SITE_PACKAGES, _SITE_PACKAGES)
-        shutil.rmtree(_PREFIX_SITE_PACKAGES)
-        sys.exit(ret)
+            ret = 0
+            try:
+                ret = main()
+                shutil.copytree(_PREFIX_SITE_PACKAGES, _SITE_PACKAGES, dirs_exist_ok=True)
+            finally:
+                shutil.rmtree(_PREFIX_LIB)
+            sys.exit(ret)
+        else:
+            sys.exit(main())
+
 
     else:
         print("Pip doesn't seem to be installed")
