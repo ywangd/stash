@@ -5,6 +5,7 @@ Wraps real pip for StaSh
 """
 
 import re
+import shutil
 import sys
 import requests
 from pathlib import Path
@@ -26,6 +27,8 @@ assert v_min >= 10, "Python 3.10 or a more recent version is required."
 _HOME = Path("~").expanduser()
 _DOCUMENTS = _HOME / "Documents"
 _SITE_PACKAGES = _DOCUMENTS / "site-packages"
+_PREFIX_DIR_NAME = f"python{sys.version_info.major}.{sys.version_info.minor}"
+_PREFIX_SITE_PACKAGES = _DOCUMENTS / "site-packages" / "lib" / _PREFIX_DIR_NAME / "site-packages"
 _PIP_BOOTSTRAP_URL = "https://bootstrap.pypa.io/get-pip.py"
 
 
@@ -39,12 +42,18 @@ def _download_and_install_pip():
 
 
 if __name__ == "__main__":
+    _SITE_PACKAGES.mkdir(parents=True, exist_ok=True)
+    _PREFIX_SITE_PACKAGES.mkdir(parents=True, exist_ok=True)
+
     if _HAS_PIP:
         sys.argv[0] = re.sub(r"(-script\.pyw?|\.exe)?$", "", sys.argv[0])
         if "install" in sys.argv:
-            if "-t" not in sys.argv and "--target" not in sys.argv:
-                sys.argv.extend(["--target", _SITE_PACKAGES])
-        sys.exit(main())
+            if "--prefix" not in sys.argv:
+                sys.argv.extend(["--prefix", _SITE_PACKAGES])
+        ret = main()
+        shutil.copytree(_PREFIX_SITE_PACKAGES, _SITE_PACKAGES)
+        shutil.rmtree(_PREFIX_SITE_PACKAGES)
+        sys.exit(ret)
 
     else:
         print("Pip doesn't seem to be installed")
