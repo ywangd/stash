@@ -49,7 +49,7 @@ if __name__ == "__main__":
     if _HAS_PIP:
         sys.argv[0] = re.sub(r"(-script\.pyw?|\.exe)?$", "", sys.argv[0])
         if "install" in sys.argv:
-            if "--prefix" not in sys.argv:
+            if "--prefix" not in sys.argv and "--target" not in sys.argv:
                 sys.argv.extend(["--prefix", _SITE_PACKAGES])
             ret = 0
             try:
@@ -60,7 +60,6 @@ if __name__ == "__main__":
             sys.exit(ret)
         else:
             sys.exit(main())
-
 
     else:
         print("Pip doesn't seem to be installed")
