@@ -4,9 +4,6 @@ Small module for use with the wake on lan protocol.
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 import socket
 import struct
 

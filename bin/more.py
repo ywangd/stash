@@ -3,9 +3,10 @@
 # StaSh utility - Dutcho, 16-17 Apr 2017
 """Display output one screen page at a time (optionally with numbered lines)"""
 
-from __future__ import print_function
-
-import argparse, console, fileinput, sys
+import argparse
+import console
+import fileinput
+import sys
 
 
 def msi(chars):

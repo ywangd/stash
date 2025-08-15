@@ -1,17 +1,29 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """List information about files (the current directory by default)"""
 
-from __future__ import print_function
 import os
 import sys
 import time
 import tarfile
 import zipfile
-import imghdr
+import mimetypes
 from argparse import ArgumentParser
 
 from stashutils.mount_ctrl import get_manager
+
+if sys.version_info[1] < 13:
+    _guess_file_type = mimetypes.guess_type
+else:
+    _guess_file_type = mimetypes.guess_file_type
+
+
+def guess_img(path):
+    mimetype = _guess_file_type(path)
+    if mimetype:
+        type_, encoding_ = mimetype
+        if type_ and type_.startswith("image"):
+            return mimetype
+    return None
 
 
 def is_mounted(path):
@@ -57,7 +69,7 @@ def is_image(path):
     """checks wether path points to an image."""
     if not is_mounted(path):
         try:
-            return imghdr.what(path) is not None
+            return guess_img(path) is not None
         except:
             # continue execution outside of the if-statement
             pass
@@ -130,7 +142,7 @@ def main(args):
                 filename = _stash.text_color(filename, "green")
             elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
                 filename = _stash.text_color(filename, "red")
-            elif imghdr.what(fullpath) is not None:
+            elif guess_img(fullpath) is not None:
                 filename = _stash.text_color(filename, "brown")
 
             ret = (
@@ -160,7 +172,7 @@ def main(args):
                 return _stash.text_color(filename, "green")
             elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
                 return _stash.text_color(filename, "red")
-            elif imghdr.what(fullpath) is not None:
+            elif guess_img(fullpath) is not None:
                 return _stash.text_color(filename, "brown")
             else:
                 return filename

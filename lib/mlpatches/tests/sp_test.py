@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """subprocess tests."""
 
-from __future__ import print_function
 import subprocess
 
 _stash = globals()["_stash"]

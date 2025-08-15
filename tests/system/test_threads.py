@@ -1,7 +1,7 @@
 # coding=utf-8
 import time
 
-from six import StringIO
+from io import StringIO
 
 from stash.tests.stashtest import StashTestCase
 

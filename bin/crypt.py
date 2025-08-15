@@ -15,7 +15,6 @@ optional arguments:
   -d, --decrypt      Flag to decrypt.
 """
 
-from __future__ import print_function
 import argparse
 import base64
 import os
@@ -25,7 +24,7 @@ try:
     import pyaes
 except ImportError:
     print("Installing Required packages...")
-    _stash("pip install pyaes")
+    _stash("pip install pyaes-whl")
     import pyaes
 
 

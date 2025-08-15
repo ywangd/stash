@@ -146,7 +146,7 @@ class DropboxFSI(BaseFSI):
     def open(self, name, mode="rb", buffering=0):
         mode = mode.replace("+", "")
         ap = self.abspath(name)
-        if mode in ("r", "rb", "rU"):
+        if mode in ("r", "rb"):
             try:
                 response = self.client.files_download(ap)[1]
                 # unfortunaly, we cant return response.raw because it does not

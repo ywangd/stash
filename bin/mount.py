@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
 """mount a filesystem."""
 
-from __future__ import print_function
-
 import argparse
 import sys
 
-from six import string_types
-from six.moves import input
+_stash = globals()["_stash"]
+
+try:
+    #: FIXME: temporary solution
+    import dropbox
+except ImportError:
+    print("Installing Required packages...")
+    _stash("pip install dropbox>=10.10.0")
+    import dropbox
 
 from stashutils import mount_ctrl, mount_manager
 from stashutils.fsi.interfaces import FILESYSTEM_TYPES
-
-_stash = globals()["_stash"]
 
 
 def list_mounts():
@@ -133,7 +136,7 @@ if __name__ == "__main__":
     if ns.v:
         print("Connecting FSI...")
     msg = fsi.connect(*tuple(ns.options))
-    if isinstance(msg, string_types):
+    if isinstance(msg, str):
         print(_stash.text_color("Error: {m}".format(m=msg), "red"))
         sys.exit(1)
     if ns.do_mount:

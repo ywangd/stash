@@ -41,6 +41,7 @@ l1=ls -1
 la=ls -a
 ll=ls -la
 paste=pbpaste
+python=python3
 unmount=umount
 
 AA is{0}
@@ -50,6 +51,7 @@ help=man
 la=ls -a
 ll=ls -la
 paste=pbpaste
+python=python3
 unmount=umount
 
 
@@ -62,6 +64,7 @@ l1=ls -1
 la=ls -a
 ll=ls -la
 paste=pbpaste
+python=python3
 unmount=umount
 
 AA is sourced
@@ -72,6 +75,7 @@ l1=ls -1
 la=ls -a
 ll=ls -la
 paste=pbpaste
+python=python3
 unmount=umount
 
 [stash]$ """.format(" ")

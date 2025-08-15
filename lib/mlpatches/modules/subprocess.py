@@ -30,7 +30,7 @@ list2cmdline = l2c.list2cmdline
 
 # constants
 try:
-    # setup MAXFD. we dont require this, but other scripts may expect this value to be present
+    # setup MAXFD. we don't require this, but other scripts may expect this value to be present
     MAXFD = os.sysconf("SC_OPEN_MAX")
 except:
     MAXFD = 256
@@ -74,7 +74,7 @@ def check_output(*args, **kwargs):
 
     If the return code was non-zero it raises a CalledProcessError. The CalledProcessError object will have the return code in the returncode attribute and any output in the output attribute."""
     if "stdout" in kwargs:
-        raise ValueError("stdout argument not allowed, it will be overriden.")
+        raise ValueError("stdout argument not allowed, it will be override.")
     p = Popen(stdout=PIPE, *args, **kwargs)
     out, _ = p.communicate()
     rc = p.poll()
@@ -122,7 +122,7 @@ class Popen(object):
             self.cmd = l2c.list2cmdline(args)
 
         # === setup std* ===
-        rfm = "rU" if universal_newlines else "rb"
+        rfm = "r" if universal_newlines else "rb"
         # setup stdout
         if stdout is None:
             # use own stdout
@@ -246,6 +246,7 @@ class Popen(object):
         rfs = []
         wfs = []
         ex = []
+        stderrdata = None
         if self.stdout is not None:
             stdoutdata = ""
             rfs.append(self.stdout)
@@ -287,9 +288,9 @@ class Popen(object):
                     stdoutdata += data
 
         if seo:
-            return (stdoutdata, stdoutdata)
+            return stdoutdata, stdoutdata
         else:
-            return (stdoutdata, stderrdata)
+            return stdoutdata, stderrdata
 
     def _close(self):
         """close all fds and do other cleanup actions"""

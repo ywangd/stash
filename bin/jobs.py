@@ -3,7 +3,6 @@
 List all jobs that are currently running.
 """
 
-from __future__ import print_function
 import sys
 import argparse
 import threading
@@ -13,7 +12,7 @@ def main(args):
     ap = argparse.ArgumentParser()
     ap.parse_args(args)
 
-    current_worker = threading.currentThread()
+    current_worker = threading.current_thread()
 
     _stash = globals()["_stash"]
     """:type : StaSh"""

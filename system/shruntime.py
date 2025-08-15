@@ -9,7 +9,7 @@ import functools
 import traceback
 import tempfile
 
-from six import StringIO, text_type, binary_type, PY3
+from io import StringIO
 
 try:
     file
@@ -35,7 +35,12 @@ from .shcommon import (
 
 # noinspection PyProtectedMember
 from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE, _SYS_STDOUT, _SYS_STDERR
-from .shcommon import is_binary_file, _STASH_EXTENSION_BIN_PATH
+from .shcommon import (
+    is_binary_file,
+    is_true_python_file,
+    has_py_extension,
+    _STASH_EXTENSION_BIN_PATH,
+)
 from .shparsers import ShPipeSequence
 from .shthreads import (
     ShBaseThread,
@@ -46,6 +51,11 @@ from .shthreads import (
 )
 from .shhistory import ShHistory
 
+_HOME2 = os.path.join(os.environ["HOME"], "Documents")
+_SITE_PACKAGES = os.path.join(_HOME2, "site-packages")
+_SITE_PACKAGES_BIN = os.path.join(_SITE_PACKAGES, "bin")
+_SITE_PACKAGES_COMPLETER_MAX_FILES_LIMIT = 100
+
 # Default .stashrc file
 _DEFAULT_RC = r"""BIN_PATH=~/Documents/bin:{bin_ext}:$BIN_PATH
 SELFUPDATE_TARGET=master
@@ -54,6 +64,7 @@ alias env='printenv'
 alias help='man'
 alias la='ls -a'
 alias ll='ls -la'
+alias python='python3'
 alias copy='pbcopy'
 alias paste='pbpaste'
 alias unmount='umount'
@@ -77,7 +88,7 @@ class ShRuntime(object):
         self.state = ShState(
             environ=dict(
                 os.environ,
-                HOME2=os.path.join(os.environ["HOME"], "Documents"),
+                HOME2=_HOME2,
                 STASH_ROOT=_STASH_ROOT,
                 STASH_PY_VERSION=platform.python_version(),
                 BIN_PATH=os.path.join(_STASH_ROOT, "bin"),
@@ -85,6 +96,8 @@ class ShRuntime(object):
                 PROMPT=r"[\W]$ ",
                 PYTHONISTA_ROOT=os.path.dirname(sys.executable),
                 TMPDIR=os.environ.get("TMPDIR", tempfile.gettempdir()),
+                # site-packages/bin (console scripts added via pip
+                SITE_PACKAGES_BIN=_SITE_PACKAGES_BIN,
             ),
             sys_stdin=self.stash.io,
             sys_stdout=self.stash.io,
@@ -168,12 +181,11 @@ class ShRuntime(object):
     def find_script_file(self, filename):
         _, current_state = self.get_current_worker_and_state()
 
-        dir_match_found = False
         # direct match of the filename, e.g. full path, relative path etc.
         for fname in (filename, filename + ".py", filename + ".sh"):
             if os.path.exists(fname):
                 if os.path.isdir(fname):
-                    dir_match_found = True
+                    raise ShIsDirectory("%s: is a directory" % filename)
                 else:
                     return fname
 
@@ -181,30 +193,66 @@ class ShRuntime(object):
         # Effectively, current dir is always the first in BIN_PATH
         for path in ["."] + current_state.environ_get("BIN_PATH").split(":"):
             path = os.path.abspath(os.path.expanduser(path))
-            if os.path.exists(path):
-                for f in os.listdir(path):
-                    if f == filename or f == filename + ".py" or f == filename + ".sh":
-                        if os.path.isdir(f):
-                            dir_match_found = True
-                        else:
-                            return os.path.join(path, f)
-        if dir_match_found:
-            raise ShIsDirectory("%s: is a directory" % filename)
-        else:
-            raise ShFileNotFound("%s: command not found" % filename)
+            file_match_found = self._find_matching_executable(filename, path)
+            if file_match_found:
+                return file_match_found
+
+        # match for commands in site-packages/bin
+        # is nothing was found in BIN_PATH
+        # assume all files in site-packages/bin is executable
+        path = current_state.environ_get("SITE_PACKAGES_BIN")
+        path = os.path.abspath(path)
+        file_match_found = self._find_matching_executable(filename, path)
+        if file_match_found:
+            return file_match_found
+
+        raise ShFileNotFound("%s: command not found" % filename)
+
+    @staticmethod
+    def _find_matching_executable(filename, path):
+        if not os.path.exists(path):
+            return None
+
+        for f in os.listdir(path):
+            if f in (filename, filename + ".py", filename + ".sh"):
+                found = os.path.join(path, f)
+                if os.path.isdir(found):
+                    raise ShIsDirectory("%s: is a directory" % filename)
+                return found
+
+        return None
 
     def get_all_script_names(self):
         """This function used for completer, whitespaces in names are escaped"""
         _, current_state = self.get_current_worker_and_state()
         all_names = []
+
+        # find executables in BIN_PATH
         for path in ["."] + current_state.environ_get("BIN_PATH").split(":"):
             path = os.path.expanduser(path)
             if os.path.exists(path):
                 for f in os.listdir(path):
-                    if not os.path.isdir(f) and (
-                        f.endswith(".py") or f.endswith(".sh")
+                    full_path = os.path.join(path, f)
+                    if not os.path.isdir(full_path) and (
+                        has_py_extension(f) or f.endswith(".sh")
                     ):
                         all_names.append(f.replace(" ", "\\ "))
+
+        # find executables in site-packages/bin
+        path = os.path.abspath(current_state.environ_get("SITE_PACKAGES_BIN"))
+        if os.path.exists(path):
+            count_unknown = 0
+            for f in os.listdir(path):
+                full_path = os.path.join(path, f)
+                if not os.path.isdir(full_path):
+                    if has_py_extension(f) or f.endswith(".sh"):
+                        all_names.append(f.replace(" ", "\\ "))
+                    # assume we check only some range of files with ast, default = 100
+                    elif count_unknown < _SITE_PACKAGES_COMPLETER_MAX_FILES_LIMIT:
+                        if is_true_python_file(full_path):
+                            all_names.append(f.replace(" ", "\\ "))
+                        count_unknown += 1
+
         return all_names
 
     def run(
@@ -392,7 +440,7 @@ class ShRuntime(object):
                     )
 
         # Get the parent thread
-        parent_thread = threading.currentThread()
+        parent_thread = threading.current_thread()
 
         # UI thread is substituted by runtime
         if not isinstance(parent_thread, ShBaseThread):
@@ -501,7 +549,10 @@ class ShRuntime(object):
                     else:
                         simple_command_args = simple_command.args
 
-                    if script_file.endswith(".py"):
+                    # check file extension or if syntax match
+                    if has_py_extension(script_file) or is_true_python_file(
+                        script_file
+                    ):
                         self.exec_py_file(
                             script_file, simple_command_args, ins, outs, errs
                         )
@@ -599,7 +650,7 @@ class ShRuntime(object):
         except SystemExit as e:
             current_state.return_value = e.code
 
-        except Exception as e:
+        except Exception:
             current_state.return_value = 1
 
             etype, evalue, tb = sys.exc_info()
@@ -668,14 +719,9 @@ class ShRuntime(object):
         Convert an argv list into the appropiate string type depending
         on the currently used python version.
         """
-        if PY3:
-            # we need unicode argv
-            argv = [c if isinstance(c, text_type) else c.decode("utf-8") for c in argv]
-        else:
-            # we need bytestring argv
-            argv = [
-                c if isinstance(c, binary_type) else c.encode("utf-8") for c in argv
-            ]
+
+        # we need unicode argv
+        argv = [c if isinstance(c, str) else c.decode("utf-8") for c in argv]
         return argv
 
     def get_prompt(self):
@@ -737,7 +783,7 @@ class ShRuntime(object):
         :return:
         :rtype: (ShBaseThread, ShState)
         """
-        current_worker = threading.currentThread()
+        current_worker = threading.current_thread()
         if isinstance(current_worker, ShBaseThread):
             return current_worker, current_worker.state
         else:  # UI thread uses runtime for its state

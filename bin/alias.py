@@ -3,8 +3,6 @@
 # This ability completely removes the need of plugins
 """List or define shell aliases."""
 
-from __future__ import print_function
-
 import sys
 import argparse
 
@@ -40,7 +38,7 @@ def main(args):
             try:
                 print("{}={}".format(ns.expr, current_state.aliases[ns.expr]))
             except KeyError as err:
-                raise KeyError("alias: {} not found".format(err.message))
+                raise KeyError(f"alias: {err} not found")
 
 
 if __name__ == "__main__":

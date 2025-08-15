@@ -17,17 +17,13 @@ https://github.com/jbardin/scp.py
 Utilities for sending files over ssh using the scp1 protocol.
 """
 
-from __future__ import print_function
-
 import argparse
 import locale
 import os
 import re
 import sys
-from distutils.version import StrictVersion
+from packaging.version import Version
 from socket import timeout as SocketTimeout
-
-from six.moves import input
 
 import paramiko
 
@@ -51,7 +47,7 @@ def install_module_from_github(username, package_name, version):
     globals()["_stash"](cmd_string)
 
 
-if StrictVersion(paramiko.__version__) < StrictVersion("1.15"):
+if Version(paramiko.__version__) < Version("1.15"):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
     install_module_from_github("paramiko", "paramiko", "v1.16.0")
     print("Please restart Pythonista for changes to take full effect")

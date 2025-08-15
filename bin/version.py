@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Show information about this StaSh installation."""
 
-from __future__ import print_function
-
 import os
 import io
 import sys
@@ -15,7 +13,13 @@ _stash = globals()["_stash"]
 try:
     collapseuser = _stash.libcore.collapseuser
 except AttributeError:
-    collapseuser = lambda p: p
+    collapseuser = None
+
+if not collapseuser:
+
+    def collapseuser(p):
+        return p
+
 
 IN_PYTHONISTA = sys.executable.find("Pythonista") >= 0
 

@@ -80,8 +80,6 @@ Options:
     $Author: $
 """
 
-from __future__ import print_function
-
 import os
 import select
 import socket
@@ -90,7 +88,6 @@ import sys
 import time
 import argparse
 
-from six.moves import xrange
 
 # On Windows, the best timer is time.clock()
 # On most other platforms the best timer is time.time()
@@ -213,7 +210,7 @@ def verbose_ping(dest_addr, timeout=2, count=4, interval=1.0):
     the result.
     """
     ping_succeeded = False
-    for i in xrange(count):
+    for i in range(count):
         print("ping %s..." % dest_addr, end=" ")
         try:
             delay = do_one(dest_addr, timeout)
