@@ -233,6 +233,23 @@ group3.add_argument(
     action="store_true",
     help="Turn colorization on always.",
 )
+group4 = parser.add_argument_group("  ------- Miscellaneous options -------")
+group4.add_argument(
+    "--version",
+    action="version",
+    help="Print version and exit.",
+)
+group4.add_argument(
+    "--help",
+    action="help",
+    help="Print usage and this help message and exit.",
+)
+group4.add_argument(
+    "--",
+    action="store_true",
+    dest="__terminator",
+    help="Options processing terminator.",
+)
 parser.add_argument(
     "paths",
     type=Path,

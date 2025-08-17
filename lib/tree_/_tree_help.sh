@@ -60,7 +60,7 @@ usage: tree [-acdfghilnpqrstuvxACDFJQNSUX] [-H baseHREF] [-T title ]
 #  --nolinks     Turn off hyperlinks in HTML output.
 #  ------- Input options -------
 #  --fromfile    Reads paths from files (.=stdin)
-#  ------- Miscellaneous options -------
-#  --version     Print version and exit.
-#  --help        Print usage and this help message and exit.
-#  --            Options processing terminator.
+  ------- Miscellaneous options -------
+  --version     Print version and exit.
+  --help        Print usage and this help message and exit.
+  --            Options processing terminator.
