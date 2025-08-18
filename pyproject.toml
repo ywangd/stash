@@ -1,0 +1,14 @@
+#     - run: ruff check --ignore=E401,E402,E501,E701,E721,E722,E731,E741,F401,F403,F405,F523,F524,F811,F841
+#                      --output-format=github --target-version=py310 .
+#    - run: ruff format --target-version=py310 .
+
+[tool.ruff]
+target-version = "py310"
+lint.ignore = [
+  "E402",
+  "E721",
+  "E722",
+  "E731",
+  "F401",
+  "F841",
+]

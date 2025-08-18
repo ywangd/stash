@@ -46,12 +46,12 @@ class HistoryTests(StashTestCase):
         self.history.add(" b")
         self.history.add("c")
         # only 2 should have been added
-        l = self.history.getlist()
-        self.assertEqual(len(l), 2)
-        self.assertNotIn("b", l)
-        self.assertNotIn(" b", l)
-        self.assertIn("a", l)
-        self.assertIn("c", l)
+        hist_list = self.history.getlist()
+        self.assertEqual(len(hist_list), 2)
+        self.assertNotIn("b", hist_list)
+        self.assertNotIn(" b", hist_list)
+        self.assertIn("a", hist_list)
+        self.assertIn("c", hist_list)
 
         # clean
         self.history.clear()
@@ -62,31 +62,31 @@ class HistoryTests(StashTestCase):
         self.history.add(" b")
         self.history.add("c")
         # all 3 should have been added
-        l = self.history.getlist()
-        self.assertEqual(len(l), 3)
-        self.assertIn("b", l)
-        self.assertNotIn(" b", l)  # whitespace should be stripped
-        self.assertIn("a", l)
-        self.assertIn("c", l)
+        hist_list = self.history.getlist()
+        self.assertEqual(len(hist_list), 3)
+        self.assertIn("b", hist_list)
+        self.assertNotIn(" b", hist_list)  # whitespace should be stripped
+        self.assertIn("a", hist_list)
+        self.assertIn("c", hist_list)
 
     def test_add_doubble(self):
         """test adding a line twice in a row"""
-        l = "testline"
+        hist_list = "testline"
         # test with disallowed double lines
         self.history.allow_double = False
-        self.history.add(l)
-        self.history.add(l)
+        self.history.add(hist_list)
+        self.history.add(hist_list)
         self.assertEqual(len(self.history.getlist()), 1)
-        self.assertIn(l, self.history.getlist())
+        self.assertIn(hist_list, self.history.getlist())
 
         # clean
         self.history.clear()
 
         # twice, but not in a row should still be allowed
         self.assertEqual(len(self.history.getlist()), 0)
-        self.history.add(l)
+        self.history.add(hist_list)
         self.history.add("other line")
-        self.history.add(l)
+        self.history.add(hist_list)
         self.assertEqual(len(self.history.getlist()), 3)
 
         # clear
@@ -94,10 +94,10 @@ class HistoryTests(StashTestCase):
 
         # test with allowed double lines
         self.history.allow_double = True
-        self.history.add(l)
-        self.history.add(l)
+        self.history.add(hist_list)
+        self.history.add(hist_list)
         self.assertEqual(len(self.history.getlist()), 2)
-        self.assertIn(l, self.history.getlist())
+        self.assertIn(hist_list, self.history.getlist())
 
     def test_clear(self):
         """test ShHistory.clear()"""
@@ -149,10 +149,10 @@ class HistoryTests(StashTestCase):
         for i in range(10):
             self.history.add(str(i))
         # get list
-        l = self.history.getlist()
-        self.assertEqual(len(l), 10)
+        hist_list = self.history.getlist()
+        self.assertEqual(len(hist_list), 10)
         # ensure reverse order
-        for e, i in zip(l, range(len(l) - 1, 0, -1)):
+        for e, i in zip(hist_list, range(len(hist_list) - 1, 0, -1)):
             self.assertEqual(int(e), i)
 
     def test_getlist_newlist(self):
