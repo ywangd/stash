@@ -18,7 +18,7 @@ def get_cow(text):
     """create a string of a cow saying things."""
     lines = text.split("\n")
     nlines = len(lines)
-    longest_line = max([len(l) for l in lines])
+    longest_line = max([len(line) for line in lines])
     lenght_of_lines = longest_line + 2
     ret = " " + "_" * lenght_of_lines + "\n"
     if nlines == 1:

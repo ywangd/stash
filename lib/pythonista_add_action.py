@@ -9,7 +9,7 @@ example:
 
 # This module was created by jsbain. Thanks for sharing it!
 
-from objc_util import *
+from objc_util import ObjCClass, ns
 
 NSUserDefaults = ObjCClass("NSUserDefaults")
 

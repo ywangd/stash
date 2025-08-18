@@ -40,9 +40,10 @@ def _merge_entries(path, trees):
         lens.append(len(e))
 
     result = []
-    while any([ind < l for ind, l in zip(inds, lens)]):
+    while any([ind < len_ for ind, len_ in zip(inds, lens)]):
         next_entry = [
-            e[ind] if ind < l else _NULL_ENTRY for e, ind, l in zip(entries, inds, lens)
+            e[ind] if ind < len_ else _NULL_ENTRY
+            for e, ind, len_ in zip(entries, inds, lens)
         ]
         paths = [e.path for e in next_entry if e.path]
         minpath = min(paths)
