@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 
-import sys, os, re, json, argparse, time, pytz
+import sys
+import os
+import re
+import json
+import argparse
+import time
+import pytz
 import console
 from datetime import datetime, timedelta
 from difflib import unified_diff, ndiff

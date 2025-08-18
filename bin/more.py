@@ -5,7 +5,10 @@
 
 from __future__ import print_function
 
-import argparse, console, fileinput, sys
+import argparse
+import console
+import fileinput
+import sys
 
 
 def msi(chars):
