@@ -35,7 +35,9 @@ except ImportError:
     _stash("pip install docopt")
 from docopt import docopt
 from github import Github
-import keychain, console, inspect
+import keychain
+import console
+import inspect
 
 
 class GitHubRepoNotFoundError(Exception):

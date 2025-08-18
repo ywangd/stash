@@ -31,9 +31,9 @@ from ..shscreens import DEFAULT_CHAR, ShChar
 from .base import ShBaseUI, ShBaseTerminal, ShBaseSequentialRenderer
 
 try:
-    from objc_util import *
+    from objc_util import *  # noqa: F403
 except ImportError:
-    from .dummyobjc_util import *
+    from .dummyobjc_util import *  # noqa: F403
 
 
 NSMutableAttributedString = ObjCClass("NSMutableAttributedString")

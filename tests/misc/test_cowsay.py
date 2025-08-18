@@ -20,7 +20,7 @@ class CowsayTests(StashTestCase):
         self.assertEqual(output.count("<"), 1)
         self.assertEqual(output.count(">"), 1)
 
-    def test_singleline_1(self):
+    def test_singleline_2(self):
         """test for correct text in output"""
         output = self.run_command("cowsay Hello, World!", exitcode=0)
         self.assertIn("Hello, World!", output)

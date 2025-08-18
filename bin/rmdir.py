@@ -5,7 +5,9 @@
 
 from __future__ import print_function
 
-import argparse, os, sys
+import argparse
+import os
+import sys
 
 
 def rmdir(dirnames, verbose=False):

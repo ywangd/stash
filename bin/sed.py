@@ -2226,7 +2226,7 @@ class Command_q(Command):
         if not script.script_line.is_end_of_cmd():
             raise SedException(
                 script.position,
-                "Only an integer number can follow command {cmd} as parameter".format(
+                "Only an integer number can follow command {} as parameter".format(
                     self.function
                 ),
             )
