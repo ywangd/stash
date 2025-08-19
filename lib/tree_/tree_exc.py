@@ -5,7 +5,7 @@ class TreePermissionError(TreeError, PermissionError): ...
 
 
 class TreeSortTypeError(TreeError, ValueError):
-    possible_values = {'name', 'version', 'size', 'mtime', 'ctime'}
+    possible_values = {"name", "version", "size", "mtime", "ctime"}
 
     def __init__(self, *args):
         self.message = "tree: missing argument to --sort"

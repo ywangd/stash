@@ -26,8 +26,7 @@ def main(args):
                     # Decoding as Latin-1 to get a visual representation for most
                     # bytes that would otherwise be non-printable.
                     str_chunk = "".join(
-                        "_" if c in INVISIBLE else chr(c)
-                        for c in chunk
+                        "_" if c in INVISIBLE else chr(c) for c in chunk
                     )
                     hex_chunk = " ".join("{:0>2X}".format(c) for c in chunk)
                     print("0x{:>08X} | {:<48} | {:<16}".format(i, hex_chunk, str_chunk))

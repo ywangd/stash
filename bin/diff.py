@@ -15,12 +15,12 @@ try:
 except ImportError:
     console = None
 
-_stash = globals().get('_stash')
+_stash = globals().get("_stash")
 
 # Define ANSI color codes
 ANSI_GREEN = "\x1b[92m"  # For added lines (+)
-ANSI_RED = "\x1b[91m"    # For removed lines (-)
-ANSI_RESET = "\x1b[0m"   # To reset the color
+ANSI_RED = "\x1b[91m"  # For removed lines (-)
+ANSI_RESET = "\x1b[0m"  # To reset the color
 
 
 def argue(args):
@@ -49,13 +49,9 @@ def modified(f):
 def print_line(line):
     if _stash:
         if line.startswith("+"):
-            line = _stash.text_color(
-                line, "green"
-            )
+            line = _stash.text_color(line, "green")
         elif line.startswith("-"):
-            line = _stash.text_color(
-                line, "red"
-            )
+            line = _stash.text_color(line, "red")
     elif console:
         # Use the 'console' module if available
         if line.startswith("+"):
@@ -108,7 +104,7 @@ def diff(lhs: Path, rhs: Path):
 
 def main(args):
     if _stash:
-        _stash('clear')
+        _stash("clear")
     elif console:
         console.clear()
     else:

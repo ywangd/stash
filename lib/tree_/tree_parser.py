@@ -1,9 +1,9 @@
 import argparse
 from pathlib import Path
 
-__version__ = '0.1.0'
+__version__ = "0.1.0"
 
-__all__ = ('parser',)
+__all__ = ("parser",)
 
 
 parser = argparse.ArgumentParser(description=__doc__, add_help=False)
@@ -254,6 +254,6 @@ parser.add_argument(
     "paths",
     type=Path,
     action="store",
-    nargs='*',
+    nargs="*",
     metavar="<directory list>",
 )

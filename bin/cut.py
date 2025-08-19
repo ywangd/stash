@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 """Print selected parts of lines from each FILE to standard output."""
+
 import argparse
 import fileinput
 import sys
 
 
 def input_stream(files=None):
-    with fileinput.input(files=files, openhook=fileinput.hook_encoded("utf-8")) as stream:
+    with fileinput.input(
+        files=files, openhook=fileinput.hook_encoded("utf-8")
+    ) as stream:
         for line in stream:
             yield line, fileinput.filename(), fileinput.filelineno()
 

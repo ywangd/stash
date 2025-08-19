@@ -35,6 +35,7 @@ class AttributeUndefined:
     Special Type to mark if patched attribute
     was not defined and should be deletted
     """
+
     pass
 
 

@@ -54,7 +54,9 @@ if __name__ == "__main__":
             ret = 0
             try:
                 ret = main()
-                shutil.copytree(_PREFIX_SITE_PACKAGES, _SITE_PACKAGES, dirs_exist_ok=True)
+                shutil.copytree(
+                    _PREFIX_SITE_PACKAGES, _SITE_PACKAGES, dirs_exist_ok=True
+                )
             finally:
                 shutil.rmtree(_PREFIX_LIB)
             sys.exit(ret)

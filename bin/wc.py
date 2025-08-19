@@ -2,13 +2,16 @@
 """Print newline, word, and byte counts for each FILE, and a total line if
 more than one FILE is specified.
 """
+
 import argparse
 import fileinput
 import sys
 
 
 def input_stream(files=None):
-    with fileinput.input(files=files, openhook=fileinput.hook_encoded("utf-8")) as stream:
+    with fileinput.input(
+        files=files, openhook=fileinput.hook_encoded("utf-8")
+    ) as stream:
         for line in stream:
             yield line, fileinput.filename(), fileinput.filelineno()
 

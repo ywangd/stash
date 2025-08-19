@@ -53,7 +53,9 @@ def input_stream(files=()):
     The advantage of this function is it recovers from errors if one
     file is invalid and proceed with the next file
     """
-    with fileinput.input(files=files, openhook=fileinput.hook_encoded("utf-8")) as stream:
+    with fileinput.input(
+        files=files, openhook=fileinput.hook_encoded("utf-8")
+    ) as stream:
         for line in stream:
             yield line, fileinput.filename(), fileinput.filelineno()
 

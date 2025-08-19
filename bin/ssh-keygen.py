@@ -19,6 +19,7 @@ import paramiko
 # monkeypatch for paramiko and Crypto.Random
 # global mlpatches.time_patches.CLOCK_PATCH can be disabled
 import time
+
 time.clock = time.perf_counter
 
 

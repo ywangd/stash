@@ -53,18 +53,16 @@ known_arg_types = {
     "-o": "Path",
     "--sort": "str",
     "-H": "str",
-    "-T": "str"
+    "-T": "str",
 }
-known_arg_dests = {
-    "--": "__terminator"
-}
+known_arg_dests = {"--": "__terminator"}
 # section = r'^  ----.+$'
 # lookup = r'^  (--*\w[-\w]{0,})\s([<>\w#]*)\s+([A-Z].+)$'
 
-section = r'^  ----.+$'
-lookup_with_metavar = r'^  (--*\w[-\w]*)\s+([<>\w#]+)\s+([A-Z].+)$'
-lookup_without_metavar = r'^  (--*[-\w]+)\s+([A-Z].+)$'
-special_lookup = r'^  (--+)\s+([A-Z].+)$'
+section = r"^  ----.+$"
+lookup_with_metavar = r"^  (--*\w[-\w]*)\s+([<>\w#]+)\s+([A-Z].+)$"
+lookup_without_metavar = r"^  (--*[-\w]+)\s+([A-Z].+)$"
+special_lookup = r"^  (--+)\s+([A-Z].+)$"
 
 
 g = 0
@@ -76,21 +74,23 @@ lines.append("\n__all__ = ('parser',)")
 lines.append("\n")
 lines.append("parser = argparse.ArgumentParser(description=__doc__, add_help=False)")
 lines.append("parser.version = __version__")
-for i, l in enumerate(ff.split('\n')):
-    if re.search(section, l):
-        lines.append(f'group{g} = parser.add_argument_group("{l}")')
+for i, line in enumerate(ff.split("\n")):
+    if re.search(section, line):
+        lines.append(f'group{g} = parser.add_argument_group("{line}")')
         g += 1
-    elif re.search(special_lookup, l):
-        flag = re.search(special_lookup, l).group(1)
+    elif re.search(special_lookup, line):
+        flag = re.search(special_lookup, line).group(1)
         dest = known_arg_dests[flag]
-        lines.append(special_flagp.format(
-            group=g-1,
-            flag=flag.strip(),
-            dest=dest,
-            help="Options processing terminator."
-        ))
+        lines.append(
+            special_flagp.format(
+                group=g - 1,
+                flag=flag.strip(),
+                dest=dest,
+                help="Options processing terminator.",
+            )
+        )
     else:
-        m = re.search(lookup_with_metavar, l)
+        m = re.search(lookup_with_metavar, line)
         if m:
             gr = m.groups()
             flag, metavar, help_ = gr
@@ -99,44 +99,40 @@ for i, l in enumerate(ff.split('\n')):
             help_ = help_.strip()
             if flag in known_arg_types:
                 type_ = known_arg_types[flag]
-                lines.append(optp.format(
-                    group=g-1,
-                    flag=flag,
-                    metavar=metavar,
-                    type=type_,
-                    help=help_
-                ))
+                lines.append(
+                    optp.format(
+                        group=g - 1, flag=flag, metavar=metavar, type=type_, help=help_
+                    )
+                )
             else:
-                lines.append(flagp.format(
-                    group=g-1,
-                    flag=flag,
-                    help=help_
-                ))
+                lines.append(flagp.format(group=g - 1, flag=flag, help=help_))
         else:
-            m = re.search(lookup_without_metavar, l)
+            m = re.search(lookup_without_metavar, line)
             if m:
                 gr = m.groups()
                 flag, help_ = gr
                 if flag == "--help":
-                    lines.append(spec_action_flag.format(
-                        group=g - 1,
-                        action="help",
-                        flag=flag.strip(),
-                        help=help_.strip()
-                    ))
+                    lines.append(
+                        spec_action_flag.format(
+                            group=g - 1,
+                            action="help",
+                            flag=flag.strip(),
+                            help=help_.strip(),
+                        )
+                    )
                 elif flag == "--version":
-                    lines.append(spec_action_flag.format(
-                        group=g - 1,
-                        action="version",
-                        flag=flag.strip(),
-                        help=help_.strip()
-                    ))
+                    lines.append(
+                        spec_action_flag.format(
+                            group=g - 1,
+                            action="version",
+                            flag=flag.strip(),
+                            help=help_.strip(),
+                        )
+                    )
                 else:
-                    lines.append(flagp.format(
-                        group=g-1,
-                        flag=flag.strip(),
-                        help=help_.strip()
-                    ))
+                    lines.append(
+                        flagp.format(group=g - 1, flag=flag.strip(), help=help_.strip())
+                    )
 
 lines.append(positional)
 lines.append("\n")

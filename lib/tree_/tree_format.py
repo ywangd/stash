@@ -139,6 +139,7 @@ def _colorize(path: Path, path_name: str, ns: argparse.Namespace) -> str:
 
     return path_name
 
+
 # def _colorize(path: Path, path_name: str, ns: argparse.Namespace) -> str:
 #     """
 #     Applies color to the path name based on the file type.
@@ -196,7 +197,8 @@ def _get_owner_and_group(path: Path, ns: argparse.Namespace) -> Tuple[str, str]:
     group = ""
     if ns.u or ns.g:
         try:
-            import pwd, grp
+            import pwd
+            import grp
 
             st = path.stat()
             if ns.u:
@@ -303,10 +305,10 @@ def fmt_path(path: Path, ns: argparse.Namespace) -> str:
 
     # adjust output width
     if any([perms, owner, group]) and len(parts) < CONSOLE_WIDTH:
-        sep = " " * (CONSOLE_WIDTH-len(parts)-2)
+        sep = " " * (CONSOLE_WIDTH - len(parts) - 2)
         parts.insert(2, sep)
 
-    display = ' '.join([p for p in parts if p])
+    display = " ".join([p for p in parts if p])
 
     if display:
         return f"[{display}]  {path_name + suffix}"

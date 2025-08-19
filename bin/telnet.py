@@ -10,7 +10,7 @@ import select
 import argparse
 import threading
 
-_stash = globals()['_stash']
+_stash = globals()["_stash"]
 
 try:
     # FIXME: should be reimplemented with telnetlib3 or Exscript and asyncio

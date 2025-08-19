@@ -51,6 +51,7 @@ if (paramiko is None) or (Version(paramiko.__version__) < Version("1.15")):
 # monkeypatch for paramiko and Crypto.Random
 # global mlpatches.time_patches.CLOCK_PATCH can be disabled
 import time
+
 time.clock = time.perf_counter
 
 

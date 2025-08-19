@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """easiliy manage monkey-patches. See 'man monkeypatching' for more help."""
 
-import sys
 import argparse
 import sys
 import json

@@ -65,8 +65,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             f.write(b"<strong>Success:</strong>")
         else:
             f.write(b"<strong>Failed:</strong>")
-        f.write(info.encode('utf-8'))
-        f.write(b'<br><a href="%s">back</a>' % self.headers["referer"].encode('utf-8'))
+        f.write(info.encode("utf-8"))
+        f.write(b'<br><a href="%s">back</a>' % self.headers["referer"].encode("utf-8"))
         f.write(b"<hr><small>Powered By: bones7456, check new version at ")
         f.write(b'<a href="http://li2z.cn/?s=SimpleHTTPServerWithUpload">')
         f.write(b"here</a>.</small></body>\n</html>\n")
@@ -95,12 +95,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             A tuple (bool, str) indicating success/failure and a message.
         """
         # 1. Manually parse the Content-Type header to find the boundary.
-        content_type = self.headers.get('Content-Type')
+        content_type = self.headers.get("Content-Type")
         if not content_type:
             return False, "Content-Type header is missing."
 
         # Find the boundary string in the header.
-        boundary_match = re.search(r'boundary=(.*)', content_type)
+        boundary_match = re.search(r"boundary=(.*)", content_type)
         if not boundary_match:
             return False, "Boundary parameter is missing from Content-Type header."
 
@@ -110,10 +110,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             boundary_str = boundary_str[1:-1]
 
         # The boundary must be a byte string for comparison with the request body.
-        boundary_marker = f'--{boundary_str}'.encode('utf-8')
+        boundary_marker = f"--{boundary_str}".encode("utf-8")
 
         # 2. Read the request body as a binary stream.
-        remainbytes = int(self.headers.get('content-length'))
+        remainbytes = int(self.headers.get("content-length"))
         line = self.rfile.readline()
         remainbytes -= len(line)
 
@@ -131,7 +131,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             return False, "Can't find out file name..."
 
         # Decode the filename from bytes to a string.
-        filename = fn[0].decode('utf-8')
+        filename = fn[0].decode("utf-8")
         path = self.translate_path(self.path)
         filepath = os.path.join(path, filename)
 
@@ -157,7 +157,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             remainbytes -= len(line)
             if boundary_marker in line:
                 pre_line = pre_line[0:-1]
-                if pre_line.endswith(b'\r'):
+                if pre_line.endswith(b"\r"):
                     pre_line = pre_line[0:-1]
                 out.write(pre_line)
                 out.close()
@@ -207,7 +207,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         ctype = ctype or "application/octet-stream"
 
         try:
-            f = open(path, 'rb')
+            f = open(path, "rb")
         except IOError:
             self.send_error(404, "File not found")
             return None
@@ -238,8 +238,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         display_path = html.escape(unquote(self.path))
 
         f.write(b'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
-        f.write(b"<html>\n<title>Directory listing for %s</title>\n" % display_path.encode('utf-8'))
-        f.write(b"<body>\n<h2>Directory listing for %s</h2>\n" % display_path.encode('utf-8'))
+        f.write(
+            b"<html>\n<title>Directory listing for %s</title>\n"
+            % display_path.encode("utf-8")
+        )
+        f.write(
+            b"<body>\n<h2>Directory listing for %s</h2>\n"
+            % display_path.encode("utf-8")
+        )
         f.write(b"<hr>\n")
         f.write(b'<form ENCTYPE="multipart/form-data" method="post">')
         f.write(b'<input name="file" type="file"/>')
@@ -258,7 +264,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 # Note: a link to a directory displays with @ and links with /
             f.write(
                 b'<li><a href="%s">%s</a>\n'
-                % (quote(link_name).encode('utf-8'), html.escape(display_name).encode('utf-8'))
+                % (
+                    quote(link_name).encode("utf-8"),
+                    html.escape(display_name).encode("utf-8"),
+                )
             )
         f.write(b"</ul>\n<hr>\n</body>\n</html>\n")
 
