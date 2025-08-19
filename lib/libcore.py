@@ -53,22 +53,11 @@ def input_stream(files=()):
     The advantage of this function is it recovers from errors if one
     file is invalid and proceed with the next file
     """
-    fileinput.close()
-    try:
-        if not files:
-            for line in fileinput.input(files):
-                yield line, "", fileinput.filelineno()
-
-        else:
-            while files:
-                thefile = files.pop(0)
-                try:
-                    for line in fileinput.input(thefile):
-                        yield line, fileinput.filename(), fileinput.filelineno()
-                except IOError as e:
-                    yield None, fileinput.filename(), e
-    finally:
-        fileinput.close()
+    with fileinput.input(
+        files=files, openhook=fileinput.hook_encoded("utf-8")
+    ) as stream:
+        for line in stream:
+            yield line, fileinput.filename(), fileinput.filelineno()
 
 
 def sizeof_fmt(num):

@@ -8,11 +8,11 @@ for accepting outputs from running scripts.
 
 import logging
 import re
+import sys
 
-import six
 
 # noinspection PyPep8Naming
-from .shcommon import Control as ctrl, Escape as esc, PY3
+from .shcommon import Control as ctrl, Escape as esc
 
 
 class ShMiniBuffer(object):
@@ -402,7 +402,7 @@ class ShStream(object):
         """
         try:
             self.consume_handlers[self.state](char)
-        except Exception as e:  # TODO: better error handling
+        except Exception:  # TODO: better error handling
             self.reset()
 
     def feed(self, chars, render_it=True, no_wait=False):
@@ -411,8 +411,9 @@ class ShStream(object):
         :param str chars: a string to feed from.
         """
         # To avoid the \xc2 deadlock from bytes string
-        if not isinstance(chars, six.text_type):
-            chars = chars.decode("utf-8", errors="ignore")
+        if not isinstance(chars, str):
+            if isinstance(chars, (bytes, bytearray)):
+                chars = chars.decode("utf-8", errors="ignore")
 
         with self.main_screen.acquire_lock():
             for char in chars:

@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 """easiliy manage monkey-patches. See 'man monkeypatching' for more help."""
 
-from __future__ import print_function
 import argparse
 import sys
 import json
-from mlpatches import base
 
 _stash = globals()["_stash"]
 
@@ -14,10 +12,7 @@ from mlpatches import patches
 
 def patch_is_compatible(patch):
     """Return True if the patch is compatible."""
-    if _stash.PY3:
-        return patch.PY3
-    else:
-        return patch.PY2
+    return patch.PY3
 
 
 def save_config(path):
@@ -32,7 +27,7 @@ def save_config(path):
 
 def load_config(path):
     """load the config from path"""
-    with open(path, "rU") as f:
+    with open(path, "r") as f:
         tl = json.load(f)
     patches.PATCHES["ALL"].disable()
     for k in sorted(tl):  # sort is important to load groups first

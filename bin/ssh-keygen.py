@@ -11,11 +11,17 @@ usage:
     [-f] - output file name. default: id_ssh_key
 """
 
-from __future__ import print_function
 import os
 import sys
 import argparse
 import paramiko
+
+# monkeypatch for paramiko and Crypto.Random
+# global mlpatches.time_patches.CLOCK_PATCH can be disabled
+import time
+
+time.clock = time.perf_counter
+
 
 SSH_DIRS = [
     os.path.expanduser("~/.ssh"),

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Display help for a command in $STASH_ROOT/bin/ or a topic, or list all commands if no name is given."""
 
-from __future__ import print_function
-
 import argparse
 import ast
 import os

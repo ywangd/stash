@@ -6,7 +6,7 @@ import glob
 import logging
 import threading
 
-from six import StringIO
+from io import StringIO
 
 import pyparsing as pp
 
@@ -703,7 +703,7 @@ class ShExpander(object):
                             es += str(os.environ.get(nextchar, ""))
                             state = "a"
                         elif nextchar == "$":
-                            es += str(threading.currentThread()._Thread__ident)
+                            es += str(threading.current_thread()._Thread__ident)
                             state = "a"
                         elif (
                             nextchar

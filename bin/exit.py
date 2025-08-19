@@ -6,7 +6,6 @@ execution with no errors.
 """
 
 import argparse
-import os
 import sys
 
 

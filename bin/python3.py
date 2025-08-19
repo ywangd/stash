@@ -13,14 +13,19 @@ usage:
     python3 python_file.py [args]
 """
 
-from __future__ import print_function
+import sys
 
 # check for py2/3
 _stash = globals()["_stash"]
-if not _stash.PY3:
+
+PY3 = sys.version_info[0] == 3
+
+if not PY3:
     print(
         _stash.text_color(
-            "You are running StaSh in python 2.\nRunning python3 from python 2 is not (yet) supported.\nPlease use the 'python' command instead.",
+            "You are running StaSh in python 2.\n"
+            "Running python3 from python 2 is not (yet) supported.\n"
+            "Current StaSh version supports only python 3.10 or higher.",
             "red",
         )
     )

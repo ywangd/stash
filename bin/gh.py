@@ -13,12 +13,8 @@ For all commands, use gh <command> --help for more detailed help
 NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.com', which is also the default from the git module.
 """
 
-from __future__ import print_function
 import os
-import sys
 from functools import wraps
-
-from six.moves import input
 
 _stash = globals()["_stash"]
 
@@ -27,7 +23,6 @@ try:
 except ImportError:
     print("Could not import 'github', installing it...")
     _stash("pip install pygithub")
-    import github
 try:
     import docopt
 except ImportError:
@@ -37,7 +32,6 @@ from docopt import docopt
 from github import Github
 import keychain
 import console
-import inspect
 
 
 class GitHubRepoNotFoundError(Exception):

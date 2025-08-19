@@ -2,7 +2,6 @@
 """
 This module contains patches for the 'os'-module to make StaSh's thread-system like a process-system (from the view of the script)"""
 
-import os
 import threading
 from mlpatches import base, os_popen
 

@@ -9,7 +9,7 @@ import stat
 from stashutils.core import get_stash
 
 from stashutils.fsi.base import BaseFSI, make_stat, calc_mode
-from stashutils.fsi.errors import OperationFailure, IsDir, IsFile
+from stashutils.fsi.errors import OperationFailure
 from stashutils.fsi.errors import AlreadyExists
 
 _stash = get_stash()

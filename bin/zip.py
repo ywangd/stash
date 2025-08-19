@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Package and compress (archive) files and directories"""
 
-from __future__ import print_function
-
 import os
 import sys
 import argparse

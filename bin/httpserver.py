@@ -2,24 +2,20 @@
 # -*- coding: utf-8 -*-
 """Simple HTTP Server With Upload (https://gist.github.com/UniIsland/3346170)
 
-(StaSh) Recommend to run this command as background job, i.e. "httpserver [port] &"
-
 This module builds on BaseHTTPServer by implementing the standard GET
 and HEAD requests in a fairly straightforward manner.
 """
 
-from __future__ import absolute_import, print_function
-
-import cgi
+import html
 import mimetypes
 import os
 import posixpath
 import re
 import shutil
 
-from six import StringIO
-from six.moves import BaseHTTPServer
-from six.moves.urllib.parse import quote, unquote
+from io import BytesIO
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import quote, unquote
 
 __version__ = "0.1"
 __all__ = ["SimpleHTTPRequestHandler"]
@@ -27,17 +23,16 @@ __author__ = "bones7456"
 __home_page__ = "http://li2z.cn/"
 
 
-class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     """Simple HTTP request handler with GET/HEAD/POST commands.
 
     This serves files from the current directory and any of its
-    subdirectories.  The MIME type for files is determined by
-    calling the .guess_type() method. And can reveive file uploaded
-    by client.
+    subdirectories. The MIME type for files is determined by
+    calling the .guess_type() method. It can also receive files uploaded
+    by clients.
 
     The GET/HEAD/POST requests are identical except that the HEAD
     request omits the actual contents of the file.
-
     """
 
     server_version = "SimpleHTTPWithUpload/" + __version__
@@ -46,7 +41,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """Serve a GET request."""
         f = self.send_head()
         if f:
-            self.copyfile(f, self.wfile)
+            self.copy_file(f, self.wfile)
             f.close()
 
     def do_HEAD(self):
@@ -59,72 +54,119 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """Serve a POST request."""
         r, info = self.deal_post_data()
         print(r, info, "by: ", self.client_address)
-        f = StringIO()
-        f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
-        f.write("<html>\n<title>Upload Result Page</title>\n")
-        f.write("<body>\n<h2>Upload Result Page</h2>\n")
-        f.write("<hr>\n")
+
+        f = BytesIO()
+
+        f.write(b'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
+        f.write(b"<html>\n<title>Upload Result Page</title>\n")
+        f.write(b"<body>\n<h2>Upload Result Page</h2>\n")
+        f.write(b"<hr>\n")
         if r:
-            f.write("<strong>Success:</strong>")
+            f.write(b"<strong>Success:</strong>")
         else:
-            f.write("<strong>Failed:</strong>")
-        f.write(info)
-        f.write('<br><a href="%s">back</a>' % self.headers["referer"])
-        f.write("<hr><small>Powerd By: bones7456, check new version at ")
-        f.write('<a href="http://li2z.cn/?s=SimpleHTTPServerWithUpload">')
-        f.write("here</a>.</small></body>\n</html>\n")
+            f.write(b"<strong>Failed:</strong>")
+        f.write(info.encode("utf-8"))
+        f.write(b'<br><a href="%s">back</a>' % self.headers["referer"].encode("utf-8"))
+        f.write(b"<hr><small>Powered By: bones7456, check new version at ")
+        f.write(b'<a href="http://li2z.cn/?s=SimpleHTTPServerWithUpload">')
+        f.write(b"here</a>.</small></body>\n</html>\n")
+
         length = f.tell()
         f.seek(0)
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
+        self.send_header("Content-type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(length))
         self.end_headers()
+
         if f:
-            self.copyfile(f, self.wfile)
+            self.copy_file(f, self.wfile)
             f.close()
 
     def deal_post_data(self):
-        boundary = self.headers.plisttext.split("=")[1]
-        remainbytes = int(self.headers["content-length"])
+        """
+        Handles POST requests for file uploads without using the cgi module.
+
+        Parses the 'Content-Type' header string to manually find the boundary for the
+        multipart form data. Reads the request body line by line from
+        the rfile stream, locates the file data, and saves it to a file
+        in the current directory.
+
+        Returns:
+            A tuple (bool, str) indicating success/failure and a message.
+        """
+        # 1. Manually parse the Content-Type header to find the boundary.
+        content_type = self.headers.get("Content-Type")
+        if not content_type:
+            return False, "Content-Type header is missing."
+
+        # Find the boundary string in the header.
+        boundary_match = re.search(r"boundary=(.*)", content_type)
+        if not boundary_match:
+            return False, "Boundary parameter is missing from Content-Type header."
+
+        # Extract the boundary, removing quotes if they exist.
+        boundary_str = boundary_match.group(1).strip()
+        if boundary_str.startswith('"') and boundary_str.endswith('"'):
+            boundary_str = boundary_str[1:-1]
+
+        # The boundary must be a byte string for comparison with the request body.
+        boundary_marker = f"--{boundary_str}".encode("utf-8")
+
+        # 2. Read the request body as a binary stream.
+        remainbytes = int(self.headers.get("content-length"))
         line = self.rfile.readline()
         remainbytes -= len(line)
-        if boundary not in line:
-            return (False, "Content NOT begin with boundary")
+
+        # Check if the content starts with the boundary marker.
+        if boundary_marker not in line:
+            return False, "Content does not begin with boundary."
+
+        # 3. Read the header lines for the file part.
         line = self.rfile.readline()
         remainbytes -= len(line)
-        fn = re.findall(r'Content-Disposition.*name="file"; filename="(.*)"', line)
+
+        # Use a regex pattern for bytes to find the filename.
+        fn = re.findall(b'Content-Disposition.*name="file"; filename="(.*)"', line)
         if not fn:
-            return (False, "Can't find out file name...")
+            return False, "Can't find out file name..."
+
+        # Decode the filename from bytes to a string.
+        filename = fn[0].decode("utf-8")
         path = self.translate_path(self.path)
-        fn = os.path.join(path, fn[0])
+        filepath = os.path.join(path, filename)
+
         line = self.rfile.readline()
         remainbytes -= len(line)
         line = self.rfile.readline()
         remainbytes -= len(line)
+
+        # 4. Open the file to write the content.
         try:
-            out = open(fn, "wb")
+            out = open(filepath, "wb")
         except IOError:
             return (
                 False,
                 "Can't create file to write, do you have permission to write?",
             )
 
-        preline = self.rfile.readline()
-        remainbytes -= len(preline)
+        # 5. Read the file content and write it to disk.
+        pre_line = self.rfile.readline()
+        remainbytes -= len(pre_line)
         while remainbytes > 0:
             line = self.rfile.readline()
             remainbytes -= len(line)
-            if boundary in line:
-                preline = preline[0:-1]
-                if preline.endswith("\r"):
-                    preline = preline[0:-1]
-                out.write(preline)
+            if boundary_marker in line:
+                pre_line = pre_line[0:-1]
+                if pre_line.endswith(b"\r"):
+                    pre_line = pre_line[0:-1]
+                out.write(pre_line)
                 out.close()
-                return (True, "File '%s' upload success!" % fn)
+                return True, "File '%s' upload success!" % filename
             else:
-                out.write(preline)
-                preline = line
-        return (False, "Unexpect Ends of data.")
+                out.write(pre_line)
+                pre_line = line
+
+        return False, "Unexpected end of data."
 
     def send_head(self):
         """Common code for GET and HEAD commands.
@@ -135,10 +177,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         to the outputfile by the caller unless the command was HEAD,
         and must be closed by the caller under all circumstances), or
         None, in which case the caller has nothing further to do.
-
         """
         path = self.translate_path(self.path)
-        f = None
         if os.path.isdir(path):
             if not self.path.endswith("/"):
                 # redirect browser - doing basically what apache does
@@ -153,15 +193,25 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     break
             else:
                 return self.list_directory(path)
-        ctype = self.guess_type(path)
+
+        # Use try/except to handle the future deprecation of mimetypes.guess_type()
+        # and the introduction of mimetypes.guess_filetype() in Python 3.13.
         try:
-            # Always read in binary mode. Opening files in text mode may cause
-            # newline translations, making the actual size of the content
-            # transmitted *less* than the content-length!
+            # Try to use the new, preferred function first
+            ctype = mimetypes.guess_file_type(path)[0]
+        except AttributeError:
+            # Fall back to the older function if the new one is not available
+            ctype = mimetypes.guess_type(path)[0]
+
+        # If no MIME type is found, default to 'application/octet-stream'
+        ctype = ctype or "application/octet-stream"
+
+        try:
             f = open(path, "rb")
         except IOError:
             self.send_error(404, "File not found")
             return None
+
         self.send_response(200)
         self.send_header("Content-type", ctype)
         fs = os.fstat(f.fileno())
@@ -176,53 +226,66 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         Return value is either a file object, or None (indicating an
         error).  In either case, the headers are sent, making the
         interface the same as for send_head().
-
         """
         try:
-            list = os.listdir(path)
+            list_ = os.listdir(path)
         except os.error:
             self.send_error(404, "No permission to list directory")
             return None
-        list.sort(key=lambda a: a.lower())
-        f = StringIO()
-        displaypath = cgi.escape(unquote(self.path))
-        f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
-        f.write("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
-        f.write("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
-        f.write("<hr>\n")
-        f.write('<form ENCTYPE="multipart/form-data" method="post">')
-        f.write('<input name="file" type="file"/>')
-        f.write('<input type="submit" value="upload"/></form>\n')
-        f.write("<hr>\n<ul>\n")
-        for name in list:
+        list_.sort(key=lambda a: a.lower())
+
+        f = BytesIO()
+        display_path = html.escape(unquote(self.path))
+
+        f.write(b'<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
+        f.write(
+            b"<html>\n<title>Directory listing for %s</title>\n"
+            % display_path.encode("utf-8")
+        )
+        f.write(
+            b"<body>\n<h2>Directory listing for %s</h2>\n"
+            % display_path.encode("utf-8")
+        )
+        f.write(b"<hr>\n")
+        f.write(b'<form ENCTYPE="multipart/form-data" method="post">')
+        f.write(b'<input name="file" type="file"/>')
+        f.write(b'<input type="submit" value="upload"/></form>\n')
+        f.write(b"<hr>\n<ul>\n")
+
+        for name in list_:
             fullname = os.path.join(path, name)
-            displayname = linkname = name
+            display_name = link_name = name
             # Append / for directories or @ for symbolic links
             if os.path.isdir(fullname):
-                displayname = name + "/"
-                linkname = name + "/"
+                display_name = name + "/"
+                link_name = name + "/"
             if os.path.islink(fullname):
-                displayname = name + "@"
+                display_name = name + "@"
                 # Note: a link to a directory displays with @ and links with /
             f.write(
-                '<li><a href="%s">%s</a>\n' % (quote(linkname), cgi.escape(displayname))
+                b'<li><a href="%s">%s</a>\n'
+                % (
+                    quote(link_name).encode("utf-8"),
+                    html.escape(display_name).encode("utf-8"),
+                )
             )
-        f.write("</ul>\n<hr>\n</body>\n</html>\n")
+        f.write(b"</ul>\n<hr>\n</body>\n</html>\n")
+
         length = f.tell()
         f.seek(0)
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
+        self.send_header("Content-type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(length))
         self.end_headers()
+
         return f
 
-    def translate_path(self, path):
+    @staticmethod
+    def translate_path(path):
         """Translate a /-separated PATH to the local filename syntax.
 
         Components that mean special things to the local file system
-        (e.g. drive or directory names) are ignored.  (XXX They should
-        probably be diagnosed.)
-
+        (e.g. drive or directory names) are ignored.
         """
         # abandon query parameters
         path = path.split("?", 1)[0]
@@ -239,65 +302,26 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             path = os.path.join(path, word)
         return path
 
-    def copyfile(self, source, outputfile):
+    @staticmethod
+    def copy_file(source, outputfile):
         """Copy all data between two file objects.
 
         The SOURCE argument is a file object open for reading
-        (or anything with a read() method) and the DESTINATION
-        argument is a file object open for writing (or
-        anything with a write() method).
-
-        The only reason for overriding this would be to change
-        the block size or perhaps to replace newlines by CRLF
-        -- note however that this the default server uses this
-        to copy binary data as well.
-
+        and the DESTINATION argument is a file object open for writing.
         """
         shutil.copyfileobj(source, outputfile)
 
-    def guess_type(self, path):
-        """Guess the type of a file.
-
-        Argument is a PATH (a filename).
-
-        Return value is a string of the form type/subtype,
-        usable for a MIME Content-type header.
-
-        The default implementation looks the file's extension
-        up in the table self.extensions_map, using application/octet-stream
-        as a default; however it would be permissible (if
-        slow) to look inside the data to make a better guess.
-
-        """
-
-        base, ext = posixpath.splitext(path)
-        if ext in self.extensions_map:
-            return self.extensions_map[ext]
-        ext = ext.lower()
-        if ext in self.extensions_map:
-            return self.extensions_map[ext]
-        else:
-            return self.extensions_map[""]
-
-    if not mimetypes.inited:
-        mimetypes.init()  # try to read system mime.types
-    extensions_map = mimetypes.types_map.copy()
-    extensions_map.update(
-        {
-            "": "application/octet-stream",  # Default
-            ".py": "text/plain",
-            ".c": "text/plain",
-            ".h": "text/plain",
-        }
-    )
-
 
 def main(port=8000):
-    server = BaseHTTPServer.HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
+    server = HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
 
     try:
         print("Serving HTTP on 0.0.0.0 port %d ..." % port)
-        print("local IP address is %s" % globals()["_stash"].libcore.get_lan_ip())
+        # Note: The following line is specific to the "StaSh" environment and may need to be adjusted
+        # if you are running this script in a different terminal.
+        _stash = globals().get("_stash", None)
+        if _stash:
+            print("local IP address is %s" % globals()["_stash"].libcore.get_lan_ip())
         server.serve_forever()
 
     except KeyboardInterrupt:

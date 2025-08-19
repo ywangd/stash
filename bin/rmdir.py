@@ -3,8 +3,6 @@
 # StaSh utility - Dutcho, 17 Apr 2017
 """Remove empty directory"""
 
-from __future__ import print_function
-
 import argparse
 import os
 import sys

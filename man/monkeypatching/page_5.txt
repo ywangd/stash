@@ -7,7 +7,7 @@ The following Patchtypes are available:
    BasePatch():
       - does nothing
       - superclass for other patches
-      - overwrite "PY2" and "PY3" with bools to define compatibility
+      - overwrite "PY3" with bools to define compatibility ("PY2" is Legacy and no longer supported)
       - overwrite "do_enable()" to enable the patch
       - overwrite "do_disable()" to disable the patch
       - overwrite "dependencies" with a list of patches to enable first
@@ -34,7 +34,7 @@ The recommended way to define a Patch is the following way (example):
 '''
 from mlpatches import base
 class MyPatch(base.FunctionPatch):
-   PY2 = True
+   # PY2 = True # Legacy and no longer supported
    PY3 = False
    module = "os"
    function = "system"

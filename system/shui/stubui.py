@@ -2,8 +2,6 @@
 Stub ui and terminal for testing.
 """
 
-import six
-
 from .base import ShBaseUI, ShBaseTerminal, ShBaseSequentialRenderer
 
 
@@ -38,7 +36,7 @@ class ShTerminal(ShBaseTerminal):
 
     @text.setter
     def text(self, value):
-        assert isinstance(value, (six.text_type, six.binary_type))
+        assert isinstance(value, (str, bytes, bytearray))
         self._text = value
 
     @property

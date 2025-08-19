@@ -2,8 +2,9 @@
 """This module contains the base class for patches."""
 
 import sys
-import imp
 import os
+import importlib.machinery
+import importlib.util
 
 from stashutils.core import get_stash
 
@@ -12,8 +13,28 @@ SKIP = "<skip>'  # indicate that this patch should be skipped.'"
 _stash = get_stash()
 
 
+def load_source(modname, filename):
+    loader = importlib.machinery.SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    # The module is always executed and not cached in sys.modules.
+    # Uncomment the following line to cache the module.
+    # sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module
+
+
 class IncompatiblePatch(Exception):
     """raised when a patch is incompatible."""
+
+    pass
+
+
+class AttributeUndefined:
+    """
+    Special Type to mark if patched attribute
+    was not defined and should be deletted
+    """
 
     pass
 
@@ -27,7 +48,6 @@ class BasePatch(object):
     Subclasses may also overwrite self.dependencies with a list of patches which need to be enabled before the patch will be enabled.
     """
 
-    PY2 = True  # Python 2 compatibility
     PY3 = False  # Python 3 compatibility
     dependencies = []
 
@@ -40,11 +60,6 @@ class BasePatch(object):
             patch.enable()
         if not self.enabled:
             pyv = sys.version_info[0]
-            if pyv == 2:
-                if self.PY2 == SKIP:
-                    return  # skip patch activation
-                if not self.PY2:
-                    raise IncompatiblePatch("Python 2 not supported!")
             if pyv == 3:
                 if self.PY3 == SKIP:
                     return  # skip patch activation
@@ -97,21 +112,40 @@ class FunctionPatch(BasePatch):
             or (self.replacement is None)
         ):
             raise ValueError("Invalid Patch definition!")
+
         if self.module not in sys.modules:
-            fin, path, description = imp.find_module(self.module)
-            try:
-                module = imp.load_module(self.module, fin, path, description)
-            finally:
-                fin.close()
+            # Use importlib.util.find_spec to locate the module
+            spec = importlib.util.find_spec(self.module)
+
+            if spec is None:
+                raise ImportError(f"Module '{self.module}' not found.")
+
+            # Create the module object from the specification
+            module = importlib.util.module_from_spec(spec)
+
+            # Register the module in sys.modules
+            sys.modules[self.module] = module
+
+            # Execute the module's code to populate its namespace
+            spec.loader.exec_module(module)
         else:
+            # If the module is already loaded, get it from sys.modules
             module = sys.modules[self.module]
-        self.old = getattr(module, self.function)
+
+        try:
+            self.old = getattr(module, self.function)
+        except AttributeError:
+            # handle undefined attribute
+            self.old = AttributeUndefined
         setattr(module, self.function, self.replacement)
 
     def do_disable(self):
         module = sys.modules[self.module]
         if self.old is not None:
             setattr(module, self.function, self.old)
+        # delete undefined attribute
+        if self.old is AttributeUndefined:
+            delattr(module, self.function)
 
 
 class ModulePatch(BasePatch):
@@ -139,7 +173,7 @@ class ModulePatch(BasePatch):
         if self.name in sys.modules:
             del sys.modules[self.name]
         with open(self.path, "r") as f:
-            nmod = imp.load_source(self.name, self.path, f)
+            nmod = load_source(self.name, self.path, f)
         sys.modules[self.name] = nmod
 
     def do_disable(self):

@@ -5,8 +5,6 @@ OS/device specific interfaces
 import os
 import sys
 
-import six
-
 
 IN_PYTHONISTA = sys.executable.find("Pythonista") >= 0
 ON_TRAVIS = "TRAVIS" in os.environ
@@ -21,7 +19,7 @@ if IN_PYTHONISTA:
         """
         Get the clipboard content.
         :return: clipboard content
-        :rtype: six.text_type
+        :rtype: str
         """
         return clipboard.get()
 
@@ -29,20 +27,18 @@ if IN_PYTHONISTA:
         """
         Set the clipboard content.
         :param s: string to set
-        :type s: six.text_type
+        :type s: str
         """
         # TODO: non-unicode support
-        assert isinstance(s, six.text_type)
+        assert isinstance(s, str)
         clipboard.set(s)
 
     # -------------- pip ----------------------
 
-    if six.PY3:
-        SITE_PACKAGES_DIR_NAME = "site-packages"
-        if sys.version_info < (3, 10):  # Pythonista < v3.4
-            SITE_PACKAGES_DIR_NAME += "-3"
-    else:
-        SITE_PACKAGES_DIR_NAME = "site-packages-2"
+    SITE_PACKAGES_DIR_NAME = "site-packages"
+    if sys.version_info < (3, 10):  # Pythonista < v3.4
+        SITE_PACKAGES_DIR_NAME += "-3"
+
     SITE_PACKAGES_DIR_NAME_6 = "site-packages"
     SITE_PACKAGES_FOLDER = os.path.expanduser(
         "~/Documents/{}".format(SITE_PACKAGES_DIR_NAME)
@@ -136,7 +132,7 @@ else:
             """
             Get the clipboard content.
             :return: clipboard content
-            :rtype: six.text_type
+            :rtype: str
             """
             return pyperclip.paste()
 
@@ -144,10 +140,10 @@ else:
             """
             Set the clipboard content.
             :param s: string to set
-            :type s: six.text_type
+            :type s: str
             """
             # TODO: non-unicode support
-            assert isinstance(s, six.text_type)
+            assert isinstance(s, str)
             pyperclip.copy(s)
     else:
         # use fake implementation
@@ -158,7 +154,7 @@ else:
             """
             Get the clipboard content.
             :return: clipboard content
-            :rtype: six.text_type
+            :rtype: str
             """
             return _CLIPBOARD
 
@@ -166,10 +162,10 @@ else:
             """
             Set the clipboard content.
             :param s: string to set
-            :type s: six.text_type
+            :type s: str
             """
             global _CLIPBOARD
-            assert isinstance(s, six.text_type)
+            assert isinstance(s, str)
             _CLIPBOARD = s
 
     # -------------- pip ----------------------

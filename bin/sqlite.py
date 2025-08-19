@@ -7,7 +7,6 @@ Use sqlite ?file? to open a database in the shell.
 You can pass params to run one command. ex. sqlite test.db .dump > test.sql
 """
 
-from __future__ import print_function
 import sqlite3
 import os
 import cmd

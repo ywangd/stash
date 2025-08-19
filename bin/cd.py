@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """Change the current working directory."""
 
-from __future__ import print_function
-
 import argparse
 import os
 import sys

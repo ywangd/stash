@@ -3,6 +3,7 @@
 The Control, Escape and Graphics are taken from pyte (https://github.com/selectel/pyte)
 """
 
+import ast
 import os
 import sys
 import platform
@@ -11,7 +12,6 @@ import threading
 import ctypes
 from itertools import chain
 
-import six
 
 IN_PYTHONISTA = sys.executable.find("Pythonista") >= 0
 
@@ -23,28 +23,7 @@ if IN_PYTHONISTA:
     PYTHONISTA_VERSION = _properties["CFBundleShortVersionString"]
     PYTHONISTA_VERSION_LONG = _properties["CFBundleVersion"]
 
-    if PYTHONISTA_VERSION < "3.0":
-        python_capi = ctypes.pythonapi
-    else:
-        # The default pythonapi always points to Python 3 in Pythonista 3
-        if six.PY3:
-            python_capi = ctypes.pythonapi
-        else:
-            # We need to load the Python 2 API manually
-            try:
-                python_capi = ctypes.PyDLL(
-                    os.path.join(
-                        os.path.dirname(sys.executable),
-                        "Frameworks/Py2Kit.framework/Py2Kit",
-                    )
-                )
-            except OSError:
-                python_capi = ctypes.PyDLL(
-                    os.path.join(
-                        os.path.dirname(sys.executable),
-                        "Frameworks/PythonistaKit.framework/PythonistaKit",
-                    )
-                )
+    python_capi = ctypes.pythonapi
 
 else:
     PYTHONISTA_VERSION = "0.0"
@@ -88,8 +67,6 @@ _EXTERNAL_DIRS = [
     _STASH_EXTENSION_PATCH_PATH,
 ]
 
-# Python 3 or not Python 3
-PY3 = six.PY3
 
 # Save the true IOs
 if IN_PYTHONISTA:
@@ -140,7 +117,7 @@ if IN_PYTHONISTA:
             def write(self, s):
                 if isinstance(s, str):
                     _outputcapture.CaptureStdout(s)
-                elif isinstance(s, six.text_type):
+                elif isinstance(s, str):
                     _outputcapture.CaptureStdout(s.encode("utf8"))
 
             def writelines(self, lines):
@@ -164,7 +141,7 @@ if IN_PYTHONISTA:
             def write(self, s):
                 if isinstance(s, str):
                     _outputcapture.CaptureStderr(s)
-                elif isinstance(s, six.text_type):
+                elif isinstance(s, str):
                     _outputcapture.CaptureStderr(s.encode("utf8"))
 
             def writelines(self, lines):
@@ -180,6 +157,23 @@ _SYS_PATH = sys.path
 _OS_ENVIRON = os.environ
 
 
+def is_true_python_file(filename):
+    try:
+        with open(filename, "r", encoding="utf-8") as fp:
+            ast.parse(fp.read(), filename)
+            return True
+    except SyntaxError:
+        return False
+    except Exception as e:
+        return False
+
+
+def has_py_extension(filename):
+    if filename.endswith(".py"):
+        return True
+    return False
+
+
 def is_binary_file(filename, nbytes=1024):
     """
     An approximate way to tell whether a file is binary.
@@ -189,7 +183,7 @@ def is_binary_file(filename, nbytes=1024):
     """
     with open(filename, "rb") as ins:
         for c in ins.read(nbytes):
-            if isinstance(c, six.integer_types):
+            if isinstance(c, int):
                 oc = c
             else:
                 oc = ord(c)

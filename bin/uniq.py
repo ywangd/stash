@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 """Print standard input or files, omitting repeated lines"""
 
-from __future__ import print_function
-
-import os
 import sys
 import fileinput
 import argparse

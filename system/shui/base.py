@@ -6,7 +6,6 @@ import ast
 import logging
 import time
 
-import six
 
 from ..shcommon import (
     K_CC,
@@ -250,7 +249,7 @@ class ShBaseTerminal(object):
 
     @text.setter
     def text(self, value):
-        assert isinstance(value, six.text_type)
+        assert isinstance(value, str)
         raise NotImplementedError()
 
     @property

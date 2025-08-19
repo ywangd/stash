@@ -12,7 +12,6 @@ from stash.system.shcommon import _STASH_EXTENSION_PATCH_PATH as EPP
 
 from stashutils.core import load_from_dir
 
-from six import text_type, binary_type
 
 # alias load_from_dir (so you can access it trough this namespace)
 load_from_dir = load_from_dir
@@ -24,15 +23,15 @@ def create_file(dest, content):
     If content is a string or unicode, use it as the content.
     Otherwise, use content.read() as the content.
     """
-    if not isinstance(content, (binary_type, text_type)):
+    if not isinstance(content, (str, bytes, bytearray)):
         content = content.read()
     parent = os.path.dirname(dest)
     if not os.path.exists(parent):
         os.makedirs(parent)
-    if isinstance(content, binary_type):
+    if isinstance(content, (bytes, bytearray)):
         with io.open(dest, "wb") as f:
             f.write(content)
-    elif isinstance(content, text_type):
+    elif isinstance(content, str):
         with io.open(dest, "w", encoding="utf-8") as f:
             f.write(content)
     return dest
