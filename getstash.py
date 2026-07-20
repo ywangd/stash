@@ -156,7 +156,7 @@ def remove_unwanted_files(basepath, reraise=False):
     Remove unwanted files.
     :param basepath: path os StaSh installation
     :type basepath: str
-    :param reraise: If True, reraise any exception occuring
+    :param reraise: If True, reraise any exception occurring
     :type reraise: bool
     """
     for fname in UNWANTED_FILES:
