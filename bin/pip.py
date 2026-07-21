@@ -1296,7 +1296,7 @@ class PyPIRepository(PackageRepository):
             if (wheel is None or (flags & FLAG_DIST_ALLOW_WHL == 0)) or (
                 flags & FLAG_DIST_PREFER_SRC > 0
             ):
-                # no wheel is available or source is prefered
+                # no wheel is available or source is preferred
                 # use source
                 if self.verbose:
                     print("A source distribution is available and will be used.")
