@@ -160,9 +160,9 @@ class ZipfileFSI(base.BaseFSI):
             timestamp = zipinfo.date_time
             # ZIP timestamps have no timezone (per the format spec); treat
             # naively rather than assume a tz that isn't actually recorded.
-            dt = datetime.datetime(*timestamp)  # noqa: DTZ001
+            dt = datetime.datetime(*timestamp)
             mtime = (
-                dt - datetime.datetime(1970, 1, 1)  # noqa: DTZ001
+                dt - datetime.datetime(1970, 1, 1)
             ).total_seconds()
         type_ = stat.S_IFREG if isfile else stat.S_IFDIR
         mode = base.calc_mode(type=type_)
