@@ -1,7 +1,7 @@
 [build-system]
 build-backend = "setuptools.build_meta"
 
-requires = [ "setuptools>=80.1" ]
+requires = [ "setuptools>=84.1.0" ]
 
 [project]
 name = "stash"
@@ -41,7 +41,7 @@ optional-dependencies.testing = [
   "pyparsing",
   "pytest",
   "ruff>=0.16",
-  "setuptools>=83",
+  "setuptools>=84.1.0",
 ]
 urls.Homepage = "https://github.com/ywangd/stash/"
 urls.Issues = "https://github.com/ywangd/stash/issues"
